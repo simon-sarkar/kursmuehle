@@ -176,7 +176,7 @@ Bild siehe H. Nach Import inaktiv.
 1. Intake (Intake-Leitfaden): Steuerungsgrad, Rahmen + Material, Gliederung, Formate, Gestaltung → Steckbrief.
 2. **Drehbuch** (Intake-Leitfaden 5): gesamter Inhalt als kompakter Text mit Quellenmarkierung und Zeitcheck → Freigabe
    durch die Lehrkraft (entfällt bei Steuerungsgrad „KI macht alles“). Unabhängige Prüfung auf Drehbuch-Ebene.
-   Dann Inhalte 1:1 als Daten (`content/`), Generator (`gen/`) unverändert; `site.json` mit B.1.
+   Das Drehbuch ist die Kursdatei `kurs.md` (Format: `kursdatei.md`); der Generator (`gen/`) liest sie direkt, `site.json` mit B.1.
 3. Prototyp (ein Beispiel je Modultyp, Interactive Book + Branching enthalten) → Lehrkraft importiert → Screenshot.
 4. Vollkurs oder Etappe (O) → unabhängige Prüfung → Korrekturen → Lieferung mit Import-Hinweis (Badge aktivieren, Kursbild;
    bei Delta: „Zusammenführen“).
@@ -202,10 +202,12 @@ Bild siehe H. Nach Import inaktiv.
 
 ### N. Referenzimplementierung
 
-`generator_src.zip`: `gen/mbz.py` (Writer für C–J, O), `gen/h5p.py` (Builder für I mit UI-Strings aus Anhang A), `gen/render.py`
-(Banner/Mocks HTML→PNG, Playwright), `content/*.py` (Kursinhalt als Daten), `steckbrief.yaml` (Kurs-Metadaten, Teile, Status,
-`sichtbar_ab`), `build.py [--proto] [--delta [teile]] [--steckbrief pfad]`. Benötigt Python 3.11+, Pillow, PyYAML,
-Playwright+Chromium (nur Bilder). `site.json` = B.1-Werte. Intake: `Leitfaden_Intake_Kurs-per-Fragen.md`.
+`scripts/`: `gen/kursdatei.py` (Parser der Kursdatei, Format in `kursdatei.md`), `gen/html.py` (Textbausteine für K),
+`gen/mbz.py` (Writer für C–J, O), `gen/h5p.py` (Builder für I mit UI-Strings aus Anhang A), `gen/render.py`
+(Banner/Mocks HTML→PNG, Playwright), `build.py --content ordner [--proto] [--delta [teile]] [--steckbrief pfad]`.
+Kursordner: `kurs.md` (Inhalt), `assets/` (PNG), `steckbrief.yaml` (Kurs-Metadaten, Teile, Status, `sichtbar_ab`);
+Python-Inhalt (`content/course.py`) nur noch als Ausweg. Benötigt Python 3.11+, Pillow, PyYAML; Playwright+Chromium nur
+zum Rendern von Bildern. `site.json` = B.1-Werte. Intake: `intake.md`.
 
 ---
 

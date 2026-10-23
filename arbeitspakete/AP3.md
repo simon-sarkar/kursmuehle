@@ -11,7 +11,7 @@ Ziel: Der Einstieg in SKILL.md / `references/intake.md` führt die Lehrkraft mit
 3. **Selbstabfrage des Assistenten** am Anfang von SKILL.md: Kann ich Code ausführen? Dateien lesen? Bilder
    erzeugen? Daraus folgt: Bilder selbst generieren und einbinden (Kursbild, Banner, Abschnittsbilder) oder Prompts
    für die Lehrkraft liefern.
-4. **Kursbanner** als erstes Element in Abschnitt 0 (großes Bild + Titel + ein Satz), Baustein in `content/cards.py`,
+4. **Kursbanner** als erstes Element in Abschnitt 0 (großes Bild + Titel + ein Satz), Baustein in `scripts/gen/html.py`,
    Bild aus `assets/`; Kursbild wie bisher.
 5. Fragen haben Vorschläge statt leerer Felder; keine Frage, deren Antwort sich aus dem Material ergibt.
 

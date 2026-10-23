@@ -12,15 +12,14 @@ Code-Ausführung (Python 3.11+, PyYAML, Pillow; Playwright+Chromium nur für Bil
 
 1. **Intake** nach `references/intake.md`: erste Frage Steuerungsgrad (entscheide / Vorschlag / KI macht alles), dann
    Rahmen + Material, Gliederung als Vorschlag, Formate, Gestaltung. Ergebnis: `steckbrief.yaml` (Schema in intake.md §6).
-2. **Drehbuch** (intake.md §5): gesamter Inhalt als kompakter Text mit Quellenmarkierung und Zeitcheck → Freigabe durch
-   die Lehrkraft (entfällt nur bei „KI macht alles“). Bei Revision nur Änderungsliste + geänderte Blöcke zeigen.
-3. **Bau**: neuen Kursordner anlegen (Vorbild `examples/netzwerk9/` = minimal, `examples/alltagskompetenz/` = groß):
-   `content/course.py` mit `build(A, sb, proto) -> {"sections": [...], "parts": {key: Section|SubSection}, "badges": [], "image_path": None}`
-   (nur Daten/Builder-Aufrufe, keine Logik; `content/common.py` + `content/cards.py` aus dem Beispiel kopieren), `assets/` (PNG), `steckbrief.yaml`.
-   `A` = {dateiname: (pfad, ImageRef)} aller PNGs in `assets/`.
-   Dann `python3 scripts/build.py --content <kursordner> --proto` (Erstkurs) oder ohne `--proto`.
-   Etappen: `--delta` (alle `status: pending`) oder `--delta le2,le3`. Freigabe nach Datum: `sichtbar_ab:` im Steckbrief.
-   Plattformwerte in `scripts/site.json` (spec §B.1).
+2. **Drehbuch = Kursdatei** (intake.md §5, Referenz `references/kursdatei.md`): gesamter Inhalt als `kurs.md` im
+   Drehbuch-Format mit Quellenmarkierung und Zeitcheck → Freigabe durch die Lehrkraft (entfällt nur bei „KI macht alles“).
+   Bei Revision nur Änderungsliste + geänderte Blöcke zeigen. Die freigegebene Datei wird unverändert gebaut.
+3. **Bau**: Kursordner mit `kurs.md`, `assets/` (PNG), `steckbrief.yaml` (Vorbild `examples/netzwerk9/` = minimal,
+   `examples/alltagskompetenz/` = alle Elementtypen). Kein Python schreiben.
+   `python3 scripts/build.py --content <kursordner> --proto` (Erstkurs) oder ohne `--proto`.
+   Etappen: `--delta` (alle `status: pending`) oder `--delta le2,le3`; Teile = `teil:` im Abschnitt. Freigabe nach Datum:
+   `sichtbar_ab:` im Steckbrief oder `sichtbar ab:` in der Kursdatei. Parserfehler nennen Zeile und Element: beheben, nicht raten.
 4. **Prüfung vor Lieferung**: unabhängiger zweiter Lauf auf Drehbuch-Ebene (Inhalt, Aufgabenlogik, Inhaltsregeln spec §L);
    strukturell: alle XML wohlgeformt, jedes in `json_content` referenzierte Bild in `files.xml`, Bibliotheksversionen exakt
    aus spec §B.2. Wenn möglich Rendertest mit h5p-standalone und den Bibliotheken aus §B.2.
@@ -48,11 +47,13 @@ Code-Ausführung (Python 3.11+, PyYAML, Pillow; Playwright+Chromium nur für Bil
 - `references/spec.md` – Plattformkonstanten, Archivaufbau, Schemata aller Module, H5P-Strukturen, Etappen (§A–O).
 - `references/h5p-vorlagen.md` – `json_content`-Vorlagen mit deutschen UI-Strings (Stand 2026-10-22).
 - `references/skelette.md` – `moodle_backup.xml`-Kopf, Settings, `course.xml`, leere Standarddateien.
-- `references/intake.md` – Fragerunden, Drehbuch-Format, Steckbrief-Schema.
-- `scripts/` – Generator: `gen/mbz.py` (Writer), `gen/h5p.py` (H5P-Builder), `gen/render.py` (Banner/Mocks), `build.py`,
-  `templates/`, `site.json`. Enthält keinen Kursinhalt.
+- `references/intake.md` – Fragerunden, Drehbuch-/Kursdatei-Format (eine Seite), Steckbrief-Schema.
+- `references/kursdatei.md` – vollständige Referenz der Kursdatei (alle Typen, Angaben, Bausteine, Grenzen).
+- `scripts/` – Generator: `gen/kursdatei.py` (Parser), `gen/html.py` (Textbausteine), `gen/mbz.py` (Writer),
+  `gen/h5p.py` (H5P-Builder), `gen/render.py` (Banner/Mocks), `build.py`, `templates/`, `site.json`,
+  `tests/` (Regressionstest, `.mbz`-Vergleich). Enthält keinen Kursinhalt.
 - `examples/netzwerk9/` – minimaler Beispielkurs (eine Einheit, 25 min, aus Folien + Fotos einer Lehrkraft): Vorbild für neue Kurse.
-- `examples/alltagskompetenz/` – großer Beispielkurs (Tech-Demo, Unterabschnitte, Badge, Delta).
+- `examples/alltagskompetenz/` – großer Beispielkurs (Tech-Demo, Unterabschnitte, Lesebuch, Geschichte, Badge, Delta).
   `python3 scripts/build.py --content examples/<kurs>` baut sie.
 - `README.md` – Erklärung für Lehrkräfte, Capabilities.
 

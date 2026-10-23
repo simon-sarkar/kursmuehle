@@ -71,13 +71,13 @@ Je Modul: Testkurs mit einer Instanz exportieren → Schema in `references/spec.
 
 ### 4. Schlanke Designvorlagen
 Drei bis vier austauschbare Vorlagen (z. B. *schlicht*, *kacheln*, *magazin*, *dunkel*) als Token-Sätze
-(Farben, Abstände, Kartenform) in `content/cards.py`, wählbar im Steckbrief. Standard bleibt schlicht,
+(Farben, Abstände, Kartenform) in `scripts/gen/html.py`, wählbar im Steckbrief. Standard bleibt schlicht,
 Emojis aus. Keine harten Designregeln im Skill – Vorlieben kommen aus dem Intake.
 
 ### 5. HTML-Formatierung für Textinhalte
 Lesetexte in Textfeldern und Seiten kommen formatiert, nicht als Fließtext: Zwischenüberschriften, kurze
 Absätze, Listen, Hervorhebungen, Merkkasten, Beispiel-Box, Tabelle für Vergleiche, Bild mit Unterschrift.
-Die Bausteine dafür liegen in `content/common.py` und werden von der Designvorlage eingefärbt; der Agent
+Die Bausteine dafür liegen in `scripts/gen/html.py` und werden von der Designvorlage eingefärbt; der Agent
 wählt je Textsorte den passenden Baustein (Erklärung, Fall, Anleitung, Merksatz) statt alles in `<p>` zu setzen.
 Regel im Intake: kein Absatz länger als fünf Zeilen auf dem Handy.
 
@@ -102,7 +102,7 @@ Zwei Wege, beide 1.0:
   bewertete Teile laufen weiter über Plattform-Aktivitäten. Sky is the limit.
 
 ### 8. Drehbuch → Kurs ohne Handarbeit
-Parser, der das Drehbuch-Format direkt in `content/` übersetzt; „Vorausgesetzt:“-Zeile je Element;
+Parser, der das Drehbuch-Format direkt liest (seit 0.2: `kurs.md`, `gen/kursdatei.py`); „Vorausgesetzt:“-Zeile je Element;
 Änderungsliste zwischen Drehbuch-Versionen automatisch.
 
 ## Nach 1.0

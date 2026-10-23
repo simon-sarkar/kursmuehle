@@ -1,7 +1,7 @@
 # AP4 – Designvorlagen und HTML-Textbausteine
 
 Ziel: Zwei bis drei austauschbare Designvorlagen als Token-Sätze (Farben, Abstände, Kartenform, Schrift) in
-`content/cards.py`/`common.py`, wählbar im Steckbrief (`design.vorlage: schlicht|kacheln|magazin`). Standard
+`scripts/gen/html.py`, wählbar im Steckbrief (`design.vorlage: schlicht|kacheln|magazin`). Standard
 `schlicht`, Emojis aus. Keine harten Designregeln im Skill; Vorlieben kommen aus dem Intake.
 
 Textbausteine für Lesetexte (Seite/Textfeld): Zwischenüberschrift, kurzer Absatz, Liste, Hervorhebung, Merkkasten,
