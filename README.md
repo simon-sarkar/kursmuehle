@@ -126,10 +126,13 @@ löschen, Delta neu einspielen (Fortschritt in diesem Abschnitt geht verloren).
 - [x] H5P-Render-Test und inhaltliche Gegenprüfung durch zweiten Agenten
 - [x] Delta-Sicherung („Zusammenführen“) und „sichtbar ab Datum“
 - [x] Intake mit Steuerungsgrad, Drehbuch-Format, Zeitcheck, Änderungsliste
-- [ ] H5P direkt im Textfeld (Kern-H5P-Filter) – weniger Ladezeit pro Element
+- [ ] Menüführung: „Womit starten wir?“ – Thema, altes Material, Material + Fragen, Fragen-Intake
+- [ ] Alle Kursformate (Kacheln, Grid, Wochen …) und alle Modultypen (Test, Aufgabe, Forum …)
+- [ ] Schlanke Designvorlagen zur Auswahl; Kursbanner und Bilder sinnvoll eingebunden
+- [ ] One-Page-Darstellung ohne Ladezeiten: H5P im Textfeld, Kurs als eigene Website mit eigenen Spielen
 - [ ] Drehbuch-Parser: Drehbuch → `content/` automatisch statt von Hand
-- [ ] Weitere Kursformate (Kachel) und Aktivitäten (Test, Aufgabe, Forum)
-- [ ] Rückmeldungen aus dem Einsatz an anderen Schulen
+
+Details und Reihenfolge: [`ROADMAP.md`](ROADMAP.md) – das ist die Definition von 1.0.
 
 ## Mitmachen
 
