@@ -45,6 +45,15 @@
   th { font-weight: 600; }
   .teststand th { width: 32%; }
   thead th { white-space: nowrap; }
+  .durchlaeufe td:first-child { min-width: 11em; }
+  @media (max-width: 640px) {       /* auf dem Handy je Durchlauf ein Block, Spaltenname vor dem Wert */
+    .durchlaeufe thead { display: none; }
+    .durchlaeufe, .durchlaeufe tbody, .durchlaeufe tr, .durchlaeufe td { display: block; width: 100%; box-sizing: border-box; }
+    .durchlaeufe tr { border-bottom: 1px solid var(--linie); padding: 6px 0; }
+    .durchlaeufe td { border: 0; padding: 3px 10px; }
+    .durchlaeufe td:first-child { font-weight: 600; padding-top: 6px; }
+    .durchlaeufe td:not(:first-child)::before { content: attr(data-l) ": "; color: var(--grau); }
+  }
   .ablauf { overflow-x: auto; }
   @media (max-width: 640px) { .ablauf img { min-width: 640px; } .ablauf figcaption { margin-top: .8em; } }
   figure { margin: 0 0 1.2em; }
@@ -111,8 +120,8 @@
 <div class="leiste"><div class="innen">
   <a class="marke" href="#top"><img src="logo-light.svg" alt="">Kursmühle</a>
 <nav aria-label="Sprungnavigation">
+  <a href="#wozu">Wozu</a>
   <a href="#wege">Drei Wege</a>
-  <a href="#kann">Was Kursmühle kann</a>
   <a href="#beispiele">Beispiele</a>
   <a href="#richtwerte">Richtwerte</a>
   <a href="#wiederherstellen">Wiederherstellen</a>
@@ -124,10 +133,9 @@
 <header class="hero" id="top"><div class="innen">
   <img class="banner" src="banner-kursmuehle-v9.svg" alt="Kursmühle: für die ByCS-Lernplattform" width="1200" height="300">
   <h1>Kurse wiederherstellen, die es noch nie gab.</h1>
-<p class="einstieg">Du beschreibst einem KI-Assistenten, was du brauchst, oder gibst ihm dein Material. Er schreibt
-daraus ein kurzes Drehbuch, das du liest und freigibst. Ein Skript macht aus dem Drehbuch eine Kurssicherung
-(<code>.mbz</code>), die du auf der <a href="https://www.bycs.de/">ByCS-Lernplattform</a> (früher mebis) in deinen Kurs
-lädst. Heraus kommt ein Kurs mit Texten, Übungen und Tests.</p>
+<p class="einstieg">Du beschreibst einem KI-Assistenten, was du brauchst, oder gibst ihm dein Material. Heraus kommt
+eine Kurssicherung (<code>.mbz</code>) mit Texten, Übungen und Tests, die du auf der
+<a href="https://www.bycs.de/">ByCS-Lernplattform</a> (früher mebis) in deinen Kurs lädst.</p>
 <p class="knoepfe">
   <a class="knopf" href="https://github.com/simon-sarkar/kursmuehle/releases/latest/download/kursmuehle.zip">Skill-Zip herunterladen</a>
   <a class="knopf leise" href="https://github.com/simon-sarkar/kursmuehle">Repository auf GitHub</a>
@@ -137,13 +145,24 @@ lädst. Heraus kommt ein Kurs mit Texten, Übungen und Tests.</p>
 </div></header>
 <main>
 
-<section id="ablauf" class="abschnitt">
+<section id="wozu" class="abschnitt">
+  <h2>Wozu Kursmühle dient</h2>
+  <p>Einen Kurs in der ByCS-Lernplattform von Hand anzulegen heißt, jede Seite und jede Übung einzeln anzulegen und zu
+  befüllen. Mit Kursmühle beschreibst du den Kurs oder gibst vorhandenes Material ab, und der KI-Assistent liefert eine
+  Kurssicherung zum Import.</p>
+  <ul>
+    <li>Ausgangsmaterial kann eine Beschreibung sein oder eigene Unterlagen: Folien, Arbeitsblätter, Notizen, Fotos von
+      eigenem Material.</li>
+    <li>Vor dem Bau bekommst du ein kurzes Drehbuch zum Gegenlesen: der ganze Kurs als Text mit Zeitschätzung je Element.
+      Darin ist markiert, was aus deinem Material stammt und was die KI ergänzt hat. Bevor du es siehst, prüft der
+      Assistent es gegen zehn didaktische Standardannahmen und eine Markerliste gegen Floskeln.</li>
+    <li>Ein Kurs lässt sich in Etappen liefern, das Design nachträglich wechseln und die nächste Einheit mit demselben
+      Ablauf bauen.</li>
+  </ul>
   <figure class="ablauf">
     <img src="ablauf.svg" alt="Ablauf: Lehrkraft, KI-Assistent, Drehbuch, Generator, Kurssicherung, Lernplattform">
     <figcaption>Die KI schreibt nur die Inhalte. Das Archiv aus über hundert verknüpften XML-Dateien baut der Generator
-    aus dem Drehbuch; nach deiner Freigabe wird nichts noch einmal abgetippt. Im Drehbuch steht der ganze Kurs als
-    kurzer Text mit Zeitschätzung je Element, und es ist markiert, was aus deinem Material stammt und was die KI
-    ergänzt hat.</figcaption>
+    aus dem Drehbuch; nach deiner Freigabe wird nichts noch einmal abgetippt.</figcaption>
   </figure>
 </section>
 
@@ -164,9 +183,7 @@ lädst. Heraus kommt ein Kurs mit Texten, Übungen und Tests.</p>
       analysieren“ und muss eingeschaltet sein; dort kannst du das Zip auch als Skill anlegen, dann genügt der
       Kurswunsch.</p>
       <p>Stell bei ChatGPT den Aufwand auf „Extra High“ (gibt es auch im Gratiskonto); mit mittlerem Aufwand wurde der
-      Kurs im Test deutlich dünner, ohne Grafiken und mit falschem Halt vor dem Bau.</p>
-      <p>In ChatGPT lief am 23.10.2026 ein Kurs mit kostenlosem Konto (<a href="#richtwerte">Richtwerte</a>); Durchläufe
-      in claude.ai stehen aus.</p>
+      Kurs im Test deutlich dünner, ohne Grafiken und mit falschem Halt vor dem Bau (<a href="#richtwerte">Richtwerte</a>).</p>
     </article>
     <article class="karte">
       <h3>ByLKI oder AIS-Chat</h3>
@@ -198,31 +215,6 @@ lädst. Heraus kommt ein Kurs mit Texten, Übungen und Tests.</p>
   dienstlich genutzt werden dürfen, regeln Schule und Sachaufwandsträger.</p>
 </section>
 
-<section id="kann" class="abschnitt">
-  <h2>Was Kursmühle kann</h2>
-  <div class="raster">
-    <div class="kachel"><h3>Übung im Textfeld</h3><p>Quiz, Zuordnen oder Lernkarten stehen als Block direkt zwischen den
-      Lesetexten auf der Kursseite, ohne Nachladen und ohne Bewertung.</p></div>
-    <div class="kachel"><h3>Einheit als Website-Datei</h3><p>Ein Abschnitt wird eine HTML-Seite mit Startseite,
-      Kapitelnavigation und Fortschritt, eingebettet oder in einem neuen Fenster.</p></div>
-    <div class="kachel"><h3>H5P- und Moodle-Aktivitäten</h3><p>Was eine Bestehensgrenze hat, für ein Badge zählt oder
-      abgegeben wird, bleibt eine Aktivität der Plattform und erscheint im Abschlussstatus oder im Bewertungsbuch.</p></div>
-    <div class="kachel"><h3>Sechs Kursformate</h3><p>Themen, Kacheln, Wochen, Ein-Themen, Komprimiert oder
-      Einzelaktivität; im Kachelformat bekommt jeder Abschnitt ein textfreies Kachelbild oder ein Icon.</p></div>
-    <div class="kachel"><h3>Modultypen</h3><p>Lesetexte als Seite, Lesebuch oder Buch, Übungen als H5P und alle acht
-      Moodle-Module von Test bis Glossar; die ganze Liste steht in der
-      <a href="https://github.com/simon-sarkar/kursmuehle#elementtypen">README</a>.</p></div>
-    <div class="kachel"><h3>Designvorlagen</h3><p>Drei Vorlagen (schlicht, kacheln, magazin) färben alle Textbausteine
-      ein; du wählst sie im Steckbrief.</p></div>
-    <div class="kachel"><h3>Glossar-Import</h3><p>Die Einträge eines Glossars liegen als XML-Datei neben der Sicherung
-      und kommen über „Einträge importieren“ in den Kurs.</p></div>
-    <div class="kachel"><h3>Delta-Sicherungen</h3><p>Neue Abschnitte kommen als eigene Sicherung per „Zusammenführen“
-      in einen laufenden Kurs; der Lernfortschritt bleibt erhalten.</p></div>
-    <div class="kachel"><h3>Prüfdurchlauf</h3><p>Bevor du das Drehbuch siehst, prüft der Assistent es gegen zehn
-      didaktische Standardannahmen und eine Markerliste gegen Slop und behebt die Treffer.</p></div>
-  </div>
-</section>
-
 <section id="beispiele" class="abschnitt">
   <h2>Beispiele</h2>
   <p>Drei Beispielkurse liegen im Repository und im Skill-Zip, mit eigenen Texten und selbst erzeugten Bildern.</p>
@@ -242,38 +234,28 @@ lädst. Heraus kommt ein Kurs mit Texten, Übungen und Tests.</p>
 
 <section id="richtwerte" class="abschnitt">
   <h2>Richtwerte</h2>
-  <p>Im Fremdtest zu 1.0 bekam ein frischer Assistent der Sonnet-Klasse nur das Skill-Zip und den Satz „Mach mir eine
-  Einheit zu Bruchrechnen für Jgst 6, 45 Minuten, Selbstlernkurs.“ Sonnet ist die mittlere, günstigere Modellstufe von
-  Anthropic; der Skill soll ohne das teuerste Modell auskommen.</p>
-  <table>
-    <thead><tr><th>Größe</th><th>Durchlauf 1</th><th>Durchlauf 2</th></tr></thead>
+  <p>Alle Durchläufe vom 23.10.2026, Auftrag jeweils ein Satz; Protokolle im
+  <a href="https://github.com/simon-sarkar/kursmuehle/tree/main/docs/entwicklung/protokolle">Repository</a>.</p>
+  <table class="durchlaeufe">
+    <thead><tr><th>Assistent</th><th>Auftrag</th><th>Dauer</th><th>Ergebnis</th></tr></thead>
     <tbody>
-      <tr><td>Bis zur fertigen <code>.mbz</code> mit Protokoll</td><td>5 min 10 s</td><td>5 min 46 s (erste <code>.mbz</code> nach etwa 3 min)</td></tr>
-      <tr><td>Tokens gesamt (Agent-Schnittstelle)</td><td>138 000</td><td>154 000</td></tr>
-      <tr><td>Rückfragen, die der Assistent gestellt hätte</td><td>2</td><td>0</td></tr>
-      <tr><td>Nachrichten an dich (Schätzung, ohne deine Lesezeit)</td><td>2</td><td>1</td></tr>
-      <tr><td>Bauläufe bis <code>check.py</code> OK</td><td>1</td><td>1</td></tr>
+      <tr><td>Claude Code, Sonnet-Klasse (Fremdtest, zwei Durchläufe)</td><td data-l="Auftrag">Bruchrechnen, Jgst 6, 45 min</td>
+        <td data-l="Dauer">5–6 min bis zur <code>.mbz</code></td><td data-l="Ergebnis">ein Baulauf, 1–2 Nachrichten an dich, 138 000–154 000 Tokens</td></tr>
+      <tr><td>ChatGPT Gratiskonto, GPT-5.6 Terra, Aufwand Medium</td><td data-l="Auftrag">Satz des Pythagoras, Jgst 9, 45 min</td>
+        <td data-l="Dauer">9 min, davon 4 min Halt mit der falschen Meldung „kein Python“</td>
+        <td data-l="Ergebnis">keine Bilder, drei kurze Lesetexte, zwei Übungsblöcke, Abschlusstest</td></tr>
+      <tr><td>ChatGPT Gratiskonto, GPT-6 Luna, Aufwand Extra High</td><td data-l="Auftrag">wie oben</td><td data-l="Dauer">4 min ohne Halt</td>
+        <td data-l="Ergebnis">drei selbst gezeichnete Bilder, rund 900 Wörter Lesetext, zwei Übungsblöcke, Test mit zehn Fragen; importiert
+        und läuft</td></tr>
+      <tr><td>AIS-Chat, GPT-5.5 (nur Drehbuch, Bau mit 1.0.3)</td><td data-l="Auftrag">wie oben</td><td data-l="Dauer">unter 30 s</td>
+        <td data-l="Ergebnis">rund 330 Wörter Lesetext, Lernkarten, Zuordnen, Quiz, Test mit zehn Fragen; Import steht aus</td></tr>
+      <tr><td>fobizz, GPT-6.1 Sol (nur Drehbuch, Bau mit 1.0.3)</td><td data-l="Auftrag">wie oben</td><td data-l="Dauer">etwa 4 min</td>
+        <td data-l="Ergebnis">rund 960 Wörter Lesetext mit Rundungsfall und Fehlersuche, Zuordnen, Lückentext, Test mit acht Fragen; Import
+        steht aus</td></tr>
     </tbody>
   </table>
-  <p>Der Fremdtest lief in Claude Code, einem Agenten mit Dateizugriff, nicht über den Upload in ChatGPT oder claude.ai.
-  Mit Version 0.1 lag ein kompletter Kurs mit mehreren Abschnitten und vom Assistenten erzeugten Bildern in ChatGPT bei
-  etwa sieben Minuten, eine Einzelbeobachtung ohne Protokoll. Das Protokoll liegt im
-  <a href="https://github.com/simon-sarkar/kursmuehle/blob/main/docs/entwicklung/protokolle/AP9_fremdtest.md">Repository</a>.</p>
-  <p>ChatGPT mit kostenlosem Konto, 23.10.2026: Eingaben „Entpacke das und lies SKILL.md“, „Starte den Skill“, dann Weg
-  „Fragen“, Steuerungsgrad c und „Mathematik Satz des Pythagoras, 9. Klasse Mittelschule, Selbstlernkurs ca. 45 min,
-  eine Einheit“.</p>
-  <table>
-    <thead><tr><th>Größe</th><th>A: GPT-5.6 Terra, Aufwand Medium</th><th>B: GPT-6 Luna, Aufwand Extra High</th></tr></thead>
-    <tbody>
-      <tr><td>Dauer</td><td>9 min (22:05–22:14), davon 4 min Halt mit der falschen Meldung, es gebe keine lauffähige Python-Umgebung</td><td>4 min (22:21–22:25), ohne Halt</td></tr>
-      <tr><td>Bilder</td><td>keine</td><td>drei selbst gezeichnete: beschriftetes Dreieck, Banner, Badge</td></tr>
-      <tr><td>Lesetext</td><td>drei kurze Lesetexte</td><td>rund 900 Wörter mit durchgerechneten Beispielen</td></tr>
-      <tr><td>Übungen</td><td>zwei Übungsblöcke</td><td>zwei Übungsblöcke</td></tr>
-      <tr><td>Abschluss</td><td>Abschlusstest</td><td>H5P-Abschlusstest mit zehn Fragen, davon acht Fälle</td></tr>
-    </tbody>
-  </table>
-  <p>Kurs B wurde am 23.10.2026 auf der Plattform importiert und läuft. Durchläufe in claude.ai und ByLKI stehen aus. Das Protokoll liegt
-  im <a href="https://github.com/simon-sarkar/kursmuehle/blob/main/docs/entwicklung/protokolle/chatgpt-free.md">Repository</a>.</p>
+  <p>Sonnet ist die mittlere, günstigere Modellstufe von Anthropic; der Skill soll ohne das teuerste Modell auskommen.
+  Durchläufe in claude.ai und ByLKI stehen aus.</p>
   <table class="teststand">
     <tbody>
       <tr><th>Import getestet am 23.10.2026</th><td>Themen- und Kachelformat mit Kachelbildern, alle acht Moodle-Module,
