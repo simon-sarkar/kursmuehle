@@ -1,4 +1,4 @@
-![Kursmühle – Lernplattform-Kurse aus einem Prompt](docs/banner-kursmuehle-v2.svg)
+![Kursmühle – Lernplattform-Kurse aus einem Prompt](docs/banner-kursmuehle-v3.svg)
 
 # Kursmühle – Lernplattform-Kurse aus einem Prompt
 
