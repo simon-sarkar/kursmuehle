@@ -54,6 +54,9 @@ FEHLER = [
     ("## A\n### Textfeld: X\nSchritte: Titel\nkein Listenpunkt", "Zeile 3 (Textfeld „X“): Schritte: Liste"),
     ("## A\nkachelbild: fehlt.png\n### Textfeld: X\nt", "Zeile 1 (Abschnitt „A“): Bild „fehlt.png“ nicht in assets/"),
     ("## A\nkachelicon: Book Icon\n### Textfeld: X\nt", "Zeile 1 (Abschnitt „A“): kachelicon „Book Icon“"),
+    ("## A\nwebsite: vielleicht\n### Textfeld: X\nt", "Zeile 1 (Abschnitt „A“): website „vielleicht“: erlaubt sind ja"),
+    ("## A\nwebsite: ja\n### Textfeld: X\nwebsite: ja\nt", "Zeile 3 (Textfeld „X“): website am Element: nur `website: nein`"),
+    ("## A\nwebsite: ja\n### Quiz: X\n1. F? · a · b", "Zeile 4 (Quiz „X“): MC ohne ✔"),
 ]
 
 # Textbausteine (AP4): jede Zeile ein Baustein, erwarteter Teil des HTML

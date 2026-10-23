@@ -9,7 +9,8 @@ fehlender fileref, ungültiges Verfügbarkeits-JSON, doppelte Abschnittsnummer, 
 fremdem Format; aus dem Kachel-Build: Kachelbild ohne Datei, Kacheloption im Themenformat; aus dem module-Build:
 Fragenverweis ins Leere, Fragenkategorie in fremdem Kontext, sumgrades falsch, Kapitelbild entfernt, Datei ohne Inhalt,
 Bewertungsposten passt nicht; aus dem module-Build mit Nutzerdaten: users.xml fehlt, Glossar-userinfo ohne
-Abschnitts-userinfo; Warnung bei users=1 (und nur dort) und bei langem Kacheltitel.
+Abschnitts-userinfo; aus dem Website-Build von netzwerk9: Bild fehlt im Verzeichnis der Seite, externe Quelle;
+Warnung bei users=1 (und nur dort) und bei langem Kacheltitel.
 """
 import io
 import os
@@ -215,6 +216,26 @@ def f_userinfo_ohne_abschnitt(e):
     e["moodle_backup.xml"] = s.encode()
 
 
+# ---- Website-Modus (AP7)
+def _website(e):
+    return next(p for p in sorted(e) if p.startswith("files/") and b"Kursm\xc3\xbchle, Website-Modus" in e[p])
+
+
+def f_website_bild_fehlt(e):
+    p = _website(e)
+    s = e[p].decode()
+    e[p] = re.sub(r'IMG = \{.*?\};\n', 'IMG = {};\n', s, count=1, flags=re.S).encode()
+
+
+def f_website_extern(e):
+    p = _website(e)
+    e[p] = e[p].replace(b"</head>", b'<script src="https://cdn.example.org/x.js"></script></head>', 1)
+
+
+WEB_FAELLE = [
+    ("Website-Bild fehlt im Verzeichnis", f_website_bild_fehlt, "fehlt im Bilderverzeichnis der Seite"),
+    ("Website lädt von außen", f_website_extern, "lädt von außen (cdn.example.org)"),
+]
 FORMAT_FAELLE = [
     ("Formatoption mit fremdem Format", f_formatoption_fremd, "courseformatoption „hiddensections“: format tiles"),
 ]
@@ -238,6 +259,8 @@ def main():
                build("module", os.path.join(d, "module.mbz"))]
         gut += [build("netzwerk9", os.path.join(d, f"n9_{f}.mbz"), "--format", f)
                 for f in ("kacheln", "wochen", "einthemen", "komprimiert")]
+        gut.append(build("netzwerk9", os.path.join(d, "n9_website.mbz"), "--website"))
+        gut.append(build("alltagskompetenz", os.path.join(d, "ak_website.mbz"), "--website", "popup"))
         gut.append(build("module", os.path.join(d, "module_mit.mbz"), "--mit-nutzerdaten"))
         for path in gut:
             errors, info, warnings = check_mbz(path)
@@ -265,10 +288,11 @@ def main():
             print(f"FEHLT  Einzelaktivität mit zehn Elementen: {r.stdout} {r.stderr}")
         else:
             print("ok     Einzelaktivität mit zehn Elementen: Bau bricht ab")
-        base, modul, kachel, modul_mit = load(gut[0]), load(gut[4]), load(gut[5]), load(gut[-1])
+        base, modul, kachel, modul_mit, web = load(gut[0]), load(gut[4]), load(gut[5]), load(gut[-1]), load(gut[-3])
         for name, mut, want, src in ([(*f, base) for f in FAELLE] + [(*f, modul) for f in MODUL_FAELLE]
                                      + [(*f, base) for f in FORMAT_FAELLE] + [(*f, kachel) for f in KACHEL_FAELLE]
-                                     + [(*f, modul_mit) for f in USERS_FAELLE]):
+                                     + [(*f, modul_mit) for f in USERS_FAELLE]
+                                     + [(*f, web) for f in WEB_FAELLE]):
             e = dict(src)
             mut(e)
             path = save(e, os.path.join(d, "kaputt.mbz"))

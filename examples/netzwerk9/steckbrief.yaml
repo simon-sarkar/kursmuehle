@@ -6,6 +6,7 @@ kurs:
   jahrgangsstufe: "9"
   einsatz: begleitend
   format: themen
+  website: nein                   # ja: Website-Variante (Abschnitt als eine HTML-Seite), auch: build.py --website
   steuerung: ki
   umfang_min: 25
   design: {vorlage: schlicht, banner: true, emoji_marker: false}

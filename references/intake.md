@@ -66,7 +66,7 @@ Eine Nachricht, höchstens vier Fragen, jede mit Vorschlag. Welche Fragen, häng
 | **Kursformat?** Empfehlung nach Kurstyp (Tabelle unten), die Lehrkraft entscheidet. | Empfehlung | 2, 3, 4 |
 | Umfang und Portionierung: eine Lieferung, oder in Wochen bzw. Etappen sichtbar werden lassen? | eine Lieferung | 3, 4 |
 | Abschluss: Abschlusstest mit Badge? Bestehensgrenze? | ja, 70 %, ein Badge am Ende (Selbstlernkurs); nein (begleitend) | 3, 4 |
-| Gestaltung: Vorlage schlicht (weiße Karten, Haarlinien), kacheln (getönte Flächen, runder) oder magazin (Linien, Weißraum)? Farbwunsch? Abschnittsbilder? | schlicht, Farbe wählt der Assistent, keine Abschnittsbilder | 3, 4 |
+| Gestaltung: Vorlage schlicht (weiße Karten, Haarlinien), kacheln (getönte Flächen, runder) oder magazin (Linien, Weißraum)? Farbwunsch? Abschnittsbilder? Website-Modus (jede Einheit eine Seite mit Kapiteln, ohne Ladezeiten, Übungen ohne Note)? | schlicht, Farbe wählt der Assistent, keine Abschnittsbilder, kein Website-Modus | 3, 4 |
 | Was kommt dazu, hinter welchem Abschnitt, ab wann sichtbar? | hinten anhängen, sofort sichtbar | 5 |
 
 Bei Weg 2 nur die Fragen stellen, die das Material offenlässt, in der Regel das Kursformat; Umfang und Gliederung
@@ -246,6 +246,7 @@ kurs:
   umfang_min: 90
   portionierung: keine            # keine | wochen | etappen
   format: themen                  # themen | kacheln | wochen | einthemen | komprimiert | einzelaktivitaet (Empfehlung §2)
+  website: nein                   # nein | ja | vollbild | neues fenster: Abschnitte als HTML-Seite (kursdatei.md §7a)
   start: null                     # JJJJ-MM-TT, Kursbeginn (Wochenformat zählt ab hier); null = Bautag
   badge: "…"                      # Name oder null
   bestehensgrenze: 70

@@ -130,7 +130,12 @@ Abgabe (feedback) `2/$@NULL@$/0/0` + `completionsubmit 1`. (Reihenfolge: complet
   grade, gradepass aus `bestehen`). Abschluss „abgabe“ `2/$@NULL@$/0/0` + `completionsubmit 1`.
 - **resource** (Datei): `name, intro, introformat 1, tobemigrated 0, legacyfiles 0, legacyfileslast $@NULL@$, display 0,
   displayoptions a:2:{s:10:"printintro";i:1;s:8:"showtype";i:1;}, filterfiles 0, revision 1, timemodified`; genau eine
-  Datei im Bereich `mod_resource/content/0`, `sortorder 1`, mimetype nach Endung.
+  Datei im Bereich `mod_resource/content/0`, `sortorder 1`, mimetype nach Endung. Website-Modus (AP7, `gen/website.py`):
+  eine `index.html` (text/html), `display` 1 eingebettet (Standard), 5 öffnen, 6 Pop-up (`displayoptions` dann mit
+  `popupwidth 1200`, `popupheight 800`), `printintro 0`, `showtype 0`, Abschluss „ansehen“ (`website:` ja/eingebettet → 1, vollbild → 5, neues fenster → 6).
+  `filterfiles 0`: die Filter der Plattform laufen nicht über die Datei; ob ihre Skripte laufen, prüft `tools/jsprobe`. Bilder als data-URI im Bilderverzeichnis
+  der Seite; `check.py` prüft Anzeige, externe Quellen und Bildverweise. Moodle-Anzeige 2 (Rahmen) und 3 (neues
+  Fenster) sind im Standard von `resource | displayoptions` nicht freigegeben und werden nicht erzeugt.
 - **folder** (Verzeichnis): `name, intro, introformat 1, revision 1, timemodified, display (0 eigene Seite, 1 auf der
   Kursseite), showexpanded, forcedownload 1, studentedit 0`; Dateien in `mod_folder/content/0`, filepath `/`.
 - **forum**: `type (general | qanda | eachuser | blog), name, intro, introformat 1`, Rest wie Schema (`assessed 0,

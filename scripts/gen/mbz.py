@@ -289,13 +289,26 @@ class Assign(Item):
 
 
 class Resource(Item):
-    """Datei (mod_resource): genau eine Datei, angezeigt nach Plattformstandard."""
+    """Datei (mod_resource): genau eine Datei. display auto (Plattformstandard), embed, open, popup.
+    website=True: HTML-Datei des Website-Modus (gen/website.py), ohne Beschreibung und Dateityp auf der Kursseite."""
     modname = "resource"
+    DISPLAY = {"auto": 0, "embed": 1, "open": 5, "popup": 6}
 
-    def __init__(self, name, local_path, filename=None, intro="", completion="view", files=None):
+    def __init__(self, name, local_path, filename=None, intro="", completion="view", files=None, display="auto",
+                 website=False):
         super().__init__(name, intro=intro, completion=completion, files=files)
         self.local_path = local_path
         self.filename = filename or os.path.basename(local_path)
+        self.display = self.DISPLAY[display]
+        self.website = website
+
+    @property
+    def displayoptions(self):
+        """Serialisiertes PHP-Array wie im Export; Pop-up mit Fenstergröße."""
+        opts = [("printintro", 0 if self.website else 1), ("showtype", 0 if self.website else 1)]
+        if self.display == 6:
+            opts += [("popupwidth", 1200), ("popupheight", 800)]
+        return f"a:{len(opts)}:{{" + "".join(f's:{len(k)}:"{k}";i:{v};' for k, v in opts) + "}"
 
 
 class Folder(Item):
@@ -1152,8 +1165,8 @@ class Writer:
     <tobemigrated>0</tobemigrated>
     <legacyfiles>0</legacyfiles>
     <legacyfileslast>{NULL}</legacyfileslast>
-    <display>0</display>
-    <displayoptions>a:2:{{s:10:"printintro";i:1;s:8:"showtype";i:1;}}</displayoptions>
+    <display>{it.display}</display>
+    <displayoptions>{it.displayoptions}</displayoptions>
     <filterfiles>0</filterfiles>
     <revision>1</revision>
     <timemodified>{self.now}</timemodified>

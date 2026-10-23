@@ -545,9 +545,11 @@ class Pruefung:
                 self.hvp(a, inner, wo)
             elif mod == "resource":
                 areas.add("content")
-                n = len(self._files_for(a, "content"))
-                if n != 1:
-                    self.err(wo, f"Datei braucht genau eine Datei in mod_resource/content, {n} gefunden")
+                fs = self._files_for(a, "content")
+                if len(fs) != 1:
+                    self.err(wo, f"Datei braucht genau eine Datei in mod_resource/content, {len(fs)} gefunden")
+                elif fs[0]["filename"].lower().endswith((".html", ".htm")):
+                    self.website(fs[0], inner, wo)
             elif mod == "folder":
                 areas.add("content")
                 if not self._files_for(a, "content"):
@@ -572,6 +574,25 @@ class Pruefung:
                                      "(ohne Nutzerdaten nur Einträge der Lehrkraft)")
             for r in [r for r in self.files if r["contextid"] == a["contextid"] and r["filearea"] not in areas]:
                 self.err(wo, f"Datei „{r['filename']}“ in unbekanntem Dateibereich {r['component']}/{r['filearea']}")
+
+    def website(self, f, inner, wo):
+        """Website-Modus: Anzeige erlaubt, keine externen Skripte/Stile, jedes data-km-img im Bilderverzeichnis."""
+        if _text(inner, "display", "0") not in ("0", "1", "5", "6"):
+            self.err(wo, f"display {_text(inner, 'display', '')}: für HTML 0 (automatisch), 1 (eingebettet), 5 (öffnen), 6 (Pop-up)")
+        data = self.entries.get(f"files/{f['contenthash'][:2]}/{f['contenthash']}")
+        if data is None:
+            return
+        html = data.decode("utf-8", "replace")
+        for m in re.findall(r'<(?:script|link|iframe)[^>]+(?:src|href)="(https?:)?//([^"/]+)', html):
+            if not m[1].endswith(("youtube-nocookie.com", "player.vimeo.com")):
+                self.err(wo, f"Website lädt von außen ({m[1]}); die Datei muss ohne externe Quellen laufen")
+        if "kursmuehle" in html.lower() or "Kursmühle" in html:
+            m = re.search(r"IMG = (\{.*?\});\n", html, re.S)
+            namen = set(json.loads(m.group(1))) if m else set()
+            for name in sorted(set(re.findall(r'data-km-img="([^"]+)"', html)) - namen):
+                self.err(wo, f"Website: Bild „{name}“ fehlt im Bilderverzeichnis der Seite")
+        if len(data) > 15 * 1024 * 1024:
+            self.warn(wo, f"Website {len(data) // 1024 // 1024} MB: große Datei, Bilder verkleinern")
 
     def bewertung(self, a, wo, grademax):
         """Bewertungsposten passt zur Maximalbewertung des Moduls (0 = kein Posten)."""

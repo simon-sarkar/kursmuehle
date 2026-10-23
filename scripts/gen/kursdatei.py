@@ -7,10 +7,12 @@ import datetime
 import os
 import re
 import sys
+import tempfile
 import zoneinfo
 
 from . import h5p as H
 from . import html as T
+from .website import WEB_TYPEN, ART, Website
 from .mbz import (Assign, Badge, Book, Choice, Feedback, Folder, Forum, Glossary, HvpItem, Label, MultiChoice, Page,
                   Quiz, Resource, Section, ShortAnswer, SubSection, TrueFalse, Url)
 
@@ -53,7 +55,7 @@ QUIZ_FRAGEN = {"MC", "RF", "Einsetzen", "Markieren", "Lückentext"}
 TEST_FRAGEN = {"MC", "RF", "Kurzantwort"}      # Moodle-Test (questions.xml): nur diese drei Typen
 ATTRS = {
     "kurs": {"farbe", "kursbild"},
-    "abschnitt": {"teil", "farbe", "kachelbild", "kachelicon", "sichtbar ab", "prototyp"},
+    "abschnitt": {"teil", "farbe", "kachelbild", "kachelicon", "website", "sichtbar ab", "prototyp"},
     "Unterabschnitt": {"teil", "sichtbar ab", "prototyp"},
     "Banner": {"bild", "untertitel", "name", "sichtbar ab", "prototyp"},
     "Textfeld": {"sichtbar ab", "prototyp"},
@@ -79,6 +81,8 @@ ATTRS = {
     "Abstimmung": {"mehrfach", "ergebnisse", "ändern", "aendern", "abschluss", "sichtbar ab", "prototyp"},
     "Glossar": {"anzeige", "abschluss", "sichtbar ab", "prototyp"},
 }
+for _t in WEB_TYPEN:
+    ATTRS[_t] = ATTRS[_t] | {"website"}       # `website: nein` hält ein Element als Plattform-Aktivität
 ABSCHLUSS = {"ansehen": "view", "bestehen": "pass", "keine": "none", "manuell": "manual", "abgabe": "submit",
              "beitrag": "post", "eintrag": "entry"}
 # Welche Abschlussarten ein Typ kennt (sonst: ansehen, keine, manuell; H5P und Quiz zusätzlich bestehen)
@@ -91,6 +95,10 @@ GLOSSAR_ANZEIGE = {"wörterbuch": "dictionary", "woerterbuch": "dictionary", "fo
                    "lexikon": "encyclopedia", "faq": "faq", "liste": "entrylist"}
 JA = ("ja", "yes", "true", "1")
 ANZEIGE = {"eingebettet": "embed", "automatisch": "auto", "neues fenster": "open", "popup": "popup"}
+NEIN = ("nein", "no", "false", "0", "aus")
+# Website-Modus: eingebettet = im Plattform-Rahmen (iframe), vollbild = Datei füllt das Fenster (Moodle „Öffnen“),
+# neues fenster = Pop-up (Moodle-Anzeige 3 ist im Plattformstandard nicht freigegeben)
+WEB_ANZEIGE = {"ja": "embed", "eingebettet": "embed", "vollbild": "open", "neues fenster": "popup", "popup": "popup"}
 FARBEN = {"rot": "#BE123C", "grün": "#15803D", "gruen": "#15803D", "blau": "#1D5FD1", "orange": "#B45309", "lila": "#6D28D9"}
 SKALA = ["1 trifft gar nicht zu", "2", "3", "4", "5 trifft voll zu"]
 OK = "✔✓"
@@ -451,8 +459,12 @@ def body_html(blocks, k: Kontext):
     return "".join(block_html(b, k) for b in blocks)
 
 
-# ---------------------------------------------------------------- Fragen (H5P-Unterinhalte)
-def frage(b, k: Kontext):
+# ---------------------------------------------------------------- Fragen (H5P-Unterinhalte und Website)
+def frage_daten(b, k: Kontext):
+    """Frage aus Lesebuch oder Quiz -> (typ, titel, daten); H5P (frage) und Website (gen.website) bauen daraus.
+    MC: (frage, [(text, richtig, rückmeldung)]); RF: (aussage, richtig, rm_richtig, rm_falsch); Einsetzen, Markieren:
+    (aufgabe, text mit *Lücken*); Lückentext: (aufgabe, [absätze]); Aussagen: (einleitung, [[richtig, falsch …]]);
+    Schnellquiz: [(frage, [richtig, falsch …])]."""
     name, title, rest, ln = b["name"], b["title"], b["rest"], b["ln"]
     if name == "MC":
         if " · " in rest:
@@ -462,10 +474,9 @@ def frage(b, k: Kontext):
         answers = [_answer(a) for a in ans]
         if len(answers) < 2:
             k.fehler(ln, "MC: mindestens zwei Antworten (` · `-getrennt oder als `- `-Liste)")
-        n_ok = sum(1 for _, c, _ in answers if c)
-        if n_ok == 0:
+        if not any(c for _, c, _ in answers):
             k.fehler(ln, "MC: keine Antwort mit ✔ markiert")
-        return H.multichoice(inl(q), answers, title=title or "Frage", single=n_ok == 1)
+        return name, title or "Frage", (inl(q), answers)
     if name == "RF":
         m = re.search(f"[{OK}{NOK}]", rest)
         if not m:
@@ -481,22 +492,22 @@ def frage(b, k: Kontext):
                 fb_nok = inl(seg[7:].strip())
             else:
                 k.fehler(ln, "RF: Rückmeldung als `→ richtig: …` und `→ falsch: …` angeben")
-        return H.truefalse(inl(statement), correct, fb_ok, fb_nok, title=title or "Richtig oder falsch?")
+        return name, title or "Richtig oder falsch?", (inl(statement), correct, fb_ok, fb_nok)
     if name == "Einsetzen":
         text = "\n".join(t for _, t in b["follow"])
         if not text:
             k.fehler(ln, "Einsetzen: Text mit *Lücken* in den Zeilen darunter erwartet")
-        return H.dragtext(inl(rest), text, title=title or "Wörter zuordnen")
+        return name, title or "Wörter zuordnen", (inl(rest), text)
     if name == "Markieren":
         text = " ".join(t for _, t in b["follow"])
         if not text:
             k.fehler(ln, "Markieren: Text mit *markierten* Wörtern in den Zeilen darunter erwartet")
-        return H.markwords(inl(rest), text, title=title or "Wörter markieren")
+        return name, title or "Wörter markieren", (inl(rest), text)
     if name == "Lückentext":
         qs = [t for _, t in b["follow"]]
         if not qs:
             k.fehler(ln, "Lückentext: Text mit *Lücken* in den Zeilen darunter erwartet")
-        return H.blanks(inl(rest), qs, title=title or "Lückentext")
+        return name, title or "Lückentext", (inl(rest), qs)
     if name == "Aussagen":
         groups = []
         for l2, _, t in b["list"]:
@@ -507,7 +518,7 @@ def frage(b, k: Kontext):
             groups.append([ok[0][0]] + [s[0] for s in stmts if s is not ok[0]])
         if not groups:
             k.fehler(ln, "Aussagen: Gruppen als `- `-Liste darunter erwartet")
-        return H.summary(inl(rest), groups, title=title or "Zusammenfassung")
+        return name, title or "Zusammenfassung", (inl(rest), groups)
     if name == "Schnellquiz":
         qs = []
         for l2, _, t in b["list"]:
@@ -517,8 +528,26 @@ def frage(b, k: Kontext):
             if len(ans) < 2:
                 k.fehler(l2, "Schnellquiz: `Frage? · ✔richtig · falsch · …` erwartet")
             qs.append((inl(q), [ok[0][0]] + [a[0] for a in ans if a is not ok[0]]))
-        return H.singlechoiceset(qs, title=title or "Schnellquiz")
+        return name, title or "Schnellquiz", qs
     k.fehler(ln, f"{name}: kein Fragetyp")
+
+
+def frage(b, k: Kontext):
+    name, title, d = frage_daten(b, k)
+    if name == "MC":
+        q, answers = d
+        return H.multichoice(q, answers, title=title, single=sum(1 for _, c, _ in answers if c) == 1)
+    if name == "RF":
+        return H.truefalse(*d, title=title)
+    if name == "Einsetzen":
+        return H.dragtext(*d, title=title)
+    if name == "Markieren":
+        return H.markwords(*d, title=title)
+    if name == "Lückentext":
+        return H.blanks(*d, title=title)
+    if name == "Aussagen":
+        return H.summary(*d, title=title)
+    return H.singlechoiceset(d, title=title)
 
 
 def test_frage(b, k: Kontext):
@@ -581,10 +610,36 @@ class Parser:
         self.all_items = []
         self.banner = False     # Banner vorhanden -> Überblickskarten ohne Titel (Doppelung)
         self.banner_bild = None  # Bild des Banners; Kursbild, wenn `kursbild:` fehlt (beide textfrei)
+        self.web = None         # Website des aktuellen Abschnitts (Website-Modus, gen/website.py)
+        self.web_titel = set()  # Titel der Elemente, die in einer Website aufgegangen sind
+        self.websites = []      # (Abschnittstitel, Pfad der HTML-Datei)
+        self.badge_titel = self._badge_voraussetzungen()   # bleiben im Website-Modus Aktivitäten (Abschluss zählt)
+        wk = (self.sb.get("kurs") or {}).get("website")
+        self.web_standard = self._web_anzeige(wk, 0, "Steckbrief kurs.website") if wk not in (None, False) else None
 
     # ----- Hilfen
     def fehler(self, ln, element, msg):
         self.zl.fehler(ln, element, msg)
+
+    def _badge_voraussetzungen(self):
+        """Titel aus `voraussetzung:` aller Badges (Vorlauf, weil Badges erst am Ende aufgelöst werden)."""
+        out, im_badge = set(), False
+        for _, s in self.zl.lines:
+            h = re.match(r"^#{1,4}\s+(\w+):", s)
+            if h:
+                im_badge = h.group(1).lower() == "badge"
+            elif im_badge and s.lower().startswith("voraussetzung:"):
+                out |= {_strip_time(t) for t in _split(s.split(":", 1)[1], "|")}
+        return out
+
+    def _web_anzeige(self, v, ln, element):
+        """website: ja | eingebettet | vollbild | neues fenster | popup | nein -> Moodle-Anzeige oder None."""
+        v = "ja" if v is True else str(v).strip().lower()
+        if v in NEIN:
+            return None
+        if v not in WEB_ANZEIGE:
+            self.fehler(ln, element, f"website „{v}“: erlaubt sind ja, {', '.join(list(WEB_ANZEIGE)[1:])}, nein")
+        return WEB_ANZEIGE[v]
 
     def _heading(self, s):
         m = re.match(r"^(#{1,4})\s+(.*)$", s)
@@ -717,7 +772,7 @@ class Parser:
         img = self.kurs_attr.get("kursbild")
         image_path = self._image(img, 1, "Kurs")[0] if img else self.banner_bild
         return {"sections": self.sections, "parts": self.parts, "badges": badges, "image_path": image_path,
-                "titel": self.titel, "farbe": hue}
+                "titel": self.titel, "farbe": hue, "websites": self.websites}
 
     def _section(self, ln, title, lines, hue):
         element = f"Abschnitt „{title}“"
@@ -740,7 +795,13 @@ class Parser:
             if not re.match(r"^[a-z0-9-]+$", icon):
                 self.fehler(ln, element, f"kachelicon „{icon}“: FontAwesome-Name wie book, lightbulb-o, flask, globe, laptop")
             sec.tile_icon = icon
+        # Website-Modus: Angabe im Abschnitt, sonst Steckbrief kurs.website (nicht für Allgemeines)
+        anzeige = self._web_anzeige(attrs["website"], ln, element) if "website" in attrs else \
+            (None if allg else self.web_standard)
+        self.web = Website(title or "Allgemeines", hue, anzeige) if anzeige else None
         self._items(lines, sec, hue, level=3, section=sec)
+        if self.web:
+            self._web_fertig(sec)
         self.sections.append(sec)
         if attrs.get("teil"):
             self._part(attrs["teil"], sec, ln, element)
@@ -795,7 +856,8 @@ class Parser:
                 self.badges.append((ln, title, attrs))
             else:
                 # Elemente nach dem Unterabschnitt-Block sind wieder Elemente des Abschnitts
-                item = self._element(ln, typ, title, body, hue, container)
+                mins = re.search(r"·\s*(?:ca\.\s*)?(\d+)\s*min\.?\s*$", s)
+                item = self._element(ln, typ, title, body, hue, container, int(mins.group(1)) if mins else None)
                 if item is not None:
                     container.items.append(item)
                     self.all_items.append(item)
@@ -805,6 +867,12 @@ class Parser:
         element = f"Unterabschnitt „{title}“"
         attrs, lines = self._attrs(body, ATTRS["Unterabschnitt"], element)
         if self._skip(attrs):
+            return
+        if self.web:
+            # Website-Modus: Unterabschnitt = Kapitelgruppe; Elemente ohne Web-Form landen im Abschnitt
+            self.web.gruppe = inl(title)
+            self._items(lines, section, hue, level=4, section=section)
+            self.web.gruppe = None
             return
         sub = SubSection(title, [])
         sub.available_from = self._avail(attrs, ln, element)
@@ -816,11 +884,19 @@ class Parser:
             self._part(attrs["teil"], sub, ln, element)
         self._sb_avail(attrs, sub)
 
-    def _element(self, ln, typ, title, body, hue, container):
+    def _element(self, ln, typ, title, body, hue, container, minuten=None):
         element = f"{typ} „{title}“"
         attrs, lines = self._attrs(body, ATTRS[typ], element)
         if self._skip(attrs):
             return None
+        if self.web and typ in WEB_TYPEN and title not in self.badge_titel:
+            if "website" in attrs and str(attrs["website"]).strip().lower() not in NEIN:
+                self.fehler(ln, element, "website am Element: nur `website: nein` (bleibt Plattform-Aktivität)")
+            if "website" not in attrs:
+                if self.web.pos is None:
+                    self.web.pos = len(container.items)
+                self._web_element(ln, typ, title, lines, attrs, hue, element, minuten)
+                return None
         k = Kontext(self.zl, self.A, hue, element)
         avail = self._avail(attrs, ln, element)
         quiz = typ in ("Quiz", "Test")
@@ -1074,6 +1150,163 @@ class Parser:
         item.available_from = avail
         return item
 
+    # ----- Website-Modus (AP7)
+    def _web_element(self, ln, typ, title, lines, attrs, hue, element, minuten):
+        """Element als Kapitel (oder Startseiten-Teil) der Website des Abschnitts."""
+        W, k = self.web, Kontext(self.zl, self.A, hue, element)
+        blocks = parse_body(lines, self.zl, element, quiz=typ == "Quiz") if typ != "Geschichte" else None
+        self.web_titel.add(title)
+        if typ == "Banner":
+            img = attrs.get("bild")
+            if img:
+                W.dateien([(self._image(img, ln, element)[0], img)])
+                self.banner_bild = self.banner_bild or self._image(img, ln, element)[0]
+            W.kopf = (inl(title), inl(attrs.get("untertitel", "")), img)
+            rest = body_html(blocks, k)
+            if rest:
+                W.start.append(rest)
+            W.dateien(k.files)
+            self.banner = True
+            return
+        if typ == "Überblick":
+            steps_ = []
+            for b in blocks:
+                if b["kind"] != "list":
+                    self.fehler(b["ln"], element, "Überblick: nur eine Liste `- Schritt: Erklärung`")
+                for t, _ in b["items"]:
+                    icon, t = _emoji_split(t)
+                    lab, _, det = t.partition(":")
+                    steps_.append((inl(lab.strip()), inl(det.strip()), icon))
+            if W.gruppe is None:
+                # Startseite: Untertitel in den Kopf, Karte ohne Titel darunter
+                if W.kopf is None:
+                    W.kopf = (inl(W.name), inl(attrs.get("untertitel", "")), None)
+                W.start.append(T.le_card(1, None, "", attrs.get("dauer", ""), steps_, hue))
+            else:
+                html = T.le_card(attrs.get("nummer") or "", inl(title), inl(attrs.get("untertitel", "")),
+                                 attrs.get("dauer", ""), steps_, hue)
+                W.kapitel_neu(attrs.get("name") or "Überblick", html, ART[typ], minuten)
+            return
+        if typ in ("Textfeld", "Seite"):
+            html = body_html(blocks, k)
+        elif typ in ("Link", "Video"):
+            url = next((b["text"] for b in blocks if b["kind"] == "para"), "")
+            if not url.startswith(("http://", "https://")):
+                self.fehler(ln, element, "Adresse (https://…) in der Zeile unter der Überschrift erwartet")
+            html = W.video(url) if typ == "Video" else W.link(url)
+        elif typ == "Lesebuch":
+            seiten = self._web_lesebuch(blocks, k, element)
+            for i, (st, html) in enumerate(seiten):
+                W.kapitel_neu(st, (f'<p class="km-hint">{inl(title)} · Seite {i + 1} von {len(seiten)}</p>'
+                                   if len(seiten) > 1 else "") + html, ART[typ], minuten if i == 0 else None)
+            W.dateien(k.files)
+            return
+        elif typ == "Quiz":
+            qs = []
+            for b in blocks:
+                if b["kind"] != "dir" or b["name"] not in QUIZ_FRAGEN:
+                    if b["kind"] == "para" and " · " in b["text"]:
+                        self.fehler(b["ln"], element, "MC ohne ✔ – richtige Antwort mit ✔ markieren")
+                    self.fehler(b["ln"], element, f"Quiz: jede Frage beginnt mit {', '.join(sorted(QUIZ_FRAGEN))}"
+                                                  " (oder `1. Frage? · ✔A · B`)")
+                qs.append(W.frage(*frage_daten(b, k)))
+            if not qs:
+                self.fehler(ln, element, "Quiz ohne Fragen")
+            html = W.quiz(qs, inl(attrs.get("einleitung", "")))
+        elif typ == "Zuordnen":
+            if "zonen" not in attrs:
+                self.fehler(ln, element, "Zuordnen: `zonen: A | B | C` fehlt")
+            zones = _split(attrs["zonen"], "|")
+            elemente = []
+            for b in blocks:
+                if b["kind"] != "list":
+                    self.fehler(b["ln"], element, "Zuordnen: nur eine Liste `- Element → Zone`")
+                for t, _ in b["items"]:
+                    txt, _, zone = t.partition(" → ")
+                    zone = zone.strip()
+                    if zone in ("", "–", "-"):
+                        elemente.append((inl(txt.strip()), None))
+                    elif zone not in zones:
+                        self.fehler(b["ln"], element, f"Zone „{zone}“ nicht in zonen ({', '.join(zones)})")
+                    else:
+                        elemente.append((inl(txt.strip()), zones.index(zone)))
+            if not elemente:
+                self.fehler(ln, element, "Zuordnen ohne Elemente")
+            html = W.zuordnen([inl(z) for z in zones], elemente, inl(attrs.get("titel", "")))
+        elif typ == "Lernkarten":
+            karten = []
+            for b in blocks:
+                if b["kind"] != "list":
+                    self.fehler(b["ln"], element, "Lernkarten: nur eine Liste `- Vorderseite → Rückseite`")
+                for t, _ in b["items"]:
+                    if " → " not in t:
+                        self.fehler(b["ln"], element, "Lernkarte: `Vorderseite → Rückseite` erwartet")
+                    front, back = t.split(" → ", 1)
+                    parts = _split(back)
+                    tip, img = "", None
+                    for extra in parts[1:]:
+                        if extra.lower().startswith("bild:"):
+                            img = self._image(extra[5:].strip(), b["ln"], element)[1]
+                        elif extra.lower().startswith("tipp:"):
+                            tip = inl(extra[5:].strip())
+                        else:
+                            self.fehler(b["ln"], element, f"Lernkarte: Zusatz „{extra}“ unbekannt (Bild: …, Tipp: …)")
+                    karten.append((inl(front.strip()), inl(parts[0]), tip, img))
+            if not karten:
+                self.fehler(ln, element, "Lernkarten ohne Karten")
+            html = W.lernkarten(karten, inl(attrs.get("beschreibung", "")))
+        elif typ == "Geschichte":
+            html = W.geschichte(*self._story_daten(title, lines, attrs, ln, element))
+        elif typ == "Lückentext":
+            if "aufgabe" not in attrs:
+                self.fehler(ln, element, "Lückentext: `aufgabe: …` fehlt")
+            qs = [b["text"] for b in blocks if b["kind"] == "para"]
+            if not qs:
+                self.fehler(ln, element, "Lückentext: Text mit *Lücken* erwartet")
+            html = W.lueckentext(inl(attrs["aufgabe"]), qs)
+        W.dateien(k.files)
+        W.kapitel_neu(inl(title), html, ART[typ], minuten)
+
+    def _web_lesebuch(self, blocks, k, element):
+        """Lesebuch -> [(seitentitel, html)]: Textbausteine, Bilder und Fragen je Seite."""
+        W, seiten, cur = self.web, [], None
+        for b in blocks:
+            if b["kind"] == "dir" and b["name"] == "Seite":
+                cur = [inl(_strip_time(b["rest"])), []]
+                seiten.append(cur)
+                continue
+            if cur is None:
+                k.fehler(b["ln"], "Lesebuch: erste Zeile muss `Seite: Titel` sein")
+            if b["kind"] == "dir" and b["name"] in FRAGEN:
+                cur[1].append(W.frage(*frage_daten(b, k)))
+            else:
+                cur[1].append(block_html(b, k))
+        if not seiten:
+            k.fehler(0, "Lesebuch ohne Seiten (`Seite: Titel`)")
+        for st, parts in seiten:
+            if not "".join(parts):
+                k.fehler(0, f"Seite „{st}“ ist leer")
+        return [(st, "".join(parts)) for st, parts in seiten]
+
+    def _web_fertig(self, sec):
+        """Website des Abschnitts schreiben und als Datei-Aktivität an die Stelle des ersten Kapitels setzen."""
+        W, self.web = self.web, None
+        if not W.kapitel:
+            return
+        if self.banner_bild and (W.kopf is None or W.kopf[2] is None):
+            # Kopf der Startseite: Bild des Kursbanners (textfrei), Titel und Satz als HTML darunter
+            name = os.path.basename(self.banner_bild)
+            W.dateien([(self.banner_bild, name)])
+            W.kopf = ((W.kopf or (inl(W.name), ""))[0], (W.kopf or (inl(W.name), ""))[1], name)
+        d = tempfile.mkdtemp(prefix="kursmuehle_web_")
+        path = os.path.join(d, "index.html")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(W.render())
+        item = Resource(W.name, path, "index.html", completion="view", display=W.anzeige, website=True)
+        sec.items.insert(W.pos or 0, item)
+        self.all_items.append(item)
+        self.websites.append((W.name, path))
+
     def _int(self, attrs, key, default, ln, element):
         v = attrs.get(key)
         if v is None or v.strip() == "":
@@ -1174,10 +1407,12 @@ class Parser:
             k.fehler(0, "Lesebuch ohne Seiten (`Seite: Titel`)")
         return H.interactive_book(title, chapters, base_color=base)
 
-    def _story(self, title, lines, attrs, ln, element):
-        k = Kontext(self.zl, self.A, None, element)
+    def _story_daten(self, title, lines, attrs, ln, element):
+        """Geschichte -> (start_titel, start_untertitel, bild (path, ImageRef) | None, knoten, enden).
+        knoten: [(key, "szene", titel, html, ziel) | (key, "frage", frage, [(antwort, ziel)])], Ziele als Schlüssel;
+        enden: {key: (titel, text)}. H5P (_story) und Website bauen daraus."""
         blocks = parse_body(lines, self.zl, element)
-        ends, nodes = {}, []
+        ends, raw = {}, []
         for b in blocks:
             if b["kind"] != "dir" or b["name"] not in ("Szene", "Frage", "Ende"):
                 self.fehler(b["ln"], element, "Geschichte: nur `Szene (key): Titel → ziel`, `Frage (key): …`, `Ende (key): Titel`")
@@ -1185,23 +1420,21 @@ class Parser:
             if not key:
                 self.fehler(b["ln"], element, f"{b['name']}: Schlüssel fehlt – `{b['name']} (key): …`")
             if b["name"] == "Ende":
-                ends[key] = H.Branch.END(inl(b["rest"]), inl(" ".join(t for _, t in b["follow"])))
+                ends[key] = (inl(b["rest"]), inl(" ".join(t for _, t in b["follow"])))
             else:
-                nodes.append((key, b))
-        if not nodes:
+                raw.append((key, b))
+        if not raw:
             self.fehler(ln, element, "Geschichte ohne Szenen")
-        keys = {key for key, _ in nodes} | set(ends)
+        keys = {key for key, _ in raw} | set(ends)
 
         def target(ref, l2):
             ref = ref.strip()
-            if ref in ends:
-                return ends[ref]
             if ref not in keys:
                 self.fehler(l2, element, f"Ziel „{ref}“ unbekannt (Szenen, Fragen, Enden: {', '.join(sorted(keys))})")
             return ref
 
-        br = H.Branch()
-        for key, b in nodes:
+        nodes = []
+        for key, b in raw:
             if b["name"] == "Szene":
                 if " → " not in b["rest"]:
                     self.fehler(b["ln"], element, "Szene: `Szene (key): Titel → ziel` erwartet")
@@ -1209,7 +1442,7 @@ class Parser:
                 html = "".join(f"<p>{inl(x)}</p>" for _, x in b["follow"])
                 if not html:
                     self.fehler(b["ln"], element, "Szene ohne Text")
-                br.add_text(key, inl(t), html, target(nxt, b["ln"]))
+                nodes.append((key, "szene", inl(t), html, target(nxt, b["ln"])))
             else:
                 alts = []
                 for l2, _, t in b["list"]:
@@ -1219,11 +1452,23 @@ class Parser:
                     alts.append((inl(txt.strip()), target(nxt, l2)))
                 if not alts:
                     self.fehler(b["ln"], element, "Frage ohne Antworten")
-                br.add_question(key, inl(b["rest"]), alts)
+                nodes.append((key, "frage", inl(b["rest"]), alts))
         start = _split(attrs.get("start", title), "|")
         img = self._image(attrs["bild"], ln, element) if attrs.get("bild") else None
-        return H.branching_scenario(title, br, inl(start[0]), inl(start[1]) if len(start) > 1 else "",
-                                    start_img=img[1] if img else None,
+        return inl(start[0]), inl(start[1]) if len(start) > 1 else "", img, nodes, ends
+
+    def _story(self, title, lines, attrs, ln, element):
+        st, su, img, nodes, ends = self._story_daten(title, lines, attrs, ln, element)
+        end_obj = {key: H.Branch.END(t, sub) for key, (t, sub) in ends.items()}
+        br = H.Branch()
+        for node in nodes:
+            if node[1] == "szene":
+                key, _, t, html, nxt = node
+                br.add_text(key, t, html, end_obj.get(nxt, nxt))
+            else:
+                key, _, q, alts = node
+                br.add_question(key, q, [(txt, end_obj.get(nxt, nxt)) for txt, nxt in alts])
+        return H.branching_scenario(title, br, st, su, start_img=img[1] if img else None,
                                     files=[(img[0], img[1].h5p_path)] if img else [])
 
     def _badge(self, ln, name, attrs):
@@ -1235,6 +1480,9 @@ class Parser:
         crit = []
         for want in _split(attrs["voraussetzung"], "|"):
             hits = [it for it in self.all_items if it.name == want and not isinstance(it, SubSection)]
+            if not hits and want in self.web_titel:
+                self.fehler(ln, element, f"voraussetzung „{want}“ ist im Website-Modus Teil der Website (ohne Abschluss); "
+                                         "am Element `website: nein` setzen oder einen `Test` nehmen")
             if len(hits) != 1:
                 self.fehler(ln, element, f"voraussetzung „{want}“: {len(hits)} Elemente mit diesem Titel")
             crit.append(hits[0])

@@ -2,7 +2,7 @@
 Sicherung prüfen (check.py).
 
 usage: python3 build.py --content DIR [--proto] [--delta [teile]] [--steckbrief PATH] [--out PATH] [--no-check]
-                        [--vorlage NAME] [--format NAME] [--mit-nutzerdaten]
+                        [--vorlage NAME] [--format NAME] [--mit-nutzerdaten] [--website [ANZEIGE]]
 
 DIR enthält kurs.md (Format: references/kursdatei.md), assets/ (PNG) und steckbrief.yaml.
 Fallback: DIR/content/course.py mit build(A, sb, proto) -> {"sections", "parts", "badges", "image_path"}.
@@ -10,10 +10,14 @@ Kursformat aus dem Steckbrief (`kurs.format`: themen, kacheln, wochen, einthemen
 `--format`. Glossare mit Einträgen: die Sicherung trägt users=0; je Glossar liegt eine XML-Datei neben der .mbz
 (Glossar -> Mehr -> Einträge importieren). `--mit-nutzerdaten` baut users=1 (userinfo=1 nur für Glossare), damit Moodle
 die Einträge selbst wiederherstellt – nur sinnvoll, wenn die Plattform „Nutzer einbeziehen“ beim Wiederherstellen zulässt.
+Website-Modus (`kurs.website` im Steckbrief, `website:` am Abschnitt, `--website`): jeder Abschnitt wird eine HTML-Datei
+(Datei-Aktivität) mit Startseite, Kapiteln und Übungen; bewertete Teile bleiben Aktivitäten. Die HTML-Dateien liegen zur
+Vorschau neben der .mbz (`<kurs>_website.html`).
 Exit-Code 1, wenn die Prüfung der fertigen .mbz Fehler meldet (Datei bleibt zur Fehlersuche liegen).
 """
 import argparse
 import os
+import shutil
 import sys
 import time
 
@@ -90,6 +94,9 @@ def main():
     ap.add_argument("--format", help=f"Kursformat (überschreibt kurs.format im Steckbrief): {', '.join(FORMATE)} oder Moodle-Name")
     ap.add_argument("--mit-nutzerdaten", action="store_true",
                     help="Sicherung mit users=1 (nur Glossare), Einträge ohne XML-Import; nur wenn die Plattform es zulässt")
+    ap.add_argument("--website", nargs="?", const="ja", metavar="ANZEIGE",
+                    help="Website-Modus für alle Abschnitte (überschreibt kurs.website): ja (eingebettet), vollbild, "
+                         "'neues fenster' (Pop-up) oder nein")
     args = ap.parse_args()
 
     content_dir = os.path.abspath(args.content)
@@ -97,6 +104,9 @@ def main():
     sb_path = args.steckbrief or os.path.join(content_dir, "steckbrief.yaml")
     sb = load_steckbrief(sb_path) if os.path.exists(sb_path) else {}
     teile = sb.get("teile", {}) or {}
+    if args.website:
+        sb.setdefault("kurs", {})
+        sb["kurs"] = dict(sb["kurs"] or {}, website=args.website)
     design = (sb.get("kurs", {}) or {}).get("design") or {}
     T.EMOJI = bool(design.get("emoji_marker", False))
     try:
@@ -164,6 +174,10 @@ def main():
         raise SystemExit(f"FEHLER {kursdatei}: {e}")
     print(out, os.path.getsize(out))
     glossar_xml(w, out, course)
+    for n, (titel, path) in enumerate(k.get("websites", []), 1):
+        ziel = os.path.splitext(out)[0] + f"_website{n if len(k['websites']) > 1 else ''}.html"
+        shutil.copyfile(path, ziel)
+        print(f"Website „{titel}“: Vorschau {ziel}")
     if not args.no_check:
         errors, info, warnings = check_mbz(out)
         report(out, errors, info, warnings)

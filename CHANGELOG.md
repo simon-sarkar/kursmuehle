@@ -1,5 +1,50 @@
 # Changelog
 
+## 0.8 – 2026-10-23 (AP7: Website-Modus; Korrekturen aus Import-Test 3)
+
+- Korrekturen aus Import-Test 3 (0.7):
+  - Kachelbilder ohne Text: `scripts/banner.py --kachel` rendert 900 × 600 (etwa 3:2, `format_tiles` schneidet auf die
+    Kachel zu) mit eigenem Motiv je Abschnitt in der Banner-Palette (`gen/render.kachel_html`, Motiv mittig),
+    `--nummer 1-8 --out …/kachel{n}.png` rendert alle in einem Aufruf, `--farbe` auch als Komma-Liste.
+  - Kursbild (overviewfiles) ohne Text, die Plattform legt den Kursnamen darüber; `--mit-text` nur noch für Banner im
+    Abschnitt. Fehlt `kursbild:`, dient das Bild des Banner-Elements als Kursbild (stand schon in intake.md, war nicht
+    gebaut).
+  - Regel in SKILL.md, intake.md §2/§4, kursdatei.md §2/§4: Kachel- und Kursbild ohne Text, Abschnittstitel im
+    Kachelformat höchstens etwa 35 Zeichen, Banner mit Text nur im Abschnitt. `check.py` warnt bei längeren
+    Kacheltiteln und bei Kachelbildern fern von 3:2.
+  - `alltagskompetenz`: `kurs.png` textfrei neu gerendert, Willkommensbild mit Text als `start.png`, `kachel1–8.png`
+    neu (je Themenfeld Motiv und Farbe), Themenfeld-Titel unter 35 Zeichen.
+  - Glossar: `users=0` ist Standard, `build.py --mit-nutzerdaten` optional (statt `--ohne-nutzerdaten`); fester Schritt
+    nach dem Import „Glossar → Mehr → Einträge importieren → `<kurs>_glossar.xml`“, `build.py` nennt die Datei.
+    `check.py` warnt bei `users=1`, nicht mehr bei Glossareinträgen mit `users=0`.
+- AP7 Website-Modus: ein Abschnitt als eine HTML-Datei (`mod_resource`, `index.html`), eingebettet (Standard), Vollbild
+  oder neues Fenster (Pop-up). Einschalten mit `kurs.website` im Steckbrief, `website:` am Abschnitt oder
+  `build.py --website [anzeige]`; die Kursdatei bleibt gleich. `gen/website.py` setzt die Elemente um: Startseite mit
+  Kopf (Banner oder Kursbanner-Bild), Ablauf (Überblick) und Kapitelliste; Kapitel aus Textfeld, Seite, Lesebuch (je
+  Seite), Quiz, Zuordnen (Auswahllisten), Lückentext, Lernkarten (umdrehen), Geschichte (Szenen und Entscheidungen),
+  Video/Link; Unterabschnitte als Kapitelgruppen. Übungen mit Prüfen, Rückmeldung je Antwort, „Lösung zeigen“ und
+  Zähler, ohne Bewertung. Navigation mit Fortschritt (localStorage, geht auch ohne), am Handy hinter „Inhalt“.
+  Seite und Skript in `scripts/templates/website.html`, ohne externe Quellen; Bilder einmal als data-URI.
+  Bewertete Teile bleiben Aktivitäten: Moodle-Module, Umfragen, Badge-Voraussetzungen (automatisch) und Elemente mit
+  `website: nein`. Die HTML-Datei liegt als Vorschau neben der `.mbz` (`<kurs>_website.html`).
+- Parser: `frage_daten()` und `_story_daten()` trennen Lesen und Bauen, H5P und Website nutzen dieselben Daten
+  (Sicherungen ohne Website inhaltsgleich, geprüft mit `mbz_diff.py`). `Resource` kennt `display` (auto, embed, open,
+  popup) und die passenden `displayoptions`.
+- `check.py`: Website-Dateien (Anzeige 0/1/5/6, keine externen Skripte oder Stile, jedes Bild im Bilderverzeichnis der
+  Seite, Warnung über 15 MB).
+- Tests: `test_website.py` (neu) baut netzwerk9 und alltagskompetenz als Website und klickt bei 390 und 1280 px
+  Navigation, Fortschritt, Quiz (falsch/richtig, Lösung zeigen, Zähler), Zuordnen, Lernkarten, Markieren, Lückentext,
+  Geschichte und das Handy-Menü durch, prüft „keine Anfrage nach außen“ und gesetzte Bilder. `test_check.py`: beide
+  Website-Builds OK, zwei neue Fehlerfälle (Bild fehlt, externe Quelle), Warnungen für users=1 und Kacheltitel.
+  `test_kursdatei.py`: drei neue Fehlerfälle zu `website:`.
+- `tools/jsprobe`: Sicherung für den Fünf-Minuten-Test (läuft JS im Textfeld? in einer eingebetteten Website?).
+- Doku: kursdatei.md §2/§7a/§8, intake.md §2/§4/§6/§7, spec.md (resource, Glossar), SKILL.md (Bau, Lieferung,
+  Grenzen), README (Tabelle, Status, Website-Variante mit Screenshot `docs/website-netzwerk9.png`), ROADMAP Punkte 3, 6, 7.
+- Offen: Import-Test durch den Autor für den Website-Modus (eingebettet, Vollbild, Pop-up; Höhe des Rahmens, Fortschritt
+  im Rahmen), JS-Probe (`tools/jsprobe`), die neuen Kachelbilder und `users=0` mit XML-Import. Ergibt die Probe, dass
+  Textfelder JS ausführen, kommt der zweite Weg (One-Page im Textfeld) dazu. Eigene Spiele und Simulationen als
+  Vorlagen nach 1.0.
+
 ## 0.7 – 2026-10-23 (AP6: Kursformate; Glossareinträge beim Import)
 
 - Glossar-Fehler aus Import-Test 2 (0.6): Moodle stellt Glossareinträge nur mit Nutzerdaten wieder her

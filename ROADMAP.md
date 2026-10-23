@@ -38,7 +38,8 @@ Vorgestellt wurde 0.1 bereits, Durchlauf mit ChatGPT (inklusive selbst generiert
    Module seit 0.6 (AP5), Kursformate seit 0.7 (AP6) gebaut; Import-Tests offen.
 5. **Kern-H5P im Textfeld** – Fünf-Minuten-Test auf der Plattform; Ergebnis entscheidet (Punkt 7).
 6. **Website-Modus als Vorlage** – eine HTML-Ressource mit Navigation, Inhalten und einem kleinen
-   JS-Quiz; eigene Spiele und Simulationen als Beispiele erst nach 1.0 (Punkt 7).
+   JS-Quiz; eigene Spiele und Simulationen als Beispiele erst nach 1.0 (Punkt 7). Seit 0.8 (AP7) gebaut; Import-Test
+   und JS-Probe (`tools/jsprobe`) offen.
 7. **Zweiter Fremdtest** mit frischem Agenten nur mit dem Repo, dann Release 1.0.
 
 Geklärt 23.10.: Import mit Platzhalter-`site.json` in einem anderen Account funktioniert – die Werte sind bedeutungslos,
@@ -102,11 +103,15 @@ Zwei Wege, beide 1.0:
   Übungen zwischen Lesetexten; Bewertung/Abschluss bleiben Aktivitäten.
 - **Vorab prüfen:** Die Nutzungsbedingungen erlauben Lehrkräften ausdrücklich Beiträge mit JavaScript (4.1.3).
   Filtert die Plattform JS aus Textfeldern von Lehrkraft-Konten wirklich? Wenn nicht, geht One-Page ohne
-  den Umweg über eine HTML-Ressource. Gehört in den Fünf-Minuten-Test.
+  den Umweg über eine HTML-Ressource. Gehört in den Fünf-Minuten-Test (seit 0.8 als Sicherung `tools/jsprobe`;
+  Ergebnis offen).
 - **Kurs als eigene Website:** eine HTML-Datei (Ressource, eingebettet oder Vollbild) mit eigener
   Navigation, Inhalten, Bildern und **eigenen Spielen/Interaktionen in JavaScript** – Textfelder
   filtern JS, eingebettete Dateien nicht. Damit sind Custom-Spiele, Simulationen, Lernpfade möglich;
   bewertete Teile laufen weiter über Plattform-Aktivitäten. Sky is the limit.
+  Seit 0.8 (AP7) gebaut: Website-Modus je Abschnitt aus derselben Kursdatei (`website:`, `build.py --website`),
+  Startseite, Kapitelnavigation, Übungen mit Rückmeldung ohne Bewertung; Import-Test offen. Eigene Spiele und
+  Simulationen als Vorlagen nach 1.0.
 
 ### 8. Drehbuch → Kurs ohne Handarbeit
 Parser, der das Drehbuch-Format direkt liest (seit 0.2: `kurs.md`, `gen/kursdatei.py`); „Vorausgesetzt:“-Zeile je Element;
