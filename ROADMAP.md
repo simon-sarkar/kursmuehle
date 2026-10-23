@@ -61,4 +61,4 @@ Parser, der das Drehbuch-Format direkt in `content/` übersetzt; „Vorausgesetz
 - Rückmeldungen anderer Schulen einarbeiten; Sammlung geprüfter Test-Exporte (ohne Teilnehmerdaten).
 - Weitere H5P-Typen (Interactive Video, Image Hotspots, Memory, Game Map).
 - Andere Zugriffsbedingungen (Abschluss von X, Bewertung, Gruppe), Kursabschluss-Kriterien.
-- Lizenzentscheidung.
+- Lizenz für 1.0 prüfen (0.1 bleibt PolyForm Noncommercial / CC BY-NC-SA).
