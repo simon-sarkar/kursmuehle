@@ -14,3 +14,6 @@ für Lehrkräfte (`scripts/package.py`: nur SKILL.md, references/ ohne export-sc
 Richtwerte aus 0.1 (23.10.2026): eine 25-Minuten-Einheit in ca. 3 Minuten; ein kompletter Kurs (Geschichte, mehrere
 Abschnitte, Bilder vom Assistenten generiert, ChatGPT) in ca. 7 Minuten. 1.0 muss das halten: Einheit unter 5 Minuten,
 Kurs mit Bildern unter 10. Zeit wird im Fremdtest mitgemessen.
+
+Projektseite: GitHub Pages aus `docs/` (Logo, Palette Creme/Anthrazit/Ocker, Schnellstart, Download des Skill-Zips),
+aus der README verlinkt – die Adresse für Lehrkräfte, das Repo für Entwickler.

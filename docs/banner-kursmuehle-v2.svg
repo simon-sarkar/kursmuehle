@@ -12,11 +12,12 @@
   <text x="300" y="138" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="66" font-weight="700" fill="#2a2a2a" letter-spacing="-1">Kursmühle</text>
   <text x="304" y="182" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="25" fill="#3d3833">Lernplattform-Kurse aus einem Prompt</text>
   <text x="304" y="214" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="17" fill="#6b6257">Eigenes Material rein, Kurssicherung raus</text>
-  <g font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" text-anchor="middle">
-    <g transform="translate(900,150)"><rect x="-54" y="-44" width="108" height="88" rx="12" fill="#2a2a2a" fill-opacity="0.06" stroke="#2a2a2a" stroke-opacity="0.35"/><rect x="-32" y="-22" width="64" height="8" rx="4" fill="#2a2a2a"/><rect x="-32" y="-4" width="50" height="8" rx="4" fill="#2a2a2a" fill-opacity="0.65"/><rect x="-32" y="14" width="58" height="8" rx="4" fill="#2a2a2a" fill-opacity="0.4"/><text y="70" font-size="15" fill="#3d3833">Drehbuch</text></g>
-    <path d="M960 150 h30" stroke="#d9a441" stroke-width="3" fill="none"/><path d="M984 143 l10 7 -10 7" fill="#d9a441"/>
-    <g transform="translate(1056,150)"><rect x="-54" y="-44" width="108" height="88" rx="12" fill="#2a2a2a" fill-opacity="0.06" stroke="#2a2a2a" stroke-opacity="0.35"/><text y="10" font-size="30" font-weight="700" fill="#2a2a2a">.mbz</text><text y="70" font-size="15" fill="#3d3833">Generator</text></g>
-    <path d="M1116 150 h30" stroke="#d9a441" stroke-width="3" fill="none"/><path d="M1140 143 l10 7 -10 7" fill="#d9a441"/>
-    <g transform="translate(1172,150)"><rect x="-22" y="-44" width="44" height="88" rx="12" fill="#2a2a2a" fill-opacity="0.06" stroke="#2a2a2a" stroke-opacity="0.35"/><rect x="-14" y="-24" width="28" height="18" rx="4" fill="#2a2a2a"/><rect x="-14" y="0" width="12" height="18" rx="4" fill="#2a2a2a" fill-opacity="0.65"/><rect x="2" y="0" width="12" height="18" rx="4" fill="#d9a441"/><text y="70" font-size="15" fill="#3d3833">Kurs</text></g>
+  <!-- Mühlenflügel-Motiv rechts, dezent -->
+  <g transform="translate(1040,150)" fill="#2a2a2a" fill-opacity="0.07">
+    <g transform="rotate(45)"><rect x="-14" y="-150" width="28" height="92" rx="9"/></g>
+    <g transform="rotate(135)"><rect x="-14" y="-150" width="28" height="92" rx="9"/></g>
+    <g transform="rotate(225)"><rect x="-14" y="-150" width="28" height="92" rx="9"/></g>
+    <g transform="rotate(315)"><rect x="-14" y="-150" width="28" height="92" rx="9"/></g>
+    <circle r="34"/>
   </g>
 </svg>
