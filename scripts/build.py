@@ -175,9 +175,9 @@ def main():
             else:
                 sections.append(Section(part.name, items=part.items, available_from=part.available_from))
         course = Course(name, short, summary=summary, sections=sections, badges=[], image_path=None, **kurs)
-        fname = f"{dateiname(short)}_delta_{'-'.join(keys)}_{time.strftime('%Y%m%d-%H%M')}.mbz"
+        fname = f"{dateiname(short)}_delta_{'-'.join(keys)}_{time.strftime('%Y%m%d-%H%M%S')}.mbz"
     else:
-        fname = f"{dateiname(short)}_{'prototyp' if args.proto else 'kurs'}_{time.strftime('%Y%m%d-%H%M')}.mbz"
+        fname = f"{dateiname(short)}_{'prototyp' if args.proto else 'kurs'}_{time.strftime('%Y%m%d-%H%M%S')}.mbz"
         if args.proto:
             name, short = f"{short} – Prototyp", f"{short}-Proto"
         course = Course(name, short, summary=summary, sections=k["sections"], badges=k.get("badges", []),

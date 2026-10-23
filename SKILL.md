@@ -60,7 +60,7 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
    `python3 scripts/check.py <datei.mbz>`. Wenn möglich Rendertest mit h5p-standalone und den Bibliotheken aus §B.2.
 5. **Lieferung**: `.mbz`, dazu die Wiederherstellungsanleitung (unten) in der passenden Variante (neuer Kurs, in diesen
    Kurs, Delta), bei Glossar der XML-Schritt, bei Badge das Aktivieren, bei Übungsblöcken im Textfeld die Regel von oben.
-   Steckbrief-Teile auf `delivered`. Ein Satz zum Schluss, einmal je Kurs: Rückmeldungen zum Skill nimmt die Projektseite
+   Steckbrief-Teile erst auf `delivered`, wenn die Lehrkraft den Import bestätigt hat. Ein Satz zum Schluss, einmal je Kurs: Rückmeldungen zum Skill nimmt die Projektseite
    entgegen (https://simon-sarkar.github.io/kursmuehle/, Abschnitt Rückmeldung).
 
 ## Wiederherstellen auf der ByCS-Lernplattform (Text für die Lieferung)
@@ -80,10 +80,9 @@ Eine Sicherung darf höchstens 500 MB haben; `check.py` warnt ab 400 MB (Bilder 
 
 ## Harte Regeln
 
-- Nur Bibliotheksversionen aus `references/spec.md` §B.2 verwenden; nie raten. Unbekannter Typ → Fallback §B.3.
-- `json_content` aus `references/h5p-vorlagen.md` übernehmen, nur Inhalte ersetzen; jede `subContentId` eine eigene UUID.
-- Bilder in H5P-Inhalten ins Filearea `mod_hvp/content` (spec §H) – häufigster stiller Fehler.
-- Kursseiten-HTML nur mit filtersicherem CSS (spec §K); jede `<td>` setzt `border` explizit; keine verschachtelten Tabellen.
+- Bibliotheksversionen, `json_content`, Dateibereiche und das HTML der Kursseite setzt der Generator; nichts davon von
+  Hand bauen oder nachbessern (Entwicklerdoku `references/spec.md`, `h5p-vorlagen.md`, `skelette.md`, `formate.md` werden
+  im Einsatz nicht gelesen).
 - Gestaltung ist Präferenz der Lehrkraft: Steckbrief `design.vorlage` (`schlicht` Standard, `kacheln`, `magazin`), Emojis nur
   auf Wunsch. Lesetexte formatiert (Überschrift, Schritte, Tabelle, Kästen, Merke nach `kursdatei.md` §4), kein Absatz länger
   als fünf Zeilen auf dem Handy; kein HTML im Drehbuch.
@@ -101,15 +100,11 @@ Eine Sicherung darf höchstens 500 MB haben; `check.py` warnt ab 400 MB (Bilder 
 
 ## Dateien
 
-- `references/spec.md` – Plattformkonstanten, Archivaufbau, Schemata aller Module, H5P-Strukturen, Etappen (§A–O).
-- `references/h5p-vorlagen.md` – `json_content`-Vorlagen mit deutschen UI-Strings (Stand 2026-10-22).
-- `references/skelette.md` – `moodle_backup.xml`-Kopf, Settings, `course.xml`, leere Standarddateien.
 - `references/intake.md` – Fragerunden, Darstellungsweg, Standardannahmen D1–D10, Drehbuch-/Kursdatei-Format, Steckbrief.
 - `references/qualitaet.md` – Prüfdurchlauf: Markerliste mit Proben, Fachprüfung, `Offen:`-Zeilen.
 - `references/kursdatei.md` – vollständige Referenz der Kursdatei (alle Typen, Angaben, Bausteine, Grenzen).
-- `scripts/` – Generator: `gen/kursdatei.py` (Parser), `gen/html.py` (Textbausteine), `gen/mbz.py` (Writer),
-  `gen/h5p.py` (H5P-Builder), `gen/render.py` (Banner/Mocks), `build.py`, `check.py` (Sicherung prüfen), `templates/`,
-  `tests/` (Regressionstests, `.mbz`-Vergleich, `render_vorlagen.py`: Vorlagen bei 390 und 1200 px). Enthält keinen Kursinhalt.
+- `scripts/` – Generator (`build.py`, `check.py`, `banner.py`); die übrigen Dateien dort und in `references/` sind
+  Entwicklerdoku und Code, im Einsatz nicht zu lesen.
 - `examples/netzwerk9/` – minimaler Beispielkurs (eine Einheit, 25 min, aus Folien + Fotos einer Lehrkraft): Vorbild für neue Kurse.
 - `examples/alltagskompetenz/` – großer Beispielkurs (Tech-Demo, Unterabschnitte, Lesebuch, Geschichte, Badge, Delta).
 - `examples/module/` – ein Abschnitt mit den Moodle-Modulen Buch, Datei, Verzeichnis, Glossar, Forum, Abstimmung, Aufgabe, Test.

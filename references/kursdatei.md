@@ -88,7 +88,7 @@ sind Fehler, keine Vermutungen.
 | `Link`, `Video` | URL (eingebettet) | eine Zeile mit `https://…` |
 | `Lesebuch` | Interactive Book | `Seite: Titel`, darunter Textbausteine, `Bild:` und Fragen (§5) |
 | `Quiz` | Question Set | nummerierte Fragen (§5): MC, RF, Einsetzen, Markieren, Lückentext |
-| `Zuordnen` | Drag and Drop | `- Element → Zone`; ohne Zone = Ablenker |
+| `Zuordnen` | Drag and Drop | `- Element → Zone`; ohne Zone = Ablenker, der liegen bleiben muss; dann sagt die Aufgabe (`titel:`), dass ein Element zu keiner Zone passt |
 | `Lernkarten` | Dialog Cards | `- Vorderseite → Rückseite · Bild: x.png · Tipp: …` |
 | `Geschichte` | Branching Scenario | `Szene`, `Frage`, `Ende` (§6) |
 | `Lückentext` | Fill in the Blanks | `aufgabe:` plus Absätze mit `*Lücke/Alternative:Tipp*` |
@@ -163,13 +163,13 @@ MC (Titel): Frage? · A · ✔B · C                            eine Zeile; mehr
 MC (Titel): Frage?                                         oder als Liste, mit Rückmeldung je Antwort
 - ✔ Antwort → Rückmeldung, wenn gewählt
 - Antwort → Rückmeldung
-RF: Aussage ✔|✘ → richtig: Rückmeldung → falsch: Rückmeldung   (Rückmeldungen optional)
+RF: Aussage ✔|✘ → richtig: Rückmeldung → falsch: Rückmeldung   (optional; „richtig“ erscheint, wenn die Lernenden richtig antworten, „falsch“ bei falscher Antwort)
 Einsetzen (Titel): Aufgabe                                  Drag the Words; Text darunter, eine Zeile je Zeile
 Wand: *Buchse* → *Router*
 Markieren (Titel): Aufgabe                                  Mark the Words; Text darunter
 Mein *Nordvia* *X3* lädt *nicht*.
-Lückentext (Titel): Aufgabe                                 Fill in the Blanks; Absätze darunter
-Du bist ein *Techniker/Experte:Rolle*.
+Lückentext (Titel): Aufgabe                                 Fill in the Blanks; Absätze darunter, Leerzeile = neuer Absatz
+Du bist ein *Techniker/Experte:Rolle*.                      Lücke/Alternative:Tipp; Bruch nie als ganze Lücke (*1/2* = zwei Alternativen), nur Zähler oder Nenner
 Aussagen (Titel): Anweisung                                 nur Lesebuch: je Zeile eine Gruppe, ✔ = richtig
 - ✔Richtig. · Falsch. · Falsch.
 Schnellquiz (Titel):                                        nur Lesebuch: Single Choice Set

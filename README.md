@@ -203,7 +203,23 @@ AGENTS.md      Arbeitsregeln für Agenten, die am Repo arbeiten (CLAUDE.md verwe
 CHANGELOG.md   Versionen und bekannte Lücken
 ```
 
-<!-- RICHTWERTE -->
+## Richtwerte
+
+Aus dem Fremdtest zu 1.0 (`docs/entwicklung/protokolle/AP9_fremdtest.md`): ein frischer Assistent der Sonnet-Klasse bekam
+nur das Skill-Zip und den Satz „Mach mir eine Einheit zu Bruchrechnen für Jgst 6, 45 Minuten, Selbstlernkurs.“
+
+| Größe | Durchlauf 1 | Durchlauf 2 |
+|---|---|---|
+| Bis zur fertigen `.mbz` mit Protokoll | 5 min 10 s | 5 min 46 s (erste `.mbz` nach etwa 3 min) |
+| Tokens gesamt (Agent-Schnittstelle) | 138 000 | 154 000 |
+| Rückfragen an die Lehrkraft | 0 | 0 |
+| Nachrichten an die Lehrkraft | 2 | 1 |
+| Bauläufe bis `check.py` OK | 1 | 1 |
+
+Ein kompletter Kurs mit mehreren Abschnitten und vom Assistenten erzeugten Bildern lag mit Version 0.1 in ChatGPT bei etwa
+sieben Minuten. Durchläufe mit kostenlosen Konten (ChatGPT Free, Claude Free) und mit ByLKI stehen aus; die
+Protokollvorlagen dafür liegen in `docs/entwicklung/protokolle/`, das Ergebnis kommt als Zeile „läuft mit …“ hierher.
+
 
 ## Ohne KI bauen (für Entwickler)
 

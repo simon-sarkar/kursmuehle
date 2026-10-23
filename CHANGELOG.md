@@ -13,7 +13,12 @@
   `abschluss: ansehen`. Badge-Bild: `banner.py --badge --titel … --kicker …` (neu) oder selbst erzeugt. Rechenzeichen in
   der Kursdatei (Brüche `3/8`, ` · ` ist Trennzeichen, Malzeichen `×`, keine LaTeX-Formeln). Zeitcheck bis Jgst 7 mit
   100 Wörtern/min, Rechenlücke 30 s. `--proto` erklärt (nur für einen Prototyp zum Ansehen), Ausgabeordner `out/` genannt.
-  Dateiname der `.mbz` jetzt ASCII ohne Leerzeichen (`brueche-6_kurs_…`), Umlaute ausgeschrieben.
+  Dateiname der `.mbz` jetzt ASCII ohne Leerzeichen (`brueche-6_kurs_…`), Umlaute ausgeschrieben, mit Sekunden.
+- Folgen aus Durchlauf 2: Darstellungsweg bei Weg 1 ohne Rückfrage nach der Rangfolge (intake.md §1); Ablenker im
+  Zuordnen muss die Aufgabe nennen, `→ richtig:`/`→ falsch:` bei RF definiert, Lückentext-Absätze und Bruchlücken
+  (kursdatei.md §3, §5); Allgemeines zählt zur Soll-Zeit (höchstens 3 min); einfache Fachgrafiken mit Pillow (intake.md §4);
+  `delivered` erst nach bestätigtem Import. SKILL.md gekürzt: die harten Regeln zu Bibliotheksversionen, `json_content` und
+  Dateibereichen sind ein Satz (das macht der Generator), die Dateiliste nennt nur noch die Laufzeitdateien.
 - Wiederherstellungsanleitung Schritt für Schritt, wie sie auf der Plattform aussieht (Kurs → Mehr → Kurs wiederherstellen;
   Bestätigen; Ziel mit drei Varianten; Einstellungen; Schema mit „Kurseinstellungen überschreiben: Ja“ bei Formatwechsel;
   danach Glossar-XML und Badge) in SKILL.md (Text für die Lieferung) und README. Sicherungen höchstens 500 MB;

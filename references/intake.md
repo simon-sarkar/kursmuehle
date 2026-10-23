@@ -53,7 +53,8 @@ Dazu in einem Satz: Fach, Thema, Jahrgangsstufe, Einsatz, Minuten (Vorschlag: be
 nur die Schulart oder das Fach, wird angenommen (`Angenommen:`), nicht gefragt. Ist das Thema für den Umfang zu breit
 („Bruchrechnen, 45 min“), grenzt der Assistent selbst ein und nennt die Eingrenzung als erste `Angenommen:`-Zeile.
 Bei Weg 1 folgt auf die Antwort keine weitere Frage: Format nach Empfehlung (§2), Gestaltung schlicht mit Banner, Bilder
-nach §4, Annahmen oben im Drehbuch. Bei Weg 2 liest der Assistent das Material und stellt nur Fragen, die es nicht
+nach §4, Darstellungsweg nach der Rangfolge in §3 (formative Übungen im Textfeld, Bewertetes als Aktivität), Annahmen oben
+im Drehbuch. Bei Weg 2 liest der Assistent das Material und stellt nur Fragen, die es nicht
 beantwortet; meist bleibt die Formatfrage. Bei Weg 5 braucht er das alte Drehbuch oder eine Liste der vorhandenen
 Abschnitte; die Fragerunde fragt dann, was dazukommt und ab wann es sichtbar ist (Bau mit `--delta`, Regeln spec §O).
 
@@ -165,6 +166,10 @@ Was der Assistent kann, hat die Selbstabfrage ergeben (`assistent.bilder` im Ste
 | nein, aber Code | `python3 scripts/banner.py --farbe "#RRGGBB" --out <kursordner>/assets/banner.png` rendert ein textfreies Banner in der Akzentfarbe (braucht Playwright und Chromium; `--motiv` wählt das Muster); `--hoehe 520 --out …/kurs.png` das Kursbild; `--kachel --nummer 1-6 --out …/kachel{n}.png` alle Kachelbilder in einem Aufruf. Scheitert das, Banner ohne `bild:`, Kacheln mit `kachelicon:`. | gerendert |
 | nein | Banner-Element ohne `bild:` bauen (farbiger Block mit Titel und Satz) und am Ende des Drehbuch-Kopfs je Bild eine Zeile `Bildwunsch: banner.png \| 1600 × 420 \| <Prompt>` liefern. Die Lehrkraft erzeugt die Bilder, legt sie in `assets/`, der Assistent trägt `bild:` nach und baut neu. | lehrkraft |
 
+Einfache Fachgrafiken (Bruchbalken, Kreisteile, Zahlenstrahl, Balkendiagramm) zeichnet der Assistent mit Pillow selbst, auch
+wenn er sonst keine Bilder erzeugen kann; ein kurzes Skript außerhalb des Kursordners, PNG nach `assets/`, `Bild:`-Zeile mit
+Alt-Text, der die Grafik beschreibt.
+
 Badge-Bild (Pflicht bei `### Badge:`): quadratisches PNG, etwa 600 × 600, hier darf der Name stehen. Selbst erzeugt oder
 `python3 scripts/banner.py --badge --titel "<Badge-Name>" --kicker "<Fach Jgst>" --farbe "#RRGGBB" --out <kursordner>/assets/badge.png`;
 ohne Bildweg bekommt es eine `Bildwunsch:`-Zeile wie das Banner.
@@ -267,7 +272,7 @@ Regeln:
   der Parser entfernt sie. Eine Zweck- oder Quellenzeile als Kursinhalt ist ein Fehler.
 - **Zeitcheck**: je Aufgabe/Seite Minuten schätzen (Lesen 150 Wörter/min, bis Jgst 7 100 Wörter/min; MC 45 s, Karte 20 s,
   Quizfrage 45 s, Rechenlücke 30 s, Geschichtsknoten 40 s),
-  je LE summieren, gegen Soll ausweisen (`Zeit LE 1: …`); bei Abweichung über 20 % steht der Vorschlag (kürzen/ergänzen) in
+  je LE summieren, gegen Soll ausweisen (`Zeit LE 1: …`; Allgemeines zählt mit, höchstens 3 min); bei Abweichung über 20 % steht der Vorschlag (kürzen/ergänzen) in
   derselben Zeile, die Lehrkraft entscheidet.
 - Umfang: eine 45-Minuten-Stunde ≈ 2–3 Seiten Drehbuch. Länger nur, wenn der Inhalt es verlangt.
 - **Lesetexte formatiert, nicht als Fließtext**: je Textsorte den Baustein wählen (Erklärung: Überschriften, kurze Absätze,
