@@ -147,10 +147,24 @@ Fehlerberichte und Erweiterungen als Issue oder Pull Request. Am meisten hilft
 ein Test-Export aus einem anderen Kursformat (leerer Kurs, ohne
 Teilnehmerdaten), damit der Generator das Format übernehmen kann.
 
+Wer einen Pull Request einreicht, stellt seinen Beitrag unter die Lizenzen
+dieses Repositories und ist damit einverstanden, dass der Autor spätere
+Versionen unter anderen Bedingungen veröffentlichen kann.
+
 ## Lizenz
 
-Noch offen. Ansehen und Ausprobieren ist in Ordnung; vor Weiterverbreitung
-oder Einbau in eigene Projekte bitte anfragen. Eine Lizenz folgt.
+Nicht kommerziell. Schulen, Lehrkräfte und Fortbildungen dürfen den Skill
+nutzen, verändern und weitergeben; der Einbau in kommerzielle Produkte oder
+Dienste ist nicht erlaubt.
+
+- **Code** (`scripts/`): [PolyForm Noncommercial 1.0.0](LICENSE)
+- **Texte, Vorlagen, Beispielkurse** (alles andere):
+  [CC BY-NC-SA 4.0](LICENSE-DOCS.md) – Namensnennung, nicht kommerziell,
+  Weitergabe unter gleichen Bedingungen
+
+Mit dem Skill erzeugte Kurse gehören der Lehrkraft, die sie gebaut hat.
+Spätere Versionen können unter anderen Bedingungen erscheinen; einmal
+veröffentlichte Fassungen bleiben unter ihrer Lizenz nutzbar.
 
 ## Danksagung
 
