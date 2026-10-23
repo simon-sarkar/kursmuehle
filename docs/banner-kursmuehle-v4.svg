@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-label="Kursmühle – Lernplattform-Kurse aus einem Prompt">
+  <rect width="1200" height="300" rx="18" fill="#f3e9d8"/>
+  <g transform="translate(60,46) scale(0.8)"><rect width="256" height="256" rx="56" fill="#2a2a2a"/><path d="M100,236 L156,236 L147,150 L109,150 Z" fill="#f3e9d8"/>
+  <g transform="rotate(45 128 98)"><rect x="118" y="0" width="20" height="62" rx="7" fill="#f3e9d8"/></g><g transform="rotate(135 128 98)"><rect x="118" y="0" width="20" height="62" rx="7" fill="#f3e9d8"/></g><g transform="rotate(225 128 98)"><rect x="118" y="0" width="20" height="62" rx="7" fill="#f3e9d8"/></g><g transform="rotate(315 128 98)"><rect x="118" y="0" width="20" height="62" rx="7" fill="#f3e9d8"/></g>
+  <path d="M161.3,111.8 L158.7,116.8 L168.5,127.4 L157.4,138.5 L146.8,128.7 L141.8,131.3 L136.4,133.0 L135.8,147.4 L120.2,147.4 L119.6,133.0 L114.2,131.3 L109.2,128.7 L98.6,138.5 L87.5,127.4 L97.3,116.8 L94.7,111.8 L93.0,106.4 L78.6,105.8 L78.6,90.2 L93.0,89.6 L94.7,84.2 L97.3,79.2 L87.5,68.6 L98.6,57.5 L109.2,67.3 L114.2,64.7 L119.6,63.0 L120.2,48.6 L135.8,48.6 L136.4,63.0 L141.8,64.7 L146.8,67.3 L157.4,57.5 L168.5,68.6 L158.7,79.2 L161.3,84.2 L163.0,89.6 L177.4,90.2 L177.4,105.8 L163.0,106.4 Z" fill="#f3e9d8" fill-rule="evenodd"/>
+  <circle cx="128" cy="98" r="22" fill="#2a2a2a"/>
+  <circle cx="128" cy="98" r="9" fill="#d9a441"/>
+  <rect x="115" y="170" width="12" height="12" rx="3" fill="#2a2a2a"/>
+  <rect x="131" y="170" width="12" height="12" rx="3" fill="#2a2a2a"/>
+  <rect x="115" y="188" width="12" height="12" rx="3" fill="#2a2a2a"/>
+  <rect x="131" y="188" width="12" height="12" rx="3" fill="#d9a441"/></g>
+  <text x="300" y="150" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="66" font-weight="700" fill="#2a2a2a" letter-spacing="-1">Kursmühle</text>
+  <text x="304" y="196" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="25" fill="#3d3833">Lernplattform-Kurse aus einem Prompt</text>
+  <g transform="translate(1040,150)" fill="#2a2a2a" fill-opacity="0.07"><g transform="rotate(45)"><rect x="-14" y="-150" width="28" height="92" rx="9"/></g><g transform="rotate(135)"><rect x="-14" y="-150" width="28" height="92" rx="9"/></g><g transform="rotate(225)"><rect x="-14" y="-150" width="28" height="92" rx="9"/></g><g transform="rotate(315)"><rect x="-14" y="-150" width="28" height="92" rx="9"/></g><circle r="34"/></g>
+</svg>
