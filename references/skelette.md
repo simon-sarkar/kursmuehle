@@ -189,14 +189,14 @@
   <tags>
   </tags>
   <customfields>
-    <customfield id="4142081">
+    <customfield id="1">
       <shortname>schule</shortname>
       <type>text</type>
       <value></value>
       <valueformat>0</valueformat>
       <valuetrust></valuetrust>
     </customfield>
-    <customfield id="4142084">
+    <customfield id="2">
       <shortname>participants</shortname>
       <type>checkbox</type>
       <value>0</value>

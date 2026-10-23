@@ -2,7 +2,7 @@
 
 ## 0.1 – 2026-10-23
 
-Erste Fassung, entstanden als Tech-Demo für eine Dienstbesprechung (Digitales Netzwerk).
+Erste Fassung (Tech-Demo).
 
 - Generator für ByCS-Lernplattform-Sicherungen (Moodle 5.2, mod_hvp): Abschnitte, Unterabschnitte, Textfelder, Seiten,
   Links/Videos, Feedback, Badges, Abschlussverfolgung; H5P-Typen Interactive Book, Branching Scenario, Question Set,

@@ -11,7 +11,7 @@ Lizenztext: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.de
 Kurzfassung: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.de
 
 Das heißt: Nutzen, Kopieren, Verändern und Weitergeben sind erlaubt, solange
-der Urheber genannt wird (Simon Sarkar, https://github.com/simon-sarkar),
+der Urheber genannt wird (simon-sarkar, https://github.com/simon-sarkar),
 die Nutzung nicht kommerziell ist und Bearbeitungen unter derselben Lizenz
 weitergegeben werden. Einsatz an Schulen und in der Lehrerfortbildung gilt
 als nicht kommerziell.
