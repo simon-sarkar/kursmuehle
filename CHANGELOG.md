@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.9 – 2026-10-23 (AP8: didaktik.md und qualitaet.md, Entwürfe)
+
+- `references/didaktik.md` (Entwurf): Rangfolge Angabe der Lehrkraft > ihr Material > Standardannahme und zehn
+  Standardannahmen D1–D10, je ein Satz Prinzip und Begründung (erst Input, dann Kontrolle; Lesen → Üben → Sichern; Zweck
+  je Element nur im Marker; eine Sache je Aufgabe; Rückmeldung je Antwortoption; steigender Anspruch; H5P höchstens die
+  Hälfte; Zeitcheck; Anwendung vor Wissen; unbewerteter Einstieg). Abweichungen werden gebaut und als `Hinweis: Dn – …`
+  im Drehbuch-Kopf nach den Kurs-Angaben vermerkt; Zweck als `[Quelle: … · Zweck: …]` bzw. `[KI: Zweck: …]`. Beides
+  gegen den Parser geprüft: nichts davon landet in der `.mbz`.
+- `references/qualitaet.md` (Entwurf): Prüfdurchlauf vor der Drehbuch-Freigabe (Markerliste, dann D1–D10; Treffer
+  beheben statt melden; Wunsch der Lehrkraft und wörtliches Material sind keine Treffer) mit zwölf Markern, je Treffer
+  und Behebung, plus Regel für weitergegebene Beispiele (nur eigene oder CC0-Inhalte).
+- SKILL.md: eine Zeile unter „Harte Regeln“ verweist auf beide Dateien.
+- Offen: Freigabe und Formulierungen durch den Autor. `intake.md` §5 sagt „Rückmeldungen nur, wo sie etwas erklären“,
+  D5 verlangt sie je Option; eine der beiden Stellen anpassen. Der Parser meldet `Hinweis:` im Kopf als ignorierte Zeile
+  und übergeht die Kurs-Angaben, wenn die Zeile vor `farbe:` steht; `Hinweis:` wie `Angenommen:` behandeln wäre eine
+  Zeile in `gen/kursdatei.py` (nach AP7). Mechanisch erkennbare Marker (Ausrufezeichen, Emojis, Genderzeichen) könnte
+  der Parser als Warnung ausgeben.
+
 ## 0.7 – 2026-10-23 (AP6: Kursformate; Glossareinträge beim Import)
 
 - Glossar-Fehler aus Import-Test 2 (0.6): Moodle stellt Glossareinträge nur mit Nutzerdaten wieder her

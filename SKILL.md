@@ -67,6 +67,7 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
   unbewertet (Text), Auflösung auf der Folgeseite; im Drehbuch je Aufgabe `(← Sn)`.
 - Inhaltsregeln spec §L: Antworten mischen, plausible Distraktoren, kein Meta-Text, keine Aphorismen, keine absoluten
   Aussagen, keine Genderzeichen, Fachliches gegen das Material der Lehrkraft prüfen.
+- Standardannahmen und Rangfolge (`Hinweis:` bei Abweichung) in `references/didaktik.md`; vor jeder Drehbuch-Freigabe ein eigener Durchlauf gegen die Markerliste in `references/qualitaet.md`, Treffer beheben (beide Entwurf).
 - Delta-Sicherungen: Abschnitt 0 leer, Teile als Top-Level-Abschnitte, keine Badges/Kursbild (spec §O).
 
 ## Dateien
