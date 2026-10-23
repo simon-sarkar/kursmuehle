@@ -145,7 +145,7 @@ class Website:
         """Frage aus kursdatei.frage_daten -> Markup."""
         t = None if titel in ("Frage", "Richtig oder falsch?") else titel
         if typ == "MC":
-            return self.mc(d[0], d[1], t)
+            return self.mc(d[0], d[1], t, mischen=True)     # wie randomAnswers in H5P und shuffle im Test
         if typ == "RF":
             return self.rf(*d, titel=t)
         if typ == "Einsetzen":
