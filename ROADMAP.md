@@ -92,6 +92,9 @@ Regel im Intake: kein Absatz länger als fünf Zeilen auf dem Handy.
 Zwei Wege, beide 1.0:
 - **Kern-H5P-Filter im Textfeld** (`.h5p` im Textfeld, inline gerendert, keine eigene Aktivität) für
   Übungen zwischen Lesetexten; Bewertung/Abschluss bleiben Aktivitäten.
+- **Vorab prüfen:** Die Nutzungsbedingungen erlauben Lehrkräften ausdrücklich Beiträge mit JavaScript (4.1.3).
+  Filtert die Plattform JS aus Textfeldern von Lehrkraft-Konten wirklich? Wenn nicht, geht One-Page ohne
+  den Umweg über eine HTML-Ressource. Gehört in den Fünf-Minuten-Test.
 - **Kurs als eigene Website:** eine HTML-Datei (Ressource, eingebettet oder Vollbild) mit eigener
   Navigation, Inhalten, Bildern und **eigenen Spielen/Interaktionen in JavaScript** – Textfelder
   filtern JS, eingebettete Dateien nicht. Damit sind Custom-Spiele, Simulationen, Lernpfade möglich;
@@ -104,7 +107,7 @@ Parser, der das Drehbuch-Format direkt in `content/` übersetzt; „Vorausgesetz
 ## Nach 1.0
 - Weitere Module (Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool) und Kursformate (Grid, Wochen, Einzelaktivität).
 - Beispiele für eigene Spiele und Simulationen im Website-Modus.
-- Rückmeldungen anderer Schulen einarbeiten; Sammlung geprüfter Test-Exporte (ohne Teilnehmerdaten).
+- Rückmeldungen anderer Schulen einarbeiten. Test-Exporte bleiben privat (Nutzungsbedingungen der Plattform: keine Weitergabe von Dateien an Dritte); veröffentlicht werden nur die daraus abgeleiteten Schemata mit Platzhaltern.
 - Weitere H5P-Typen (Interactive Video, Image Hotspots, Memory, Game Map).
 - Andere Zugriffsbedingungen (Abschluss von X, Bewertung, Gruppe), Kursabschluss-Kriterien.
 - Lizenz für 1.0 prüfen (0.1 bleibt PolyForm Noncommercial / CC BY-NC-SA).

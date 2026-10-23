@@ -146,8 +146,10 @@ Reihenfolge und Details in [`ROADMAP.md`](ROADMAP.md); die Liste dort definiert 
 ## Mitmachen
 
 Fehlerberichte und Erweiterungen als Issue oder Pull Request. Am meisten hilft
-ein Test-Export aus einem anderen Kursformat (leerer Kurs, ohne
-Teilnehmerdaten), damit der Generator das Format übernehmen kann.
+ein Hinweis, welches Kursformat oder welche Aktivität fehlt; Kurssicherungen
+selbst gehören nicht ins Repo (die Nutzungsbedingungen der Plattform untersagen
+die Weitergabe von Dateien an Dritte) – veröffentlicht werden nur die daraus
+abgeleiteten Schemata mit Platzhaltern.
 
 Wer einen Pull Request einreicht, stellt seinen Beitrag unter die Lizenzen
 dieses Repositories und ist damit einverstanden, dass der Autor spätere
