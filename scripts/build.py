@@ -1,9 +1,11 @@
-"""Kurs bauen: Kursdatei (kurs.md) oder Python-Inhalt (content/course.py) lesen, Abschnitte zusammensetzen, .mbz schreiben.
+"""Kurs bauen: Kursdatei (kurs.md) oder Python-Inhalt (content/course.py) lesen, Abschnitte zusammensetzen, .mbz schreiben,
+Sicherung prüfen (check.py).
 
-usage: python3 build.py --content DIR [--proto] [--delta [teile]] [--steckbrief PATH] [--out PATH]
+usage: python3 build.py --content DIR [--proto] [--delta [teile]] [--steckbrief PATH] [--out PATH] [--no-check]
 
 DIR enthält kurs.md (Format: references/kursdatei.md), assets/ (PNG) und steckbrief.yaml.
 Fallback: DIR/content/course.py mit build(A, sb, proto) -> {"sections", "parts", "badges", "image_path"}.
+Exit-Code 1, wenn die Prüfung der fertigen .mbz Fehler meldet (Datei bleibt zur Fehlersuche liegen).
 """
 import argparse
 import os
@@ -18,6 +20,7 @@ from gen import html as T  # noqa: E402
 from gen.h5p import ImageRef  # noqa: E402
 from gen.kursdatei import KursdateiFehler, parse, ts_sichtbar_ab  # noqa: E402
 from gen.mbz import Course, Section, Writer  # noqa: E402
+from check import check_mbz, report  # noqa: E402
 
 
 def asset_map(assets):
@@ -59,6 +62,7 @@ def main():
     ap.add_argument("--steckbrief")
     ap.add_argument("--out")
     ap.add_argument("--no-render", action="store_true", help="ohne Wirkung (Bilder werden nicht mehr von build.py gerendert)")
+    ap.add_argument("--no-check", action="store_true", help="fertige .mbz nicht mit check.py prüfen")
     args = ap.parse_args()
 
     content_dir = os.path.abspath(args.content)
@@ -112,6 +116,11 @@ def main():
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     Writer(course, out).build()
     print(out, os.path.getsize(out))
+    if not args.no_check:
+        errors, info = check_mbz(out)
+        report(out, errors, info)
+        if errors:
+            raise SystemExit(1)
 
 
 if __name__ == "__main__":

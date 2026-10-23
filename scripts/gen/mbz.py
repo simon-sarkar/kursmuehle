@@ -19,15 +19,14 @@ MOODLE_RELEASE = "5.2.4 (Build: 20261005)"
 BACKUP_VERSION = "2026042000"
 BACKUP_RELEASE = "5.2"
 WWWROOT = "https://lernplattform.bycs.de"
-# Site-specific values: read from site.json (created from your own test export; not part of the shared package).
-import json as _json
-try:
-    with open(os.path.join(os.path.dirname(__file__), "..", "site.json"), encoding="utf-8") as _f:
-        SITE = _json.load(_f)
-except FileNotFoundError:
-    SITE = {"site_hash": "0" * 32, "category_id": 1, "category_name": "Kategorie", "customfields": [],
-            "original_course_id": 1000000, "original_course_contextid": 1000000}
-SITE_HASH = SITE["site_hash"]
+# Platzhalter für Herkunftsangaben der Sicherung. Beim Import in einen bestehenden Kurs sind die Werte ohne
+# Bedeutung (belegt 2026-10-23: Import mit diesen Platzhaltern in einem fremden Account); sie werden nicht angepasst.
+SITE_HASH = "6aa9a12f353641854c7eaa8a0fcd932f"
+ORIGINAL_COURSE_ID = 1000000
+ORIGINAL_COURSE_CONTEXTID = 1000001
+CATEGORY_ID, CATEGORY_NAME = 1, "Kategorie"
+# Kurs-Zusatzfelder der Plattform (spec §B.1): (id, shortname, type, value)
+CUSTOMFIELDS = [(1, "schule", "text", ""), (2, "participants", "checkbox", "0")]
 MODULE_VERSIONS = {"hvp": "2026062501", "subsection": "2026042000", "label": "2026042000",
                    "page": "2026042000", "feedback": "2026042000", "url": "2026042000"}
 
@@ -165,8 +164,8 @@ class Writer:
         self.entries = {}       # archive path -> bytes
         self.files = []         # File objects
         self._id = 900000
-        self.course_id = SITE["original_course_id"]
-        self.course_ctx = SITE["original_course_contextid"]
+        self.course_id = ORIGINAL_COURSE_ID
+        self.course_ctx = ORIGINAL_COURSE_CONTEXTID
         self.cat_id = 2884508
         self.all_items = []     # flat, in course order (with subsection items)
         self.all_sections = []  # regular + delegated
@@ -583,8 +582,8 @@ class Writer:
     <metainfos>
     </metainfos>
   </plugin_local_mbslicenseinfo_course>
-  <category id="{SITE['category_id']}">
-    <name>{x(SITE['category_name'])}</name>
+  <category id="{CATEGORY_ID}">
+    <name>{x(CATEGORY_NAME)}</name>
     <description></description>
   </category>
   <tags>
@@ -676,11 +675,11 @@ class Writer:
 
     def customfields_xml(self):
         out = []
-        for cf in SITE.get("customfields", []):
-            out.append(f"""    <customfield id="{cf['id']}">
-      <shortname>{x(cf['shortname'])}</shortname>
-      <type>{cf['type']}</type>
-      <value>{x(cf['value'])}</value>
+        for cid, shortname, ctype, value in CUSTOMFIELDS:
+            out.append(f"""    <customfield id="{cid}">
+      <shortname>{x(shortname)}</shortname>
+      <type>{ctype}</type>
+      <value>{x(value)}</value>
       <valueformat>0</valueformat>
       <valuetrust></valuetrust>
     </customfield>""")

@@ -204,5 +204,6 @@ Delta neu einspielen). `sichtbar_ab: YYYY-MM-DD` erzeugt eine Datums-Zugriffsbes
 1. Kursordner anlegen: `kurs.md` (freigegebenes Drehbuch), `steckbrief.yaml`, `assets/` (PNG, per Dateiname referenziert).
    Teile-Schlüssel des Steckbriefs (`teile:`) = `teil:` an Abschnitten und Unterabschnitten der Kursdatei.
 2. `python3 scripts/build.py --content <kursordner> --proto` (Erstkurs) oder ohne `--proto`; Etappen:
-   `--delta` (alle `pending`) oder `--delta le2,le3`.
+   `--delta` (alle `pending`) oder `--delta le2,le3`. Am Ende prüft `build.py` die Sicherung (`check.py`); bei `FEHLER`
+   beheben und neu bauen, nicht liefern.
 3. Nach erfolgreichem Import die gelieferten Teile auf `delivered` setzen.

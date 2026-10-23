@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.3 – 2026-10-23 (AP2: Prüfskript, site.json entfernt)
+
+- `scripts/check.py <datei.mbz>` prüft eine Sicherung vor dem Import: Archiv (tar.gz, `.ARCHIVE_INDEX`), Pflichtdateien,
+  alle XML wohlgeformt, `moodle_backup.xml` gegen die Ordner und Settings, Abschnittsnummern fortlaufend und IDs eindeutig
+  (cmid, contextid, Instanz, Datei, Bewertungsposten), `sequence`/`sectionid`/Unterabschnitte konsistent, jede
+  `files.xml`-Zeile mit Datei unter `files/xx/<sha1>` (Hash und Größe), jede Datei von einer `inforef.xml` referenziert
+  und in ihrem Inhalt verwendet (`@@PLUGINFILE@@` in Textfeld/Seite, `images/` in `json_content`), `inforef`-Verweise auf
+  Dateien und Bewertungsposten, H5P-Bibliotheksversionen aus `gen/libs.py` (Hauptbibliothek und alle Unterinhalte),
+  `json_content` gültig, `subContentId` eindeutig, Badges (Bild, Kriterien), Verfügbarkeits-JSON.
+  Ausgabe `OK …` oder Zeilen `FEHLER <wo>: <was>`, Exit-Code 1. `build.py` ruft die Prüfung nach jedem Bau auf
+  (`--no-check` schaltet sie ab); eine fehlerhafte Sicherung bleibt zur Fehlersuche liegen, der Bau endet mit Exit 1.
+- `scripts/site.json` entfernt. Die Herkunftsangaben der Sicherung (Site-Hash, Kurs-ID, Kontext, Kategorie, Zusatzfelder)
+  sind feste Platzhalter in `gen/mbz.py`; beim Import in einen bestehenden Kurs sind sie ohne Bedeutung (belegt 2026-10-23).
+  Die erzeugten Sicherungen sind mit dem 0.2-Build inhaltsgleich (`mbz_diff.py`).
+- `scripts/tests/test_check.py`: vier Builds (netzwerk9 Vollkurs und Prototyp, alltagskompetenz Vollkurs und Delta) melden
+  OK; zehn absichtlich eingebaute Fehler werden gefunden (fehlende Datei, falscher Hash, kaputtes `json_content`, falsche
+  Bibliotheksversion, fehlender Aktivitätsordner, Bild ohne `files.xml`-Zeile, fehlender `fileref`, ungültiges
+  Verfügbarkeits-JSON, doppelte Abschnittsnummer, nicht wohlgeformtes XML) sowie eine Datei, die kein Archiv ist.
+- Doku: SKILL.md (Prüfung vor Lieferung, Dateien), spec.md §B.1/§M/§N, README, intake.md §7, ROADMAP ohne `site.json`.
+- Offen: `check.py` kennt nur die Dateibereiche der bisherigen Module (intro, page/content, hvp/content, Kursbild, Badge);
+  neue Modultypen (AP5) brauchen dort einen Eintrag. Geprüft wird die Struktur, nicht der Inhalt (Drehbuch-Prüfung bleibt
+  der zweite Lauf). Import-Test einer aus `kurs.md` gebauten Sicherung auf der Plattform steht weiterhin aus.
+
 ## 0.2.1 – 2026-10-23
 
 - Umbenennung in „Kursmühle“ (Repo `kursmuehle`, Skill-Name `kursmuehle`); Logo, Wortmarke und Banner in `docs/`;

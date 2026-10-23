@@ -20,9 +20,10 @@ Code-Ausführung (Python 3.11+, PyYAML, Pillow; Playwright+Chromium nur für Bil
    `python3 scripts/build.py --content <kursordner> --proto` (Erstkurs) oder ohne `--proto`.
    Etappen: `--delta` (alle `status: pending`) oder `--delta le2,le3`; Teile = `teil:` im Abschnitt. Freigabe nach Datum:
    `sichtbar_ab:` im Steckbrief oder `sichtbar ab:` in der Kursdatei. Parserfehler nennen Zeile und Element: beheben, nicht raten.
-4. **Prüfung vor Lieferung**: unabhängiger zweiter Lauf auf Drehbuch-Ebene (Inhalt, Aufgabenlogik, Inhaltsregeln spec §L);
-   strukturell: alle XML wohlgeformt, jedes in `json_content` referenzierte Bild in `files.xml`, Bibliotheksversionen exakt
-   aus spec §B.2. Wenn möglich Rendertest mit h5p-standalone und den Bibliotheken aus §B.2.
+4. **Prüfung vor Lieferung**: unabhängiger zweiter Lauf auf Drehbuch-Ebene (Inhalt, Aufgabenlogik, Inhaltsregeln spec §L).
+   Strukturell prüft `build.py` die fertige `.mbz` selbst (`scripts/check.py`: Archiv, IDs, Dateien und Hashes, Bilder,
+   Bibliotheksversionen, Verfügbarkeits-JSON); meldet es `FEHLER`, wird nicht geliefert, sondern behoben. Von Hand:
+   `python3 scripts/check.py <datei.mbz>`. Wenn möglich Rendertest mit h5p-standalone und den Bibliotheken aus §B.2.
 5. **Lieferung**: `.mbz` + kurzer Import-Hinweis (Ziel „Inhalte löschen und wiederherstellen“ bzw. bei Delta
    „Zusammenführen“, neuer Abschnitt landet hinten; Badge nach Import aktivieren; Kursbild prüfen). Steckbrief-Teile auf `delivered`.
 
@@ -50,8 +51,8 @@ Code-Ausführung (Python 3.11+, PyYAML, Pillow; Playwright+Chromium nur für Bil
 - `references/intake.md` – Fragerunden, Drehbuch-/Kursdatei-Format (eine Seite), Steckbrief-Schema.
 - `references/kursdatei.md` – vollständige Referenz der Kursdatei (alle Typen, Angaben, Bausteine, Grenzen).
 - `scripts/` – Generator: `gen/kursdatei.py` (Parser), `gen/html.py` (Textbausteine), `gen/mbz.py` (Writer),
-  `gen/h5p.py` (H5P-Builder), `gen/render.py` (Banner/Mocks), `build.py`, `templates/`, `site.json`,
-  `tests/` (Regressionstest, `.mbz`-Vergleich). Enthält keinen Kursinhalt.
+  `gen/h5p.py` (H5P-Builder), `gen/render.py` (Banner/Mocks), `build.py`, `check.py` (Sicherung prüfen), `templates/`,
+  `tests/` (Regressionstests, `.mbz`-Vergleich). Enthält keinen Kursinhalt.
 - `examples/netzwerk9/` – minimaler Beispielkurs (eine Einheit, 25 min, aus Folien + Fotos einer Lehrkraft): Vorbild für neue Kurse.
 - `examples/alltagskompetenz/` – großer Beispielkurs (Tech-Demo, Unterabschnitte, Lesebuch, Geschichte, Badge, Delta).
   `python3 scripts/build.py --content examples/<kurs>` baut sie.
