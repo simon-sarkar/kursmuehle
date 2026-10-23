@@ -398,10 +398,17 @@ def glossary_import_xml(g: Glossary):
     Moodle setzt dabei userid auf die importierende Lehrkraft, approved und teacherentry auf 1."""
     ents = []
     for concept, definition, aliases in g.entries:
+        # ALIASES/CATEGORIES nur mit Inhalt: ein leeres Element wird von xmlize als String geliefert, und
+        # import.php greift mit ['#']['ALIAS'] darauf zu -> PHP 8 "Cannot access offset of type string on string"
+        # (Import-Test 3, 23.10.2026: Abbruch nach dem ersten Eintrag ohne Alias). Moodle selbst schreibt sie
+        # ebenfalls nur bei Inhalt.
         al = "".join(f"""
           <ALIAS>
             <NAME>{x(a)}</NAME>
           </ALIAS>""" for a in aliases)
+        aliases_xml = f"""
+        <ALIASES>{al}
+        </ALIASES>""" if aliases else ""
         ents.append(f"""      <ENTRY>
         <CONCEPT>{x(concept)}</CONCEPT>
         <DEFINITION>{x(definition)}</DEFINITION>
@@ -409,11 +416,7 @@ def glossary_import_xml(g: Glossary):
         <USEDYNALINK>1</USEDYNALINK>
         <CASESENSITIVE>0</CASESENSITIVE>
         <FULLMATCH>0</FULLMATCH>
-        <TEACHERENTRY>1</TEACHERENTRY>
-        <ALIASES>{al}
-        </ALIASES>
-        <CATEGORIES>
-        </CATEGORIES>
+        <TEACHERENTRY>1</TEACHERENTRY>{aliases_xml}
       </ENTRY>""")
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <GLOSSARY>
