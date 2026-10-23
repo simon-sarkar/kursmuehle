@@ -4,7 +4,30 @@ Stand 2026-10-23. Version 0.1 ist eine Tech-Demo; die Punkte hier definieren, wa
 Reihenfolge innerhalb der Blöcke ist Priorität. Jeder Punkt braucht in der Regel genau einmal einen
 Test-Export von der Plattform (leerer Kurs mit dem Element), danach gilt die Erweiterung für alle.
 
-## Muss für 1.0
+## Umfang und Reihenfolge für 1.0 (Entscheidung 23.10.)
+
+Ziel: in wenigen Tagen nutzbar für andere Lehrkräfte mit beliebigem Code-ausführendem Assistenten.
+Vorgestellt wurde 0.1 bereits; die Rückmeldungen waren positiv.
+
+1. **Kursdatei statt Python** – Inhalte als Markdown/YAML, die der Generator direkt liest (Punkt 8).
+   Fremde Assistenten schreiben dann kein `content/course.py` mehr; das war die größte Fehlerquelle.
+2. **Prüfskript `scripts/check.py`** – öffnet die fertige `.mbz` und prüft Struktur, IDs, Dateiverweise,
+   H5P-Bibliotheksversionen. Jeder Assistent prüft seine Sicherung selbst, bevor importiert wird.
+3. **Menüführung, Kursbanner, zwei bis drei Designvorlagen, HTML-Textbausteine** (Punkte 1, 4, 5, 6) –
+   ein zusammenhängender Block ohne Plattform-Export.
+4. **Die meistgenutzten Module und das Kachelformat** – Test, Aufgabe, Datei/Verzeichnis, Forum, Buch;
+   Kursformat Kacheln. Braucht je einen Test-Export (Punkte 2, 3). Alles Weitere nach 1.0.
+5. **Kern-H5P im Textfeld** – Fünf-Minuten-Test auf der Plattform; Ergebnis entscheidet (Punkt 7).
+6. **Website-Modus als Vorlage** – eine HTML-Ressource mit Navigation, Inhalten und einem kleinen
+   JS-Quiz; eigene Spiele und Simulationen als Beispiele erst nach 1.0 (Punkt 7).
+7. **Zweiter Fremdtest** mit frischem Agenten nur mit dem Repo, dann Release 1.0.
+
+Vorab klären: `site.json` – die Lernplattform ist eine Moodle-Instanz, site_hash für alle gleich,
+Kategorie beim Import in einen bestehenden Kurs ohne Bedeutung; bestätigt sich das, entfällt die Hürde
+in der Anleitung. Moodle-Version (derzeit 5.2.4) als Feld im Steckbrief plus README-Hinweis für
+„Version nicht unterstützt“.
+
+## Die Punkte im Einzelnen
 
 ### 1. Einstieg ohne Arbeit – Menüführung des Agenten
 Erste Frage des Agenten: **„Womit starten wir?“**
@@ -18,12 +41,13 @@ Danach Steuerungsgrad und höchstens eine Fragerunde. Ziel: ein Kurs in unter ze
 bis zum Drehbuch. Nachfragen nur, wenn eine falsche Annahme teuer wäre.
 
 ### 2. Alle Kursformate
-Themen (0.1) → **Kacheln**, Grid, Wochen, Einzelaktivität, Buttons/One-Topic – je ein Test-Export für
+Themen (0.1) → **Kacheln** (1.0), danach Grid, Wochen, Einzelaktivität, Buttons/One-Topic – je ein Test-Export für
 `course.xml`-Felder und Format-Optionen; Kachelbilder und Kachelfarben aus dem Steckbrief.
 
 ### 3. Alle Modultypen
 Reihenfolge nach Nutzen: Test (mit Fragensammlung), Aufgabe, Forum, Buch, Glossar, Abstimmung,
 Datei/Verzeichnis, Kern-H5P-Aktivität, Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool.
+1.0 enthält Test, Aufgabe, Datei/Verzeichnis, Forum, Buch; der Rest folgt.
 Je Modul: Testkurs mit einer Instanz exportieren → Schema in `references/spec.md` → Klasse in `gen/mbz.py`.
 
 ### 4. Schlanke Designvorlagen
@@ -58,6 +82,8 @@ Parser, der das Drehbuch-Format direkt in `content/` übersetzt; „Vorausgesetz
 Änderungsliste zwischen Drehbuch-Versionen automatisch.
 
 ## Nach 1.0
+- Weitere Module (Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool) und Kursformate (Grid, Wochen, Einzelaktivität).
+- Beispiele für eigene Spiele und Simulationen im Website-Modus.
 - Rückmeldungen anderer Schulen einarbeiten; Sammlung geprüfter Test-Exporte (ohne Teilnehmerdaten).
 - Weitere H5P-Typen (Interactive Video, Image Hotspots, Memory, Game Map).
 - Andere Zugriffsbedingungen (Abschluss von X, Bewertung, Gruppe), Kursabschluss-Kriterien.
