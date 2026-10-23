@@ -28,6 +28,7 @@ from gen.libs import LIBS  # noqa: E402
 from gen.mbz import FORMAT_OPTIONEN, MODULE_VERSIONS, QTYPES  # noqa: E402
 
 NULL = "$@NULL@$"
+KACHEL_TITEL = 35   # Zeichen; längere Abschnittstitel brechen auf der Kachel um
 PFLICHT_TOP = ["moodle_backup.xml", "files.xml", "moodle_backup.log", "roles.xml", "scales.xml", "outcomes.xml",
                "questions.xml", "groups.xml", "grade_history.xml", "completion.xml", "gradebook.xml", "badges.xml"]
 PFLICHT_COURSE = ["course", "inforef", "roles", "filters", "calendar", "contentbank", "completiondefaults", "enrolments"]
@@ -292,13 +293,27 @@ class Pruefung:
                     self.err("moodle_backup.xml", f"{a['modname']}_{a['cmid']}_userinfo=1 im Unterabschnitt, aber "
                                                   f"subsection_{sub['cmid']}_userinfo=0")
                 s = self.secs.get(sub["sectionid"]) if sub is not None else None
-        if users and self.xml.get("badges.xml") is not None and self.xml["badges.xml"].findall("badge"):
-            self.warn("moodle_backup.xml", "users=1 (Glossareinträge) und Badges: sperrt die Plattform „Nutzer einbeziehen“ "
-                                           "beim Wiederherstellen, fallen Einträge und Badges weg (build.py --ohne-nutzerdaten, "
-                                           "Einträge per XML-Import)")
+        if users:
+            badges = self.xml.get("badges.xml") is not None and self.xml["badges.xml"].findall("badge")
+            self.warn("moodle_backup.xml", "users=1: sperrt die Plattform „Nutzer einbeziehen“ beim Wiederherstellen, "
+                                           "fallen Glossareinträge" + (" und Badges" if badges else "") + " weg; Standard ist "
+                                           "users=0 (build.py ohne --mit-nutzerdaten) plus XML-Import der Einträge")
 
     def kursformat(self):
-        """Einzelaktivität: genau eine Aktivität in Abschnitt 0, activitytype passend."""
+        """Kacheln: Titel kurz, Kachelbild etwa 3:2 (Warnungen). Einzelaktivität: genau eine Aktivität in Abschnitt 0."""
+        if self.format == "tiles":
+            for s in self.secs.values():
+                name = _text(s["root"], "name", "") if s["root"] is not None else ""
+                if s["number"] and not s["parentcmid"] and name != NULL and len(name) > KACHEL_TITEL:
+                    self.warn(f"{s['dir']}/section.xml", f"Kacheltitel „{name}“ hat {len(name)} Zeichen; über "
+                                                         f"{KACHEL_TITEL} bricht er auf der Kachel um oder wird gekürzt")
+            for r in [r for r in self.files if r["component"] == "format_tiles" and r["filearea"] == "tilephoto"]:
+                data = self.entries.get(f"files/{r['contenthash'][:2]}/{r['contenthash']}") or b""
+                if data[:8] == b"\x89PNG\r\n\x1a\n" and len(data) >= 24:
+                    w, h = int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
+                    if h and not 1.2 <= w / h <= 1.8:
+                        self.warn(f"files.xml Datei {r['id']} ({r['filename']})", f"Kachelbild {w} × {h}: format_tiles "
+                                  "schneidet auf etwa 3:2 zu (cover); Vorlage 900 × 600, textfrei (banner.py --kachel)")
         if self.format != "singleactivity":
             return
         course = self.xml.get("course/course.xml")
@@ -530,9 +545,11 @@ class Pruefung:
                 self.hvp(a, inner, wo)
             elif mod == "resource":
                 areas.add("content")
-                n = len(self._files_for(a, "content"))
-                if n != 1:
-                    self.err(wo, f"Datei braucht genau eine Datei in mod_resource/content, {n} gefunden")
+                fs = self._files_for(a, "content")
+                if len(fs) != 1:
+                    self.err(wo, f"Datei braucht genau eine Datei in mod_resource/content, {len(fs)} gefunden")
+                elif fs[0]["filename"].lower().endswith((".html", ".htm")):
+                    self.website(fs[0], inner, wo)
             elif mod == "folder":
                 areas.add("content")
                 if not self._files_for(a, "content"):
@@ -555,12 +572,27 @@ class Pruefung:
                     if _text(e, "approved", "1") != "1" or _text(e, "teacherentry", "1") != "1":
                         self.err(wo, f"Eintrag „{_text(e, 'concept', '')}“: approved und teacherentry müssen 1 sein "
                                      "(ohne Nutzerdaten nur Einträge der Lehrkraft)")
-                if entries and (a["userinfo"] != "1" or self.settings.get("users") != "1"):
-                    self.warn(wo, f"{len(entries)} Einträge, aber userinfo=0: Moodle stellt Glossareinträge nur mit "
-                                  "Nutzerdaten wieder her (restore_glossary_stepslib), sie gehen beim Import verloren; "
-                                  "Ausweg: XML-Datei neben der .mbz über Glossar → Einträge importieren")
             for r in [r for r in self.files if r["contextid"] == a["contextid"] and r["filearea"] not in areas]:
                 self.err(wo, f"Datei „{r['filename']}“ in unbekanntem Dateibereich {r['component']}/{r['filearea']}")
+
+    def website(self, f, inner, wo):
+        """Website-Modus: Anzeige erlaubt, keine externen Skripte/Stile, jedes data-km-img im Bilderverzeichnis."""
+        if _text(inner, "display", "0") not in ("0", "1", "5", "6"):
+            self.err(wo, f"display {_text(inner, 'display', '')}: für HTML 0 (automatisch), 1 (eingebettet), 5 (öffnen), 6 (Pop-up)")
+        data = self.entries.get(f"files/{f['contenthash'][:2]}/{f['contenthash']}")
+        if data is None:
+            return
+        html = data.decode("utf-8", "replace")
+        for m in re.findall(r'<(?:script|link|iframe)[^>]+(?:src|href)="(https?:)?//([^"/]+)', html):
+            if not m[1].endswith(("youtube-nocookie.com", "player.vimeo.com")):
+                self.err(wo, f"Website lädt von außen ({m[1]}); die Datei muss ohne externe Quellen laufen")
+        if "kursmuehle" in html.lower() or "Kursmühle" in html:
+            m = re.search(r"IMG = (\{.*?\});\n", html, re.S)
+            namen = set(json.loads(m.group(1))) if m else set()
+            for name in sorted(set(re.findall(r'data-km-img="([^"]+)"', html)) - namen):
+                self.err(wo, f"Website: Bild „{name}“ fehlt im Bilderverzeichnis der Seite")
+        if len(data) > 15 * 1024 * 1024:
+            self.warn(wo, f"Website {len(data) // 1024 // 1024} MB: große Datei, Bilder verkleinern")
 
     def bewertung(self, a, wo, grademax):
         """Bewertungsposten passt zur Maximalbewertung des Moduls (0 = kein Posten)."""
@@ -802,10 +834,10 @@ class Pruefung:
         self.pflichtdateien()
         self.backup_xml()
         self.nutzerdaten()
-        self.kursformat()
         self.ids_und_nummern()
         self.abschnitte()
         self.dateien()
+        self.kursformat()
         self.inforefs()
         self.inhalte()
         self.fragen()

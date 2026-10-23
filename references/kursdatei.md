@@ -42,10 +42,12 @@ sind Fehler, keine Vermutungen.
 | Wo | Angabe | Bedeutung |
 |---|---|---|
 | Kurs | `farbe` | Akzentfarbe `#RRGGBB` oder rot, grün, blau, orange, lila; Standard `#1D5FD1` |
-| Kurs | `kursbild` | PNG aus `assets/` als Kursbild |
+| Kurs | `kursbild` | PNG aus `assets/` als Kursbild, textfrei (die Plattform legt den Kursnamen darüber); fehlt es, dient das Bild des Banners als Kursbild |
 | Abschnitt | `teil` | Schlüssel für `--delta` und `sichtbar_ab` im Steckbrief (`teile:`) |
 | Abschnitt | `farbe` | Akzentfarbe des Abschnitts (vererbt an Unterabschnitte und Elemente) |
-| Abschnitt | `kachelbild`, `kachelicon` | Kachelformat: PNG aus `assets/` als Kachelbild, FontAwesome-4-Name (book, lightbulb-o, flask, globe, laptop, puzzle-piece, trophy …) als Icon; in anderen Formaten ohne Wirkung. Alternativ im Steckbrief unter `teile.<teil>.kachelbild` / `.kachelicon` |
+| Abschnitt | `kachelbild`, `kachelicon` | Kachelformat: PNG aus `assets/` als Kachelbild (textfrei, etwa 3:2, 900 × 600, eigenes Motiv je Abschnitt; `banner.py --kachel`), FontAwesome-4-Name (book, lightbulb-o, flask, globe, laptop, puzzle-piece, trophy …) als Icon; in anderen Formaten ohne Wirkung. Alternativ im Steckbrief unter `teile.<teil>.kachelbild` / `.kachelicon` |
+| Abschnitt | `website` | `ja` (= eingebettet, im Rahmen der Plattform), `vollbild` (Datei füllt das Fenster), `neues fenster` (Pop-up) oder `nein`: Abschnitt als eine HTML-Seite (§7a); überschreibt `kurs.website` im Steckbrief |
+| Element | `website: nein` | im Website-Modus als Plattform-Aktivität behalten (statt Kapitel der Website) |
 | Abschnitt, Unterabschnitt, Element | `sichtbar ab` | `JJJJ-MM-TT`, Datumsbedingung 06:00 Uhr; überschreibt den Steckbrief |
 | Abschnitt, Unterabschnitt, Element | `prototyp: nein` | wird bei `--proto` weggelassen |
 | Unterabschnitt | `teil` | wie beim Abschnitt |
@@ -138,6 +140,9 @@ Anleitung = `Schritte:`; Merksatz = `Merke:` oder `Hervorhebung:`; Gegenüberste
 Kein Absatz länger als fünf Zeilen auf dem Handy (etwa 60 Wörter). Alle Bausteine werden von der Designvorlage
 (Steckbrief `design.vorlage`, §7) eingefärbt und geformt; die Kursdatei kennt keine Gestaltungsangaben außer `farbe`.
 
+Bilder mit Text nur im Abschnitt (`Bild:`); Kursbild, Kachelbild und Banner-`bild:` sind textfrei. Im Kachelformat
+Abschnittstitel höchstens etwa 35 Zeichen (`check.py` warnt darüber).
+
 Steht ein `### Banner:` im Kurs, trägt jede Überblickskarte keinen Titel und Untertitel mehr, nur Dauer und Phasen
 (Banner und Karte zeigten sonst beides doppelt).
 
@@ -229,15 +234,45 @@ Bau: `python3 scripts/build.py --content <ordner>`; `--proto` lässt alles mit `
 den Kursnamen; `--delta` baut die Teile mit `status: pending`, `--delta le2,le3` die genannten; jeder Teil wird dabei ein
 eigener Abschnitt (Unterabschnitte werden Abschnitte). Einzelaktivität: die Kursdatei enthält genau ein Element.
 
-Glossare mit Einträgen: Moodle stellt Einträge nur mit Nutzerdaten wieder her. Die Sicherung trägt deshalb `users=1`
-(nur das Glossar und seine Abschnitte haben `userinfo=1`), und `build.py` legt je Glossar eine XML-Datei neben die `.mbz`
-(`<kurs>_glossar.xml`) für Glossar → Mehr → Einträge importieren. Sperrt die Plattform beim Wiederherstellen „Nutzer
-einbeziehen“, fehlen Einträge und Badges: dann `--ohne-nutzerdaten` bauen und die Einträge über die XML-Datei einspielen.
+Glossare mit Einträgen: Moodle stellt Einträge nur mit Nutzerdaten wieder her; „Nutzer einbeziehen“ ist für Lehrkräfte
+kein verlässlicher Weg. Die Sicherung trägt deshalb `users=0`; `build.py` legt je Glossar eine XML-Datei neben
+die `.mbz` (`<kurs>_glossar.xml`), fester Schritt nach dem Import: Glossar → Mehr → Einträge importieren → diese Datei.
+`--mit-nutzerdaten` baut `users=1` (nur das Glossar und seine Abschnitte mit `userinfo=1`) für Moodle-Instanzen, die das
+Häkchen zulassen.
+
+## 7a. Website-Modus
+
+Ein Abschnitt wird eine einzige HTML-Datei (Datei-Aktivität, Standard eingebettet): Startseite mit Kopf, Ablauf und
+Kapitelliste, Navigation (am Handy hinter „Inhalt“), Zurück/Weiter, Fortschritt der gelesenen Kapitel, Übungen mit
+Rückmeldung und „Lösung zeigen“, ohne Bewertung. Kein Nachladen zwischen den Elementen. Einschalten: Steckbrief
+`kurs.website: ja` (alle Abschnitte außer Allgemeines), `website: ja` am Abschnitt, oder `build.py --website`.
+Die Kursdatei bleibt gleich; der Generator setzt die Elemente um:
+
+| Element | in der Website |
+|---|---|
+| Banner, Überblick (im Abschnitt) | Kopf und Ablauf der Startseite; ohne Banner im Abschnitt trägt der Kopf das Bild des Kursbanners |
+| Textfeld, Seite | je ein Kapitel mit denselben Textbausteinen |
+| Lesebuch | je Seite ein Kapitel, Fragen als Übungen an ihrer Stelle |
+| Quiz | ein Kapitel, Fragen mit Prüfen-Knopf und Zähler; `bestehen` hat keine Wirkung |
+| Zuordnen, Einsetzen | Auswahllisten statt Ziehen (geht auf dem Handy mit einer Hand) |
+| Lückentext, Markieren, Aussagen, Schnellquiz | Eingabefelder, antippbare Wörter, Einfachauswahl |
+| Lernkarten | Karten zum Umdrehen |
+| Geschichte | Szenen und Entscheidungen bis zu einem Ende |
+| Video, Link | YouTube/Vimeo eingebettet, sonst Knopf zur Seite |
+| Unterabschnitt | Kapitelgruppe in der Navigation (`teil:` darin ist ohne Wirkung) |
+| alle Moodle-Module, Umfrage, Badge-Voraussetzungen, Elemente mit `website: nein` | bleiben Aktivitäten nach der Website |
+
+Bewertete Teile gehören nicht in die Website: Was ein Badge voraussetzt, bleibt automatisch Aktivität; für Noten
+`Test` nehmen. Abschluss der Website ist „ansehen“. Die HTML-Datei liegt nach dem Bau als `<kurs>_website.html` zur
+Vorschau neben der `.mbz`; sie braucht keinen Server und lädt nichts von außen (Bilder stecken in der Datei).
 
 Python bleibt als Ausweg: Liegt keine `kurs.md`, aber `content/course.py` mit `build(A, sb, proto)` im Kursordner,
 wird sie genutzt (Bausteine in `scripts/gen/html.py`).
 
 ## 8. Grenzen
+
+Website-Modus: keine Bewertung und kein Abschluss je Übung, `sichtbar ab` gilt nur für die ganze Website, Zuordnen ohne
+Hintergrundbild. Ob die Plattform JavaScript in Textfeldern ausführt, klärt `tools/jsprobe` (Import-Test offen).
 
 Nicht ausdrückbar in 1.0: Kursformate Lernlandkarte und Mimo, Rückmeldung „nicht gewählt“ bei MC, Bilder in Szenen einer Geschichte, Buchdeckel,
 Rückmeldungsbereiche des Quiz, Tipps bei Einsetzen/MC, Hintergrundbild mit Koordinaten beim Zuordnen (nur automatische

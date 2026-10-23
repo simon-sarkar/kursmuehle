@@ -1,0 +1,6 @@
+kurs:
+  titel: "JS-Probe Kursmühle"
+  kurzname: "JSProbe"
+  beschreibung: "<p>Fünf-Minuten-Test: Läuft JavaScript im Textfeld und in einer eingebetteten HTML-Datei?</p>"
+  format: themen
+  design: {vorlage: schlicht, emoji_marker: false}

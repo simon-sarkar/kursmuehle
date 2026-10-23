@@ -5,7 +5,7 @@ kursbild: kurs.png
 teil: start
 
 ### Textfeld: Willkommen
-Bild: kurs.png | Alltagskompetenz – Selbstlernkurs
+Bild: start.png | Alltagskompetenz – Selbstlernkurs
 Kacheln: Die acht Themenfelder
 - 🔍 Probleme selbst lösen · #1D5FD1 · ausgearbeitet
 - 🔐 Digitale Selbstbestimmung · #6D28D9 · exemplarisch
@@ -33,9 +33,9 @@ danach: Danke. Weiter mit Themenfeld 1.
 - Ich erkenne, ob eine Internetseite vertrauenswürdig ist.
 - Ich prüfe eine KI-Antwort, bevor ich sie benutze.
 
-## TF 1 · Probleme selbst lösen – Google & KI
+## TF 1 · Probleme selbst lösen
 teil: tf1
-kachelbild: tf1.png
+kachelbild: kachel1.png
 
 ### Textfeld: Fahrplan
 Bild: tf1.png | Themenfeld 1 – Probleme selbst lösen
@@ -471,7 +471,7 @@ voraussetzung: Abschlusstest
 
 ## TF 2 · Digitale Selbstbestimmung
 teil: tf2
-kachelbild: tf2.png
+kachelbild: kachel2.png
 farbe: #6D28D9
 
 ### Textfeld: Überblick
@@ -481,9 +481,9 @@ Themenfeld: Du schützt deine Daten und Geräte und gestaltest deinen Medienkons
 - Phishing, Fake-Shops, Deepfakes erkennen
 - Digitaler Fußabdruck, Recht am eigenen Bild, Bildschirmzeit
 
-## TF 3 · Mentale Gesundheit und Selbstfürsorge
+## TF 3 · Mentale Gesundheit
 teil: tf3
-kachelbild: tf3.png
+kachelbild: kachel3.png
 farbe: #0F766E
 prototyp: nein
 
@@ -504,9 +504,9 @@ einleitung: Fünf Aussagen über Stress, Schlaf und Hilfe.
 4. Es ist 2 Uhr nachts, es geht dir sehr schlecht, und du willst mit jemandem reden. Wo bekommst du jetzt anonym Hilfe? · ✔Telefonseelsorge 0800 111 0 111 – rund um die Uhr, kostenlos · Nummer gegen Kummer 116 111 – die ist aber nur tagsüber erreichbar → Das Kinder- und Jugendtelefon ist Montag bis Samstag von 14 bis 20 Uhr erreichbar. Nachts: Telefonseelsorge. · Erst morgen früh, nachts ist alles geschlossen · Im Kommentarbereich eines Videos
 5. RF: Hilfe zu holen ist ein Zeichen von Schwäche. ✘ → richtig: Stimmt, die Aussage ist falsch: Hilfe holen ist eine Fähigkeit. → falsch: Hilfe holen ist eine Fähigkeit. Bei akuter Gefahr: 112.
 
-## TF 4 · Körper, Ernährung und Gesundheitssystem
+## TF 4 · Körper und Gesundheit
 teil: tf4
-kachelbild: tf4.png
+kachelbild: kachel4.png
 farbe: #15803D
 prototyp: nein
 
@@ -519,7 +519,7 @@ Themenfeld: Du triffst gesundheitsbewusste Alltagsentscheidungen und findest dic
 
 ## TF 5 · Geld und Finanzen
 teil: tf5
-kachelbild: tf5.png
+kachelbild: kachel5.png
 farbe: #B45309
 prototyp: nein
 
@@ -540,9 +540,9 @@ einleitung: Fünf Fragen zu Geld.
 4. Was bedeutet „Brutto“ auf dem Gehaltszettel? · ✔Das Gehalt vor Abzug von Steuern und Sozialversicherung · Das, was aufs Konto kommt · Das Gehalt inklusive Weihnachtsgeld · Das Gehalt ohne Überstunden
 5. 100 € bei 3 % Zinsen pro Jahr, 10 Jahre, Zinsen bleiben auf dem Konto. Wie viel ist es dann, auf den Euro gerundet? · ✔134 € → 100 × 1,03 hoch 10 = 134,39 €. Zinseszins. · 130 € → Das wären 3 € pro Jahr ohne Zinseszins. · 103 € · 300 €
 
-## TF 6 · Konsum, Verträge und Rechte
+## TF 6 · Konsum, Verträge, Rechte
 teil: tf6
-kachelbild: tf6.png
+kachelbild: kachel6.png
 farbe: #BE123C
 prototyp: nein
 
@@ -553,9 +553,9 @@ Themenfeld: Du handelst als informierte Verbraucherin oder Verbraucher und setzt
 - Abos, Kündigungsfristen, Widerruf, Gewährleistung und Garantie
 - Beschwerde schreiben, Verbraucherzentrale, Greenwashing erkennen
 
-## TF 7 · Wohnen, Haushalt und Bürokratie
+## TF 7 · Wohnen und Bürokratie
 teil: tf7
-kachelbild: tf7.png
+kachelbild: kachel7.png
 farbe: #4F46E5
 prototyp: nein
 
@@ -568,7 +568,7 @@ Themenfeld: Du organisierst einen eigenen Haushalt und bewältigst Behördengän
 
 ## TF 8 · Ich und die anderen
 teil: tf8
-kachelbild: tf8.png
+kachelbild: kachel8.png
 farbe: #C2410C
 prototyp: nein
 

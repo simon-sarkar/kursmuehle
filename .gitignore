@@ -3,3 +3,4 @@ __pycache__/
 examples/*/out/
 *.mbz
 .DS_Store
+tools/*/out/

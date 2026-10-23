@@ -72,7 +72,7 @@ activities/<mod>_<cmid>/{module,<mod>,grades,inforef,roles,filters,calendar,grad
   (Unterabschnitt: `parentcmid` = cmid des subsection-Moduls, `modname` = `subsection`). Reihenfolge: reguläre Abschnitte,
   dann Unterabschnitte.
 - `<settings>`: root-Liste aus Anhang B; je Abschnitt `section_<id>_included=1`, `_userinfo=0`; je Aktivität
-  `<mod>_<cmid>_included=1`, `_userinfo=0`. Ausnahme Glossar mit Einträgen (G): root `users=1`, `glossary_<cmid>_userinfo=1`
+  `<mod>_<cmid>_included=1`, `_userinfo=0`. Ausnahme nur mit `build.py --mit-nutzerdaten`, Glossar mit Einträgen (G): root `users=1`, `glossary_<cmid>_userinfo=1`
   und `userinfo=1` für seinen Abschnitt sowie bei Unterabschnitten für das subsection-Modul und dessen Abschnitt (Moodle
   sperrt das Modul-Setting sonst, `restore_activity_task`); dazu `users.xml` = `<users></users>`. Alle anderen Settings
   bleiben 0. `original_course_format` = `<format>` aus course.xml.
@@ -130,7 +130,12 @@ Abgabe (feedback) `2/$@NULL@$/0/0` + `completionsubmit 1`. (Reihenfolge: complet
   grade, gradepass aus `bestehen`). Abschluss „abgabe“ `2/$@NULL@$/0/0` + `completionsubmit 1`.
 - **resource** (Datei): `name, intro, introformat 1, tobemigrated 0, legacyfiles 0, legacyfileslast $@NULL@$, display 0,
   displayoptions a:2:{s:10:"printintro";i:1;s:8:"showtype";i:1;}, filterfiles 0, revision 1, timemodified`; genau eine
-  Datei im Bereich `mod_resource/content/0`, `sortorder 1`, mimetype nach Endung.
+  Datei im Bereich `mod_resource/content/0`, `sortorder 1`, mimetype nach Endung. Website-Modus (AP7, `gen/website.py`):
+  eine `index.html` (text/html), `display` 1 eingebettet (Standard), 5 öffnen, 6 Pop-up (`displayoptions` dann mit
+  `popupwidth 1200`, `popupheight 800`), `printintro 0`, `showtype 0`, Abschluss „ansehen“ (`website:` ja/eingebettet → 1, vollbild → 5, neues fenster → 6).
+  `filterfiles 0`: die Filter der Plattform laufen nicht über die Datei; ob ihre Skripte laufen, prüft `tools/jsprobe`. Bilder als data-URI im Bilderverzeichnis
+  der Seite; `check.py` prüft Anzeige, externe Quellen und Bildverweise. Moodle-Anzeige 2 (Rahmen) und 3 (neues
+  Fenster) sind im Standard von `resource | displayoptions` nicht freigegeben und werden nicht erzeugt.
 - **folder** (Verzeichnis): `name, intro, introformat 1, revision 1, timemodified, display (0 eigene Seite, 1 auf der
   Kursseite), showexpanded, forcedownload 1, studentedit 0`; Dateien in `mod_folder/content/0`, filepath `/`.
 - **forum**: `type (general | qanda | eachuser | blog), name, intro, introformat 1`, Rest wie Schema (`assessed 0,
@@ -154,8 +159,8 @@ Abgabe (feedback) `2/$@NULL@$/0/0` + `completionsubmit 1`. (Reihenfolge: complet
   `moodle/restore:userinfo`, sperrt Moodle `users` auf 0 ohne Abbruch (`restore_check`), dann fehlen die Einträge und
   mit ihnen die Badges (Abhängigkeit `users → badges` im `restore_root_task`). (B) Je Glossar eine Moodle-Glossar-XML
   (`GLOSSARY/INFO/ENTRIES/ENTRY`, `gen/mbz.py glossary_import_xml`) neben der `.mbz`, Import Glossar → Mehr → Einträge
-  importieren (setzt `userid` auf die Lehrkraft). `build.py --ohne-nutzerdaten` baut (A) ab (users=0); `check.py` warnt
-  bei Einträgen mit `userinfo=0`.
+  importieren (setzt `userid` auf die Lehrkraft). Nach Import-Test 3 (0.7) ist seit 0.8 (B) der feste Weg
+  und Standard (users=0), (A) nur mit `build.py --mit-nutzerdaten`; `check.py` warnt bei users=1.
 
 G.2 Fragensammlung (`questions.xml`, Moodle 4.x/5.x)
 

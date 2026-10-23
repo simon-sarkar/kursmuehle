@@ -1,4 +1,4 @@
-"""Banner, Mock-Screenshots und Badge für den Beispielkurs Alltagskompetenz neu rendern (HTML -> PNG).
+"""Kursbild, Kachelbilder, Banner, Mock-Screenshots und Badge für den Beispielkurs Alltagskompetenz neu rendern (HTML -> PNG).
 
 Braucht Playwright + Chromium. Die PNGs liegen bereits in assets/; dieses Skript ist nur zum Neu-Erzeugen.
 usage: python3 examples/alltagskompetenz/render_assets.py
@@ -37,12 +37,16 @@ def _prompt_html():
 
 
 def jobs():
-    j = [(R.banner_html(0, "Alltagskompetenz", "Probleme selbst lösen · auf sich achten · mit Geld umgehen · Verträge verstehen",
+    # Kursbild und Kachelbilder ohne Text (die Plattform setzt Kursname und Abschnittstitel darüber),
+    # Banner mit Text nur im Abschnitt (start.png im Willkommen-Textfeld, tfN.png im Fahrplan).
+    j = [(R.banner_html(0, "", "", [], w=1600, h=520), os.path.join(ASSETS, "kurs.png")),
+         (R.banner_html(0, "Alltagskompetenz", "Probleme selbst lösen · auf sich achten · mit Geld umgehen · Verträge verstehen",
                         ["Jahrgangsstufe 8–10", "8 Themenfelder"], w=1600, h=520, kicker="Selbstlernkurs"),
-          os.path.join(ASSETS, "kurs.png"))]
+          os.path.join(ASSETS, "start.png"))]
     for n, (t, s) in TF_TITLES.items():
         chips = ["4 Lerneinheiten · ca. 100 min"] if n == 1 else ["3 Lerneinheiten", "exemplarisch"]
         j.append((R.banner_html(n, t, s, chips, w=1600, h=420), os.path.join(ASSETS, f"tf{n}.png")))
+        j.append((R.kachel_html(n, hue=R.HUES[n]), os.path.join(ASSETS, f"kachel{n}.png")))
     j.append((R.serp_html("Nordvia X3 lädt nicht Ladesymbol blinkt"), os.path.join(ASSETS, "serp.png")))
     j.append((R.chat_html([
         ("user", "mein handy lädt nicht mehr was soll ich machen"),

@@ -4,8 +4,9 @@ Templated from test exports of 2026-10-22/23 (Moodle 5.2.4, mod_hvp 2026062501; 
 references/export-schemata/). Supported modules: label, page, url, hvp, subsection, feedback, quiz (mit Fragensammlung in
 questions.xml), assign, resource, folder, forum, book, choice, glossary. Plus badges, files.
 Kursformate: topics, tiles (Kachelbild/-icon je Abschnitt), weeks, onetopic, topcoll, singleactivity (references/formate.md).
-Glossareinträge: Moodle stellt sie nur mit Nutzerdaten wieder her; daher users=1 und userinfo=1 nur für Glossare mit
-Einträgen (users.xml leer, userid 0) und zusätzlich `glossary_import_xml()` für den Import über das Glossar selbst.
+Glossareinträge: Moodle stellt sie nur mit Nutzerdaten wieder her. Standard ist users=0 (seit 0.8, nach Import-Test 3),
+die Einträge kommen über `glossary_import_xml()` ins Glossar. Mit glossar_nutzerdaten=True
+users=1 und userinfo=1 nur für Glossare mit Einträgen (users.xml leer, userid 0).
 """
 import hashlib
 import io
@@ -288,13 +289,26 @@ class Assign(Item):
 
 
 class Resource(Item):
-    """Datei (mod_resource): genau eine Datei, angezeigt nach Plattformstandard."""
+    """Datei (mod_resource): genau eine Datei. display auto (Plattformstandard), embed, open, popup.
+    website=True: HTML-Datei des Website-Modus (gen/website.py), ohne Beschreibung und Dateityp auf der Kursseite."""
     modname = "resource"
+    DISPLAY = {"auto": 0, "embed": 1, "open": 5, "popup": 6}
 
-    def __init__(self, name, local_path, filename=None, intro="", completion="view", files=None):
+    def __init__(self, name, local_path, filename=None, intro="", completion="view", files=None, display="auto",
+                 website=False):
         super().__init__(name, intro=intro, completion=completion, files=files)
         self.local_path = local_path
         self.filename = filename or os.path.basename(local_path)
+        self.display = self.DISPLAY[display]
+        self.website = website
+
+    @property
+    def displayoptions(self):
+        """Serialisiertes PHP-Array wie im Export; Pop-up mit Fenstergröße."""
+        opts = [("printintro", 0 if self.website else 1), ("showtype", 0 if self.website else 1)]
+        if self.display == 6:
+            opts += [("popupwidth", 1200), ("popupheight", 800)]
+        return f"a:{len(opts)}:{{" + "".join(f's:{len(k)}:"{k}";i:{v};' for k, v in opts) + "}"
 
 
 class Folder(Item):
@@ -369,7 +383,7 @@ class Badge:
 
 class Course:
     def __init__(self, fullname, shortname, summary="", sections=None, badges=None,
-                 image_path=None, startdate=None, format="topics", format_options=None, glossar_nutzerdaten=True):
+                 image_path=None, startdate=None, format="topics", format_options=None, glossar_nutzerdaten=False):
         self.fullname, self.shortname, self.summary = fullname, shortname, summary
         self.sections = sections or []
         self.badges = badges or []
@@ -378,7 +392,7 @@ class Course:
         self.format = moodle_format(format)
         self.format_options = dict(format_options or {})   # überschreibt FORMAT_OPTIONEN[format]
         # Glossareinträge stellt Moodle nur mit Nutzerdaten wieder her (restore_glossary_stepslib: if $userinfo).
-        # True: Sicherung mit users=1 und userinfo=1 nur für Glossare mit Einträgen; False: users=0, Einträge nur per XML-Import.
+        # False (Standard): users=0, Einträge per XML-Import; True: users=1 und userinfo=1 nur für Glossare mit Einträgen.
         self.glossar_nutzerdaten = glossar_nutzerdaten
 
     def format_option_list(self):
@@ -1151,8 +1165,8 @@ class Writer:
     <tobemigrated>0</tobemigrated>
     <legacyfiles>0</legacyfiles>
     <legacyfileslast>{NULL}</legacyfileslast>
-    <display>0</display>
-    <displayoptions>a:2:{{s:10:"printintro";i:1;s:8:"showtype";i:1;}}</displayoptions>
+    <display>{it.display}</display>
+    <displayoptions>{it.displayoptions}</displayoptions>
     <filterfiles>0</filterfiles>
     <revision>1</revision>
     <timemodified>{self.now}</timemodified>

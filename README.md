@@ -2,9 +2,9 @@
 
 # Kursmühle – Lernplattform-Kurse aus einem Prompt
 
-![Version 0.7](docs/badge-version.svg) ![Status: Tech-Demo auf dem Weg zu 1.0](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
+![Version 0.8](docs/badge-version.svg) ![Status: Tech-Demo auf dem Weg zu 1.0](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
 
-**Version 0.7** (Stand 23.10.2026) · siehe [`ROADMAP.md`](ROADMAP.md) und [`CHANGELOG.md`](CHANGELOG.md)
+**Version 0.8** (Stand 23.10.2026) · siehe [`ROADMAP.md`](ROADMAP.md) und [`CHANGELOG.md`](CHANGELOG.md)
 
 **Ein KI-Assistent baut aus einer Beschreibung oder eigenem Unterrichtsmaterial eine importierbare Kurssicherung (`.mbz`) für die ByCS-Lernplattform.**
 
@@ -41,16 +41,17 @@ fertige Kurssicherung zum Import.
    Testkurs. Dabei *Kurseinstellungen überschreiben: Ja* wählen, sonst behält
    der Kurs sein bisheriges Kursformat.
 
-> **Projektstatus: Version 0.7 (Tech-Demo).**
+> **Projektstatus: Version 0.8 (Tech-Demo).**
 > Der Ablauf Intake → Drehbuch → Generator → Import ist an zwei Beispielkursen
 > durchgespielt, einschließlich H5P-Inhalten, Badge und Nachlieferung in einen
 > laufenden Kurs, mit Claude Code und mit ChatGPT. Die Moodle-Module Test,
 > Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung und Glossar (seit 0.6)
 > und die Kursformate Kacheln, Wochen, Ein-Themen, Komprimiert und
-> Einzelaktivität (seit 0.7) sind gebaut und geprüft; der Import-Test auf der
-> Plattform steht für Test, Buch und die neuen Formate noch aus. Glossar-
-> Einträge kommen beim Import nur mit „Nutzer einbeziehen“ an, sonst über eine
-> mitgelieferte XML-Datei (Import-Test 2). Kein offizielles Produkt der
+> Einzelaktivität (seit 0.7) sind gebaut und geprüft, ebenso der Website-Modus
+> (seit 0.8: ein Abschnitt als eine HTML-Seite mit Kapiteln und Übungen); der
+> Import-Test auf der Plattform steht für die neuen Formate und den
+> Website-Modus noch aus. Glossar-Einträge kommen über eine mitgelieferte
+> XML-Datei in den Kurs (fester Schritt nach dem Import). Kein offizielles Produkt der
 > Plattform; wenn sich die Lernplattform ändert, wird der Skill angepasst.
 
 ## Systemübersicht
@@ -90,7 +91,8 @@ fertige Kurssicherung zum Import.
 | Moodle-Module: Test (Multiple Choice, Wahr/Falsch, Kurzantwort; Fragen in der Fragensammlung), Aufgabe (Text- und Dateiabgabe), Datei, Verzeichnis, Forum, Buch mit Kapiteln, Abstimmung, Glossar | Weitere Fragetypen im Test (Zuordnung, Lückentext, numerisch), Zeitlimits, Forum-Diskussionen |
 | H5P: Interactive Book, Branching Scenario, Question Set, Drag and Drop, Fill in the Blanks, Dialog Cards, Course Presentation; Bausteine Text, Bild, Multiple Choice, True/False, Drag the Words, Mark the Words, Summary, Single Choice Set | Weitere H5P-Typen (Interactive Video, Image Hotspots, Memory …) |
 | Feedback-Umfragen, Links/Videos (eingebettet), Badges, Kursbild, Abschlussverfolgung | Gruppen, Termine, Kursabschluss-Kriterien |
-| Kursbanner als erstes Element (Bild, Titel, ein Satz); Bild von der KI erzeugt, gerendert (`scripts/banner.py`) oder von der Lehrkraft nach Prompt; Kachelbilder aus `assets/` | Abschnitts- und Kachelbilder automatisch aus dem Material |
+| Kursbanner als erstes Element (Bild, Titel, ein Satz); Bild von der KI erzeugt, gerendert (`scripts/banner.py`) oder von der Lehrkraft nach Prompt; Kursbild und Kachelbilder textfrei (`banner.py --kachel`: eigenes Motiv je Abschnitt) | Abschnitts- und Kachelbilder automatisch aus dem Material |
+| Website-Modus: ein Abschnitt als eine HTML-Seite (eingebettet, Vollbild oder neues Fenster) mit Startseite, Kapitelnavigation, Fortschritt und Übungen mit Rückmeldung (Quiz, Zuordnen, Lückentext, Markieren, Lernkarten, Geschichte); dieselbe Kursdatei, `build.py --website` | Bewertung und Abschluss je Übung in der Website, eigene Spiele und Simulationen als Vorlage |
 | Zugriffsbeschränkung „sichtbar ab Datum“; Nachlieferung per Delta-Sicherung | Andere Zugriffsbedingungen (Abschluss von X, Bewertung, Gruppe) |
 
 ## Repository-Struktur
@@ -107,15 +109,15 @@ examples/      netzwerk9/  – eine Einheit, 25 min: Vorbild für neue Kurse
                module/ – ein Abschnitt mit Test, Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar
                (je kurs.md, assets/, steckbrief.yaml)
 tools/h5ptest/ Render-Test der H5P-Inhalte außerhalb der Plattform (h5p-standalone + Playwright)
+tools/jsprobe/ Fünf-Minuten-Test: läuft JavaScript im Textfeld und in einer eingebetteten Website?
 CHANGELOG.md   Versionen und bekannte Lücken
 ```
 
 ## Nach dem Import
 
 Badge aktivieren (Mehr → Badges), Kursbild prüfen, Probedurchlauf als
-Schüler/in. Hat der Kurs ein Glossar mit Einträgen und sind sie nach dem Import
-leer, die mitgelieferte Datei `…_glossar.xml` über Glossar → Mehr →
-*Einträge importieren* einspielen. Wenn etwas nicht passt, reicht ein
+Schüler/in. Hat der Kurs ein Glossar mit Einträgen: Glossar → Mehr →
+*Einträge importieren* → die mitgelieferte Datei `…_glossar.xml`. Wenn etwas nicht passt, reicht ein
 Screenshot an den Assistenten; er ändert die Inhalte und baut die Sicherung
 neu.
 
@@ -132,7 +134,17 @@ die Bilder in `examples/netzwerk9/assets` sind Platzhalter. `build.py` prüft di
 mit `scripts/check.py` (auch einzeln: `python3 scripts/check.py <datei.mbz>`, Ausgabe `OK` oder `FEHLER`-Zeilen).
 `python3 scripts/tests/test_kursdatei.py` prüft Parser und Beispiele, `scripts/tests/test_check.py` das Prüfskript,
 `scripts/tests/mbz_diff.py` vergleicht zwei Sicherungen ohne IDs und Zeitstempel, `scripts/tests/render_vorlagen.py`
-rendert die Kursseite je Designvorlage bei 390 und 1200 px (Playwright; `--vorlage` an `build.py` wählt die Vorlage).
+rendert die Kursseite je Designvorlage bei 390 und 1200 px (Playwright; `--vorlage` an `build.py` wählt die Vorlage),
+`scripts/tests/test_website.py` baut netzwerk9 und alltagskompetenz als Website und klickt Navigation und Übungen bei
+390 und 1280 px durch.
+
+Website-Variante des Beispiels (eine HTML-Seite statt zehn Aktivitäten; Vorschau `…_website.html` neben der `.mbz`):
+
+```bash
+python3 scripts/build.py --content examples/netzwerk9 --website
+```
+
+![Website-Modus: netzwerk9 am Desktop und auf dem Handy](docs/website-netzwerk9.png)
 
 ## Kurs in Etappen
 

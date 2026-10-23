@@ -33,7 +33,11 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
    `examples/alltagskompetenz/` = alle Elementtypen). Kein Python schreiben. Erstes Element in `## Allgemeines` ist
    `### Banner:` (Bild + Titel + ein Satz); Bild nach intake.md §4: selbst erzeugt, `python3 scripts/banner.py`, oder ohne `bild:`.
    Kursformat aus dem Steckbrief (`format:` themen, kacheln, wochen, einthemen, komprimiert, einzelaktivitaet); bei Kacheln
-   je Abschnitt `kachelbild:` (PNG aus `assets/`) oder `kachelicon:`.
+   je Abschnitt `kachelbild:` (PNG 900 × 600, eigenes Motiv je Abschnitt; `banner.py --kachel --nummer 1-N`) oder
+   `kachelicon:`, Abschnittstitel dann höchstens ~35 Zeichen. Kursbild und Kachelbilder ohne Text (die Plattform setzt
+   Namen darüber); Banner mit Text nur als `Bild:` im Abschnitt.
+   Website-Modus (Abschnitt als eine HTML-Seite mit Kapitelnavigation, Übungen ohne Bewertung): `kurs.website: ja` im
+   Steckbrief oder `website: ja` am Abschnitt; Kursdatei bleibt gleich (kursdatei.md §7a).
    `python3 scripts/build.py --content <kursordner> --proto` (Erstkurs) oder ohne `--proto`.
    Etappen: `--delta` (alle `status: pending`) oder `--delta le2,le3`; Teile = `teil:` im Abschnitt. Freigabe nach Datum:
    `sichtbar_ab:` im Steckbrief oder `sichtbar ab:` in der Kursdatei. Parserfehler nennen Zeile und Element: beheben, nicht raten.
@@ -43,9 +47,8 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
    `python3 scripts/check.py <datei.mbz>`. Wenn möglich Rendertest mit h5p-standalone und den Bibliotheken aus §B.2.
 5. **Lieferung**: `.mbz` + kurzer Import-Hinweis (Ziel „Inhalte löschen und wiederherstellen“ bzw. bei Delta
    „Zusammenführen“, neuer Abschnitt landet hinten; „Kurseinstellungen überschreiben: Ja“, sonst bleibt das alte Kursformat;
-   Badge nach Import aktivieren; Kursbild prüfen). Glossar mit Einträgen: „Nutzer einbeziehen“ angehakt lassen; fehlen die
-   Einträge danach, die XML-Datei neben der `.mbz` über Glossar → Mehr → Einträge importieren einspielen (`build.py` schreibt
-   sie und nennt den Weg). Steckbrief-Teile auf `delivered`.
+   Badge nach Import aktivieren; Kursbild prüfen). Glossar mit Einträgen, fester Schritt nach dem Import:
+   Glossar → Mehr → Einträge importieren → `<kurs>_glossar.xml` (liegt neben der `.mbz`, `build.py` nennt den Namen). Steckbrief-Teile auf `delivered`.
 
 ## Harte Regeln
 
@@ -90,6 +93,7 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
 Kursformate Themen, Kacheln, Wochen, Ein-Themen, Komprimiert, Einzelaktivität (keine Lernlandkarte, kein Mimo); Moodle-Module
 nur Test (MC, RF, Kurzantwort), Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar (keine Lektion, Wiki, Datenbank,
 Workshop); H5P nur die Typen aus §B.2; geänderte Teile eines Kurses lassen sich per Sicherung nicht aktualisieren (löschen +
-Delta). Delta-Zusammenführen hängt neue Abschnitte hinten an (verifiziert 2026-10-23). Glossareinträge kommen nur mit
-„Nutzer einbeziehen“ an (sonst XML-Import). Kursformate außer Themen, Kachelbilder, Test und Buch sind noch nicht per Import
-auf der Plattform verifiziert (Stand 0.7): beim ersten Einsatz in einen Testkurs importieren.
+Delta). Website-Modus: Übungen ohne Bewertung, Badge-Voraussetzungen bleiben Aktivitäten (Import-Test offen).
+Delta-Zusammenführen hängt neue Abschnitte hinten an (verifiziert 2026-10-23). Glossareinträge kommen per XML-Import nach der
+Wiederherstellung. Kursformate außer Themen, Kachelbilder, Test und Buch sind noch nicht per Import
+auf der Plattform verifiziert (Stand 0.8): beim ersten Einsatz in einen Testkurs importieren.
