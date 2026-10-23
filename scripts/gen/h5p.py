@@ -385,7 +385,8 @@ def drag_question(name, zones, elements, width=760, height=480, intro="",
     p["behaviour"]["showTitle"] = bool(title)
     p["scoreExplanation"] = ""
     p["title"] = title
-    return Hvp(name, libs.lib("DragQuestion"), p, intro=intro, completion="view", grademax=len(elements))
+    files = [(background.local_path, background.h5p_path)] if background else []
+    return Hvp(name, libs.lib("DragQuestion"), p, intro=intro, completion="view", grademax=len(elements), files=files)
 
 
 # ---------------------------------------------------------------- branching

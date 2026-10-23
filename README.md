@@ -44,8 +44,8 @@ fertige Kurssicherung zum Import.
 Lehrkraft ──▶ KI-Assistent ──▶ Drehbuch (Text, zum Gegenlesen)
  Beschreibung   liest SKILL.md          │ Freigabe
  + Material                             ▼
-                               content/course.py ──▶ scripts/build.py ──▶ kurs.mbz
-                               Inhalte in Python       Generator (gen/)      │
+                               kurs.md ──────────▶ scripts/build.py ──▶ kurs.mbz
+                               Drehbuch als Kursdatei  Generator (gen/)      │
                                                                              ▼
                                    ByCS-Lernplattform ◀── Kurs wiederverwenden → Wiederherstellen
 ```
@@ -54,8 +54,9 @@ Lehrkraft ──▶ KI-Assistent ──▶ Drehbuch (Text, zum Gegenlesen)
   XML-Dateien, Hashes und IDs baut der Generator.
 - Das Drehbuch enthält den gesamten Kurs als kurzen Text mit Zeitschätzung
   je Element und Quellenmarkierung (aus dem Material / von der KI ergänzt).
-  Gebaut wird erst nach Freigabe. Vor der Lieferung prüft ein zweiter,
-  unabhängiger Lauf Inhalt und Aufgabenlogik.
+  Dieselbe Datei ist die Kursdatei: Der Generator liest sie direkt, nichts
+  wird nach der Freigabe noch einmal abgetippt. Vor der Lieferung prüft ein
+  zweiter, unabhängiger Lauf Inhalt und Aufgabenlogik.
 - Die Sicherung ist nicht an einen Account gebunden; der Import läuft in jedem
   Kurs der Plattform ohne Vorarbeit.
 
@@ -86,11 +87,13 @@ Lehrkraft ──▶ KI-Assistent ──▶ Drehbuch (Text, zum Gegenlesen)
 ```
 SKILL.md       Einstieg für den KI-Agenten: Ablauf, harte Regeln, Grenzen
 references/    spec.md (Sicherungsformat, Plattformwerte, H5P-Strukturen),
+               kursdatei.md (Format der Kursdatei kurs.md),
                h5p-vorlagen.md (json_content aller Typen, deutsche UI-Texte),
                skelette.md (XML-Skelette), intake.md (Fragerunden, Drehbuch, Steckbrief)
-scripts/       Generator (gen/), build.py, Vorlagen
+scripts/       Generator (gen/), build.py, Vorlagen, tests/
 examples/      netzwerk9/  – eine Einheit, 25 min: Vorbild für neue Kurse
                alltagskompetenz/ – großer Kurs mit Unterabschnitten, Badge, Delta
+               (je kurs.md, assets/, steckbrief.yaml)
 tools/h5ptest/ Render-Test der H5P-Inhalte außerhalb der Plattform (h5p-standalone + Playwright)
 CHANGELOG.md   Versionen und bekannte Lücken
 ```
@@ -106,10 +109,12 @@ er ändert die Inhalte und baut die Sicherung neu.
 Beispielkurs direkt aus dem Generator (Python 3.11+, PyYAML, Pillow):
 
 ```bash
-python3 scripts/build.py --content examples/netzwerk9 --no-render
+python3 scripts/build.py --content examples/netzwerk9
 ```
 
-Die Bilder in `examples/netzwerk9/assets` sind ebenfalls Platzhalter.
+Der Kursinhalt steht in `examples/netzwerk9/kurs.md` (Format: `references/kursdatei.md`);
+die Bilder in `examples/netzwerk9/assets` sind Platzhalter. `python3 scripts/tests/test_kursdatei.py`
+prüft Parser und Beispiele, `scripts/tests/mbz_diff.py` vergleicht zwei Sicherungen ohne IDs und Zeitstempel.
 
 ## Kurs in Etappen
 
@@ -132,12 +137,12 @@ verloren.
 - [x] H5P-Render-Test und inhaltliche Gegenprüfung durch zweiten Agenten
 - [x] Delta-Sicherung („Zusammenführen“) und „sichtbar ab Datum“
 - [x] Intake mit Steuerungsgrad, Drehbuch-Format, Zeitcheck, Änderungsliste
+- [x] Drehbuch-Parser: Das Drehbuch ist die Kursdatei (`kurs.md`), der Generator liest sie direkt
 - [ ] Menüführung: „Womit starten wir?“ – Thema, altes Material, Material + Fragen, Fragen-Intake
 - [ ] Alle Kursformate (Kacheln, Grid, Wochen …) und alle Modultypen (Test, Aufgabe, Forum …)
 - [ ] Schlanke Designvorlagen zur Auswahl; Kursbanner und Bilder sinnvoll eingebunden, generiert vom Assistenten, wenn er es kann
 - [ ] HTML-Formatierung für Lesetexte: Überschriften, Listen, Merk- und Beispielkästen statt Fließtext
 - [ ] One-Page-Darstellung ohne Ladezeiten: H5P im Textfeld, Kurs als eigene Website mit eigenen Spielen
-- [ ] Drehbuch-Parser: Drehbuch → `content/` automatisch statt von Hand
 
 Reihenfolge und Details in [`ROADMAP.md`](ROADMAP.md); die Liste dort definiert Version 1.0.
 

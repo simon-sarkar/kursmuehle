@@ -93,48 +93,79 @@ Lieferung zwei Varianten einer Abschnittsseite zur Auswahl.
 
 Antworten unter `kurs.design` im Steckbrief; bei „weiß nicht“: `design.varianten: true` → zwei Varianten zeigen.
 
-## 5. Drehbuch – Inhalt zum Lesen vor dem Bau
+## 5. Drehbuch = Kursdatei – Inhalt zum Lesen vor dem Bau
 
 Zweck: Die Lehrkraft liest den gesamten Inhalt als Text, korrigiert, promptet nach; gebaut wird erst die freigegebene Fassung.
 Lesen und Nachprompten ist die Reibung – **so kurz wie möglich, so lang wie nötig**. Kein Prosa-Rahmen, keine
-Erklärungen an die Lehrkraft, keine Wiederholung des Steckbriefs.
+Erklärungen an die Lehrkraft, keine Wiederholung des Steckbriefs. Das Drehbuch ist zugleich die Kursdatei `kurs.md`:
+`scripts/build.py` liest sie direkt; Quellen-, Zeit- und Bezugsmarker ignoriert der Parser. Vollständige Referenz
+(alle Angaben, Bausteine, Grenzen): `references/kursdatei.md`. Vorbild: `examples/netzwerk9/kurs.md`.
 
-Format (Markdown, feste Reihenfolge):
+Format (Markdown, Überschriften tragen die Struktur, Angaben stehen klein geschrieben direkt darunter):
 
 ```
 # Drehbuch v1 · <Kurstitel> · <Umfang> min
+v2: S2 gekürzt · Frage 3 ersetzt                       Änderungsliste (wird ignoriert)
+farbe: #0F766E                                          optional: Akzentfarbe, kursbild: datei.png
 
-## LE 1 · <Titel> · 20 min
-### Lesebuch (3 Seiten)
-**S1 <Titel>** (4 min) <Text, so wie er im Kurs steht> [Quelle: Buch S. 12] / [KI]
-   MC: <Frage>? · <A> · ✔<B> · <C>     → Rückmeldung B: <Satz>
-**S2 …**
-### Lernkarten (7) · 4 min
-<Vorderseite> → <Rückseite>
-…
-### Quiz (6 Fragen, 5 richtig = bestanden) · 6 min
+## <Abschnitt> · 25 min                                 ## Allgemeines = Abschnitt 0 (optional)
+teil: le1                                               Schlüssel für Steckbrief, --delta, sichtbar ab
+### Überblick: <Titel>                                  Kopfkarte; untertitel:, dauer:, dann - Lesen: … / - Üben: …
+### Textfeld: <Name> · 2 min [Quelle: Folie 3]          kurzer Input auf der Kursseite
+Vorspann: <Einleitungssatz>
+<Absatz>                                               Leerzeile = neuer Absatz; **fett**, *kursiv*, <br>
+- <Punkt> / 1. <Schritt>                                Liste / Schritte
+| <Begriff> | <Erklärung> |                             Tabelle
+Kasten: <Titel>   (auch Beispiel:, Hinweis:)            Inhalt zwei Leerzeichen eingerückt
+  <Absatz oder Liste>
+Merke: <Merksatz>
+Bild: <datei.png> | <Alt-Text>                          Bild aus assets/
+### Seite: <Titel> · 5 min                              längerer Input, gleiche Bausteine
+### Video: <Titel>                                      Link, eingebettet; darunter die https://-Zeile
+### Lesebuch: <Titel> · 12 min
+Seite: <S1-Titel> (4 min) [KI]                          Bausteine wie oben, dazwischen Fragen:
+MC (<Titel>): <Frage>? · <A> · ✔<B> · <C>                 eine Zeile, oder Antworten als - Liste mit → Rückmeldung
+RF: <Aussage> ✘ → richtig: <Satz> → falsch: <Satz>
+Einsetzen: <Aufgabe>  /  Markieren: <Aufgabe>  /  Lückentext: <Aufgabe>   Text mit *Lücken* in den Zeilen darunter
+Aussagen: <Anweisung>  → - ✔<richtig> · <falsch> · <falsch>   (je Zeile eine Gruppe)
+Schnellquiz:           → - <Frage>? · ✔<richtig> · <falsch>
+### Lernkarten: <Titel> · 4 min
+- <Vorderseite> → <Rückseite> · Bild: <datei.png>
+### Zuordnen: <Titel> (← S2)
+zonen: <A> | <B>
+- <Element> → <A>
+### Quiz: <Titel> · 6 min (← S1–S3)
+bestehen: 80 %                                          einleitung: <Text der Startseite>
 1. <Frage>? · <A> · ✔<B> · <C> · <D>
 2. RF: <Aussage> ✘
-### Geschichte · 12 min
-N1 <Titel>: <Text> → F1
-F1 <Frage>? (a) <Text> → N2 · (b) <Text> → ENDE Harte Landung · (c) … → N3
-ENDE Harte Landung: <Text>
+### Geschichte: <Titel> · 12 min
+start: <Titel> | <Untertitel>                           bild: <datei.png>
+Szene (n1): <Titel> → f1                                Absätze darunter
+Frage (f1): <Frage>?
+- <Antwort> → n2
+- <Antwort> → hart
+Ende (hart): <Titel>                                    Text darunter
+### Umfrage: Selbsteinschätzung                         - <Aussage> (Skala 1–5)
+### Badge: <Name>                                       beschreibung:, bild:, voraussetzung: <Quiztitel>
+### Unterabschnitt: <Titel>                             Elemente darin mit ####
 Zeit LE 1: 20 min ✔ (Soll 20)
 ```
 
 Regeln:
-- Jede Aufgabe eine Zeile; richtige Antwort mit ✔, falsche Aussage mit ✘. Rückmeldungen nur, wo sie etwas erklären.
+- Jede Aufgabe eine Zeile; richtige Antwort mit ✔, falsche Aussage mit ✘. Rückmeldungen (`→`) nur, wo sie etwas erklären.
 - **Erst Input, dann Kontrolle:** Jede bewertete Aufgabe muss aus dem beantwortbar sein, was im selben Lesebuch davor steht
   (oder aus explizit vorausgesetztem Vorwissen). Aktivierungsfragen vor dem Input sind erlaubt, aber unbewertet – als Text
   („Überleg kurz: …“), Auflösung auf der nächsten Seite. Jede Aufgabe im Drehbuch trägt einen Verweis, worauf sie aufbaut
   (`(← S2)`); fehlt der Verweis, ist die Aufgabe falsch platziert. Keine Rückmeldung „falsch“ auf Fragen, die nur Vorwissen testen.
-- **Quellenmarkierung** je Textblock: `[Quelle: …]` (aus dem Material der Lehrkraft) oder `[KI]` (erfunden/ergänzt). Nur im Drehbuch, nicht im Kurs.
+- **Quellenmarkierung** je Textblock: `[Quelle: …]` (aus dem Material der Lehrkraft) oder `[KI]` (erfunden/ergänzt). Nur im Drehbuch,
+  nie im Kurs – der Parser entfernt sie. Eine Zweck- oder Quellenzeile als Kursinhalt ist ein Fehler.
 - **Zeitcheck**: je Aufgabe/Seite Minuten schätzen (Lesen 150 Wörter/min, MC 45 s, Karte 20 s, Quizfrage 45 s, Geschichtsknoten 40 s),
-  je LE summieren, gegen Soll ausweisen; Abweichung > 20 % mit Vorschlag (kürzen/ergänzen) melden.
+  je LE summieren, gegen Soll ausweisen (`Zeit LE 1: …`); Abweichung > 20 % mit Vorschlag (kürzen/ergänzen) melden.
 - Umfang: eine 45-Minuten-Stunde ≈ 2–3 Seiten Drehbuch. Länger nur, wenn der Inhalt es verlangt.
 - **Änderungsliste** bei jeder Revision oben im Drehbuch: `v2: S2 gekürzt · Frage 3 ersetzt · N4 neu · Zeit LE 1 20 → 18 min`.
   Nur die Änderungsliste und die geänderten Blöcke erneut zeigen, nicht das ganze Drehbuch, außer auf Wunsch.
-- Freigabe = „passt“ der Lehrkraft (oder Steuerungsgrad c). Danach Inhalte 1:1 in `content/` übertragen; keine Umformulierung nach der Freigabe.
+- Freigabe = „passt“ der Lehrkraft (oder Steuerungsgrad c). Danach die Datei unverändert als `kurs.md` bauen; keine
+  Umformulierung nach der Freigabe. Meldet der Parser einen Fehler (Zeile, Element), die Zeile korrigieren, nicht den Inhalt ändern.
 
 ## 6. Steckbrief (Ausgabeformat)
 
@@ -170,8 +201,8 @@ Delta neu einspielen). `sichtbar_ab: YYYY-MM-DD` erzeugt eine Datums-Zugriffsbes
 
 ## 7. Übergabe an den Bau
 
-1. Steckbrief als `steckbrief.yaml` neben `build.py` ablegen; freigegebenes Drehbuch als `drehbuch.md` daneben.
-2. Inhalte je Teil aus dem Drehbuch in `content/` übertragen (Daten, keine Logik); Teile-Schlüssel des Steckbriefs = Registry in `build.py`.
-3. `python3 build.py --proto` (Erstkurs) oder `python3 build.py`; Etappen: `python3 build.py --delta` (alle `pending`)
-   oder `--delta le2,le3`.
-4. Nach erfolgreichem Import die gelieferten Teile auf `delivered` setzen.
+1. Kursordner anlegen: `kurs.md` (freigegebenes Drehbuch), `steckbrief.yaml`, `assets/` (PNG, per Dateiname referenziert).
+   Teile-Schlüssel des Steckbriefs (`teile:`) = `teil:` an Abschnitten und Unterabschnitten der Kursdatei.
+2. `python3 scripts/build.py --content <kursordner> --proto` (Erstkurs) oder ohne `--proto`; Etappen:
+   `--delta` (alle `pending`) oder `--delta le2,le3`.
+3. Nach erfolgreichem Import die gelieferten Teile auf `delivered` setzen.
