@@ -57,6 +57,8 @@ FEHLER = [
     ("## A\nwebsite: vielleicht\n### Textfeld: X\nt", "Zeile 1 (Abschnitt „A“): website „vielleicht“: erlaubt sind ja"),
     ("## A\nwebsite: ja\n### Textfeld: X\nwebsite: ja\nt", "Zeile 3 (Textfeld „X“): website am Element: nur `website: nein`"),
     ("## A\nwebsite: ja\n### Quiz: X\n1. F? · a · b", "Zeile 4 (Quiz „X“): MC ohne ✔"),
+    ("## A\nwebsite: textfeld\n### Quiz: X\nwebsite: textfeld\n1. F? · ✔a · b", "Zeile 3 (Quiz „X“): website am Element: nur `website: nein`"),
+    ("## A\nwebsite: textfeld\n### Lernkarten: X\n- ohne Pfeil", "Zeile 4 (Lernkarten „X“): Lernkarte: `Vorderseite → Rückseite` erwartet"),
 ]
 
 # Textbausteine (AP4): jede Zeile ein Baustein, erwarteter Teil des HTML
@@ -220,6 +222,80 @@ def check_fehler():
         assert [e[0] for e in glos.entries] == ["Begriff", "Zwei"] and glos.entries[0][2] == ["Alias"]
         assert forum.completion == "post" and forum.type == "general"
         assert auf.submission == {"onlinetext", "file"} and auf.grade == 20 and auf.gradepass == 10 and auf.duedate
+        bad += check_textfeld(path)
+    return bad
+
+
+TEXTFELD = """## Allgemeines
+### Überblick: Kurs
+- Lesen: alles
+## Teil
+website: textfeld
+### Überblick: Teil
+- Üben: Quiz
+### Textfeld: Lesen
+Ein Absatz.
+### Quiz: Q1
+abschluss: ansehen
+1. F? · ✔a · b
+### Lernkarten: L
+- Vorne → Hinten · Bild: router.png
+### Quiz: Q2
+website: nein
+1. G? · ✔c · d
+### Lesebuch: B
+Seite: S
+Text.
+### Quiz: Q3
+abschluss: ansehen
+1. H? · ✔e · f
+### Quiz: Q4
+bestehen: 80 %
+1. I? · ✔g · h
+### Zuordnen: Z
+abschluss: bestehen
+zonen: A | B
+- x → A
+### Badge: Abzeichen
+bild: router.png
+voraussetzung: Q3
+"""
+
+
+def check_textfeld(path):
+    """Textfeld-Modus (AP7b): Übungen ohne Abschluss „bestehen“ werden Blöcke; Abschlussrelevantes (Q4, Z), Badge-
+    Voraussetzung (Q3), `website: nein` (Q2) und Lesebuch bleiben H5P. Kachelformat ohne Überblick in Allgemeines."""
+    bad = 0
+    from gen.mbz import HvpItem, Label
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(TEXTFELD)
+    k = parse(path, A, {"teile": {}})
+    allg, teil = k["sections"][0].items, k["sections"][1].items
+    typen = [(it.name, type(it).__name__) for it in teil]
+    want = [("Überblick", "Label"), ("Lesen", "Label"), ("Q1", "Label"), ("L", "Label"), ("Q2", "HvpItem"),
+            ("B", "HvpItem"), ("Q3", "HvpItem"), ("Q4", "HvpItem"), ("Z", "HvpItem")]
+    if typen != want:
+        print(f"FALSCH Textfeld-Modus: {typen}\n       erwartet {want}")
+        bad += 1
+    q1, lk = teil[2], teil[3]
+    ids = [it.intro.split('id="', 1)[1][:12] for it in (q1, lk)]
+    if not (all(i.startswith("kmb-") for i in ids) and ids[0] != ids[1]):
+        print(f"FALSCH Textfeld-Modus: Block-ids {ids}")
+        bad += 1
+    if not (lk.files and lk.files[0][1] == "router.png" and 'src="@@PLUGINFILE@@/router.png"' in lk.intro):
+        print(f"FALSCH Textfeld-Modus: Bild der Lernkarte als Datei im Textfeld ({lk.files})")
+        bad += 1
+    if f'name="{ids[0]}-' not in q1.intro or len(k["textfelder"]) != 2:
+        print("FALSCH Textfeld-Modus: Feldnamen mit Block-id, zwei Blöcke für die Vorschau")
+        bad += 1
+    assert isinstance(q1, Label) and isinstance(teil[4], HvpItem)
+    # Kachelformat: Überblick in Allgemeines fällt weg (doppelt die Kacheln), im Abschnitt bleibt er
+    for fmt, n_allg in (("themen", 1), ("kacheln", 0)):
+        k = parse(path, A, {"teile": {}, "kurs": {"format": fmt}})
+        n = len(k["sections"][0].items)
+        if n != n_allg or k["sections"][1].items[0].name != "Überblick":
+            print(f"FALSCH {fmt}: {n} Elemente in Allgemeines, erwartet {n_allg}")
+            bad += 1
     return bad
 
 

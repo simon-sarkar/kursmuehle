@@ -250,7 +250,7 @@ Bild siehe H. Nach Import inaktiv.
 
 ### L. Inhaltsregeln
 
-Laufzeitfassung für den Assistenten: `didaktik.md` (Rangfolge, D1–D10, nur Prinzipien) und `qualitaet.md` (Prüfdurchlauf,
+Laufzeitfassung für den Assistenten: `intake.md` §3 (Rangfolge, D1–D10, nur Prinzipien) und `qualitaet.md` (Prüfdurchlauf,
 Markerliste mit Proben). Hier nur, was der Generator dazu beiträgt, und die Begründungen.
 
 - Der Generator mischt die Antworten (H5P `randomAnswers`, Test `shuffle`, Website deterministisch je Frage); die Position

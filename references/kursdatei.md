@@ -32,7 +32,7 @@ teil: le1
 
 Ignoriert werden überall: `[Quelle: …]`, `[KI]`, `[KI: …]`, `[Zweck: …]`, `(← S2)`, `(← Elementtitel)`, `(4 min)` und
 `· 4 min` am Ende von Überschriften und `Seite:`-Zeilen, Zeilen `Zeit … min` (Zeitcheck), `v2: …` (Änderungsliste),
-`Angenommen: …` (Annahmen ohne Rückfrage), `Abweichung: …` (Abweichung von `didaktik.md`), `Offen: …` (Fachzweifel für
+`Angenommen: …` (Annahmen ohne Rückfrage), `Abweichung: …` (Abweichung von D1–D10, `intake.md` §3), `Offen: …` (Fachzweifel für
 die Lehrkraft) und `Bildwunsch: …` (Bildprompts für die Lehrkraft); die vier Zeilenarten gehören in den Kopf. Nichts davon
 landet im Kurs. Andere Zeilen im Kopf meldet der Parser als ignoriert; `farbe:` und `kursbild:` gelten trotzdem.
 
@@ -48,8 +48,8 @@ sind Fehler, keine Vermutungen.
 | Abschnitt | `teil` | Schlüssel für `--delta` und `sichtbar_ab` im Steckbrief (`teile:`) |
 | Abschnitt | `farbe` | Akzentfarbe des Abschnitts (vererbt an Unterabschnitte und Elemente) |
 | Abschnitt | `kachelbild`, `kachelicon` | Kachelformat: PNG aus `assets/` als Kachelbild (textfrei, etwa 3:2, 900 × 600, eigenes Motiv je Abschnitt; `banner.py --kachel`), FontAwesome-4-Name (book, lightbulb-o, flask, globe, laptop, puzzle-piece, trophy …) als Icon; in anderen Formaten ohne Wirkung. Alternativ im Steckbrief unter `teile.<teil>.kachelbild` / `.kachelicon` |
-| Abschnitt | `website` | `ja` (= eingebettet, im Rahmen der Plattform), `vollbild` (Datei füllt das Fenster), `neues fenster` (Pop-up) oder `nein`: Abschnitt als eine HTML-Seite (§7a); überschreibt `kurs.website` im Steckbrief |
-| Element | `website: nein` | im Website-Modus als Plattform-Aktivität behalten (statt Kapitel der Website) |
+| Abschnitt | `website` | `textfeld` (jede Übung ein Block im Textfeld), `ja` (= eingebettet, im Rahmen der Plattform), `vollbild` (Datei füllt das Fenster), `neues fenster` (Pop-up) oder `nein`: Abschnitt als eine HTML-Seite bzw. Übungen im Textfeld (§7a); überschreibt `kurs.website` im Steckbrief |
+| Element | `website: nein` | im Website- oder Textfeld-Modus als Plattform-Aktivität behalten |
 | Abschnitt, Unterabschnitt, Element | `sichtbar ab` | `JJJJ-MM-TT`, Datumsbedingung 06:00 Uhr; überschreibt den Steckbrief |
 | Abschnitt, Unterabschnitt, Element | `prototyp: nein` | wird bei `--proto` weggelassen |
 | Unterabschnitt | `teil` | wie beim Abschnitt |
@@ -147,6 +147,8 @@ Abschnittstitel höchstens etwa 35 Zeichen (`check.py` warnt darüber).
 
 Steht ein `### Banner:` im Kurs, trägt jede Überblickskarte keinen Titel und Untertitel mehr, nur Dauer und Phasen
 (Banner und Karte zeigten sonst beides doppelt).
+Im Kachelformat lässt der Generator einen `### Überblick:` in Allgemeines weg; er doppelt die Kacheln. Überblicke in den
+Abschnitten bleiben.
 
 ## 5. Fragen (Lesebuch-Seiten und Quiz)
 
@@ -267,6 +269,23 @@ Die Kursdatei bleibt gleich; der Generator setzt die Elemente um:
 Bewertete Teile gehören nicht in die Website: Was ein Badge voraussetzt, bleibt automatisch Aktivität; für Noten
 `Test` nehmen. Abschluss der Website ist „ansehen“. Die HTML-Datei liegt nach dem Bau als `<kurs>_website.html` zur
 Vorschau neben der `.mbz`; sie braucht keinen Server und lädt nichts von außen (Bilder stecken in der Datei).
+
+### Textfeld-Modus (`website: textfeld`)
+
+Jede Übung des Abschnitts wird ein Block in einem Textfeld, direkt auf der Kursseite zwischen den Lesetexten, ohne
+iframe und ohne Nachladen. Gedacht für einzelne Übungen, nicht für ganze Einheiten (dafür die Website).
+
+| Element | im Textfeld-Modus |
+|---|---|
+| Quiz, Zuordnen, Lernkarten, Lückentext, Geschichte | Block im Textfeld: Umsetzung wie in der Website (Prüfen, Rückmeldung, Lösung zeigen, Zähler), ohne Bewertung; Bilder als Dateien des Textfelds |
+| dieselben mit Abschluss `bestehen` (beim Quiz Standard), Badge-Voraussetzungen, `website: nein` | bleiben H5P-Aktivität |
+| Textfeld, Seite, Lesebuch, Banner, Überblick, Video, Link, Moodle-Module | unverändert |
+
+Jeder Block trägt eine eigene id; sein CSS gilt nur unter dieser id, sein Skript läuft in einer eigenen Funktion ohne
+globale Namen. Mehrere Blöcke auf einer Kursseite laufen nebeneinander, ein zweiter Lauf desselben Skripts (Abschnitt
+nachgeladen) bleibt wirkungslos. Ohne JavaScript (die Moodle-App führt es möglicherweise nicht aus) zeigt der Block den
+Hinweis, die Kursseite im Browser zu öffnen. Je Block kommen etwa 10 KB Stil und Skript auf die Kursseite; `check.py`
+warnt ab 60 KB je Block. Nach dem Bau liegt `<kurs>_textfeld.html` mit allen Blöcken zur Vorschau neben der `.mbz`.
 
 Python bleibt als Ausweg: Liegt keine `kurs.md`, aber `content/course.py` mit `build(A, sb, proto)` im Kursordner,
 wird sie genutzt (Bausteine in `scripts/gen/html.py`).

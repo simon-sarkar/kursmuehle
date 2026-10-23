@@ -6,14 +6,14 @@ alles) vor dem Bau. Bei einer Revision nur über die geänderten Blöcke.
 ## Ablauf
 
 1. Das Drehbuch Element für Element gegen die Markerliste lesen. Gibt eine Zeile eine Probe an, entscheidet die Probe.
-2. Danach jedes Element gegen D1–D10 (`references/didaktik.md`) und fachlich: die Lösung jeder Frage im Bezugselement
+2. Danach jedes Element gegen D1–D10 (`references/intake.md` §3) und fachlich: die Lösung jeder Frage im Bezugselement
    (`(← …)`) nachschlagen. Widerspricht sie ihm oder ist sie fachlich zweifelhaft, bleibt sie stehen und bekommt eine
    Zeile `Offen: <Frage an die Lehrkraft>` im Drehbuch-Kopf; nicht still ändern.
 3. Treffer beheben, nicht melden; die Lehrkraft bekommt keine Prüfliste, nur das bereinigte Drehbuch. Ausnahmen: der
    Zeitcheck-Vorschlag (D8) bleibt in der `Zeit`-Zeile, Fachzweifel stehen als `Offen:`.
 4. Kein Treffer ist, was im Steckbrief unter `vorgaben:` steht (Genderstern, Emojis, Ausrufezeichen, Sie-Form). Wörtlich
    übernommenes Material ist für die Sprachmarker kein Treffer, für die Fachprüfung in Schritt 2 schon. Abweichungen von
-   D1–D10 bekommen die `Abweichung:`-Zeile aus `didaktik.md`.
+   D1–D10 bekommen die `Abweichung:`-Zeile aus `intake.md` §3.
 
 ## Markerliste
 

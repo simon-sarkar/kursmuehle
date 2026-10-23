@@ -12,5 +12,6 @@ Pakete, die die Plattform brauchen (Import-Tests), sind markiert; sie bleiben be
 | AP5 | Neue Modultypen aus `references/export-schemata/`: Test, Aufgabe, Datei, Forum, Buch, Abstimmung, Verzeichnis, Glossar | nein (Import-Test: Autor) |
 | AP6 | Kursformate: Kacheln zuerst (Kursoptionen, tilephoto/tileicon je Abschnitt), dann Wochen, Ein-Themen, Komprimiert | nein (Import-Test: Autor) |
 | AP7 | Website-Modus: HTML-Ressource mit Navigation, Inhalten, JS-Quiz als Vorlage | nein |
-| AP8 | `references/didaktik.md` + `references/qualitaet.md` (Entwürfe, Freigabe durch Autor) | nein |
+| AP7b | Textfeld-Modus: Übungen als Block im Textfeld ohne iframe (nach der JS-Probe vom 23.10.) | nein (Import-Test Probe 3: Autor) |
+| AP8 | `references/didaktik.md` (seit 0.9.1 in `intake.md` §3) + `references/qualitaet.md` (Entwürfe, Freigabe durch Autor) | nein |
 | AP9 | Fremdtest: frischer Agent nur mit dem Repo baut einen Kurs; Protokoll der Reibungspunkte | nein |

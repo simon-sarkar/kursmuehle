@@ -4,6 +4,7 @@ Format: references/kursdatei.md (vollständig), references/intake.md §5 (Kurzfa
 Fehler nennen Zeile und Element; unbekannte Typen und Angaben brechen ab.
 """
 import datetime
+import hashlib
 import os
 import re
 import sys
@@ -12,9 +13,9 @@ import zoneinfo
 
 from . import h5p as H
 from . import html as T
-from .website import WEB_TYPEN, ART, Website
+from .website import ART, BLOCK_TYPEN, WEB_TYPEN, Website
 from .mbz import (Assign, Badge, Book, Choice, Feedback, Folder, Forum, Glossary, HvpItem, Label, MultiChoice, Page,
-                  Quiz, Resource, Section, ShortAnswer, SubSection, TrueFalse, Url)
+                  Quiz, Resource, Section, ShortAnswer, SubSection, TrueFalse, Url, moodle_format)
 
 
 class KursdateiFehler(Exception):
@@ -97,8 +98,10 @@ JA = ("ja", "yes", "true", "1")
 ANZEIGE = {"eingebettet": "embed", "automatisch": "auto", "neues fenster": "open", "popup": "popup"}
 NEIN = ("nein", "no", "false", "0", "aus")
 # Website-Modus: eingebettet = im Plattform-Rahmen (iframe), vollbild = Datei füllt das Fenster (Moodle „Öffnen“),
-# neues fenster = Pop-up (Moodle-Anzeige 3 ist im Plattformstandard nicht freigegeben)
-WEB_ANZEIGE = {"ja": "embed", "eingebettet": "embed", "vollbild": "open", "neues fenster": "popup", "popup": "popup"}
+# neues fenster = Pop-up (Moodle-Anzeige 3 ist im Plattformstandard nicht freigegeben); textfeld = jede Übung ein Block
+# im Textfeld, ohne iframe (AP7b)
+WEB_ANZEIGE = {"ja": "embed", "eingebettet": "embed", "vollbild": "open", "neues fenster": "popup", "popup": "popup",
+               "textfeld": "textfeld"}
 FARBEN = {"rot": "#BE123C", "grün": "#15803D", "gruen": "#15803D", "blau": "#1D5FD1", "orange": "#B45309", "lila": "#6D28D9"}
 SKALA = ["1 trifft gar nicht zu", "2", "3", "4", "5 trifft voll zu"]
 OK = "✔✓"
@@ -614,6 +617,13 @@ class Parser:
         self.web = None         # Website des aktuellen Abschnitts (Website-Modus, gen/website.py)
         self.web_titel = set()  # Titel der Elemente, die in einer Website aufgegangen sind
         self.websites = []      # (Abschnittstitel, Pfad der HTML-Datei)
+        self.textfeld = False   # Textfeld-Modus im aktuellen Abschnitt: Übungen als Block im Textfeld (AP7b)
+        self.textfelder = []    # (Titel, HTML, Dateien) aller Blöcke, für die Vorschau
+        try:
+            self.kacheln = moodle_format((self.sb.get("kurs") or {}).get("format")) == "tiles"
+        except ValueError:
+            self.kacheln = False    # build.py meldet das unbekannte Format
+        self.allg = False       # aktueller Abschnitt ist Allgemeines (Abschnitt 0)
         self.badge_titel = self._badge_voraussetzungen()   # bleiben im Website-Modus Aktivitäten (Abschluss zählt)
         wk = (self.sb.get("kurs") or {}).get("website")
         self.web_standard = self._web_anzeige(wk, 0, "Steckbrief kurs.website") if wk not in (None, False) else None
@@ -778,7 +788,7 @@ class Parser:
         img = self.kurs_attr.get("kursbild")
         image_path = self._image(img, 1, "Kurs")[0] if img else self.banner_bild
         return {"sections": self.sections, "parts": self.parts, "badges": badges, "image_path": image_path,
-                "titel": self.titel, "farbe": hue, "websites": self.websites}
+                "titel": self.titel, "farbe": hue, "websites": self.websites, "textfelder": self.textfelder}
 
     def _section(self, ln, title, lines, hue):
         element = f"Abschnitt „{title}“"
@@ -804,7 +814,9 @@ class Parser:
         # Website-Modus: Angabe im Abschnitt, sonst Steckbrief kurs.website (nicht für Allgemeines)
         anzeige = self._web_anzeige(attrs["website"], ln, element) if "website" in attrs else \
             (None if allg else self.web_standard)
-        self.web = Website(title or "Allgemeines", hue, anzeige) if anzeige else None
+        self.textfeld = anzeige == "textfeld"
+        self.web = Website(title or "Allgemeines", hue, anzeige) if anzeige and not self.textfeld else None
+        self.allg = allg
         self._items(lines, sec, hue, level=3, section=sec)
         if self.web:
             self._web_fertig(sec)
@@ -895,9 +907,19 @@ class Parser:
         attrs, lines = self._attrs(body, ATTRS[typ], element)
         if self._skip(attrs):
             return None
-        if self.web and typ in WEB_TYPEN and title not in self.badge_titel:
-            if "website" in attrs and str(attrs["website"]).strip().lower() not in NEIN:
-                self.fehler(ln, element, "website am Element: nur `website: nein` (bleibt Plattform-Aktivität)")
+        if typ == "Überblick" and self.allg and self.kacheln:
+            print(f"Hinweis: Kachelformat – Überblick „{title}“ in Allgemeines weggelassen (doppelt die Kacheln)",
+                  file=sys.stderr)
+            return None
+        web = self.web and typ in WEB_TYPEN
+        # Textfeld-Modus: nur formative Übungen; was für den Abschluss zählt (bestehen, beim Quiz Standard), bleibt Aktivität
+        block = self.textfeld and typ in BLOCK_TYPEN and \
+            self._completion(attrs, ln, element, "pass" if typ == "Quiz" else "view", typ) != "pass"
+        if (self.web or self.textfeld) and "website" in attrs and str(attrs["website"]).strip().lower() not in NEIN:
+            self.fehler(ln, element, "website am Element: nur `website: nein` (bleibt Plattform-Aktivität)")
+        if (web or block) and title not in self.badge_titel:
+            if "website" not in attrs and block:
+                return self._block(ln, typ, title, lines, attrs, hue, element, minuten)
             if "website" not in attrs:
                 if self.web.pos is None:
                     self.web.pos = len(container.items)
@@ -1272,6 +1294,21 @@ class Parser:
             html = W.lueckentext(inl(attrs["aufgabe"]), qs)
         W.dateien(k.files)
         W.kapitel_neu(inl(title), html, ART[typ], minuten)
+
+    def _block(self, ln, typ, title, lines, attrs, hue, element, minuten):
+        """Textfeld-Modus: Übung als Block in einem Textfeld (gleiche Umsetzung wie im Website-Modus, ohne iframe)."""
+        n = len(self.textfelder) + 1
+        bid = "kmb-" + hashlib.sha1(f"{self.titel}|{n}|{title}".encode()).hexdigest()[:8]
+        alt, self.web = self.web, Website(inl(title), hue, "textfeld", prefix=bid + "-")
+        try:
+            self._web_element(ln, typ, title, lines, attrs, hue, element, minuten)
+            html, files = self.web.block(bid, ART[typ])
+        finally:
+            self.web = alt
+        self.textfelder.append((title, html, files))
+        item = Label(html, files=files, name=title)
+        item.available_from = self._avail(attrs, ln, element)
+        return item
 
     def _web_lesebuch(self, blocks, k, element):
         """Lesebuch -> [(seitentitel, html)]: Textbausteine, Bilder und Fragen je Seite."""
