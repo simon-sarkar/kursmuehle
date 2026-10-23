@@ -28,8 +28,8 @@ Vorgestellt wurde 0.1 bereits, Durchlauf mit ChatGPT (inklusive selbst generiert
 
 1. **Kursdatei statt Python** – Inhalte als Markdown/YAML, die der Generator direkt liest (Punkt 8).
    Fremde Assistenten schreiben dann kein `content/course.py` mehr; das war die größte Fehlerquelle.
-2. **Prüfskript `scripts/check.py`** – öffnet die fertige `.mbz` und prüft Struktur, IDs, Dateiverweise,
-   H5P-Bibliotheksversionen. Jeder Assistent prüft seine Sicherung selbst, bevor importiert wird.
+2. **Prüfskript `scripts/check.py`** (seit 0.3) – öffnet die fertige `.mbz` und prüft Struktur, IDs, Dateiverweise,
+   H5P-Bibliotheksversionen. `build.py` ruft es nach jedem Bau auf; jeder Assistent prüft so seine Sicherung, bevor importiert wird.
 3. **Menüführung, Kursbanner, Bildgenerierung (wenn der Assistent es kann), zwei bis drei Designvorlagen,
    HTML-Textbausteine** (Punkte 1, 4, 5, 6) –
    ein zusammenhängender Block ohne Plattform-Export.
@@ -41,7 +41,7 @@ Vorgestellt wurde 0.1 bereits, Durchlauf mit ChatGPT (inklusive selbst generiert
 7. **Zweiter Fremdtest** mit frischem Agenten nur mit dem Repo, dann Release 1.0.
 
 Geklärt 23.10.: Import mit Platzhalter-`site.json` in einem anderen Account funktioniert – die Werte sind bedeutungslos,
-`site.json` wird entfernt (AP2). Alt: `site.json` – die Lernplattform ist eine Moodle-Instanz, site_hash für alle gleich,
+`site.json` ist seit 0.3 entfernt (AP2), die Platzhalter stehen fest in `gen/mbz.py`. Alt: `site.json` – die Lernplattform ist eine Moodle-Instanz, site_hash für alle gleich,
 Kategorie beim Import in einen bestehenden Kurs ohne Bedeutung; bestätigt sich das, entfällt die Hürde
 in der Anleitung. Moodle-Version (derzeit 5.2.4) als Feld im Steckbrief plus README-Hinweis für
 „Version nicht unterstützt“.

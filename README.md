@@ -2,9 +2,9 @@
 
 # Kursmühle – Lernplattform-Kurse aus einem Prompt
 
-![Version 0.2.1](docs/badge-version.svg) ![Status: Tech-Demo auf dem Weg zu 1.0](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
+![Version 0.3](docs/badge-version.svg) ![Status: Tech-Demo auf dem Weg zu 1.0](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
 
-**Version 0.2.1** (Stand 23.10.2026) · siehe [`ROADMAP.md`](ROADMAP.md) und [`CHANGELOG.md`](CHANGELOG.md)
+**Version 0.3** (Stand 23.10.2026) · siehe [`ROADMAP.md`](ROADMAP.md) und [`CHANGELOG.md`](CHANGELOG.md)
 
 **Ein KI-Assistent baut aus einer Beschreibung oder eigenem Unterrichtsmaterial eine importierbare Kurssicherung (`.mbz`) für die ByCS-Lernplattform.**
 
@@ -37,7 +37,7 @@ fertige Kurssicherung zum Import.
    Kurs → Mehr → *Kurs wiederverwenden* → *Wiederherstellen*, zuerst in einen
    Testkurs.
 
-> **Projektstatus: Version 0.2 (Tech-Demo).**
+> **Projektstatus: Version 0.3 (Tech-Demo).**
 > Der Ablauf Intake → Drehbuch → Generator → Import ist an zwei Beispielkursen
 > durchgespielt, einschließlich H5P-Inhalten, Badge und Nachlieferung in einen
 > laufenden Kurs, mit Claude Code und mit ChatGPT. Offen sind weitere
@@ -56,7 +56,8 @@ fertige Kurssicherung zum Import.
   wird nach der Freigabe noch einmal abgetippt. Vor der Lieferung prüft ein
   zweiter, unabhängiger Lauf Inhalt und Aufgabenlogik.
 - Die Sicherung ist nicht an einen Account gebunden; der Import läuft in jedem
-  Kurs der Plattform ohne Vorarbeit.
+  Kurs der Plattform ohne Vorarbeit. Vor der Lieferung prüft `scripts/check.py`
+  jede Sicherung auf Struktur, Dateien, IDs und H5P-Versionen.
 
 ## Features
 
@@ -88,7 +89,7 @@ references/    spec.md (Sicherungsformat, Plattformwerte, H5P-Strukturen),
                kursdatei.md (Format der Kursdatei kurs.md),
                h5p-vorlagen.md (json_content aller Typen, deutsche UI-Texte),
                skelette.md (XML-Skelette), intake.md (Fragerunden, Drehbuch, Steckbrief)
-scripts/       Generator (gen/), build.py, Vorlagen, tests/
+scripts/       Generator (gen/), build.py, check.py (Sicherung prüfen), Vorlagen, tests/
 examples/      netzwerk9/  – eine Einheit, 25 min: Vorbild für neue Kurse
                alltagskompetenz/ – großer Kurs mit Unterabschnitten, Badge, Delta
                (je kurs.md, assets/, steckbrief.yaml)
@@ -111,8 +112,10 @@ python3 scripts/build.py --content examples/netzwerk9
 ```
 
 Der Kursinhalt steht in `examples/netzwerk9/kurs.md` (Format: `references/kursdatei.md`);
-die Bilder in `examples/netzwerk9/assets` sind Platzhalter. `python3 scripts/tests/test_kursdatei.py`
-prüft Parser und Beispiele, `scripts/tests/mbz_diff.py` vergleicht zwei Sicherungen ohne IDs und Zeitstempel.
+die Bilder in `examples/netzwerk9/assets` sind Platzhalter. `build.py` prüft die fertige Sicherung am Ende
+mit `scripts/check.py` (auch einzeln: `python3 scripts/check.py <datei.mbz>`, Ausgabe `OK` oder `FEHLER`-Zeilen).
+`python3 scripts/tests/test_kursdatei.py` prüft Parser und Beispiele, `scripts/tests/test_check.py` das Prüfskript,
+`scripts/tests/mbz_diff.py` vergleicht zwei Sicherungen ohne IDs und Zeitstempel.
 
 ## Kurs in Etappen
 
@@ -136,6 +139,7 @@ verloren.
 - [x] Delta-Sicherung („Zusammenführen“) und „sichtbar ab Datum“
 - [x] Intake mit Steuerungsgrad, Drehbuch-Format, Zeitcheck, Änderungsliste
 - [x] Drehbuch-Parser: Das Drehbuch ist die Kursdatei (`kurs.md`), der Generator liest sie direkt
+- [x] Prüfskript `check.py`: jede Sicherung wird vor dem Import auf Struktur, Dateien und H5P-Versionen geprüft
 - [ ] Menüführung: „Womit starten wir?“ – Thema, altes Material, Material + Fragen, Fragen-Intake
 - [ ] Alle Kursformate (Kacheln, Grid, Wochen …) und alle Modultypen (Test, Aufgabe, Forum …)
 - [ ] Schlanke Designvorlagen zur Auswahl; Kursbanner und Bilder sinnvoll eingebunden, generiert vom Assistenten, wenn er es kann

@@ -23,12 +23,13 @@ B.1 Kopf/Versionen
 | backup_version | 2026042000 |
 | backup_release | 5.2 |
 | original_wwwroot | https://lernplattform.bycs.de |
-| original_site_identifier_hash | 6aa9a12f353641854c7eaa8a0fcd932f |
 | module.xml version hvp | 2026062501 |
 | module.xml version subsection/label/page/feedback/url | 2026042000 |
 | course customfields | `schule` (text, Wert leer) · `participants` (checkbox, 0) |
-| category | beliebig; Lehrkraft wählt Ziel beim Import |
-| original_course_id / contextid | beliebig |
+
+Herkunftsangaben (`original_site_identifier_hash`, `original_course_id`, `original_course_contextid`, Kategorie) sind feste
+Platzhalter in `gen/mbz.py`. Beim Import in einen bestehenden Kurs sind sie ohne Bedeutung (belegt 2026-10-23: Import mit
+diesen Platzhaltern in einem fremden Account); die Lehrkraft wählt den Zielkurs beim Wiederherstellen.
 
 B.2 H5P-Bibliotheken (library-String = `machine_name major.minor`)
 
@@ -176,11 +177,12 @@ Bild siehe H. Nach Import inaktiv.
 1. Intake (Intake-Leitfaden): Steuerungsgrad, Rahmen + Material, Gliederung, Formate, Gestaltung → Steckbrief.
 2. **Drehbuch** (Intake-Leitfaden 5): gesamter Inhalt als kompakter Text mit Quellenmarkierung und Zeitcheck → Freigabe
    durch die Lehrkraft (entfällt bei Steuerungsgrad „KI macht alles“). Unabhängige Prüfung auf Drehbuch-Ebene.
-   Das Drehbuch ist die Kursdatei `kurs.md` (Format: `kursdatei.md`); der Generator (`gen/`) liest sie direkt, `site.json` mit B.1.
+   Das Drehbuch ist die Kursdatei `kurs.md` (Format: `kursdatei.md`); der Generator (`gen/`) liest sie direkt.
 3. Prototyp (ein Beispiel je Modultyp, Interactive Book + Branching enthalten) → Lehrkraft importiert → Screenshot.
 4. Vollkurs oder Etappe (O) → unabhängige Prüfung → Korrekturen → Lieferung mit Import-Hinweis (Badge aktivieren, Kursbild;
    bei Delta: „Zusammenführen“).
-5. Fehlersuche: Restore-Abbruch nennt Datei/Element; H5P öffnet nicht → Version (B.2/B.3); Bild fehlt → files.xml (H).
+5. Fehlersuche: zuerst `scripts/check.py <datei.mbz>` (läuft nach jedem Bau automatisch); Restore-Abbruch nennt
+   Datei/Element; H5P öffnet nicht → Version (B.2/B.3); Bild fehlt → files.xml (H).
 
 ### O. Sukzessiver Aufbau
 
@@ -203,11 +205,13 @@ Bild siehe H. Nach Import inaktiv.
 ### N. Referenzimplementierung
 
 `scripts/`: `gen/kursdatei.py` (Parser der Kursdatei, Format in `kursdatei.md`), `gen/html.py` (Textbausteine für K),
-`gen/mbz.py` (Writer für C–J, O), `gen/h5p.py` (Builder für I mit UI-Strings aus Anhang A), `gen/render.py`
-(Banner/Mocks HTML→PNG, Playwright), `build.py --content ordner [--proto] [--delta [teile]] [--steckbrief pfad]`.
+`gen/mbz.py` (Writer für C–J, O; Platzhalter aus B.1), `gen/h5p.py` (Builder für I mit UI-Strings aus Anhang A),
+`gen/render.py` (Banner/Mocks HTML→PNG, Playwright), `build.py --content ordner [--proto] [--delta [teile]] [--steckbrief pfad]`,
+`check.py datei.mbz` (prüft C–J und O an der fertigen Sicherung: Archiv, Pflichtdateien, IDs und Nummern, Dateien mit
+sha1, inforef, Bibliotheksversionen, `json_content`, Bilder, Badges, Verfügbarkeits-JSON; `build.py` ruft es am Ende auf).
 Kursordner: `kurs.md` (Inhalt), `assets/` (PNG), `steckbrief.yaml` (Kurs-Metadaten, Teile, Status, `sichtbar_ab`);
 Python-Inhalt (`content/course.py`) nur noch als Ausweg. Benötigt Python 3.11+, Pillow, PyYAML; Playwright+Chromium nur
-zum Rendern von Bildern. `site.json` = B.1-Werte. Intake: `intake.md`.
+zum Rendern von Bildern. Intake: `intake.md`.
 
 ---
 
