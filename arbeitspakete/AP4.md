@@ -11,3 +11,6 @@ Handy. Beachte die Theme-Grenzen in `references/spec.md` (Inline-CSS, keine vers
 
 Abnahme: Render-Test (`tools/h5ptest/` für H5P; für HTML ein Playwright-Screenshot bei 390 px und 1200 px Breite)
 für jede Vorlage mit `examples/netzwerk9`; Screenshots in `examples/netzwerk9/out/`, nicht committen.
+
+Hinweis aus Import-Test 1 (0.4): Das Kursbanner und die Überblickskarte direkt darunter zeigen beide Titel und
+Untertitel. Wenn ein Banner vorhanden ist, trägt die Karte nur noch Dauer und die drei Phasen, keinen Titel.
