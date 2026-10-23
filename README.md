@@ -2,7 +2,9 @@
 
 # Kursmühle – Lernplattform-Kurse aus einem Prompt
 
-**Version 0.2.1** (Stand 23.10.2026) · Tech-Demo auf dem Weg zu 1.0, siehe [`ROADMAP.md`](ROADMAP.md) und [`CHANGELOG.md`](CHANGELOG.md)
+![Version 0.2.1](docs/badge-version.svg) ![Status: Tech-Demo auf dem Weg zu 1.0](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
+
+**Version 0.2.1** (Stand 23.10.2026) · siehe [`ROADMAP.md`](ROADMAP.md) und [`CHANGELOG.md`](CHANGELOG.md)
 
 **Ein KI-Assistent baut aus einer Beschreibung oder eigenem Unterrichtsmaterial eine importierbare Kurssicherung (`.mbz`) für die ByCS-Lernplattform.**
 
@@ -44,15 +46,7 @@ fertige Kurssicherung zum Import.
 
 ## Systemübersicht
 
-```
-Lehrkraft ──▶ KI-Assistent ──▶ Drehbuch (Text, zum Gegenlesen)
- Beschreibung   liest SKILL.md          │ Freigabe
- + Material                             ▼
-                               kurs.md ──────────▶ scripts/build.py ──▶ kurs.mbz
-                               Drehbuch als Kursdatei  Generator (gen/)      │
-                                                                             ▼
-                                   ByCS-Lernplattform ◀── Kurs wiederverwenden → Wiederherstellen
-```
+![Ablauf: Lehrkraft → KI-Assistent → Drehbuch → Generator → Lernplattform](docs/ablauf.svg)
 
 - Die KI schreibt nur die Inhalte. Das Archiv aus über hundert verknüpften
   XML-Dateien, Hashes und IDs baut der Generator.
