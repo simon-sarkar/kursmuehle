@@ -43,7 +43,7 @@ def icon(fg, bg, ac):
 
 def wortmarke():
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="640" height="160" viewBox="0 0 640 160">
-  <g transform="translate(16,16) scale(0.5)"><rect width="256" height="256" rx="56" fill="{BG}"/>{mark(FG, BG, AC)}</g>
+  <g transform="translate(16,16) scale(0.5)"><rect width="256" height="256" rx="56" fill="{FG}"/>{mark(BG, FG, AC)}</g>
   <text x="172" y="86" font-family="{FONT}" font-size="64" font-weight="700" fill="{FG}" letter-spacing="-1">Kursmühle</text>
   <text x="175" y="122" font-family="{FONT}" font-size="22" fill="#6b6257">Lernplattform-Kurse aus einem Prompt</text>
 </svg>'''
@@ -73,8 +73,8 @@ def badge(left, right, lw, rw, rightfill=AC, rightfg=FG):
 if __name__ == "__main__":
     version = open(os.path.join(HERE, "..", "CHANGELOG.md"), encoding="utf-8").read().split("## ", 2)[1].split(" ")[0]
     files = {
-        "logo.svg": icon(FG, BG, AC),
-        "logo-light.svg": icon(FG, "#ffffff", AC),
+        "logo.svg": icon(BG, FG, AC),          # dunkles Quadrat, helle Mühle (Hauptfassung, wie im Banner)
+        "logo-light.svg": icon(FG, BG, AC),    # Creme-Quadrat, dunkle Mühle (für dunkle Flächen)
         "wortmarke.svg": wortmarke(),
         "banner-kursmuehle-v5.svg": banner(),
         "badge-version.svg": badge("Version", version, 62, 48),
