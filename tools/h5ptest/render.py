@@ -10,6 +10,8 @@ WEB = os.environ.get('WEB', f'{BASE}/web')
 BS_PATH = [int(x) for x in os.environ.get('BS_PATH', '1').split(',')]
 REPORT = os.environ.get('REPORT', f'{BASE}/report.json')
 PORT = int(os.environ.get('PORT', '8765'))
+ROOT = os.path.dirname(os.path.abspath(__file__))
+rel = lambda p: os.path.relpath(os.path.abspath(p), ROOT)
 only = sys.argv[1:]
 os.makedirs(SHOTS, exist_ok=True)
 report = {}
@@ -47,7 +49,7 @@ with sync_playwright() as pw:
         page.on('pageerror', lambda e, r=r: r['pageerrors'].append(str(e)))
         page.on('requestfailed', lambda q, r=r: r['failed_requests'].append(q.url))
         page.on('response', lambda resp, r=r: r['failed_requests'].append(f'{resp.status} {resp.url}') if resp.status >= 400 else None)
-        page.goto(f'http://127.0.0.1:{PORT}/{os.path.basename(WEB)}/{a}/index.html')
+        page.goto(f'http://127.0.0.1:{PORT}/{rel(WEB)}/{a}/index.html')
         try:
             wait_ready(page)
         except Exception as e:

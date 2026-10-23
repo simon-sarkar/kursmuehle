@@ -14,7 +14,7 @@ mkdir -p work && tar -xzf ../../out/kurs.mbz -C work/mbz   # .mbz ist tar.gz
 python3 extract.py work/mbz work/content             # json_content + Bilder je Aktivität, meta.json mit Bibliotheken
 python3 fetchlibs.py "H5P.QuestionSet 1.21" "H5P.InteractiveBook 1.15"   # Bibliotheken von GitHub, exakte major.minor (siehe scripts/gen/libs.py)
 python3 buildpages.py                                # h5p.json + index.html je Aktivität nach work/web
-python3 -m http.server 8765 -d work/web &            # statischer Server
+python3 -m http.server 8765 &                        # statischer Server, Wurzel = tools/h5ptest
 python3 render.py                                    # Screenshots nach work/shots, Report work/report.json
 ```
 

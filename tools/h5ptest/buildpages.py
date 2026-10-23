@@ -5,6 +5,8 @@ BASE = os.environ.get('H5PTEST', os.path.join(os.path.dirname(os.path.abspath(__
 LIB = f'{BASE}/libs/lib'
 CONTENT = os.environ.get('CONTENT', f'{BASE}/content')
 WEB = os.environ.get('WEB', f'{BASE}/web')
+ROOT = os.path.dirname(os.path.abspath(__file__))  # Wurzel des http.server
+rel = lambda p: os.path.relpath(os.path.abspath(p), ROOT)
 
 def deps(name, maj, mi, acc, missing):
     key = f'{name}-{maj}.{mi}'
@@ -36,14 +38,14 @@ for a in sorted(os.listdir(CONTENT)):
 <style>body{{margin:0;padding:16px;background:#fff;font-family:sans-serif}} #h5p{{max-width:1000px}}</style>
 </head><body>
 <div id="h5p"></div>
-<script src="/tools/node_modules/h5p-standalone/dist/main.bundle.js"></script>
+<script src="/node_modules/h5p-standalone/dist/main.bundle.js"></script>
 <script>
 window.__h5pReady = false; window.__h5pError = null;
 new H5PStandalone.H5P(document.getElementById('h5p'), {{
-  h5pJsonPath: '/{os.path.basename(CONTENT)}/{a}',
-  librariesPath: '/libs/lib',
-  frameJs: '/tools/node_modules/h5p-standalone/dist/frame.bundle.js',
-  frameCss: '/tools/node_modules/h5p-standalone/dist/styles/h5p.css',
+  h5pJsonPath: '/{rel(CONTENT)}/{a}',
+  librariesPath: '/{rel(LIB)}',
+  frameJs: '/node_modules/h5p-standalone/dist/frame.bundle.js',
+  frameCss: '/node_modules/h5p-standalone/dist/styles/h5p.css',
   fullScreen: false,
 }}).then(function(){{ window.__h5pReady = true; }}).catch(function(e){{ window.__h5pError = String(e && e.stack || e); console.error('H5P init failed: ' + window.__h5pError); }});
 </script>
