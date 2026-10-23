@@ -2,6 +2,8 @@
 
 ## 1.0.2 – 2026-10-23
 
+- Hinweis in README, Projektseite und Skill-Menü: Wie viel die Lehrkraft vorgeben muss, hängt vom Modell ab; bei kleinen
+  oder kostenlosen Modellen Phasen, Übungstypen, Formate, Textlänge, Beispiele und Fehlvorstellungen nennen (Nachtrag 23.10.).
 - `SKILL.md`, Ablauf: Der Assistent baut die `.mbz` mit `scripts/build.py`, sobald das Drehbuch freigegeben ist, bei
   Steuerungsgrad c sofort nach dem Drehbuch ohne Halt. Er behauptet nie vorab, Code-Ausführung oder Python fehle; erst
   wenn der Bauaufruf scheitert, zeigt er die Fehlermeldung und liefert Drehbuch und Steckbrief als Dateien. Anlass: Im

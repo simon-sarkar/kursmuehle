@@ -30,7 +30,8 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
 
 1. **Einstieg** nach `references/intake.md`: erste Nachricht „Womit starten wir?“ mit fünf Wegen (nur Thema · Material ·
    Material + Fragen · Fragen · bestehenden Kurs erweitern), Steuerungsgrad (entscheide / Vorschläge freigeben / KI macht
-   alles) und Rahmen in einem Satz. Nennt die erste Nachricht schon Thema, Jahrgangsstufe, Einsatz und Minuten, entfällt
+   alles) und Rahmen in einem Satz, dazu der Hinweis: Je genauer die Lehrkraft Aufbau, Übungstypen und Umfang vorgibt,
+   desto besser wird der Kurs; wer nur einen Satz nennt, bekommt die Standardannahmen. Nennt die erste Nachricht schon Thema, Jahrgangsstufe, Einsatz und Minuten, entfällt
    diese Frage: Weg „nur Thema“, KI macht alles, sofort bauen; verlangt die Lehrkraft das Drehbuch zuerst („Zeig mir zuerst das
    Drehbuch“), Drehbuch zeigen und nach der Freigabe bauen. Sonst höchstens **eine Fragerunde** (Kursformat mit
    Empfehlung, Umfang, Abschluss, Gestaltung; jede Frage mit Vorschlag) und ein Gliederungsvorschlag. Bei „nur Thema“ keine

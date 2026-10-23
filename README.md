@@ -55,6 +55,12 @@ Rückfrage; die Annahmen stehen oben im Drehbuch. Nennt der erste Satz Thema, Ja
 entfällt auch die Einstiegsfrage, und der Assistent baut sofort; mit „Zeig mir zuerst das Drehbuch.“ baut er erst nach
 der Freigabe.
 
+Wie viel du vorgeben musst, hängt vom Modell ab. Ein starkes Modell mit hohem Aufwand baut aus einem Satz einen
+brauchbaren Kurs. Ein kostenloses oder kleines Modell braucht deine Vorgaben: Phasen (Einstieg, Erarbeitung, Übung,
+Sicherung), welche Übungstypen und Formate du willst, wie lang die Lesetexte sein sollen, welche Beispiele und welche
+Fehlvorstellungen vorkommen. Je genauer die Beschreibung, desto weniger hängt das Ergebnis vom Modell ab; mit „Vorschläge
+freigeben“ siehst du das Drehbuch, bevor gebaut wird.
+
 ## Wiederherstellen
 
 So sieht der Import auf der ByCS-Lernplattform aus, Schritt für Schritt. Beim ersten Mal in einen Testkurs.
