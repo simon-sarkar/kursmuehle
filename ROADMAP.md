@@ -7,13 +7,14 @@ Test-Export von der Plattform (leerer Kurs mit dem Element), danach gilt die Erw
 ## Umfang und Reihenfolge für 1.0 (Entscheidung 23.10.)
 
 Ziel: in wenigen Tagen nutzbar für andere Lehrkräfte mit beliebigem Code-ausführendem Assistenten.
-Vorgestellt wurde 0.1 bereits; die Rückmeldungen waren positiv.
+Vorgestellt wurde 0.1 bereits, Durchlauf mit ChatGPT (inklusive selbst generierter und eingebundener Bilder); die Rückmeldungen waren positiv.
 
 1. **Kursdatei statt Python** – Inhalte als Markdown/YAML, die der Generator direkt liest (Punkt 8).
    Fremde Assistenten schreiben dann kein `content/course.py` mehr; das war die größte Fehlerquelle.
 2. **Prüfskript `scripts/check.py`** – öffnet die fertige `.mbz` und prüft Struktur, IDs, Dateiverweise,
    H5P-Bibliotheksversionen. Jeder Assistent prüft seine Sicherung selbst, bevor importiert wird.
-3. **Menüführung, Kursbanner, zwei bis drei Designvorlagen, HTML-Textbausteine** (Punkte 1, 4, 5, 6) –
+3. **Menüführung, Kursbanner, Bildgenerierung (wenn der Assistent es kann), zwei bis drei Designvorlagen,
+   HTML-Textbausteine** (Punkte 1, 4, 5, 6) –
    ein zusammenhängender Block ohne Plattform-Export.
 4. **Die meistgenutzten Module und das Kachelformat** – Test, Aufgabe, Datei/Verzeichnis, Forum, Buch;
    Kursformat Kacheln. Braucht je einen Test-Export (Punkte 2, 3). Alles Weitere nach 1.0.
@@ -63,8 +64,10 @@ wählt je Textsorte den passenden Baustein (Erklärung, Fall, Anleitung, Merksat
 Regel im Intake: kein Absatz länger als fünf Zeilen auf dem Handy.
 
 ### 6. Bilder sinnvoll
-- **Kursbanner** als erstes Element im Abschnitt 0 (großer optischer Unterschied) plus Kursbild;
-  Bildprompts liefert die KI, Generierung macht die Lehrkraft oder ein Bildmodell im Agenten.
+- **Kursbanner** als erstes Element im Abschnitt 0 (großer optischer Unterschied) plus Kursbild.
+- **Bildgenerierung im Arbeitsschritt, wenn der Assistent es kann** (ChatGPT erzeugt Bilder direkt und
+  bindet sie ein – im Durchlauf vom 23.10. so gelaufen); kann er es nicht, liefert er Prompts, und die
+  Lehrkraft generiert selbst. Der Skill fragt die Fähigkeit ab, statt sie vorauszusetzen.
 - Abschnittsbilder/Kachelbilder, Fotos aus dem Material (Heftbilder, Folien) automatisch übernommen.
 - Wenige, große Bilder statt Deko.
 

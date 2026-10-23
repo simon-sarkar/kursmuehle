@@ -34,7 +34,7 @@ fertige Kurssicherung zum Import.
 > **Projektstatus: Version 0.1 (Tech-Demo).**
 > Der Ablauf Intake → Drehbuch → Generator → Import ist an zwei Beispielkursen
 > durchgespielt, einschließlich H5P-Inhalten, Badge und Nachlieferung in einen
-> laufenden Kurs. Getestet hat bisher nur der Autor. Offen sind weitere
+> laufenden Kurs, mit Claude Code und mit ChatGPT. Offen sind weitere
 > Kursformate und Modultypen (siehe Tabelle unten). Kein offizielles Produkt
 > der Plattform; wenn sich die Lernplattform ändert, wird der Skill angepasst.
 
@@ -136,7 +136,7 @@ verloren.
 - [x] Intake mit Steuerungsgrad, Drehbuch-Format, Zeitcheck, Änderungsliste
 - [ ] Menüführung: „Womit starten wir?“ – Thema, altes Material, Material + Fragen, Fragen-Intake
 - [ ] Alle Kursformate (Kacheln, Grid, Wochen …) und alle Modultypen (Test, Aufgabe, Forum …)
-- [ ] Schlanke Designvorlagen zur Auswahl; Kursbanner und Bilder sinnvoll eingebunden
+- [ ] Schlanke Designvorlagen zur Auswahl; Kursbanner und Bilder sinnvoll eingebunden, generiert vom Assistenten, wenn er es kann
 - [ ] HTML-Formatierung für Lesetexte: Überschriften, Listen, Merk- und Beispielkästen statt Fließtext
 - [ ] One-Page-Darstellung ohne Ladezeiten: H5P im Textfeld, Kurs als eigene Website mit eigenen Spielen
 - [ ] Drehbuch-Parser: Drehbuch → `content/` automatisch statt von Hand
