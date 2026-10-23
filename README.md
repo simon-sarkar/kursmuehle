@@ -100,7 +100,7 @@ Plattform speichern (siehe [Vorbehalte beim Textfeld](#vorbehalte-beim-textfeld)
 > **Projektstatus: Version 1.0.2.**
 > Mit 1.0 getestet in Claude Code (Agent mit Dateizugriff), im Fremdtest mit einem frischen Assistenten der
 > Sonnet-Klasse, der nur das Skill-Zip und einen Satz bekam. Am 23.10.2026 entstand in ChatGPT mit einem kostenlosen
-> Konto in zwei Durchläufen je ein Kurs zum Satz des Pythagoras ([Richtwerte](#richtwerte)); der Import von Kurs B steht aus.
+> Konto in zwei Durchläufen je ein Kurs zum Satz des Pythagoras ([Richtwerte](#richtwerte)); der Kurs B am 23.10.2026 auf der Plattform importiert, läuft.
 > Durchläufe in claude.ai stehen aus.
 > Import getestet 23.10.2026, siehe [Protokoll](docs/entwicklung/protokolle/import-tests-2-5.md): Themen- und
 > Kachelformat mit Kachelbildern, alle acht Moodle-Module, Glossar-XML, Website-Modus (eingebettet) und Textfeld-Modus mit

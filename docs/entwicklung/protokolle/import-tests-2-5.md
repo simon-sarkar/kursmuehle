@@ -49,3 +49,18 @@ Nicht geprüft: Website im Vollbild und in einem neuen Fenster.
 Nicht per Import geprüft sind die Kursformate Wochen, Ein-Themen, Komprimiert und Einzelaktivität, der Website-Modus im
 Vollbild und im neuen Fenster, die Moodle-App, der ungeprüfte Ausweg über den Texteditor „Textbereich“ und der Kurs aus
 dem Fremdtest. Dafür ist `import-test-1.0.md` vorgesehen.
+
+## Import-Test 6 – 23.10.2026, 22:52 (Kurs aus dem ChatGPT-Durchlauf B, Version 1.0.1)
+
+Kurs „Pythagoras im Alltag“ (Mathematik 9, 45 min), erzeugt in einem kostenlosen ChatGPT-Konto mit GPT-6 Luna, Aufwand
+Extra High, ohne Eingriff des Autors; als neuer Kurs wiederhergestellt.
+
+| Geprüft | Ergebnis |
+|---|---|
+| Wiederherstellung | läuft durch |
+| Kursbild, Banner (selbst gezeichnet) | kommen an |
+| Allgemeines mit Selbsteinschätzung (Umfrage) | vorhanden |
+| Einstiegsfall als Textfeld mit Kasten | vorhanden |
+| Seiten „Rechtwinklige Dreiecke erkennen“, „Warum die Formel passt“ | öffnen, Abschluss „Erledigt“ setzbar |
+| Übungsblock im Textfeld (Quiz, 3 Fragen) | rendert, Zähler „0 von 3“, Prüfen reagiert |
+| Abschlusstest (H5P), Badge | nicht eigens protokolliert |
