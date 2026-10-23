@@ -52,6 +52,8 @@ FEHLER = [
     ("## A\n### Textfeld: X\n| a | b | c |\n| d | e | f |", "Zeile 3 (Textfeld „X“): Tabelle: ohne Kopfzeile zwei Spalten"),
     ("## A\n### Textfeld: X\n| a | b |\n|---|---|\n| d | e | f |", "Zeile 3 (Textfeld „X“): Tabelle: alle Zeilen brauchen gleich viele Spalten"),
     ("## A\n### Textfeld: X\nSchritte: Titel\nkein Listenpunkt", "Zeile 3 (Textfeld „X“): Schritte: Liste"),
+    ("## A\nkachelbild: fehlt.png\n### Textfeld: X\nt", "Zeile 1 (Abschnitt „A“): Bild „fehlt.png“ nicht in assets/"),
+    ("## A\nkachelicon: Book Icon\n### Textfeld: X\nt", "Zeile 1 (Abschnitt „A“): kachelicon „Book Icon“"),
 ]
 
 # Textbausteine (AP4): jede Zeile ein Baustein, erwarteter Teil des HTML

@@ -53,7 +53,7 @@ QUIZ_FRAGEN = {"MC", "RF", "Einsetzen", "Markieren", "Lückentext"}
 TEST_FRAGEN = {"MC", "RF", "Kurzantwort"}      # Moodle-Test (questions.xml): nur diese drei Typen
 ATTRS = {
     "kurs": {"farbe", "kursbild"},
-    "abschnitt": {"teil", "farbe", "sichtbar ab", "prototyp"},
+    "abschnitt": {"teil", "farbe", "kachelbild", "kachelicon", "sichtbar ab", "prototyp"},
     "Unterabschnitt": {"teil", "sichtbar ab", "prototyp"},
     "Banner": {"bild", "untertitel", "name", "sichtbar ab", "prototyp"},
     "Textfeld": {"sichtbar ab", "prototyp"},
@@ -689,10 +689,6 @@ class Parser:
         hue = self._hue(self.kurs_attr, T.HUE, 1, "Kurs")
         global _HUE
         _HUE = hue
-        fmt = str((self.sb.get("kurs") or {}).get("format") or "").strip().lower()
-        if fmt and fmt not in ("themen", "topics"):
-            print(f"Hinweis: Kursformat „{fmt}“ im Steckbrief vorgemerkt; der Generator baut derzeit „Themen“. "
-                  f"Nach dem Import unter Kurseinstellungen → Kursformat umstellen.", file=sys.stderr)
         # Abschnitte
         while i < len(lines):
             ln, s = lines[i]
@@ -720,7 +716,7 @@ class Parser:
         img = self.kurs_attr.get("kursbild")
         image_path = self._image(img, 1, "Kurs")[0] if img else None
         return {"sections": self.sections, "parts": self.parts, "badges": badges, "image_path": image_path,
-                "titel": self.titel}
+                "titel": self.titel, "farbe": hue}
 
     def _section(self, ln, title, lines, hue):
         element = f"Abschnitt „{title}“"
@@ -732,6 +728,17 @@ class Parser:
         if allg and self.sections:
             self.fehler(ln, element, "„Allgemeines“ (Abschnitt 0) muss der erste Abschnitt sein")
         sec = Section(None if allg else title, available_from=self._avail(attrs, ln, element))
+        # Kachelbild/-icon (nur im Kachelformat wirksam): Angabe im Abschnitt oder im Steckbrief unter teile.<teil>
+        sb_teil = (self.sb.get("teile") or {}).get(attrs.get("teil", ""), {}) or {}
+        bild = attrs.get("kachelbild") or sb_teil.get("kachelbild")
+        if bild:
+            sec.tile_photo = self._image(bild.strip(), ln, element)[0], bild.strip()
+        icon = attrs.get("kachelicon") or sb_teil.get("kachelicon")
+        if icon:
+            icon = str(icon).strip()
+            if not re.match(r"^[a-z0-9-]+$", icon):
+                self.fehler(ln, element, f"kachelicon „{icon}“: FontAwesome-Name wie book, lightbulb-o, flask, globe, laptop")
+            sec.tile_icon = icon
         self._items(lines, sec, hue, level=3, section=sec)
         self.sections.append(sec)
         if attrs.get("teil"):

@@ -81,9 +81,9 @@ ergeben sich aus dem Material.
 | Materialsammlung, Vertretung, eine einzelne Einheit | **Themen** | alles auf einer Seite, nichts versteckt |
 | Nur ein Test, ein Forum, eine Abgabe | **Einzelaktivität** | der Kurs ist die Aktivität |
 
-Weitere Formate (Ein-Themen-Format, komprimierte Abschnitte, Lernlandkarte) nur, wenn die Lehrkraft sie nennt.
-Der Generator baut derzeit das Format **Themen**; jedes andere Format wird im Steckbrief (`format:`) vorgemerkt, der Bau
-meldet einen Hinweis, und die Lehrkraft stellt nach dem Import unter Kurseinstellungen → Kursformat um; der Inhalt bleibt.
+Weitere Formate (Ein-Themen-Format, komprimierte Abschnitte) nur, wenn die Lehrkraft sie nennt; Lernlandkarte und
+Mimo baut der Generator nicht. Das gewählte Format steht im Steckbrief (`format:`), der Generator baut es. Bei Kacheln
+bekommt jeder Abschnitt ein Kachelbild (`kachelbild:` in der Kursdatei, Bild nach §4) oder ein Icon (`kachelicon:`).
 Die Entwicklerliste aller Formate steht in `references/formate.md` und wird im Gespräch nicht gebraucht.
 
 ## 3. Vorschlag statt Fragen: Gliederung und Formate
@@ -242,7 +242,8 @@ kurs:
   ton: "…"                        # abgeleitet
   umfang_min: 90
   portionierung: keine            # keine | wochen | etappen
-  format: themen                  # themen | kacheln | wochen | einzelaktivitaet (Empfehlung §2; gebaut wird bis auf Weiteres themen)
+  format: themen                  # themen | kacheln | wochen | einthemen | komprimiert | einzelaktivitaet (Empfehlung §2)
+  start: null                     # JJJJ-MM-TT, Kursbeginn (Wochenformat zählt ab hier); null = Bautag
   badge: "…"                      # Name oder null
   bestehensgrenze: 70
   farbe: "#1D5FD1"
@@ -273,4 +274,8 @@ Delta neu einspielen). `sichtbar_ab: YYYY-MM-DD` erzeugt eine Datums-Zugriffsbes
 3. `python3 scripts/build.py --content <kursordner> --proto` (Erstkurs) oder ohne `--proto`; Etappen:
    `--delta` (alle `pending`) oder `--delta le2,le3`. Am Ende prüft `build.py` die Sicherung (`check.py`); bei `FEHLER`
    beheben und neu bauen, nicht liefern.
-4. Nach erfolgreichem Import die gelieferten Teile auf `delivered` setzen.
+4. Import-Hinweis an die Lehrkraft: beim Wiederherstellen in einen bestehenden Kurs „Kurseinstellungen überschreiben: Ja“,
+   sonst bleibt das Kursformat des Zielkurses (Kachelbilder nur bei gleichem Format). Hat der Kurs ein Glossar mit
+   Einträgen, „Nutzer einbeziehen“ angehakt lassen; fehlen die Einträge danach, die XML-Datei neben der `.mbz` über
+   Glossar → Mehr → Einträge importieren einspielen.
+5. Nach erfolgreichem Import die gelieferten Teile auf `delivered` setzen.

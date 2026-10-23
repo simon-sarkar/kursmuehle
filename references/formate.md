@@ -17,7 +17,32 @@ Formate folgen demselben Mechanismus (Moodle-Kern), Export je Format noch nicht 
 | topcoll | Komprimierte Abschnitte | hiddensections=[1\|0]:1; displayinstructions=[0\|1\|2]:0; layoutelement=[0\|1\|3\|2\|5\|4\|8\|6\|7]:0; layoutstructure=[0\|1\|2\|3\|4\|5]:0; layoutcolumnorientation=[0\|3\|2\|1]:0; layoutcolumns=[0\|1\|2\|3\|4]:0; flexiblemodules=[0\|1\|2]:0; toggleallenabled=[0\|1\|2]:0; viewsinglesectionenabled=[0\|1\|2]:0; togglealignment=[0\|1\|2\|3]:0; toggleiconposition=[0\|1\|2]:0; toggleiconset=[-\|arrow\|bulb\|cloud\|eye\|folder\|groundsignal\|led\|point\|power\|radio\|smiley\|square\|sunmoon\|switch\|tif]:-; toggleiconfontclosed=-; toggleiconfontopen=-; onesection=[0\|1\|2]:0; toggleallhover=[0\|1\|2]:0; toggleforegroundcolour=-; toggleforegroundopacity=[-\|0.0…1.0]:-; toggleforegroundhovercolour=-; toggleforegroundhoveropacity=[-\|0.0…1.0]:-; togglebackgroundcolour=-; togglebackgroundopacity=[-\|0.0…1.0]:-; togglebackgroundhovercolour=-; togglebackgroundhoveropacity=[-\|0.0…1.0]:-; showsectionsummary=[0\|1\|2]:0 |
 
 Kein Grid-Format auf der Plattform. Kachelformat: Kachelbild und -icon je Abschnitt sind Abschnittsoptionen
-(`tilephoto`, `tileicon`, `tileoutcomeid`) – Schema aus einem Kachel-Export zu belegen.
+(`tilephoto`, `tileicon`, `tileoutcomeid`); Schema des Kachelbilds aus einem Kachel-Export belegt
+(`export-schemata/kachelformat/`), das Icon nicht (gleicher Mechanismus, `course_format_options` `tileicon`).
+
+## Umsetzung im Generator (seit 0.7, `gen/mbz.py`)
+
+| Steckbrief `kurs.format` | Moodle | Gebaut |
+|---|---|---|
+| `themen` (Standard) | topics | Kursoptionen aus der Tabelle oben |
+| `kacheln` | tiles | Kursoptionen (`basecolour` = nächste Plattformfarbe zur Akzentfarbe, `courseshowtileprogress 1`), je Abschnitt `kachelbild:` und `kachelicon:` aus der Kursdatei |
+| `wochen` | weeks | Kursoptionen; Wochen zählen ab `kurs.start` (JJJJ-MM-TT, Standard: Bautag) |
+| `einthemen` | onetopic | Kursoptionen mit Standardwerten |
+| `komprimiert` | topcoll | Kursoptionen mit Standardwerten |
+| `einzelaktivitaet` | singleactivity | genau ein Element in der Kursdatei; es landet in Abschnitt 0, `activitytype` = sein Modul |
+
+`kurs.formatoptionen: {name: wert}` überschreibt einzelne Kursoptionen (Entwicklerweg, Werte aus der Tabelle oben);
+`build.py --format <name>` überschreibt den Steckbrief. Lernlandkarte und Mimo nach 1.0.
+
+Kachelbild in der Sicherung: `section.xml` mit `plugin_format_tiles_section` (optiontype 1, optionvalue = Dateiname,
+tilesversion 2026012570) und `course_format_options` (`tilephoto`); Datei `format_tiles / tilephoto / <Abschnitts-ID> /
+/tilephoto/` im Kurskontext, referenziert aus `sections/section_<id>/inforef.xml`. Icon nur als `course_format_options`
+(`tileicon`, FontAwesome-4-Name).
+
+Import: Moodle übernimmt `course.xml` (Format und Kursoptionen) in einen bestehenden Kurs nur mit
+„Kurseinstellungen überschreiben: Ja“ (`restore_course_task`, Setting `overwrite_conf`, Standard Nein) und die
+Abschnittsoptionen (Kachelbilder) nur, wenn der Zielkurs dasselbe Format hat (`restore_stepslib`,
+`process_course_format_options`). Beim Zusammenführen (Delta) bleibt das Format des Zielkurses.
 
 # Modultypen der Plattform (Aktivitätsauswahl, 39)
 

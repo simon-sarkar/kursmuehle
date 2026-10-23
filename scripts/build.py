@@ -1,10 +1,15 @@
 """Kurs bauen: Kursdatei (kurs.md) oder Python-Inhalt (content/course.py) lesen, Abschnitte zusammensetzen, .mbz schreiben,
 Sicherung prüfen (check.py).
 
-usage: python3 build.py --content DIR [--proto] [--delta [teile]] [--steckbrief PATH] [--out PATH] [--no-check] [--vorlage NAME]
+usage: python3 build.py --content DIR [--proto] [--delta [teile]] [--steckbrief PATH] [--out PATH] [--no-check]
+                        [--vorlage NAME] [--format NAME] [--ohne-nutzerdaten]
 
 DIR enthält kurs.md (Format: references/kursdatei.md), assets/ (PNG) und steckbrief.yaml.
 Fallback: DIR/content/course.py mit build(A, sb, proto) -> {"sections", "parts", "badges", "image_path"}.
+Kursformat aus dem Steckbrief (`kurs.format`: themen, kacheln, wochen, einthemen, komprimiert, einzelaktivitaet) oder
+`--format`. Glossare mit Einträgen: die Sicherung trägt users=1 (nur so stellt Moodle Einträge wieder her); zusätzlich
+liegt je Glossar eine XML-Datei neben der .mbz (Glossar -> Mehr -> Einträge importieren). `--ohne-nutzerdaten` baut mit
+users=0 (Einträge dann nur per XML), nötig, wenn die Plattform „Nutzer einbeziehen“ sperrt und der Kurs Badges hat.
 Exit-Code 1, wenn die Prüfung der fertigen .mbz Fehler meldet (Datei bleibt zur Fehlersuche liegen).
 """
 import argparse
@@ -19,7 +24,7 @@ from PIL import Image  # noqa: E402
 from gen import html as T  # noqa: E402
 from gen.h5p import ImageRef  # noqa: E402
 from gen.kursdatei import KursdateiFehler, parse, ts_sichtbar_ab  # noqa: E402
-from gen.mbz import Course, Section, Writer  # noqa: E402
+from gen.mbz import FORMATE, Course, Section, Writer, glossary_import_xml, moodle_format  # noqa: E402
 from check import check_mbz, report  # noqa: E402
 
 
@@ -52,6 +57,23 @@ def load_python(content_dir, A, sb, proto):
     return k
 
 
+def glossar_xml(w, out, course):
+    """Je Glossar mit Einträgen eine Moodle-Glossar-XML neben die .mbz (Ausweg, wenn die Plattform Nutzerdaten sperrt)."""
+    for n, g in enumerate(w.glossare, 1):
+        path = os.path.splitext(out)[0] + f"_glossar{n if len(w.glossare) > 1 else ''}.xml"
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(glossary_import_xml(g))
+        print(f"Glossar „{g.name}“: {len(g.entries)} Einträge auch als {path}")
+    if w.glossare and w.users:
+        print("Hinweis: Sicherung mit users=1, damit die Glossareinträge wiederhergestellt werden; beim Wiederherstellen "
+              "„Nutzer einbeziehen“ angehakt lassen. Sperrt die Plattform das Häkchen, fehlen die Einträge"
+              + (" und die Badges" if course.badges else "")
+              + ": dann mit --ohne-nutzerdaten bauen und die Einträge über die XML-Datei importieren.")
+    elif w.glossare:
+        print("Hinweis: Sicherung ohne Nutzerdaten (users=0): Glossareinträge nach dem Import über die XML-Datei einspielen "
+              "(Glossar → Mehr → Einträge importieren).")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--content", default=os.environ.get("KURS_CONTENT", "."),
@@ -64,6 +86,9 @@ def main():
     ap.add_argument("--no-render", action="store_true", help="ohne Wirkung (Bilder werden nicht mehr von build.py gerendert)")
     ap.add_argument("--no-check", action="store_true", help="fertige .mbz nicht mit check.py prüfen")
     ap.add_argument("--vorlage", choices=sorted(T.VORLAGEN), help="Designvorlage (überschreibt design.vorlage im Steckbrief)")
+    ap.add_argument("--format", help=f"Kursformat (überschreibt kurs.format im Steckbrief): {', '.join(FORMATE)} oder Moodle-Name")
+    ap.add_argument("--ohne-nutzerdaten", action="store_true",
+                    help="Sicherung mit users=0; Glossareinträge dann nur über die XML-Datei neben der .mbz")
     args = ap.parse_args()
 
     content_dir = os.path.abspath(args.content)
@@ -94,6 +119,17 @@ def main():
     short = meta.get("kurzname") or name[:20]
     summary = meta.get("beschreibung", "")
     out_dir = os.path.join(content_dir, "out")
+    try:
+        fmt = moodle_format(args.format or meta.get("format") or "themen")
+    except ValueError as e:
+        raise SystemExit(f"FEHLER {'--format' if args.format else sb_path}: {e}")
+    fmt_opts = meta.get("formatoptionen") or {}
+    if not isinstance(fmt_opts, dict):
+        raise SystemExit(f"FEHLER {sb_path}: formatoptionen muss ein Mapping name: wert sein")
+    if fmt == "tiles" and "basecolour" not in fmt_opts and (meta.get("farbe") or k.get("farbe")):
+        fmt_opts["basecolour"] = meta.get("farbe") or k.get("farbe")
+    startdate = ts_sichtbar_ab(meta.get("start")) if meta.get("start") else None
+    kurs = dict(format=fmt, format_options=fmt_opts, startdate=startdate, glossar_nutzerdaten=not args.ohne_nutzerdaten)
 
     if args.delta:
         keys = [x for x, v in teile.items() if (v or {}).get("status") == "pending"] if args.delta == "pending" \
@@ -110,21 +146,26 @@ def main():
                 sections.append(part)
             else:
                 sections.append(Section(part.name, items=part.items, available_from=part.available_from))
-        course = Course(name, short, summary=summary, sections=sections, badges=[], image_path=None)
+        course = Course(name, short, summary=summary, sections=sections, badges=[], image_path=None, **kurs)
         fname = f"{short.lower()}_delta_{'-'.join(keys)}_{time.strftime('%Y%m%d-%H%M')}.mbz"
     else:
         fname = f"{short.lower()}_{'prototyp' if args.proto else 'kurs'}_{time.strftime('%Y%m%d-%H%M')}.mbz"
         if args.proto:
             name, short = f"{short} – Prototyp", f"{short}-Proto"
         course = Course(name, short, summary=summary, sections=k["sections"], badges=k.get("badges", []),
-                        image_path=k.get("image_path"))
+                        image_path=k.get("image_path"), **kurs)
     out = args.out or os.path.join(out_dir, fname)
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
-    Writer(course, out).build()
+    try:
+        w = Writer(course, out)
+        w.build()
+    except ValueError as e:
+        raise SystemExit(f"FEHLER {kursdatei}: {e}")
     print(out, os.path.getsize(out))
+    glossar_xml(w, out, course)
     if not args.no_check:
-        errors, info = check_mbz(out)
-        report(out, errors, info)
+        errors, info, warnings = check_mbz(out)
+        report(out, errors, info, warnings)
         if errors:
             raise SystemExit(1)
 

@@ -35,6 +35,7 @@ danach: Danke. Weiter mit Themenfeld 1.
 
 ## TF 1 · Probleme selbst lösen – Google & KI
 teil: tf1
+kachelbild: tf1.png
 
 ### Textfeld: Fahrplan
 Bild: tf1.png | Themenfeld 1 – Probleme selbst lösen
@@ -470,6 +471,7 @@ voraussetzung: Abschlusstest
 
 ## TF 2 · Digitale Selbstbestimmung
 teil: tf2
+kachelbild: tf2.png
 farbe: #6D28D9
 
 ### Textfeld: Überblick
@@ -481,6 +483,7 @@ Themenfeld: Du schützt deine Daten und Geräte und gestaltest deinen Medienkons
 
 ## TF 3 · Mentale Gesundheit und Selbstfürsorge
 teil: tf3
+kachelbild: tf3.png
 farbe: #0F766E
 prototyp: nein
 
@@ -503,6 +506,7 @@ einleitung: Fünf Aussagen über Stress, Schlaf und Hilfe.
 
 ## TF 4 · Körper, Ernährung und Gesundheitssystem
 teil: tf4
+kachelbild: tf4.png
 farbe: #15803D
 prototyp: nein
 
@@ -515,6 +519,7 @@ Themenfeld: Du triffst gesundheitsbewusste Alltagsentscheidungen und findest dic
 
 ## TF 5 · Geld und Finanzen
 teil: tf5
+kachelbild: tf5.png
 farbe: #B45309
 prototyp: nein
 
@@ -537,6 +542,7 @@ einleitung: Fünf Fragen zu Geld.
 
 ## TF 6 · Konsum, Verträge und Rechte
 teil: tf6
+kachelbild: tf6.png
 farbe: #BE123C
 prototyp: nein
 
@@ -549,6 +555,7 @@ Themenfeld: Du handelst als informierte Verbraucherin oder Verbraucher und setzt
 
 ## TF 7 · Wohnen, Haushalt und Bürokratie
 teil: tf7
+kachelbild: tf7.png
 farbe: #4F46E5
 prototyp: nein
 
@@ -561,6 +568,7 @@ Themenfeld: Du organisierst einen eigenen Haushalt und bewältigst Behördengän
 
 ## TF 8 · Ich und die anderen
 teil: tf8
+kachelbild: tf8.png
 farbe: #C2410C
 prototyp: nein
 

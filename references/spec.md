@@ -6,7 +6,8 @@ und Rendertest mit den gelisteten Bibliotheksversionen.
 
 ### A. Plattform
 
-- Moodle 5.2.4, Kursformat `topics`, Unterabschnitte (mod_subsection) aktiv.
+- Moodle 5.2.4; Kursformate `topics`, `tiles`, `weeks`, `onetopic`, `topcoll`, `singleactivity` (Optionen: `formate.md`);
+  Unterabschnitte (mod_subsection) aktiv.
 - H5P = **mod_hvp** („Interaktiver Inhalt“). Inhalt liegt als JSON in `hvp.xml` (`json_content`). Keine `.h5p`-Dateien.
 - Bibliotheksversion muss exakt (major.minor) installiert sein; Nachinstallation unmöglich. Nur Versionen aus B.2 verwenden.
 - HTML in Textfeld/Seite wird gefiltert: Inline-CSS ja, JavaScript nein. Theme zeichnet Rahmen um jede `<td>`.
@@ -26,6 +27,7 @@ B.1 Kopf/Versionen
 | module.xml version hvp | 2026062501 |
 | module.xml version subsection/label/page/feedback/url/quiz/assign/resource/folder/forum/book/choice/glossary | 2026042000 |
 | course customfields | `schule` (text, Wert leer) · `participants` (checkbox, 0) |
+| format_tiles tilesversion (section.xml) | 2026012570 |
 
 Herkunftsangaben (`original_site_identifier_hash`, `original_course_id`, `original_course_contextid`, Kategorie) sind feste
 Platzhalter in `gen/mbz.py`. Beim Import in einen bestehenden Kurs sind sie ohne Bedeutung (belegt 2026-10-23: Import mit
@@ -70,7 +72,10 @@ activities/<mod>_<cmid>/{module,<mod>,grades,inforef,roles,filters,calendar,grad
   (Unterabschnitt: `parentcmid` = cmid des subsection-Moduls, `modname` = `subsection`). Reihenfolge: reguläre Abschnitte,
   dann Unterabschnitte.
 - `<settings>`: root-Liste aus Anhang B; je Abschnitt `section_<id>_included=1`, `_userinfo=0`; je Aktivität
-  `<mod>_<cmid>_included=1`, `_userinfo=0`.
+  `<mod>_<cmid>_included=1`, `_userinfo=0`. Ausnahme Glossar mit Einträgen (G): root `users=1`, `glossary_<cmid>_userinfo=1`
+  und `userinfo=1` für seinen Abschnitt sowie bei Unterabschnitten für das subsection-Modul und dessen Abschnitt (Moodle
+  sperrt das Modul-Setting sonst, `restore_activity_task`); dazu `users.xml` = `<users></users>`. Alle anderen Settings
+  bleiben 0. `original_course_format` = `<format>` aus course.xml.
 
 ### E. Abschnitte
 
@@ -78,6 +83,9 @@ activities/<mod>_<cmid>/{module,<mod>,grades,inforef,roles,filters,calendar,grad
 `summaryformat 1`, `sequence` (cmids, kommagetrennt, inkl. subsection-Module), `visible 1`, `availabilityjson $@NULL@$`,
 `component`/`itemid` (`$@NULL@$`; Unterabschnitt: `mod_subsection` / Instanz-ID des subsection-Moduls), `timemodified`.
 Aktivitäten eines Unterabschnitts: `sectionid`/`sectionnumber` in module.xml = der Unterabschnitt.
+Kachelformat (regulärer Abschnitt mit Kachelbild/-icon): nach `timemodified` `plugin_format_tiles_section sectionid="<id>"`
+(`optiontype 1`, `optionvalue` = Dateiname, `tilesversion` B.1) und je Option `course_format_options id` (`format tiles`,
+`name tilephoto|tileicon`, `value`); Bilddatei nach H, `fileref` in `sections/section_<id>/inforef.xml`.
 
 ### F. module.xml (alle Module)
 
@@ -139,8 +147,15 @@ Abgabe (feedback) `2/$@NULL@$/0/0` + `completionsubmit 1`. (Reihenfolge: complet
   `usedynalink 1`); `entries/entry`: `userid 0, concept, definition HTML, definitionformat 1, definitiontrust 0,
   attachment (leer), timecreated, timemodified, teacherentry 1, sourceglossaryid 0, usedynalink 1, casesensitive 0,
   fullmatch 0, approved 1`, Kinder `aliases/alias/alias_text`, `ratings` (leer). Abschluss „eintrag“ `2/$@NULL@$/0/0`
-  + `completionentries 1`. Ob Einträge der Lehrkraft ohne Nutzerdaten wiederhergestellt werden, ist noch nicht per
-  Import verifiziert.
+  + `completionentries 1`. **Einträge stellt Moodle nur mit Nutzerdaten wieder her** (Import-Test 2, 0.6;
+  `restore_glossary_stepslib.php`: Pfad `entries/entry` nur `if ($userinfo)`). Daher zwei Wege, beide gebaut:
+  (A) Settings nach D (`users=1`, `userinfo=1` nur für das Glossar und seine Abschnittskette, `users.xml` leer, Einträge
+  `userid 0`; die Vorprüfung lädt `users.xml` und findet keine Nutzer, `restore_prechecks_helper`); fehlt der Lehrkraft
+  `moodle/restore:userinfo`, sperrt Moodle `users` auf 0 ohne Abbruch (`restore_check`), dann fehlen die Einträge und
+  mit ihnen die Badges (Abhängigkeit `users → badges` im `restore_root_task`). (B) Je Glossar eine Moodle-Glossar-XML
+  (`GLOSSARY/INFO/ENTRIES/ENTRY`, `gen/mbz.py glossary_import_xml`) neben der `.mbz`, Import Glossar → Mehr → Einträge
+  importieren (setzt `userid` auf die Lehrkraft). `build.py --ohne-nutzerdaten` baut (A) ab (users=0); `check.py` warnt
+  bei Einträgen mit `userinfo=0`.
 
 G.2 Fragensammlung (`questions.xml`, Moodle 4.x/5.x)
 
@@ -180,6 +195,7 @@ repositorytype/repositoryid/reference $@NULL@$`; Datei unter `files/<hash[:2]>/<
 | Verzeichnis (folder) | mod_folder / content / 0 / `/` | – |
 | Bild im Buchkapitel | mod_book / chapter / Kapitel-ID / `/` | `@@PLUGINFILE@@/name.png` im Kapitel |
 | Bild in Beschreibung (assign, forum, choice, glossary …) | mod_<mod> / intro / 0 / `/` | `@@PLUGINFILE@@/name.png` |
+| Kachelbild (Kachelformat) | format_tiles / tilephoto / Abschnitts-ID / `/tilephoto/`, Kurs-Kontext | `optionvalue`/`tilephoto` in section.xml (fileref in der inforef des Abschnitts) |
 
 Mimetype nach Dateiendung (`application/pdf`, `image/png`, Office-Typen); unbekannt → `application/octet-stream`.
 
@@ -277,7 +293,8 @@ Bild siehe H. Nach Import inaktiv.
 `gen/render.py` (Banner/Mocks HTML→PNG, Playwright), `build.py --content ordner [--proto] [--delta [teile]] [--steckbrief pfad]`,
 `check.py datei.mbz` (prüft C–J und O an der fertigen Sicherung: Archiv, Pflichtdateien, IDs und Nummern, Dateien mit
 sha1, inforef, Bibliotheksversionen, `json_content`, Bilder, Test-Fragenverweise gegen `questions.xml`, Bewertungsposten,
-Buchkapitel, Badges, Verfügbarkeits-JSON; `build.py` ruft es am Ende auf).
+Buchkapitel, Badges, Verfügbarkeits-JSON, Kursformat und Kacheloptionen, `users`/`userinfo`-Settings; `WARNUNG`-Zeilen
+ohne Exit 1, wenn beim Import voraussichtlich etwas verloren geht; `build.py` ruft es am Ende auf).
 Kursordner: `kurs.md` (Inhalt), `assets/` (PNG), `steckbrief.yaml` (Kurs-Metadaten, Teile, Status, `sichtbar_ab`);
 Python-Inhalt (`content/course.py`) nur noch als Ausweg. Benötigt Python 3.11+, Pillow, PyYAML; Playwright+Chromium nur
 zum Rendern von Bildern. Intake: `intake.md`.

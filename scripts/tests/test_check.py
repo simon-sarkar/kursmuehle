@@ -2,12 +2,13 @@
 
 usage: python3 scripts/tests/test_check.py   (Exit 0 = alles gut)
 
-Baut netzwerk9 (Vollkurs, Prototyp), alltagskompetenz (Vollkurs, Delta) und module in ein Temp-Verzeichnis, prüft sie,
-und erzeugt aus dem netzwerk9-Build je eine kaputte Kopie: fehlende Datei, falscher Hash, kaputtes json_content,
-falsche Bibliotheksversion, fehlender Aktivitätsordner, Bild aus files.xml entfernt, fehlender fileref,
-ungültiges Verfügbarkeits-JSON, doppelte Abschnittsnummer, nicht wohlgeformtes XML; aus dem module-Build: Fragenverweis
-ins Leere, Fragenkategorie in fremdem Kontext, sumgrades falsch, Kapitelbild entfernt, Datei ohne Inhalt, Bewertungsposten
-passt nicht.
+Baut netzwerk9 (Vollkurs, Prototyp, je Kursformat), alltagskompetenz (Vollkurs, Delta) und module (mit und ohne
+Nutzerdaten) in ein Temp-Verzeichnis, prüft sie, und erzeugt aus dem netzwerk9-Build je eine kaputte Kopie: fehlende Datei,
+falscher Hash, kaputtes json_content, falsche Bibliotheksversion, fehlender Aktivitätsordner, Bild aus files.xml entfernt,
+fehlender fileref, ungültiges Verfügbarkeits-JSON, doppelte Abschnittsnummer, nicht wohlgeformtes XML, Formatoption mit
+fremdem Format; aus dem Kachel-Build: Kachelbild ohne Datei, Kacheloption im Themenformat; aus dem module-Build:
+Fragenverweis ins Leere, Fragenkategorie in fremdem Kontext, sumgrades falsch, Kapitelbild entfernt, Datei ohne Inhalt,
+Bewertungsposten passt nicht, users.xml fehlt, Glossar-userinfo ohne Abschnitts-userinfo; Warnung bei Glossar ohne Nutzerdaten.
 """
 import io
 import os
@@ -182,6 +183,50 @@ FAELLE = [
 ]
 
 
+# ---- Kursformate (AP6) und Nutzerdaten (Glossar)
+def f_formatoption_fremd(e):
+    p = "course/course.xml"
+    sub(e, p, "<format>topics</format>\n      <sectionid>0</sectionid>\n      <name>hiddensections",
+        "<format>tiles</format>\n      <sectionid>0</sectionid>\n      <name>hiddensections")
+
+
+def f_kachelbild_ohne_datei(e):
+    p = first(e, r"files\.xml")
+    s = e[p].decode()
+    i = s.index("<component>format_tiles</component>")
+    a, b = s.rfind("<file id=", 0, i), s.index("</file>", i) + len("</file>\n")
+    e[p] = (s[:a] + s[b:]).encode()
+
+
+def f_kacheloption_im_themenformat(e):
+    sub(e, "course/course.xml", "<format>tiles</format>", "<format>topics</format>", count=20)
+    sub(e, "moodle_backup.xml", "<original_course_format>tiles</original_course_format>",
+        "<original_course_format>topics</original_course_format>")
+
+
+def f_users_xml_fehlt(e):
+    del e["users.xml"]
+
+
+def f_userinfo_ohne_abschnitt(e):
+    s = e["moodle_backup.xml"].decode()
+    s = re.sub(r"(<name>section_\d+_userinfo</name>\s*<value>)1", r"\g<1>0", s)
+    e["moodle_backup.xml"] = s.encode()
+
+
+FORMAT_FAELLE = [
+    ("Formatoption mit fremdem Format", f_formatoption_fremd, "courseformatoption „hiddensections“: format tiles"),
+]
+KACHEL_FAELLE = [
+    ("Kachelbild ohne Datei", f_kachelbild_ohne_datei, "steht nicht in files.xml (format_tiles/tilephoto"),
+    ("Kacheloption im Themenformat", f_kacheloption_im_themenformat, "aber Kursformat topics"),
+]
+USERS_FAELLE = [
+    ("users.xml fehlt", f_users_xml_fehlt, "fehlt, obwohl Setting users=1"),
+    ("Glossar-userinfo ohne Abschnitts-userinfo", f_userinfo_ohne_abschnitt, "_userinfo=1, aber section_"),
+]
+
+
 def main():
     bad = 0
     with tempfile.TemporaryDirectory() as d:
@@ -190,21 +235,38 @@ def main():
                build("alltagskompetenz", os.path.join(d, "ak.mbz")),
                build("alltagskompetenz", os.path.join(d, "ak_delta.mbz"), "--delta", "le2,le3"),
                build("module", os.path.join(d, "module.mbz"))]
+        gut += [build("netzwerk9", os.path.join(d, f"n9_{f}.mbz"), "--format", f)
+                for f in ("kacheln", "wochen", "einthemen", "komprimiert")]
+        gut.append(build("module", os.path.join(d, "module_ohne.mbz"), "--ohne-nutzerdaten"))
         for path in gut:
-            errors, info = check_mbz(path)
+            errors, info, warnings = check_mbz(path)
             if errors:
                 bad += 1
                 print(f"FALSCH {os.path.basename(path)}: {len(errors)} Fehler, erwartet OK")
                 for wo, was in errors[:10]:
                     print(f"       {wo}: {was}")
             else:
-                print(f"ok     {os.path.basename(path)}: {info}")
-        base, modul = load(gut[0]), load(gut[-1])
-        for name, mut, want, src in [(*f, base) for f in FAELLE] + [(*f, modul) for f in MODUL_FAELLE]:
+                print(f"ok     {os.path.basename(path)}: {info}" + (f", {len(warnings)} Warnung(en)" if warnings else ""))
+            want_warn = path.endswith("module_ohne.mbz")
+            if want_warn != any("Einträge, aber userinfo=0" in was for _, was in warnings):
+                bad += 1
+                print(f"FALSCH {os.path.basename(path)}: Glossar-Warnung {'erwartet' if want_warn else 'nicht erwartet'}: {warnings}")
+        # Einzelaktivität: genau ein Element – netzwerk9 hat zehn, der Bau muss abbrechen
+        r = subprocess.run([sys.executable, BUILD, "--content", os.path.join(ROOT, "examples", "netzwerk9"), "--out",
+                            os.path.join(d, "single.mbz"), "--format", "einzelaktivitaet"], capture_output=True, text=True)
+        if r.returncode == 0 or "genau ein Element" not in r.stderr:
+            bad += 1
+            print(f"FEHLT  Einzelaktivität mit zehn Elementen: {r.stdout} {r.stderr}")
+        else:
+            print("ok     Einzelaktivität mit zehn Elementen: Bau bricht ab")
+        base, modul, kachel = load(gut[0]), load(gut[4]), load(gut[5])
+        for name, mut, want, src in ([(*f, base) for f in FAELLE] + [(*f, modul) for f in MODUL_FAELLE]
+                                     + [(*f, base) for f in FORMAT_FAELLE] + [(*f, kachel) for f in KACHEL_FAELLE]
+                                     + [(*f, modul) for f in USERS_FAELLE]):
             e = dict(src)
             mut(e)
             path = save(e, os.path.join(d, "kaputt.mbz"))
-            errors, _ = check_mbz(path)
+            errors, _, _ = check_mbz(path)
             msgs = [f"{wo}: {was}" for wo, was in errors]
             if not any(want in m for m in msgs):
                 bad += 1
@@ -215,7 +277,7 @@ def main():
         kein = os.path.join(d, "kein.mbz")
         with open(kein, "wb") as f:
             f.write(b"PK\x03\x04 kein tar")
-        errors, _ = check_mbz(kein)
+        errors, _, _ = check_mbz(kein)
         if not errors or "Archiv nicht lesbar" not in errors[0][1]:
             bad += 1
             print(f"FEHLT  kein Archiv: {errors}")
