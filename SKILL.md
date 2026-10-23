@@ -27,7 +27,8 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
    Gestaltung; jede Frage mit Vorschlag) und ein Gliederungsvorschlag. Bei „nur Thema“ keine Rückfrage: Annahmen stehen
    als `Angenommen:` oben im Drehbuch. Ergebnis: `steckbrief.yaml` (Schema in intake.md §6).
 2. **Drehbuch = Kursdatei** (intake.md §5, Referenz `references/kursdatei.md`): gesamter Inhalt als `kurs.md` im
-   Drehbuch-Format mit Quellenmarkierung und Zeitcheck → Freigabe durch die Lehrkraft (entfällt nur bei „KI macht alles“).
+   Drehbuch-Format mit Quellen- und Zweckmarker und Zeitcheck → ein Prüfdurchlauf nach `references/qualitaet.md` →
+   Freigabe durch die Lehrkraft (bei „KI macht alles“ keine Freigabe, der Durchlauf läuft dann vor dem Bau).
    Bei Revision nur Änderungsliste + geänderte Blöcke zeigen. Die freigegebene Datei wird unverändert gebaut.
 3. **Bau**: Kursordner mit `kurs.md`, `assets/` (PNG), `steckbrief.yaml` (Vorbild `examples/netzwerk9/` = minimal,
    `examples/alltagskompetenz/` = alle Elementtypen). Kein Python schreiben. Erstes Element in `## Allgemeines` ist
@@ -41,7 +42,7 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
    `python3 scripts/build.py --content <kursordner> --proto` (Erstkurs) oder ohne `--proto`.
    Etappen: `--delta` (alle `status: pending`) oder `--delta le2,le3`; Teile = `teil:` im Abschnitt. Freigabe nach Datum:
    `sichtbar_ab:` im Steckbrief oder `sichtbar ab:` in der Kursdatei. Parserfehler nennen Zeile und Element: beheben, nicht raten.
-4. **Prüfung vor Lieferung**: unabhängiger zweiter Lauf auf Drehbuch-Ebene (Inhalt, Aufgabenlogik, Inhaltsregeln spec §L).
+4. **Prüfung vor Lieferung**: Was sich nach der Freigabe geändert hat, läuft noch einmal durch `qualitaet.md`.
    Strukturell prüft `build.py` die fertige `.mbz` selbst (`scripts/check.py`: Archiv, IDs, Dateien und Hashes, Bilder,
    Bibliotheksversionen, Verfügbarkeits-JSON); meldet es `FEHLER`, wird nicht geliefert, sondern behoben. Von Hand:
    `python3 scripts/check.py <datei.mbz>`. Wenn möglich Rendertest mit h5p-standalone und den Bibliotheken aus §B.2.
@@ -59,18 +60,16 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
 - Gestaltung ist Präferenz der Lehrkraft: Steckbrief `design.vorlage` (`schlicht` Standard, `kacheln`, `magazin`), Emojis nur
   auf Wunsch. Lesetexte formatiert (Überschrift, Schritte, Tabelle, Kästen, Merke nach `kursdatei.md` §4), kein Absatz länger
   als fünf Zeilen auf dem Handy; kein HTML im Drehbuch.
-- Mischung statt H5P-Kette: Input als Textfeld (kurz, direkt auf der Kursseite) oder Seite (länger, mit Bildern), Videos als
-  Link (`Url`, display embed – die Plattform bettet YouTube/Vimeo ein), H5P nur für Übung und Kontrolle. Richtwert: höchstens die
-  Hälfte der Elemente einer Einheit sind H5P; Rhythmus Lesen → Üben → Lesen → Üben → Sichern.
+- Mischung statt H5P-Kette: Input als Textfeld (kurz, direkt auf der Kursseite), Seite (länger, mit Bildern), Buch oder
+  Lesebuch, Videos als Link (`Url`, display embed – die Plattform bettet YouTube/Vimeo ein); Anteil und Rhythmus nach
+  `references/didaktik.md` D2 und D7.
 - Moodle-Module, wenn die Lehrkraft Bewertung, Abgaben oder Austausch braucht: `Test` (benotet, Versuche, Fragensammlung; nur
   MC, RF, Kurzantwort) für die Kontrolle mit Note, `Quiz` (H5P) für Zwischenchecks; `Aufgabe` für Abgaben, `Forum` für
   Fragen, `Abstimmung` für Meinungsbilder, `Buch` für längere Lesetexte ohne Fragen, `Datei`/`Verzeichnis` für Material der
   Lehrkraft, `Glossar` für Begriffe. Syntax: `references/kursdatei.md` §3, Beispiel `examples/module/`.
-- Erst Input, dann Kontrolle: bewertete Aufgaben nur zu Inhalten, die im selben Lesebuch davor stehen; Aktivierungsfragen
-  unbewertet (Text), Auflösung auf der Folgeseite; im Drehbuch je Aufgabe `(← Sn)`.
-- Inhaltsregeln spec §L: Antworten mischen, plausible Distraktoren, kein Meta-Text, keine Aphorismen, keine absoluten
-  Aussagen, keine Genderzeichen, Fachliches gegen das Material der Lehrkraft prüfen.
-- Standardannahmen und Rangfolge (`Hinweis:` bei Abweichung) in `references/didaktik.md`; vor jeder Drehbuch-Freigabe ein eigener Durchlauf gegen die Markerliste in `references/qualitaet.md`, Treffer beheben (beide Entwurf).
+- Didaktik nach `references/didaktik.md`: Standardannahmen D1–D10, Rangfolge Lehrkraft vor Material vor Standard;
+  Abweichungen bauen und als `Abweichung: …` im Drehbuch-Kopf vermerken. Inhaltsregeln (Distraktoren, Meta-Text, absolute
+  Aussagen, Genderzeichen, Fachprüfung) als Markerliste in `references/qualitaet.md`.
 - Delta-Sicherungen: Abschnitt 0 leer, Teile als Top-Level-Abschnitte, keine Badges/Kursbild (spec §O).
 
 ## Dateien
@@ -79,6 +78,8 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
 - `references/h5p-vorlagen.md` – `json_content`-Vorlagen mit deutschen UI-Strings (Stand 2026-10-22).
 - `references/skelette.md` – `moodle_backup.xml`-Kopf, Settings, `course.xml`, leere Standarddateien.
 - `references/intake.md` – Fragerunden, Drehbuch-/Kursdatei-Format (eine Seite), Steckbrief-Schema.
+- `references/didaktik.md` – Rangfolge und Standardannahmen D1–D10 für Gliederung und Drehbuch.
+- `references/qualitaet.md` – Prüfdurchlauf: Markerliste mit Proben, Fachprüfung, `Offen:`-Zeilen.
 - `references/kursdatei.md` – vollständige Referenz der Kursdatei (alle Typen, Angaben, Bausteine, Grenzen).
 - `scripts/` – Generator: `gen/kursdatei.py` (Parser), `gen/html.py` (Textbausteine), `gen/mbz.py` (Writer),
   `gen/h5p.py` (H5P-Builder), `gen/render.py` (Banner/Mocks), `build.py`, `check.py` (Sicherung prüfen), `templates/`,

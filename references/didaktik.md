@@ -1,40 +1,33 @@
-# Didaktische Standardannahmen (Entwurf)
+# Didaktische Standardannahmen
 
-Entwurf aus AP8, Freigabe durch den Autor offen. Gilt für Gliederung und Drehbuch; der Assistent liest die Seite vor
-dem ersten Drehbuch. Geprüft wird dagegen im Durchlauf aus `references/qualitaet.md`.
+Gelten für Gliederung und Drehbuch. Geprüft wird dagegen im Durchlauf aus `references/qualitaet.md`.
 
 ## Rangfolge
 
-1. Ausdrückliche Angabe der Lehrkraft (Gespräch, Steckbrief)
+1. Ausdrückliche Angabe der Lehrkraft (Gespräch, Steckbrief `vorgaben:`)
 2. Material der Lehrkraft (Reihenfolge, Aufgaben, Begriffe aus Folien und Arbeitsblättern)
-3. Standardannahme dieser Seite
+3. Standardannahme D1–D10
 
 Weicht eine Angabe oder das Material von einer Standardannahme ab, wird gebaut, was die Lehrkraft will oder das Material
-vorgibt, ohne Rückfrage und ohne Belehrung. Die Abweichung steht als eine Zeile im Drehbuch-Kopf, mit Nummer der Annahme:
+vorgibt. Vermerkt wird das mit einer Zeile im Drehbuch-Kopf, im Klartext, die Nummer am Ende:
 
 ```
-# Drehbuch v1 · Biologie 7 – Die Zelle · 45 min
-farbe: #0F766E
-Hinweis: D1 – Quiz vor der Seite „Zellbestandteile“ (Wunsch der Lehrkraft: Vorwissen abfragen)
-
-## Allgemeines
+Abweichung: Quiz steht vor der Seite „Zellbestandteile“, die Lehrkraft will Vorwissen abfragen (D1)
 ```
 
-`Hinweis:`-Zeilen stehen nach den Kurs-Angaben (`farbe:`, `kursbild:`) und vor dem ersten `##`. Dort übergeht der
-Parser sie und meldet das auf der Konsole; das ist gewollt. Vor `farbe:` gesetzt, wird die Farbe mit übergangen. Unter
-einem Element wäre `Hinweis:` ein orangefarbener Kasten im Kurs.
+Der Parser übergeht `Abweichung:`-Zeilen wie `Angenommen:`; im Kurs erscheinen sie nie.
 
 ## Standardannahmen
 
-| Nr | Prinzip | Begründung |
-|---|---|---|
-| D1 | Erst Input, dann Kontrolle: jede bewertete Aufgabe ist aus dem beantwortbar, was im Kurs davor steht, und trägt im Drehbuch `(← Sn)`. | Wer abgefragt wird, bevor der Input kam, rät, und die Rückmeldung „falsch“ trifft dann fehlendes Vorwissen statt fehlendes Verständnis. |
-| D2 | Rhythmus Lesen → Üben → Sichern: auf jeden kurzen Input folgt eine Übung dazu, am Ende der Einheit eine Sicherung (Quiz, Test, Merke). | Die Übung prüft den Input, solange er noch präsent ist, und die Sicherung zeigt Lernenden und Lehrkraft, was von der Einheit bleibt. |
-| D3 | Jede Phase und jede Aufgabe hat einen Zweck; er steht als Stichpunkt im Marker des Drehbuchs (`[Quelle: Folie 3 · Zweck: Vorwissen aktivieren]`, `[KI: Zweck: Router und Switch unterscheiden]`), nie im Kurs. | Ein Element ohne nennbaren Zweck wird gestrichen, und im Kurs wäre der Zweck Meta-Text, den die Lernenden nicht brauchen. |
-| D4 | Jede Aufgabe prüft genau eine Sache. | Prüft eine Frage zwei Dinge, zeigt eine falsche Antwort nicht, woran es lag, und die Rückmeldung kann nicht gezielt helfen. |
-| D5 | Rückmeldung je Antwortoption, wo das Format es zulässt (MC als Liste mit `→`, RF mit `→ richtig:`/`→ falsch:`): bei falschen Optionen die Fehlvorstellung und die Stelle im Input, bei der richtigen der Grund. | Ein bloßes „falsch“ lässt die Fehlvorstellung stehen, aus der der Distraktor gebaut ist. |
-| D6 | Der Anspruch steigt, in der Einheit und über den Kurs: erst Wiedererkennen (Zuordnen, Richtig/Falsch), dann Anwenden auf einen Fall, zuletzt ein neuer Fall. | Die Anwendung baut auf gesicherten Begriffen auf, und erst der neue Fall zeigt, ob das Gelernte übertragbar ist. |
-| D7 | Höchstens die Hälfte der Elemente einer Einheit ist H5P; Input steht als Textfeld oder Seite, Videos als Link. | Jedes H5P-Element ist eine eigene Aktivität mit eigener Ladezeit, und ohne Lesetext fehlt der Input, auf den sich die Übungen beziehen. |
-| D8 | Zeitcheck: jede Seite und Aufgabe bekommt Minuten (Werte in `intake.md` §5), je Einheit summiert gegen das Soll; über 20 % Abweichung steht ein Vorschlag zum Kürzen oder Ergänzen dabei. | Die Lehrkraft plant mit Unterrichtsminuten, und ein Kurs, der deutlich länger dauert als angekündigt, passt nicht in die Stunde. |
-| D9 | Anwendung vor Wissen: abgefragt werden Fälle, Situationen und Entscheidungen statt Definitionen, mit erfundenen Personen und Marken. | Ob ein Begriff verstanden ist, zeigt sich am Fall, und erfundene Namen vermeiden Werbung und Bezüge auf echte Personen. |
-| D10 | Der Einstieg einer Einheit ist ein konkreter Fall oder eine Frage aus dem Alltag der Lernenden, unbewertet, aufgelöst im folgenden Input. | Die Frage gibt dem Input eine Richtung; bewertet wäre sie ein Test auf Vorwissen (D1). |
+| Nr | Prinzip |
+|---|---|
+| D1 | Erst Input, dann Kontrolle: Regel und Verweis `(← S2)` bzw. `(← Elementtitel)` stehen in `intake.md` §5. |
+| D2 | Rhythmus Lesen → Üben → Sichern (`intake.md` §3); die Sicherung am Ende der Einheit enthält mindestens einen Fall, der vorher nicht vorkam. |
+| D3 | Jedes Element außer Banner und Überblick hat einen Zweck, als `[Zweck: …]` in seiner Überschriftzeile: höchstens acht Wörter mit einem Verb („Router und Switch unterscheiden“). Lässt er sich so nicht schreiben, fällt das Element weg. |
+| D4 | Jede Aufgabe prüft eine Sache. Probe: Die Begründung der richtigen Antwort braucht genau einen Inhalt aus dem Bezugselement. |
+| D5 | In Übungen (Lesebuch, Quiz zwischendurch) bekommt jede falsche Option, die eine Fehlvorstellung abbildet, eine Rückmeldung (`→`): was daran falsch ist und wo der Input es klärt. MC dafür als Liste, RF mit `→ falsch:`. Abschlussquiz und Test sind frei. |
+| D6 | Die Übungen einer Einheit steigen im Anspruch: erst Wiedererkennen (Lernkarten, Zuordnen von Begriffen, Richtig/Falsch), dann Anwenden auf einen Fall. |
+| D7 | Höchstens die Hälfte der Elemente einer Einheit ist H5P. Gezählt werden die Elemente ohne Banner und Überblick; Lesebuch zählt als Input, wie Textfeld, Seite und Buch. |
+| D8 | Zeitcheck nach `intake.md` §5. Weicht die Summe um mehr als 20 % vom Soll ab, steht ein Vorschlag zum Kürzen oder Ergänzen in der `Zeit`-Zeile; die Lehrkraft entscheidet. |
+| D9 | Abgefragt werden Fälle statt Definitionen: Die Mehrheit der Fragen in Quiz und Test einer Einheit schildert eine Situation, in der etwas zu entscheiden ist. Personen und Marken sind erfunden. |
+| D10 | Eine Einheit beginnt mit einem konkreten Fall oder einer Frage aus dem Alltag der Lernenden, unbewertet, aufgelöst im folgenden Input (`intake.md` §5). |

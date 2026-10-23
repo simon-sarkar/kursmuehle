@@ -20,7 +20,7 @@ untertitel: Wie kommt das Internet aufs Handy?
 ## <Abschnittstitel> · 25 min                    Abschnitt; „· N min“ am Ende wird entfernt
 teil: netz                                       Angaben zum Abschnitt
 kachelbild: kachel.png                           Kachelbild (nur Kursformat Kacheln; sonst ignoriert)
-### <Typ>: <Titel> · 4 min [Quelle: …]           Element
+### <Typ>: <Titel> · 4 min [Quelle: …] [Zweck: …]   Element
 angabe: wert                                     Angaben zum Element, direkt unter der Überschrift
 <Inhalt>
 ### Unterabschnitt: <Titel>                      Unterabschnitt; seine Elemente haben vier Rauten
@@ -30,9 +30,11 @@ teil: le1
 ### <Typ>: <Titel>                               wieder ein Element des Abschnitts
 ```
 
-Ignoriert werden überall: `[Quelle: …]`, `[KI]`, `[KI: …]`, `(← S2)`, `(4 min)` und `· 4 min` am Ende von Überschriften
-und `Seite:`-Zeilen, Zeilen `Zeit … min` (Zeitcheck), `v2: …` (Änderungsliste), `Angenommen: …` (Annahmen ohne Rückfrage)
-und `Bildwunsch: …` (Bildprompts für die Lehrkraft) im Kopf. Nichts davon landet im Kurs.
+Ignoriert werden überall: `[Quelle: …]`, `[KI]`, `[KI: …]`, `[Zweck: …]`, `(← S2)`, `(← Elementtitel)`, `(4 min)` und
+`· 4 min` am Ende von Überschriften und `Seite:`-Zeilen, Zeilen `Zeit … min` (Zeitcheck), `v2: …` (Änderungsliste),
+`Angenommen: …` (Annahmen ohne Rückfrage), `Abweichung: …` (Abweichung von `didaktik.md`), `Offen: …` (Fachzweifel für
+die Lehrkraft) und `Bildwunsch: …` (Bildprompts für die Lehrkraft); die vier Zeilenarten gehören in den Kopf. Nichts davon
+landet im Kurs. Andere Zeilen im Kopf meldet der Parser als ignoriert; `farbe:` und `kursbild:` gelten trotzdem.
 
 Fehler brechen den Bau ab und nennen Datei, Zeile und Element. Unbekannte Typen, Angaben, Bilder, Zonen und Sprungziele
 sind Fehler, keine Vermutungen.

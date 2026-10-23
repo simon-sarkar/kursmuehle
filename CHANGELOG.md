@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.9 – 2026-10-23 (AP8: didaktik.md und qualitaet.md, überarbeitet nach dem AP8-Review)
+
+Grundlage ist der Entwurf aus PR #7, auf 0.8 geholt; alle 20 Funde aus `arbeitspakete/AP8-Review.md` sind eingearbeitet.
+
+- `references/didaktik.md` (Laufzeitfassung): Rangfolge Angabe der Lehrkraft > ihr Material > Standardannahme und D1–D10
+  nur als Prinzip. Was schon in `intake.md` steht (Erst Input, dann Kontrolle; Rhythmus; Zeitcheck; Einstieg), ist ein
+  Verweis. D5: Rückmeldung bei jeder falschen Option, die eine Fehlvorstellung abbildet, Abschlussquiz und Test frei
+  (`intake.md` §5 angeglichen). D6 gilt nur für die Reihenfolge der Übungen, D9 verlangt eine Mehrheit von Fällen in Quiz
+  und Test, D2 einen neuen Fall in der Sicherung. D7 zählt die Elemente ohne Banner und Überblick, Lesebuch und Buch sind
+  Input. D3 mit Probe (höchstens acht Wörter mit Verb). Begründungen stehen als Entwicklerfassung in `spec.md` §L.
+- Abweichungen von D1–D10 stehen als `Abweichung: <Klartext> (Dn)` im Drehbuch-Kopf (statt `Hinweis:`, das unter einem
+  Element ein orangefarbener Kasten ist). Fachzweifel aus dem Prüfdurchlauf stehen als `Offen: …` im Kopf.
+- Zweck je Element als `[Zweck: …]` in der Überschriftzeile, definiert in `intake.md` §5 und `kursdatei.md` §1.
+- `references/qualitaet.md`: ein Durchlauf, bevor die Lehrkraft das Drehbuch sieht (bei „KI macht alles“ vor dem Bau),
+  danach nur Änderungen; kein zweiter Lauf in Subagent oder neuem Chat. Markerliste mit mechanischen Proben (Dreierreihe,
+  rhetorische Frage, absolute Aussage, Zweckzeile, Lob) und ausdrücklichen Nicht-Treffern: Doppelpunkt-Fanfare nur im
+  Fließtext, nie Kursdatei-Zeilenanfänge, Überschriften oder Listenlabels; Bedienhinweise sind keine Zweckzeile; RF-Aussagen
+  mit ✘, Code, Formeln und direkte Rede sind keine Treffer. Positionskriterium beim Distraktor gestrichen (der Generator
+  mischt), Länge mit Schwelle. Neu: beschreibender Untertitel, Prosa-Anweisung, langer Absatz, Schlussformel,
+  Gliederungswörter als Überschrift. Fachprüfung: Lösung jeder Frage im Bezugselement nachschlagen. Ausnahmen vom
+  „beheben, nicht melden“: Zeitvorschlag in der `Zeit`-Zeile, Fachzweifel als `Offen:`. Wünsche der Lehrkraft stehen im
+  neuen Steckbrieffeld `vorgaben:`.
+- Kein Entwurfsvermerk im Laufzeittext; die Regel für Beispiele (nur eigene oder CC0-Inhalte) steht in der README unter
+  „Mitmachen“.
+- Parser (`gen/kursdatei.py`): `Abweichung:` und `Offen:` werden wie `Angenommen:` übergangen; `_clean` entfernt
+  `[Zweck: …]`; die Kurs-Angaben im Kopf werden zeilenweise gelesen, eine fremde Zeile vor `farbe:` verschluckt die Farbe
+  nicht mehr. Website-Modus mischt MC-Antworten wie H5P und Test (deterministisch je Frage).
+- SKILL.md: Prüfdurchlauf in Schritt 2, Schritt 4 nur Änderungen nach der Freigabe; „Erst Input“ und Inhaltsregeln als
+  Verweis auf `didaktik.md` und `qualitaet.md`; Lesebuch und Buch als Input.
+- `examples/netzwerk9` besteht den eigenen Prüfdurchlauf: Zweck je Element, Verweise auf Elementtitel, Lernkarten vor den
+  Fällen (D6), Check-Frage als Fall mit Rückmeldung je Fehlvorstellung, Abschlussquiz mit vier Fällen, drei davon neu, ohne
+  Scherz- und Ausscheide-Distraktoren, Zeitvorschlag in der `Zeit`-Zeile, Untertitel ohne Umfangsangabe. Fachfehler
+  behoben: „Access Point braucht immer eine Kabelverbindung“ (falsch bei Repeater und Mesh) in Seite, Lernkarte,
+  Hefteintrag und Quiz; Quiz-Frage 1 („holt das Internet in die Wohnung → Router“) widersprach der Seite
+  (Telefonbuchse). Kursbeschreibung im Steckbrief nannte ein Lesebuch, das es nicht gibt.
+- `scripts/tests/test_website.py` stabil: Die Seite wechselt Kapitel über `hashchange`, also nach dem Klick asynchron;
+  die Prüfungen warten jetzt auf den Zielzustand (`warte()`, `springe()`), statt ihn sofort abzufragen. Vorher je Lauf
+  1 bis 4 falsche Fehler bei Los geht’s, Weiter, Fortschritt und Menü.
+- `test_kursdatei.py`: Kopf mit `Abweichung:`, `Offen:`, fremder Zeile vor `farbe:`; Element mit `[Quelle: …] [Zweck: …]`
+  in Überschrift und Text.
+- Offen: CLAUDE.md nennt als Laufzeitlektüre nur SKILL.md und das Kursdatei-Format; `didaktik.md` und `qualitaet.md` sind
+  zwei weitere Laufzeitdateien (zusammen rund 1100 Wörter). Mechanisch erkennbare Marker (Ausrufezeichen, Emojis,
+  Genderzeichen) könnte der Parser als Warnung ausgeben.
+
 ## 0.8 – 2026-10-23 (AP7: Website-Modus; Korrekturen aus Import-Test 3)
 
 - Korrekturen aus Import-Test 3 (0.7):

@@ -84,14 +84,19 @@ ERWARTET = ["<h3 ", ">Zwischen</h3>", "Kern</p>", "border-radius:3px\">markierte
 OK = """# Drehbuch v1 · Test · 5 min
 v2: Änderung
 Angenommen: Jgst 9
+Abweichung: Quiz vor der Seite, Wunsch der Lehrkraft (D1)
+Offen: Frage 1 widerspricht Folie 3
 Bildwunsch: banner.png | 1600 × 420 | ruhiges Motiv
+Hinweis: steht falsch im Kopf, darf farbe nicht schlucken
 farbe: #0F766E
 ## Allgemeines
 ### Banner: Test
 bild: router.png
 untertitel: Ein Satz
-### Textfeld: Hallo
-Vorspann: Hi [KI]
+### Textfeld: Hallo · 1 min [Quelle: Folie 1] [Zweck: begrüßen]
+Abweichung: unter dem Element
+Vorspann: Hi [KI] [Zweck: Einstieg]
+Offen: unter dem Element
 ## Teil · 5 min
 teil: t1
 sichtbar ab: 2026-11-03
@@ -171,6 +176,12 @@ def check_fehler():
         assert secs[1].items[1].hvp.gradepass == 1.98, secs[1].items[1].hvp.gradepass   # 3 Fragen, 66 %
         assert secs[0].items[0].name == "Test" and "router.png" in secs[0].items[0].intro, secs[0].items[0].intro[:80]
         assert "Hi" in secs[0].items[1].intro and "[KI]" not in secs[0].items[1].intro
+        # Drehbuch-Marker und -Zeilen landen nie im Kurs; eine fremde Kopfzeile schluckt farbe: nicht
+        for meta in ("Zweck", "begrüßen", "Quelle", "Abweichung", "Offen", "unter dem Element"):
+            assert meta not in secs[0].items[1].intro + secs[0].items[1].name, (meta, secs[0].items[1].intro)
+        assert secs[0].items[1].name == "Hallo", secs[0].items[1].name
+        from gen import kursdatei
+        assert kursdatei._HUE == "#0F766E", kursdatei._HUE
         # Textbausteine: ohne Banner trägt die Überblickskarte ihren Titel, mit Banner nicht
         with open(path, "w", encoding="utf-8") as f:
             f.write(BAUSTEINE)

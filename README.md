@@ -2,9 +2,9 @@
 
 # Kursmühle – Lernplattform-Kurse aus einem Prompt
 
-![Version 0.8](docs/badge-version.svg) ![Status: Tech-Demo auf dem Weg zu 1.0](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
+![Version 0.9](docs/badge-version.svg) ![Status: Tech-Demo auf dem Weg zu 1.0](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
 
-**Version 0.8** (Stand 23.10.2026) · siehe [`ROADMAP.md`](ROADMAP.md) und [`CHANGELOG.md`](CHANGELOG.md)
+**Version 0.9** (Stand 23.10.2026) · siehe [`ROADMAP.md`](ROADMAP.md) und [`CHANGELOG.md`](CHANGELOG.md)
 
 **Ein KI-Assistent baut aus einer Beschreibung oder eigenem Unterrichtsmaterial eine importierbare Kurssicherung (`.mbz`) für die ByCS-Lernplattform.**
 
@@ -41,14 +41,16 @@ fertige Kurssicherung zum Import.
    Testkurs. Dabei *Kurseinstellungen überschreiben: Ja* wählen, sonst behält
    der Kurs sein bisheriges Kursformat.
 
-> **Projektstatus: Version 0.8 (Tech-Demo).**
+> **Projektstatus: Version 0.9 (Tech-Demo).**
 > Der Ablauf Intake → Drehbuch → Generator → Import ist an zwei Beispielkursen
 > durchgespielt, einschließlich H5P-Inhalten, Badge und Nachlieferung in einen
 > laufenden Kurs, mit Claude Code und mit ChatGPT. Die Moodle-Module Test,
 > Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung und Glossar (seit 0.6)
 > und die Kursformate Kacheln, Wochen, Ein-Themen, Komprimiert und
 > Einzelaktivität (seit 0.7) sind gebaut und geprüft, ebenso der Website-Modus
-> (seit 0.8: ein Abschnitt als eine HTML-Seite mit Kapiteln und Übungen); der
+> (seit 0.8: ein Abschnitt als eine HTML-Seite mit Kapiteln und Übungen). Seit
+> 0.9 prüft der Assistent jedes Drehbuch gegen didaktische Standardannahmen und
+> eine Markerliste, bevor die Lehrkraft es sieht. Der
 > Import-Test auf der Plattform steht für die neuen Formate und den
 > Website-Modus noch aus. Glossar-Einträge kommen über eine mitgelieferte
 > XML-Datei in den Kurs (fester Schritt nach dem Import). Kein offizielles Produkt der
@@ -63,8 +65,10 @@ fertige Kurssicherung zum Import.
 - Das Drehbuch enthält den gesamten Kurs als kurzen Text mit Zeitschätzung
   je Element und Quellenmarkierung (aus dem Material / von der KI ergänzt).
   Dieselbe Datei ist die Kursdatei: Der Generator liest sie direkt, nichts
-  wird nach der Freigabe noch einmal abgetippt. Vor der Lieferung prüft ein
-  zweiter, unabhängiger Lauf Inhalt und Aufgabenlogik.
+  wird nach der Freigabe noch einmal abgetippt. Bevor die Lehrkraft das
+  Drehbuch sieht, prüft der Assistent es gegen zehn didaktische
+  Standardannahmen und eine Markerliste mit Proben (`references/didaktik.md`,
+  `references/qualitaet.md`); Zweck und Quelle je Element stehen nur im Drehbuch.
 - Die Sicherung ist nicht an einen Account gebunden; der Import läuft in jedem
   Kurs der Plattform ohne Vorarbeit. Vor der Lieferung prüft `scripts/check.py`
   jede Sicherung auf Struktur, Dateien, IDs und H5P-Versionen.
@@ -94,6 +98,7 @@ fertige Kurssicherung zum Import.
 | Kursbanner als erstes Element (Bild, Titel, ein Satz); Bild von der KI erzeugt, gerendert (`scripts/banner.py`) oder von der Lehrkraft nach Prompt; Kursbild und Kachelbilder textfrei (`banner.py --kachel`: eigenes Motiv je Abschnitt) | Abschnitts- und Kachelbilder automatisch aus dem Material |
 | Website-Modus: ein Abschnitt als eine HTML-Seite (eingebettet, Vollbild oder neues Fenster) mit Startseite, Kapitelnavigation, Fortschritt und Übungen mit Rückmeldung (Quiz, Zuordnen, Lückentext, Markieren, Lernkarten, Geschichte); dieselbe Kursdatei, `build.py --website` | Bewertung und Abschluss je Übung in der Website, eigene Spiele und Simulationen als Vorlage |
 | Zugriffsbeschränkung „sichtbar ab Datum“; Nachlieferung per Delta-Sicherung | Andere Zugriffsbedingungen (Abschluss von X, Bewertung, Gruppe) |
+| Prüfdurchlauf vor der Freigabe: Standardannahmen D1–D10, Markerliste mit Proben, Fachprüfung gegen das Bezugselement; Drehbuch-Zeilen `Abweichung:` und `Offen:` und der Marker `[Zweck: …]` gelangen nie in den Kurs | Automatische Warnung des Parsers bei mechanisch erkennbaren Markern (Ausrufezeichen, Emojis, Genderzeichen) |
 
 ## Repository-Struktur
 
@@ -102,7 +107,8 @@ SKILL.md       Einstieg für den KI-Agenten: Ablauf, harte Regeln, Grenzen
 references/    spec.md (Sicherungsformat, Plattformwerte, H5P-Strukturen),
                kursdatei.md (Format der Kursdatei kurs.md), formate.md (Kursformate),
                h5p-vorlagen.md (json_content aller Typen, deutsche UI-Texte),
-               skelette.md (XML-Skelette), intake.md (Fragerunden, Drehbuch, Steckbrief)
+               skelette.md (XML-Skelette), intake.md (Fragerunden, Drehbuch, Steckbrief),
+               didaktik.md (Standardannahmen), qualitaet.md (Prüfdurchlauf)
 scripts/       Generator (gen/), build.py, check.py (Sicherung prüfen), Vorlagen, tests/
 examples/      netzwerk9/  – eine Einheit, 25 min: Vorbild für neue Kurse
                alltagskompetenz/ – großer Kurs mit Unterabschnitten, Badge, Delta
@@ -185,7 +191,9 @@ Fehlerberichte und Erweiterungen als Issue oder Pull Request. Am meisten hilft
 ein Hinweis, welches Kursformat oder welche Aktivität fehlt; Kurssicherungen
 selbst gehören nicht ins Repo (die Nutzungsbedingungen der Plattform untersagen
 die Weitergabe von Dateien an Dritte) – veröffentlicht werden nur die daraus
-abgeleiteten Schemata mit Platzhaltern.
+abgeleiteten Schemata mit Platzhaltern. Beispielkurse in `examples/` enthalten
+nur eigene Texte und selbst erzeugte oder CC0-Bilder: keine Schulbuchseiten,
+fremden Fotos oder Logos, keine Namen echter Personen oder Schulen.
 
 Wer einen Pull Request einreicht, stellt seinen Beitrag unter die Lizenzen
 dieses Repositories und ist damit einverstanden, dass der Autor spätere

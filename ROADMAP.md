@@ -14,12 +14,12 @@ gemessen – macht sie den Dialog einfacher, und hält sie die Tokenkosten unten
 verschlechtern, warten.
 
 Drei Kriterien für das Ergebnis: einfach zu erstellen, brauchbar (kein Slop), ansprechend gestaltet
-(zurückhaltend, nicht nach Masse). Didaktische Standardannahmen (`references/didaktik.md`, geplant) gelten
+(zurückhaltend, nicht nach Masse). Didaktische Standardannahmen (`references/didaktik.md`, seit 0.9) gelten
 mit Rangfolge: ausdrückliche Angabe der Lehrkraft vor eigenem Material vor Standardannahme; Abweichungen
-werden gebaut und im Drehbuch mit einer Hinweiszeile vermerkt, nicht blockiert. **Zweck und Quelle je
+werden gebaut und im Drehbuch mit einer Zeile `Abweichung:` vermerkt, nicht blockiert. **Zweck und Quelle je
 Element stehen nur im Drehbuch** (Stichpunkt); im Kurs selbst erscheinen sie nie – eine Zweck- oder
 Quellenzeile unter einem Element ist ein Slop-Marker. Slop-Prüfung als eigener Durchlauf gegen eine
-konkrete Markerliste (`references/qualitaet.md`, geplant), bevor die Lehrkraft das Drehbuch sieht.
+konkrete Markerliste (`references/qualitaet.md`, seit 0.9), bevor die Lehrkraft das Drehbuch sieht.
 
 ## Umfang und Reihenfolge für 1.0 (Entscheidung 23.10.)
 

@@ -115,7 +115,8 @@ Formate je Lerneinheit, ein Satz je Format:
 | Selbsteinschätzung | drei Sätze vorher und nachher | bei Selbstlernkurs |
 | Praxisauftrag | Seite mit Auftrag außerhalb des Kurses | optional |
 
-Rhythmus: Lesen → Üben → Lesen → Üben → Sichern. Höchstens die Hälfte der Elemente sind interaktive Übungen.
+Rhythmus: Lesen → Üben → Lesen → Üben → Sichern. Anteil der interaktiven Übungen und weitere Standardannahmen:
+`references/didaktik.md`.
 
 ## 4. Bilder
 
@@ -139,7 +140,7 @@ große Bilder: Banner immer, Abschnittsbilder nur bei „gestaltet“, keine Bil
 Zweck: Die Lehrkraft liest den gesamten Inhalt als Text, korrigiert, promptet nach; gebaut wird erst die freigegebene Fassung.
 Lesen und Nachprompten ist die Reibung – **so kurz wie möglich, so lang wie nötig**. Kein Prosa-Rahmen, keine
 Erklärungen an die Lehrkraft, keine Wiederholung des Steckbriefs. Das Drehbuch ist zugleich die Kursdatei `kurs.md`:
-`scripts/build.py` liest sie direkt; Quellen-, Zeit- und Bezugsmarker ignoriert der Parser. Vollständige Referenz
+`scripts/build.py` liest sie direkt; Quellen-, Zweck-, Zeit- und Bezugsmarker ignoriert der Parser. Vollständige Referenz
 (alle Angaben, Bausteine, Grenzen): `references/kursdatei.md`. Vorbild: `examples/netzwerk9/kurs.md`.
 
 Format (Markdown, Überschriften tragen die Struktur, Angaben stehen klein geschrieben direkt darunter):
@@ -148,6 +149,8 @@ Format (Markdown, Überschriften tragen die Struktur, Angaben stehen klein gesch
 # Drehbuch v1 · <Kurstitel> · <Umfang> min
 v2: S2 gekürzt · Frage 3 ersetzt                       Änderungsliste (wird ignoriert)
 Angenommen: Jgst 9, begleitend, 45 min                 Annahmen bei Weg 1 (wird ignoriert)
+Abweichung: <Klartext> (D1)                             Abweichung von didaktik.md (wird ignoriert)
+Offen: <Frage an die Lehrkraft>                         Fachzweifel aus dem Prüfdurchlauf (wird ignoriert)
 Bildwunsch: banner.png | 1600 × 420 | <Prompt>          nur wenn die Lehrkraft Bilder erzeugt (wird ignoriert)
 farbe: #0F766E                                          optional: Akzentfarbe, kursbild: datei.png
 
@@ -158,7 +161,7 @@ untertitel: <ein Satz>
 ## <Abschnitt> · 25 min
 teil: le1                                               Schlüssel für Steckbrief, --delta, sichtbar ab
 ### Überblick: <Titel>                                  Kopfkarte; untertitel:, dauer:, dann - Lesen: … / - Üben: …
-### Textfeld: <Name> · 2 min [Quelle: Folie 3]          kurzer Input auf der Kursseite
+### Textfeld: <Name> · 2 min [Quelle: Folie 3] [Zweck: <Verb, höchstens acht Wörter>]   kurzer Input
 Vorspann: <Einleitungssatz>
 <Absatz>                                               Leerzeile = neuer Absatz; **fett**, *kursiv*, ==markiert==, <br>
 Überschrift: <Zwischenüberschrift>                      Hervorhebung: <Kernsatz>
@@ -180,7 +183,7 @@ Aussagen: <Anweisung>  → - ✔<richtig> · <falsch> · <falsch>   (je Zeile ei
 Schnellquiz:           → - <Frage>? · ✔<richtig> · <falsch>
 ### Lernkarten: <Titel> · 4 min
 - <Vorderseite> → <Rückseite> · Bild: <datei.png>
-### Zuordnen: <Titel> (← S2)
+### Zuordnen: <Titel> (← <Elementtitel>)
 zonen: <A> | <B>
 - <Element> → <A>
 ### Quiz: <Titel> · 6 min (← S1–S3)
@@ -211,21 +214,26 @@ Zeit LE 1: 20 min ✔ (Soll 20)
 ```
 
 Regeln:
-- Jede Aufgabe eine Zeile; richtige Antwort mit ✔, falsche Aussage mit ✘. Rückmeldungen (`→`) nur, wo sie etwas erklären.
-- **Erst Input, dann Kontrolle:** Jede bewertete Aufgabe muss aus dem beantwortbar sein, was im selben Lesebuch davor steht
-  (oder aus explizit vorausgesetztem Vorwissen). Aktivierungsfragen vor dem Input sind erlaubt, aber unbewertet – als Text
-  („Überleg kurz: …“), Auflösung auf der nächsten Seite. Jede Aufgabe im Drehbuch trägt einen Verweis, worauf sie aufbaut
-  (`(← S2)`); fehlt der Verweis, ist die Aufgabe falsch platziert. Keine Rückmeldung „falsch“ auf Fragen, die nur Vorwissen testen.
-- **Quellenmarkierung** je Textblock: `[Quelle: …]` (aus dem Material der Lehrkraft) oder `[KI]` (erfunden/ergänzt). Nur im Drehbuch,
-  nie im Kurs – der Parser entfernt sie. Eine Zweck- oder Quellenzeile als Kursinhalt ist ein Fehler.
+- Jede Aufgabe eine Zeile; richtige Antwort mit ✔, falsche Aussage mit ✘. Rückmeldungen (`→`) in Übungen bei jeder falschen
+  Option, die eine Fehlvorstellung abbildet (MC dann als Liste); Abschlussquiz und Test frei (didaktik.md D5).
+- **Erst Input, dann Kontrolle:** Jede bewertete Aufgabe muss aus dem beantwortbar sein, was davor steht: im selben Lesebuch
+  oder in einem Element davor (oder aus ausdrücklich vorausgesetztem Vorwissen). Aktivierungsfragen vor dem Input sind erlaubt,
+  aber unbewertet – als Text („Überleg kurz: …“), Auflösung im nächsten Element bzw. auf der nächsten Seite. Jede Aufgabe im
+  Drehbuch trägt einen Verweis, worauf sie aufbaut: `(← S2)` für eine Lesebuch-Seite, sonst `(← <Elementtitel>)`; fehlt der
+  Verweis, ist die Aufgabe falsch platziert. Keine Rückmeldung „falsch“ auf Fragen, die nur Vorwissen testen.
+- **Quelle und Zweck** je Element in der Überschriftzeile: `[Quelle: …]` (aus dem Material der Lehrkraft) oder `[KI]`
+  (erfunden/ergänzt), dazu `[Zweck: …]` (didaktik.md D3; nicht bei Banner und Überblick). Nur im Drehbuch, nie im Kurs –
+  der Parser entfernt sie. Eine Zweck- oder Quellenzeile als Kursinhalt ist ein Fehler.
 - **Zeitcheck**: je Aufgabe/Seite Minuten schätzen (Lesen 150 Wörter/min, MC 45 s, Karte 20 s, Quizfrage 45 s, Geschichtsknoten 40 s),
-  je LE summieren, gegen Soll ausweisen (`Zeit LE 1: …`); Abweichung > 20 % mit Vorschlag (kürzen/ergänzen) melden.
+  je LE summieren, gegen Soll ausweisen (`Zeit LE 1: …`); bei Abweichung über 20 % steht der Vorschlag (kürzen/ergänzen) in
+  derselben Zeile, die Lehrkraft entscheidet.
 - Umfang: eine 45-Minuten-Stunde ≈ 2–3 Seiten Drehbuch. Länger nur, wenn der Inhalt es verlangt.
 - **Lesetexte formatiert, nicht als Fließtext**: je Textsorte den Baustein wählen (Erklärung: Überschriften, kurze Absätze,
   Begriffstabelle; Fall: `Beispiel:`; Anleitung: `Schritte:`; Merksatz: `Merke:`), kein Absatz länger als fünf Zeilen auf dem
   Handy (etwa 60 Wörter). Gestaltung kommt aus der Vorlage im Steckbrief, nicht aus HTML im Drehbuch.
 - **Annahmen** bei Weg 1 und überall, wo der Assistent ohne Frage entschieden hat: eine Zeile `Angenommen: …` im Kopf.
-  Die Lehrkraft korrigiert dort, statt gefragt zu werden.
+  Die Lehrkraft korrigiert dort, statt gefragt zu werden. Ebenso im Kopf: `Abweichung: …` (Wunsch oder Material weicht von
+  didaktik.md ab, gebaut wird trotzdem) und `Offen: …` (Fachzweifel aus dem Prüfdurchlauf, vor der Freigabe klären).
 - **Änderungsliste** bei jeder Revision oben im Drehbuch: `v2: S2 gekürzt · Frage 3 ersetzt · N4 neu · Zeit LE 1 20 → 18 min`.
   Nur die Änderungsliste und die geänderten Blöcke erneut zeigen, nicht das ganze Drehbuch, außer auf Wunsch.
 - Freigabe = „passt“ der Lehrkraft (oder Steuerungsgrad c). Danach die Datei unverändert als `kurs.md` bauen; keine
@@ -257,6 +265,7 @@ kurs:
   assistent: {code: ja, dateien: ja, bilder: nein}   # Selbstabfrage aus SKILL.md
   bilder: gerendert               # selbst | gerendert | lehrkraft (§4)
   material: []                    # Dateinamen/Links der Lehrkraft
+  vorgaben: []                    # ausdrückliche Wünsche, die Standards übersteuern (Genderstern, Emojis im Text, Sie-Form)
   angenommen: []                  # Annahmen ohne Rückfrage, auch im Drehbuch-Kopf
   offen: []                       # ungeklärte Punkte, vor dem Bau klären
 teile:                            # Schlüssel frei, Reihenfolge = Kursreihenfolge

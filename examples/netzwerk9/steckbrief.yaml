@@ -1,7 +1,7 @@
 kurs:
   titel: "Informatik 9 – Netzwerkkomponenten"
   kurzname: "Netzwerk9"
-  beschreibung: "<p>Kurze Einheit: Wie kommt das Internet von der Wand aufs Handy? Lesebuch, Lernkarten, Zuordnen, Quiz. Ca. 25 Minuten.</p>"
+  beschreibung: "<p>Wie kommt das Internet von der Wand aufs Handy? Telefonbuchse, Router, Switch, Access Point und Endgeräte am Fall einer Wohnung.</p>"
   fach: "Informatik"
   jahrgangsstufe: "9"
   einsatz: begleitend
@@ -13,4 +13,4 @@ kurs:
   assistent: {code: ja, dateien: ja, bilder: nein}   # Banner mit scripts/banner.py gerendert
   material: ["1. Netzwerkkomponenten.pptx", "Heftbilder Netzwerkkomponenten.pdf"]
 teile:
-  netz: {status: pending, titel: "Netzwerkkomponenten – von der Wand aufs Handy", dauer_min: 25, formate: [lesebuch, lernkarten, zuordnen, quiz]}
+  netz: {status: pending, titel: "Netzwerkkomponenten – von der Wand aufs Handy", dauer_min: 25, formate: [seite, lernkarten, quiz, zuordnen]}

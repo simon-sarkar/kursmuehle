@@ -114,8 +114,7 @@ _RE_TIME_END = re.compile(r"\s*(?:·\s*)?\(?(?:ca\.\s*)?\d+\s*min\.?\)?\s*$")
 
 def _clean(s):
     """Quellen-, Zweck- und Bezugsmarker entfernen (nur Drehbuch, nie Kurs)."""
-    s = re.sub(r"\s*\[Quelle:[^\]]*\]", "", s)
-    s = re.sub(r"\s*\[KI(?::[^\]]*)?\]", "", s)
+    s = re.sub(r"\s*\[(?:Quelle:|Zweck:|KI\b)[^\]]*\]", "", s)
     s = re.sub(r"\s*\(←[^)]*\)", "", s)
     return s.rstrip()
 
@@ -167,7 +166,9 @@ class Zeilen:
     def __init__(self, path):
         with open(path, encoding="utf-8") as f:
             raw = f.read().splitlines()
-        self.lines = [(i + 1, "" if re.match(r"^(Zeit\b.*\d+\s*min|v\d+:|Angenommen:|Bildwunsch:)", s) else _clean(s)) for i, s in enumerate(raw)]
+        # Drehbuch-Zeilen für die Lehrkraft, nie im Kurs (Zeitcheck, Änderungsliste, Annahmen, Abweichungen, offene Fragen)
+        meta = re.compile(r"^(Zeit\b.*\d+\s*min|v\d+:|Angenommen:|Abweichung:|Offen:|Bildwunsch:)")
+        self.lines = [(i + 1, "" if meta.match(s) else _clean(s)) for i, s in enumerate(raw)]
         self.pos = 0
         self.name = os.path.basename(path)
 
@@ -738,7 +739,12 @@ class Parser:
             else:
                 head.append(lines[i])
             i += 1
-        self.kurs_attr, rest = self._attrs(head, ATTRS["kurs"], "Kurs")
+        # Kurs-Angaben zeilenweise: eine fremde Zeile davor schluckt sonst farbe: und kursbild:
+        self.kurs_attr, rest = {}, []
+        for line in head:
+            a, r = self._attrs([line], ATTRS["kurs"], "Kurs")
+            self.kurs_attr.update(a)
+            rest += r
         for ln, s in rest:
             if s.strip() and not re.match(r"^(v\d+:|Zeit\b)", s.strip()):
                 print(f"Hinweis: {self.zl.name} Zeile {ln} vor dem ersten Abschnitt wird ignoriert: {s.strip()[:60]}", file=sys.stderr)

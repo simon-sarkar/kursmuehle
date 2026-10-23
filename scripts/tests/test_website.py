@@ -8,6 +8,8 @@ Quiz (falsch → Rückmeldung + „Lösung zeigen“, richtig → „Richtig.“
 Lesebuch-Fragen (Markieren, Lückentext) und Geschichte bis zu einem Ende. Screenshots: <out>/website_<n>_<breite>.png
 (Start und Quiz), nicht committen; die Bilder in docs/ werden von Hand übernommen.
 Braucht Playwright + Chromium (CHROMIUM_PATH für ein vorhandenes Chromium).
+Die Seite wechselt Kapitel über `hashchange`, also nach dem Klick asynchron: jede Prüfung nach einem Klick oder Sprung
+wartet mit `warte()` auf den Zielzustand (höchstens fünf Sekunden), statt ihn sofort abzufragen.
 """
 import argparse
 import os
@@ -37,6 +39,30 @@ def build(content, out):
                   if f.startswith(os.path.splitext(os.path.basename(out))[0] + "_website") and f.endswith(".html"))
 
 
+_SICHTBAR = """([an, aus]) => {
+    const vis = s => { const e = document.querySelector(s);
+        return !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden'; };
+    return an.every(vis) && !aus.some(vis); }"""
+
+
+def warte(page, an=(), aus=(), js=None, ms=5000):
+    """True, sobald alle Selektoren in an sichtbar und alle in aus unsichtbar sind (bzw. js wahr ist)."""
+    try:
+        if js:
+            page.wait_for_function(js, timeout=ms)
+        else:
+            page.wait_for_function(_SICHTBAR, arg=[list(an), list(aus)], timeout=ms)
+        return True
+    except Exception:
+        return False
+
+
+def springe(page, path, kid):
+    """Kapitel per Adresse öffnen und warten, bis es angezeigt wird."""
+    page.goto(f"file://{path}#{kid}")
+    warte(page, an=[f"#{kid}"])
+
+
 def kapitel_mit(page, selector):
     """id des ersten Kapitels, das selector enthält."""
     return page.evaluate(f"""() => {{ const q = document.querySelector('.km-ch {selector}');
@@ -62,15 +88,16 @@ def netzwerk9(page, path, out, breite):
     ok(leer == 0, f"[{breite}] alle Bilder gesetzt ({leer} ohne Bild)")
     page.screenshot(path=os.path.join(out, f"website_start_{breite}.png"), full_page=True)
     page.click("text=Los geht’s")
-    ok(page.is_visible("#k1") and not page.is_visible("#start"), f"[{breite}] Los geht’s öffnet Kapitel 1")
+    ok(warte(page, an=["#k1"], aus=["#start"]), f"[{breite}] Los geht’s öffnet Kapitel 1")
     page.click("#k1 .km-pager a:last-child")
-    ok(page.is_visible("#k2"), f"[{breite}] Weiter öffnet Kapitel 2")
-    ok(page.inner_text(".km-count").startswith("2 /"), f"[{breite}] Fortschritt zählt besuchte Kapitel")
+    ok(warte(page, an=["#k2"], aus=["#k1"]), f"[{breite}] Weiter öffnet Kapitel 2")
+    ok(warte(page, js="() => document.querySelector('.km-count').textContent.startsWith('2 /')"),
+       f"[{breite}] Fortschritt zählt besuchte Kapitel")
 
     # Quiz mit den meisten Fragen (netzwerk9: Abschlussquiz mit MC und RF)
     quiz = page.evaluate("() => [...document.querySelectorAll('.km-quiz')].sort((a, b) => "
                          "b.querySelectorAll('.km-q').length - a.querySelectorAll('.km-q').length)[0].closest('.km-ch').id")
-    page.goto(f"file://{path}#{quiz}")
+    springe(page, path, quiz)
     qs = page.query_selector_all(f"#{quiz} .km-q")
     ok(len(qs) >= 6, f"[{breite}] Quiz mit {len(qs)} Fragen")
     # falsche Antwort bei der ersten MC-Frage
@@ -89,23 +116,23 @@ def netzwerk9(page, path, out, breite):
     page.screenshot(path=os.path.join(out, f"website_quiz_{breite}.png"), full_page=False)
 
     zu = kapitel_mit(page, ".km-pairs")
-    page.goto(f"file://{path}#{zu}")
+    springe(page, path, zu)
     q = page.query_selector(f"#{zu} .km-q")
     loesen(page, q)
     q.query_selector(".km-check").click()
     ok(q.query_selector(".km-qfb").inner_text() == "Richtig.", f"[{breite}] Zuordnen richtig")
 
     lk = kapitel_mit(page, ".km-cards")
-    page.goto(f"file://{path}#{lk}")
+    springe(page, path, lk)
     karte = page.query_selector(f"#{lk} .km-card")
     karte.click()
     ok(karte.get_attribute("aria-pressed") == "true" and karte.query_selector(".km-back").is_visible(),
        f"[{breite}] Lernkarte dreht um")
     if breite < 900:
         page.click(".km-menu")
-        ok(page.is_visible("#km-nav"), f"[{breite}] Menü öffnet die Kapitelliste")
+        ok(warte(page, an=["#km-nav"]), f"[{breite}] Menü öffnet die Kapitelliste")
         page.click("#km-nav a[data-k='start']")
-        ok(page.is_visible("#start") and not page.is_visible("#km-nav"), f"[{breite}] Menü schließt nach Auswahl")
+        ok(warte(page, an=["#start"], aus=["#km-nav"]), f"[{breite}] Menü schließt nach Auswahl")
 
 
 def alltagskompetenz(page, paths):
@@ -114,7 +141,7 @@ def alltagskompetenz(page, paths):
         kid = kapitel_mit(page, sel)
         ok(kid is not None, f"Lesebuch/Quiz mit {name} vorhanden")
         if kid:
-            page.goto(f"file://{paths[0]}#{kid}")
+            springe(page, paths[0], kid)
             q = page.query_selector(f"#{kid} .km-q:has({sel})")
             loesen(page, q)
             q.query_selector(".km-check").click()
@@ -122,7 +149,7 @@ def alltagskompetenz(page, paths):
     kid = kapitel_mit(page, ".km-story")
     ok(kid is not None, "Geschichte vorhanden")
     if kid:
-        page.goto(f"file://{paths[0]}#{kid}")
+        springe(page, paths[0], kid)
         page.click(f"#{kid} .km-story-alts .km-btn")
         for _ in range(30):
             if page.query_selector(f"#{kid} .km-story-view .km-kicker"):     # nur Enden tragen die Zeile „Ende“

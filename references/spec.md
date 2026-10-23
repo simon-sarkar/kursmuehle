@@ -250,25 +250,41 @@ Bild siehe H. Nach Import inaktiv.
 
 ### L. Inhaltsregeln
 
-- Mischung: Input als Textfeld/Seite (mit Bildern), Video als Link, H5P nur für Übung/Kontrolle; höchstens die Hälfte der Elemente H5P.
-- Erst Input, dann Kontrolle: bewertete Aufgaben nur zu Inhalten, die davor stehen (Seite/Textfeld/Lesebuch); Aktivierung vor dem Input unbewertet.
-- Richtige Antworten mischen (randomAnswers); nicht immer Position 1, nicht die längste Option.
-- Distraktoren = plausible Fehlvorstellungen; keine Scherzantworten.
-- Kein Meta-Text über das Material („Lesebuch mit 4 Seiten, der Reihe nach“), keine Aphorismen, keine dramatisierten
-  Einstiege, keine Floskeln. Kurze Sätze, Du-Ansprache, konkrete Fälle, erfundene Marken/Domains.
-- Keine absoluten Aussagen („immer/nie“). Fachliches prüfen (Notrufnummern inkl. Erreichbarkeitszeiten, Fristen, Rechtsbegriffe, Fehlercodes).
-- Genderzeichen (`:in`, `*innen`) vermeiden (Bayern, Schulbereich); Doppelform oder neutral.
-- Vor Lieferung: unabhängiger zweiter Lauf prüft Inhalt und Aufgabenlogik; wenn möglich Rendertest mit B.2-Bibliotheken
-  (h5p-standalone + GitHub-Repos der Bibliotheken im passenden Tag).
+Laufzeitfassung für den Assistenten: `didaktik.md` (Rangfolge, D1–D10, nur Prinzipien) und `qualitaet.md` (Prüfdurchlauf,
+Markerliste mit Proben). Hier nur, was der Generator dazu beiträgt, und die Begründungen.
+
+- Der Generator mischt die Antworten (H5P `randomAnswers`, Test `shuffle`, Website deterministisch je Frage); die Position
+  der richtigen Option ist deshalb kein Marker, die Länge schon.
+- Drehbuch-Marker und -Zeilen filtert der Parser (`gen/kursdatei.py`: `_clean` für `[Quelle: …]`, `[KI…]`, `[Zweck: …]`,
+  `(← …)`; `Zeilen` für `Zeit … min`, `v2:`, `Angenommen:`, `Abweichung:`, `Offen:`, `Bildwunsch:`). Kurs-Angaben im Kopf
+  werden zeilenweise gelesen, eine fremde Zeile davor verschluckt `farbe:` nicht.
+- Fachliches prüfen (Notrufnummern inkl. Erreichbarkeitszeiten, Fristen, Rechtsbegriffe, Fehlercodes); Genderzeichen
+  vermeiden (Bayern, Schulbereich), Doppelform oder neutral.
+- Rendertest, wo möglich, mit B.2-Bibliotheken (h5p-standalone + GitHub-Repos der Bibliotheken im passenden Tag).
+
+Begründungen der Standardannahmen (nicht im Einsatz gelesen):
+
+| Nr | Begründung |
+|---|---|
+| D1 | Wer abgefragt wird, bevor der Input kam, rät; „falsch“ trifft dann fehlendes Vorwissen statt fehlendes Verständnis. |
+| D2 | Die Übung prüft den Input, solange er präsent ist; erst ein neuer Fall in der Sicherung zeigt, ob das Gelernte übertragbar ist. |
+| D3 | Ein Element ohne nennbaren Zweck kostet Zeit ohne Ertrag; im Kurs wäre der Zweck Meta-Text. |
+| D4 | Prüft eine Frage zwei Dinge, zeigt eine falsche Antwort nicht, woran es lag. |
+| D5 | Ein bloßes „falsch“ lässt die Fehlvorstellung stehen; im Abschlussquiz und Test zählt das Ergebnis, Rückmeldungen dort verdoppeln das Drehbuch. Mehrfachauswahl kann „nicht gewählt“ nicht rückmelden (kursdatei §8). |
+| D6 | Anwendung baut auf gesicherten Begriffen auf. Gilt nur für die Reihenfolge der Übungen, nicht für den Anteil der Fälle (D9). |
+| D7 | Jedes H5P-Element ist eine eigene Aktivität mit Ladezeit; ohne Lesetext fehlt der Input. Lesebuch ist H5P, zählt aber als Input. |
+| D8 | Die Lehrkraft plant mit Unterrichtsminuten; ob gekürzt wird, entscheidet sie, deshalb Vorschlag statt Änderung. |
+| D9 | Ob ein Begriff verstanden ist, zeigt sich am Fall; erfundene Namen vermeiden Werbung und Bezüge auf echte Personen. |
+| D10 | Die Frage gibt dem Input eine Richtung; bewertet wäre sie ein Test auf Vorwissen (D1). |
 
 ### M. Ablauf
 
 1. Intake (Intake-Leitfaden): Steuerungsgrad, Rahmen + Material, Gliederung, Formate, Gestaltung → Steckbrief.
 2. **Drehbuch** (Intake-Leitfaden 5): gesamter Inhalt als kompakter Text mit Quellenmarkierung und Zeitcheck → Freigabe
-   durch die Lehrkraft (entfällt bei Steuerungsgrad „KI macht alles“). Unabhängige Prüfung auf Drehbuch-Ebene.
+   durch die Lehrkraft (entfällt bei Steuerungsgrad „KI macht alles“). Davor ein Prüfdurchlauf nach `qualitaet.md`.
    Das Drehbuch ist die Kursdatei `kurs.md` (Format: `kursdatei.md`); der Generator (`gen/`) liest sie direkt.
 3. Prototyp (ein Beispiel je Modultyp, Interactive Book + Branching enthalten) → Lehrkraft importiert → Screenshot.
-4. Vollkurs oder Etappe (O) → unabhängige Prüfung → Korrekturen → Lieferung mit Import-Hinweis (Badge aktivieren, Kursbild;
+4. Vollkurs oder Etappe (O) → Prüfdurchlauf über Änderungen nach der Freigabe → Korrekturen → Lieferung mit Import-Hinweis (Badge aktivieren, Kursbild;
    bei Delta: „Zusammenführen“).
 5. Fehlersuche: zuerst `scripts/check.py <datei.mbz>` (läuft nach jedem Bau automatisch); Restore-Abbruch nennt
    Datei/Element; H5P öffnet nicht → Version (B.2/B.3); Bild fehlt → files.xml (H).
