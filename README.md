@@ -91,6 +91,7 @@ references/    spec.md (Sicherungsformat, Plattformwerte, H5P-Strukturen),
 scripts/       Generator (gen/), build.py, Vorlagen, site.json
 examples/      netzwerk9/  – eine Einheit, 25 min: Vorbild für neue Kurse
                alltagskompetenz/ – großer Kurs mit Unterabschnitten, Badge, Delta
+tools/h5ptest/ Render-Test der H5P-Inhalte außerhalb der Plattform (h5p-standalone + Playwright)
 CHANGELOG.md   Versionen und bekannte Lücken
 ```
 
