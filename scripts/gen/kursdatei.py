@@ -164,6 +164,57 @@ def _answer(a):
     return inl(a.strip()), correct, inl(fb.strip())
 
 
+# ---------------------------------------------------------------- LaTeX und Liefertexte
+_RE_LIEFER = re.compile(r"^(?:(?:Hinweis|Notiz|Anmerkung|Tipp) (?:für|an) die Lehrkraft|Für die Lehrkraft)\s*:", re.I)
+_RE_MATHE = re.compile(r"\$\$(.+?)\$\$|\\\((.+?)\\\)|\\\[(.+?)\\\]|(?<![\w$])\$(?=\S)([^$]+?)(?<=\S)\$(?![\w$])")
+_HOCH = str.maketrans("0123456789+-−n", "⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁻ⁿ")
+_TEX = {"cdot": "×", "times": "×", "approx": "≈", "neq": "≠", "ne": "≠", "leq": "≤", "le": "≤", "geq": "≥", "ge": "≥",
+        "pm": "±", "pi": "π", "alpha": "α", "beta": "β", "gamma": "γ", "delta": "δ", "Delta": "Δ", "circ": "°",
+        "degree": "°", "Rightarrow": "⇒", "rightarrow": "→", "to": "→", "cdots": "…", "ldots": "…", "dots": "…",
+        "quad": " ", "qquad": " ", "left": "", "right": "", "displaystyle": "", ",": " ", ";": " ", "!": "", " ": " "}
+
+
+def _hoch(e):
+    e = e.strip()
+    if e in ("\\circ", "°"):
+        return "°"
+    return e.translate(_HOCH) if all(c in "0123456789+-−n" for c in e) else f"<sup>{e}</sup>"
+
+
+def _tex(t):
+    """Einen LaTeX-Ausdruck in Klartext umsetzen; Rest-Befehle werden gemeldet."""
+    t = t.strip()
+    t = re.sub(r"\\(?:text|mathrm|mathbf|operatorname)\{([^{}]*)\}", r"\1", t)
+    for _ in range(5):                                   # verschachtelte Wurzeln und Brüche von innen nach außen
+        t2 = re.sub(r"\\sqrt\{([^{}]*)\}", lambda m: "√" + (m.group(1) if re.fullmatch(r"[\w²³,.]+", m.group(1))
+                                                             else f"({m.group(1)})"), t)
+        t2 = re.sub(r"\\[dt]?frac\{([^{}]*)\}\{([^{}]*)\}",
+                    lambda m: "/".join(x if re.fullmatch(r"[\w,.²³√]+", x) else f"({x})" for x in m.groups()), t2)
+        if t2 == t:
+            break
+        t = t2
+    t = re.sub(r"\^\{\s*\\circ\s*\}|\^\\circ", "°", t)
+    t = re.sub(r"\^\{([^{}]*)\}", lambda m: _hoch(m.group(1)), t)
+    t = re.sub(r"\^([0-9n])", lambda m: _hoch(m.group(1)), t)
+    t = t.replace("{,}", ",").replace("{.}", ".")
+    t = re.sub(r"\\([A-Za-z]+|[,;! ])", lambda m: _TEX.get(m.group(1), m.group(0)), t)
+    t = re.sub(r"(?<!\\)[{}]", "", t)
+    t = re.sub(r"\s*([≈×≠≤≥])\s*", r" \1 ", t)
+    return re.sub(r"\s{2,}", " ", t).strip()
+
+
+def _latex(s):
+    """LaTeX-Formeln einer Zeile in Klartext: ($$…$$, \\(…\\), \\[…\\], $…$). Gibt (Zeile, nicht umgesetzte Befehle)."""
+    if "$" not in s and "\\(" not in s and "\\[" not in s:
+        return s, []
+    s = _RE_MATHE.sub(lambda m: _tex(next(g for g in m.groups() if g is not None)), s)
+    return s, sorted(set(re.findall(r"\\[A-Za-z]+", s)))
+
+
+def _zeilen(nums):
+    return ", ".join(map(str, nums))
+
+
 # ---------------------------------------------------------------- Zeilen
 class Zeilen:
     def __init__(self, path):
@@ -171,9 +222,31 @@ class Zeilen:
             raw = f.read().splitlines()
         # Drehbuch-Zeilen für die Lehrkraft, nie im Kurs (Zeitcheck, Änderungsliste, Annahmen, Abweichungen, offene Fragen)
         meta = re.compile(r"^(Zeit\b.*\d+\s*min|v\d+:|Angenommen:|Abweichung:|Offen:|Bildwunsch:)")
-        self.lines = [(i + 1, "" if meta.match(s) else _clean(s)) for i, s in enumerate(raw)]
-        self.pos = 0
         self.name = os.path.basename(path)
+        self.lines, liefer, latex, rest = [], [], [], []
+        for i, s in enumerate(raw):
+            if meta.match(s):
+                s = ""
+            elif _RE_LIEFER.match(s):        # Liefertext aus SKILL.md, gehört in die Antwort, nicht in den Kurs
+                liefer.append(i + 1)
+                s = ""
+            else:
+                s2, offen = _latex(s)
+                if s2 != s:
+                    latex.append(i + 1)
+                rest += [(i + 1, b) for b in offen]
+                s = _clean(s2)
+            self.lines.append((i + 1, s))
+        if liefer:
+            print(f"Hinweis: {self.name} Zeile {_zeilen(liefer)}: Hinweis für die Lehrkraft gehört in die Lieferung, "
+                  "nicht in die Kursdatei; ignoriert", file=sys.stderr)
+        if latex:
+            print(f"Hinweis: {self.name} Zeile {_zeilen(latex)}: LaTeX in Klartext umgesetzt (a² + b² = c², √, °); "
+                  "in der Kursdatei Formeln ohne LaTeX schreiben", file=sys.stderr)
+        for ln, b in rest:
+            print(f"Hinweis: {self.name} Zeile {ln}: LaTeX-Befehl {b} nicht umgesetzt, bitte als Text schreiben",
+                  file=sys.stderr)
+        self.pos = 0
 
     def fehler(self, ln, element, msg):
         where = f"{self.name} Zeile {ln}" + (f" ({element})" if element else "")
@@ -230,6 +303,12 @@ def parse_body(lines, zl, element, quiz=False):
                     else:
                         break
             elif name in LIST_DIRS:
+                k2 = j                                   # Leerzeilen zwischen `Schritte: …` und der Liste überspringen
+                while k2 < n and not lines[k2][1].strip():
+                    k2 += 1
+                if k2 > j and k2 < n and " · " not in rest and lst_re.match(lines[k2][1]) \
+                        and not _directive(classify(lines[k2][1]).strip()):
+                    j = k2
                 while j < n:
                     m = lst_re.match(lines[j][1])
                     if not m or _directive(classify(lines[j][1]).strip()):
@@ -676,6 +755,19 @@ class Parser:
             key = m.group(1).strip().lower()
             if key in allowed:
                 attrs[key] = m.group(2).strip()
+                # `versuche: 2 · rückmeldung: sofort · einleitung: …` in einer Zeile: weitere Angaben abtrennen
+                teile = attrs[key].split(" · ")
+                if len(teile) > 1 and any((m2 := _RE_ATTR.match(t)) and m2.group(1).strip().lower() in allowed
+                                          for t in teile[1:]):
+                    attrs[key] = teile[0].strip()
+                    k = key
+                    for t in teile[1:]:
+                        m2 = _RE_ATTR.match(t)
+                        if m2 and m2.group(1).strip().lower() in allowed:
+                            k = m2.group(1).strip().lower()
+                            attrs[k] = m2.group(2).strip()
+                        else:
+                            attrs[k] += " · " + t
                 i += 1
                 continue
             if _directive(s.strip()) or key[0].isupper() or s[0].isupper():

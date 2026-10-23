@@ -2,9 +2,9 @@
 
 # Kursmühle – für die ByCS-Lernplattform
 
-![Version 1.0.2](docs/badge-version.svg) ![Status: Release](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
+![Version 1.0.3](docs/badge-version.svg) ![Status: Release](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
 
-**Version 1.0.2** (Stand 23.10.2026) · [Projektseite](https://simon-sarkar.github.io/kursmuehle/) ·
+**Version 1.0.3** (Stand 23.10.2026) · [Projektseite](https://simon-sarkar.github.io/kursmuehle/) ·
 [Skill-Zip herunterladen](https://github.com/simon-sarkar/kursmuehle/releases/latest/download/kursmuehle.zip) ·
 [`ROADMAP.md`](ROADMAP.md) · [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -97,7 +97,7 @@ Plattform speichern (siehe [Vorbehalte beim Textfeld](#vorbehalte-beim-textfeld)
 | Tokens | Die Einheit, in der KI-Anbieter Textmenge abrechnen und begrenzen; 90 KB Text sind grob 25 000 Tokens. |
 | Sonnet-Klasse | Die mittlere, günstigere Modellstufe von Anthropic (Claude Sonnet); der Skill soll ohne das teuerste Modell auskommen. |
 
-> **Projektstatus: Version 1.0.2.**
+> **Projektstatus: Version 1.0.3.**
 > Mit 1.0 getestet in Claude Code (Agent mit Dateizugriff), im Fremdtest mit einem frischen Assistenten der
 > Sonnet-Klasse, der nur das Skill-Zip und einen Satz bekam. Am 23.10.2026 entstand in ChatGPT mit einem kostenlosen
 > Konto in zwei Durchläufen je ein Kurs zum Satz des Pythagoras ([Richtwerte](#richtwerte)); Kurs B wurde am 23.10.2026 auf der Plattform importiert und läuft.
