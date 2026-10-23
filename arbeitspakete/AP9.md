@@ -17,3 +17,9 @@ Kurs mit Bildern unter 10. Zeit wird im Fremdtest mitgemessen.
 
 Projektseite: GitHub Pages aus `docs/` (Logo, Palette Creme/Anthrazit/Ocker, Schnellstart, Download des Skill-Zips),
 aus der README verlinkt – die Adresse für Lehrkräfte, das Repo für Entwickler.
+
+Feedback und Verbreitung (Ziel des Autors: Nutzung im Alltag und Rückmeldungen): Feedback-Weg ohne GitHub-Konto
+(kurzes Formular oder Projektadresse) auf der Projektseite und einmal am Ende des Skill-Ablaufs genannt; Seite
+„Erfahrungen“ im Repo für Rückmeldungen und gebaute Kurse; die ersten Nutzer persönlich nach einer Woche fragen.
+Kanal für Lehrkräfte: fertiger Beispielkurs auf teachSHARE mit Hinweis „so entstanden“, Fortbildung oder Beitrag
+bei Medienpädagogischen Beratern – nicht GitHub.
