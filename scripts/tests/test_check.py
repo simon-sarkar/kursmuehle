@@ -9,7 +9,9 @@ fehlender fileref, ungültiges Verfügbarkeits-JSON, doppelte Abschnittsnummer, 
 fremdem Format; aus dem Kachel-Build: Kachelbild ohne Datei, Kacheloption im Themenformat; aus dem module-Build:
 Fragenverweis ins Leere, Fragenkategorie in fremdem Kontext, sumgrades falsch, Kapitelbild entfernt, Datei ohne Inhalt,
 Bewertungsposten passt nicht; aus dem module-Build mit Nutzerdaten: users.xml fehlt, Glossar-userinfo ohne
-Abschnitts-userinfo; aus dem Website-Build von netzwerk9: Bild fehlt im Verzeichnis der Seite, externe Quelle;
+Abschnitts-userinfo; aus dem Website-Build von netzwerk9: Bild fehlt im Verzeichnis der Seite, externe Quelle; aus dem
+Textfeld-Build von netzwerk9: doppelte Block-id, CSS-Regel ohne Block-id, Feldname ohne Block-id, Filter-Zeichenfolge im
+Skript, Skript ohne eigene Funktion;
 Warnung bei users=1 (und nur dort) und bei langem Kacheltitel.
 """
 import io
@@ -232,6 +234,45 @@ def f_website_extern(e):
     e[p] = e[p].replace(b"</head>", b'<script src="https://cdn.example.org/x.js"></script></head>', 1)
 
 
+# ---- Textfeld-Modus (AP7b): label.xml trägt den Block XML-maskiert im intro
+def _bloecke(e):
+    return [p for p in sorted(e) if re.match(r"activities/label_\d+/label\.xml$", p) and b'class="kmb"' in e[p]]
+
+
+def t_doppelte_id(e):
+    a, b = _bloecke(e)[:2]
+    alt = re.search(rb'id="(kmb-[0-9a-f]{8})"', e[a]).group(1)
+    neu = re.search(rb'id="(kmb-[0-9a-f]{8})"', e[b]).group(1)
+    e[b] = e[b].replace(neu, alt)
+
+
+def t_css_offen(e):
+    p = _bloecke(e)[0]
+    e[p] = e[p].replace(b"&lt;style&gt;\n", b"&lt;style&gt;\nbutton{color:red}\n", 1)
+
+
+def t_feldname(e):
+    p = next(x for x in _bloecke(e) if b'type="radio" name="' in e[x])
+    e[p] = re.sub(rb'name="kmb-[0-9a-f]{8}-', b'name="', e[p], count=1)
+
+
+def t_filterfolge(e):
+    p = _bloecke(e)[0]
+    e[p] = e[p].replace(b"&lt;script&gt;\n(function () {", b"&lt;script&gt;\n(function () {var x = '$$';", 1)
+
+
+def t_skript_global(e):
+    p = _bloecke(e)[0]
+    e[p] = e[p].replace(b"&lt;script&gt;\n(function () {", b"&lt;script&gt;\nvar global = 1;\n(function () {", 1)
+
+
+TEXTFELD_FAELLE = [
+    ("Textfeld: doppelte Block-id", t_doppelte_id, "kommt im Kurs mehrfach vor"),
+    ("Textfeld: CSS ohne Block-id", t_css_offen, "CSS-Regel wirkt außerhalb des Blocks: button"),
+    ("Textfeld: Feldname ohne Block-id", t_feldname, "ohne die id des Blocks"),
+    ("Textfeld: Filter-Zeichenfolge", t_filterfolge, "„$$“ in Skript oder CSS"),
+    ("Textfeld: Skript mit globalem Namen", t_skript_global, "Skript muss eine eigene Funktion sein"),
+]
 WEB_FAELLE = [
     ("Website-Bild fehlt im Verzeichnis", f_website_bild_fehlt, "fehlt im Bilderverzeichnis der Seite"),
     ("Website lädt von außen", f_website_extern, "lädt von außen (cdn.example.org)"),
@@ -261,6 +302,8 @@ def main():
                 for f in ("kacheln", "wochen", "einthemen", "komprimiert")]
         gut.append(build("netzwerk9", os.path.join(d, "n9_website.mbz"), "--website"))
         gut.append(build("alltagskompetenz", os.path.join(d, "ak_website.mbz"), "--website", "popup"))
+        gut.append(build("netzwerk9", os.path.join(d, "n9_textfeld.mbz"), "--website", "textfeld"))
+        gut.append(build("alltagskompetenz", os.path.join(d, "ak_textfeld.mbz"), "--website", "textfeld"))
         gut.append(build("module", os.path.join(d, "module_mit.mbz"), "--mit-nutzerdaten"))
         for path in gut:
             errors, info, warnings = check_mbz(path)
@@ -288,11 +331,13 @@ def main():
             print(f"FEHLT  Einzelaktivität mit zehn Elementen: {r.stdout} {r.stderr}")
         else:
             print("ok     Einzelaktivität mit zehn Elementen: Bau bricht ab")
-        base, modul, kachel, modul_mit, web = load(gut[0]), load(gut[4]), load(gut[5]), load(gut[-1]), load(gut[-3])
+        base, modul, kachel, modul_mit, web = load(gut[0]), load(gut[4]), load(gut[5]), load(gut[-1]), load(gut[-5])
+        textfeld = load(gut[-3])
         for name, mut, want, src in ([(*f, base) for f in FAELLE] + [(*f, modul) for f in MODUL_FAELLE]
                                      + [(*f, base) for f in FORMAT_FAELLE] + [(*f, kachel) for f in KACHEL_FAELLE]
                                      + [(*f, modul_mit) for f in USERS_FAELLE]
-                                     + [(*f, web) for f in WEB_FAELLE]):
+                                     + [(*f, web) for f in WEB_FAELLE]
+                                     + [(*f, textfeld) for f in TEXTFELD_FAELLE]):
             e = dict(src)
             mut(e)
             path = save(e, os.path.join(d, "kaputt.mbz"))

@@ -8,7 +8,6 @@
 <style>
 :root{--hue:{{HUE}};--tint:{{TINT}};--ink:{{INK}};--muted:{{MUTED}};--line:{{LINE}};--r:{{R}};--ok:#15803D;--okbg:#ECFDF3;--bad:#B42318;--badbg:#FEF3F2;--bg:#F6F7F9}
 *{box-sizing:border-box}
-[hidden]{display:none!important}
 html{scroll-padding-top:64px}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
 img{max-width:100%;height:auto}
@@ -30,7 +29,6 @@ a{color:var(--hue)}
 main{flex:1;min-width:0;padding:24px 16px 64px}
 .km-ch{max-width:760px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:28px 32px}
 .km-ch>h1{font-size:1.75em;line-height:1.2;margin:4px 0 14px}
-.km-kicker{font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--hue)}
 .km-hero{border-radius:var(--r);overflow:hidden;margin:-8px -12px 18px;background:var(--hue);color:#fff}
 .km-hero-img{display:block;width:100%}
 .km-hero-text{padding:22px 24px}
@@ -46,54 +44,9 @@ main{flex:1;min-width:0;padding:24px 16px 64px}
 .km-tile-t{flex:1;font-weight:600;line-height:1.3}
 .km-tile-t small{display:block;font-weight:400;color:var(--muted);font-size:13px;margin-top:2px}
 .km-pager{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:28px;padding-top:18px;border-top:1px solid var(--line)}
-.km-btn{display:inline-block;border:0;background:var(--hue);color:#fff;border-radius:8px;padding:10px 16px;font:inherit;font-weight:600;font-size:15px;text-decoration:none;cursor:pointer;line-height:1.3}
-.km-ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
-.km-btn:focus-visible,.km-opt:focus-within,.km-word:focus-visible,.km-card:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--hue);outline-offset:2px}
-.km-lead{font-size:1.08em}
-.km-hint{color:var(--muted);font-size:14px;margin:6px 0}
-.km-q{border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:16px 0;background:#fff}
-.km-qt{font-size:13px;font-weight:700;color:var(--hue);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
-.km-qq{font-weight:600;margin-bottom:10px}
-.km-opts{display:grid;gap:6px}
-.km-row{grid-template-columns:1fr 1fr}
-.km-opt{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:8px;cursor:pointer}
-.km-opt input{margin:4px 0 0;accent-color:var(--hue)}
-.km-opt>span:first-of-type{flex:1}
-.km-ofb{flex-basis:100%;font-size:14px;color:var(--muted);padding-left:26px}
-.km-opt.is-ok{border-color:var(--ok);background:var(--okbg)}
-.km-opt.is-bad{border-color:var(--bad);background:var(--badbg)}
-.km-act{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-.km-qfb{margin-top:10px;padding:10px 12px;border-radius:8px;font-weight:600}
-.km-qfb.ok{background:var(--okbg);color:var(--ok)}
-.km-qfb.bad{background:var(--badbg);color:var(--bad)}
-.km-fb-ok,.km-fb-bad{margin-top:8px;font-size:15px}
-.km-text{line-height:2.2}
-.km-gap{font:inherit;font-size:15px;padding:3px 6px;border:1px solid #B8C0CC;border-radius:6px;background:#fff;color:var(--ink);max-width:100%}
-.km-gap.is-ok{border-color:var(--ok);background:var(--okbg)}
-.km-gap.is-bad{border-color:var(--bad);background:var(--badbg)}
-.km-word{font:inherit;border:0;background:none;padding:1px 2px;border-radius:4px;cursor:pointer;color:inherit}
-.km-word.is-sel{background:var(--tint);box-shadow:inset 0 -2px 0 var(--hue)}
-.km-word.is-ok{background:var(--okbg);box-shadow:inset 0 -2px 0 var(--ok)}
-.km-word.is-bad{background:var(--badbg);box-shadow:inset 0 -2px 0 var(--bad)}
-.km-word.is-miss{box-shadow:inset 0 -2px 0 var(--ok)}
-.km-pairs{display:grid;gap:8px}
-.km-pair{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
-.km-pair select{flex:0 0 46%}
-.km-score{font-weight:600;color:var(--muted)}
-.km-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
-.km-card{font:inherit;color:var(--ink);text-align:center;min-height:170px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.km-card img{display:block;max-height:110px;width:auto;margin:0 auto 10px}
-.km-back{display:none}
-.km-card.is-flipped{background:var(--tint);border-color:var(--hue)}
-.km-card.is-flipped .km-front{display:none}
-.km-card.is-flipped .km-back{display:block}
-.km-tip{display:block;margin-top:8px;font-size:13px;color:var(--muted)}
+{{UEBUNGEN_CSS}}
 .km-video{position:relative;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#000}
 .km-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-.km-story-view{border:1px solid var(--line);border-radius:10px;padding:20px}
-.km-story-view h3{margin:0 0 8px}
-.km-story-alts{display:grid;gap:8px;margin-top:12px}
-.km-story-alts .km-btn{text-align:left}
 @media (max-width:899px){
   .km-menu{display:inline-block}
   .km-nav{position:fixed;top:56px;left:0;right:0;bottom:0;max-height:none;background:#fff;z-index:15;display:none;padding:12px 16px 40px}
@@ -105,10 +58,6 @@ main{flex:1;min-width:0;padding:24px 16px 64px}
   .km-ch>h1{font-size:1.45em}
   .km-hero h1{font-size:1.45em}
   .km-hero-text{padding:16px 18px}
-  .km-row{grid-template-columns:1fr}
-  .km-pair{flex-direction:column;align-items:stretch}
-  .km-pair select{flex:none}
-  .km-cards{grid-template-columns:1fr 1fr}
 }
 @media print{.km-top,.km-nav,.km-pager,.km-act{display:none}.km-ch[hidden]{display:block}.km-ch{border:0}}
 </style>
@@ -128,150 +77,38 @@ main{flex:1;min-width:0;padding:24px 16px 64px}
 (function () {
   "use strict";
   var KEY = "{{SCHLUESSEL}}", IMG = {{BILDER}};
-  var $ = function (s, r) { return (r || document).querySelector(s); };
-  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
-  $$("[data-km-img]").forEach(function (el) { if (IMG[el.getAttribute("data-km-img")]) el.src = IMG[el.getAttribute("data-km-img")]; });
+  var R = document;
+{{UEBUNGEN_JS}}
 
   // Fortschritt: besuchte Kapitel im Browser merken (ohne Speicher geht es auch)
   var seen = {};
   try { seen = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { seen = {}; }
-  var chapters = $$(".km-ch").map(function (s) { return s.id; }).filter(function (id) { return id !== "start"; });
+  var chapters = all(".km-ch").map(function (s) { return s.id; }).filter(function (id) { return id !== "start"; });
   function save() { try { localStorage.setItem(KEY, JSON.stringify(seen)); } catch (e) {} }
   function progress() {
-    var n = chapters.filter(function (id) { return seen[id]; }).length;
-    $(".km-prog span").style.width = (chapters.length ? 100 * n / chapters.length : 0) + "%";
-    $(".km-count").textContent = n + " / " + chapters.length;
-    $$("[data-k]").forEach(function (a) { a.classList.toggle("is-seen", !!seen[a.getAttribute("data-k")]); });
+    var k = chapters.filter(function (id) { return seen[id]; }).length;
+    one(".km-prog span").style.width = (chapters.length ? 100 * k / chapters.length : 0) + "%";
+    one(".km-count").textContent = k + " / " + chapters.length;
+    all("[data-k]").forEach(function (a) { a.classList.toggle("is-seen", !!seen[a.getAttribute("data-k")]); });
   }
   function show() {
     var id = (location.hash || "#start").slice(1);
     if (!document.getElementById(id) || !document.getElementById(id).classList.contains("km-ch")) id = "start";
-    $$(".km-ch").forEach(function (s) { s.hidden = s.id !== id; });
-    $$(".km-nav a").forEach(function (a) {
+    all(".km-ch").forEach(function (s) { s.hidden = s.id !== id; });
+    all(".km-nav a").forEach(function (a) {
       if (a.getAttribute("data-k") === id) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
     });
     if (id !== "start") { seen[id] = 1; save(); }
     progress();
     document.body.classList.remove("km-open");
-    $(".km-menu").setAttribute("aria-expanded", "false");
+    one(".km-menu").setAttribute("aria-expanded", "false");
     window.scrollTo(0, 0);
   }
   window.addEventListener("hashchange", show);
-  $(".km-menu").addEventListener("click", function () {
+  one(".km-menu").addEventListener("click", function () {
     var open = document.body.classList.toggle("km-open");
     this.setAttribute("aria-expanded", open ? "true" : "false");
   });
-
-  // Übungen: Prüfen, Rückmeldung, Lösung zeigen
-  function norm(s) { return (s || "").trim().replace(/\s+/g, " ").toLowerCase(); }
-  function gapOk(el) {
-    var v = norm(el.value);
-    return el.getAttribute("data-ok").split("|").some(function (a) {
-      a = norm(a);
-      if (a.indexOf("*") >= 0) return new RegExp("^" + a.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*") + "$").test(v);
-      return a === v;
-    });
-  }
-  function check(q) {
-    var typ = q.getAttribute("data-typ"), ok = true;
-    if (typ === "mc") {
-      $$(".km-opt", q).forEach(function (o) {
-        var c = $("input", o).checked, want = o.getAttribute("data-ok") === "1";
-        if (c !== want) ok = false;
-        o.classList.toggle("is-bad", c && !want);
-        o.classList.toggle("is-ok", c && want);
-        var fb = $(".km-ofb", o); if (fb) fb.hidden = !c;
-      });
-    } else if (typ === "gaps") {
-      $$(".km-gap", q).forEach(function (el) {
-        var g = gapOk(el); if (!g) ok = false;
-        el.classList.toggle("is-ok", g); el.classList.toggle("is-bad", !g);
-      });
-    } else if (typ === "mark") {
-      $$(".km-word", q).forEach(function (w) {
-        var sel = w.classList.contains("is-sel"), want = w.getAttribute("data-ok") === "1";
-        if (sel !== want) ok = false;
-        w.classList.toggle("is-ok", sel && want); w.classList.toggle("is-bad", sel && !want); w.classList.remove("is-miss");
-      });
-    }
-    var fb = $(".km-qfb", q);
-    fb.hidden = false;
-    fb.className = "km-qfb " + (ok ? "ok" : "bad");
-    fb.textContent = ok ? "Richtig." : "Noch nicht ganz. Ändere die rot markierten Stellen und prüfe noch einmal.";
-    var a = $(".km-fb-ok", q), b = $(".km-fb-bad", q);
-    if (a) a.hidden = !ok; if (b) b.hidden = ok;
-    $(".km-solve", q).hidden = ok;
-    q.setAttribute("data-done", ok ? "1" : "0");
-    score(q.closest(".km-quiz"));
-  }
-  function solve(q) {
-    var typ = q.getAttribute("data-typ");
-    if (typ === "mc") $$(".km-opt", q).forEach(function (o) {
-      $("input", o).checked = o.getAttribute("data-ok") === "1";
-      o.classList.toggle("is-ok", o.getAttribute("data-ok") === "1"); o.classList.remove("is-bad");
-    });
-    if (typ === "gaps") $$(".km-gap", q).forEach(function (el) {
-      el.value = el.getAttribute("data-ok").split("|")[0].replace(/\*/g, "");
-      el.classList.add("is-ok"); el.classList.remove("is-bad");
-    });
-    if (typ === "mark") $$(".km-word", q).forEach(function (w) {
-      var want = w.getAttribute("data-ok") === "1";
-      w.classList.toggle("is-sel", want); w.classList.toggle("is-miss", want); w.classList.remove("is-ok", "is-bad");
-    });
-    var fb = $(".km-qfb", q); fb.className = "km-qfb"; fb.textContent = "Lösung eingeblendet.";
-    $(".km-solve", q).hidden = true;
-  }
-  function score(quiz) {
-    if (!quiz) return;
-    var qs = $$(".km-q", quiz);
-    $(".km-n", quiz).textContent = qs.filter(function (q) { return q.getAttribute("data-done") === "1"; }).length;
-    $(".km-of", quiz).textContent = qs.length;
-  }
-  $$(".km-quiz").forEach(score);
-  document.addEventListener("click", function (e) {
-    var t = e.target.closest("button");
-    if (!t) return;
-    if (t.classList.contains("km-check")) check(t.closest(".km-q"));
-    else if (t.classList.contains("km-solve")) solve(t.closest(".km-q"));
-    else if (t.classList.contains("km-word")) t.classList.toggle("is-sel");
-    else if (t.classList.contains("km-card")) {
-      t.setAttribute("aria-pressed", t.classList.toggle("is-flipped") ? "true" : "false");
-    }
-  });
-
-  // Geschichte: Szenen, Entscheidungen, Enden
-  $$(".km-story").forEach(function (box) {
-    var d = JSON.parse($("script", box).textContent), view = $(".km-story-view", box);
-    function btn(label, go) {
-      var b = document.createElement("button"); b.type = "button"; b.className = "km-btn"; b.innerHTML = label;
-      b.addEventListener("click", go); return b;
-    }
-    function render(key) {
-      view.innerHTML = "";
-      var alts = document.createElement("div"); alts.className = "km-story-alts";
-      if (key === null) {
-        if (d.bild && IMG[d.bild]) { var im = document.createElement("img"); im.src = IMG[d.bild]; im.alt = ""; view.appendChild(im); }
-        view.insertAdjacentHTML("beforeend", "<h3>" + d.titel + "</h3>" + (d.sub ? "<p>" + d.sub + "</p>" : ""));
-        alts.appendChild(btn("Los geht’s", function () { render(d.start); }));
-      } else if (d.enden[key]) {
-        var en = d.enden[key];
-        view.insertAdjacentHTML("beforeend", '<div class="km-kicker">Ende</div><h3>' + en.titel + "</h3>" + (en.text ? "<p>" + en.text + "</p>" : ""));
-        alts.appendChild(btn("Noch einmal von vorn", function () { render(d.start); }));
-      } else {
-        var n = d.knoten[key];
-        if (n.typ === "szene") {
-          view.insertAdjacentHTML("beforeend", "<h3>" + n.titel + "</h3>" + n.html);
-          alts.appendChild(btn("Weiter", function () { render(n.ziel); }));
-        } else {
-          view.insertAdjacentHTML("beforeend", "<h3>" + n.frage + "</h3>");
-          n.antworten.forEach(function (a) { alts.appendChild(btn(a[0], function () { render(a[1]); })); });
-        }
-      }
-      view.appendChild(alts);
-    }
-    render(null);
-  });
-
   show();
 })();
 </script>

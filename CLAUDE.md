@@ -15,8 +15,9 @@ Regeln:
   wird nicht behauptet.
 - **Tokensparend**: Der Generator baut das Archiv, die KI schreibt Inhalte. Jede Änderung wird daran gemessen, ob sie
   den Dialog mit der Lehrkraft einfacher macht und die Tokenkosten senkt.
-  Konkret: Der Assistent liest im Einsatz nur `SKILL.md` und das Kursdatei-Format; `references/export-schemata/`,
-  `formate.md` und `spec.md` sind Entwicklerdoku und werden vom Generator abgebildet, nicht vom Assistenten gelesen.
+  Konkret: Der Assistent liest im Einsatz `SKILL.md`, das Kursdatei-Format (`references/kursdatei.md`),
+  `references/intake.md` und `references/qualitaet.md`, sonst nichts; `references/export-schemata/`, `formate.md` und
+  `spec.md` sind Entwicklerdoku und werden vom Generator abgebildet, nicht vom Assistenten gelesen.
   Modul- und Formatlisten für den Assistenten: eine Tabelle, ein Satz je Eintrag. Der Skill muss mit einem günstigen
   Modell (Sonnet-Klasse) laufen, im Ziel auch mit der kostenlosen Stufe eines Assistenten innerhalb ihres Tageslimits;
   was nur mit dem teuersten Modell klappt, ist nicht fertig.

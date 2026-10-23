@@ -12,7 +12,9 @@ Kursformat aus dem Steckbrief (`kurs.format`: themen, kacheln, wochen, einthemen
 die Einträge selbst wiederherstellt – nur sinnvoll, wenn die Plattform „Nutzer einbeziehen“ beim Wiederherstellen zulässt.
 Website-Modus (`kurs.website` im Steckbrief, `website:` am Abschnitt, `--website`): jeder Abschnitt wird eine HTML-Datei
 (Datei-Aktivität) mit Startseite, Kapiteln und Übungen; bewertete Teile bleiben Aktivitäten. Die HTML-Dateien liegen zur
-Vorschau neben der .mbz (`<kurs>_website.html`).
+Vorschau neben der .mbz (`<kurs>_website.html`). `website: textfeld` (AP7b): jede Übung wird ein Block in einem Textfeld,
+ohne iframe; Vorschau aller Blöcke als `<kurs>_textfeld.html`.
+Kachelformat: ein Überblick in Allgemeines wird weggelassen (doppelt die Kacheln).
 Exit-Code 1, wenn die Prüfung der fertigen .mbz Fehler meldet (Datei bleibt zur Fehlersuche liegen).
 """
 import argparse
@@ -29,6 +31,7 @@ from gen import html as T  # noqa: E402
 from gen.h5p import ImageRef  # noqa: E402
 from gen.kursdatei import KursdateiFehler, parse, ts_sichtbar_ab  # noqa: E402
 from gen.mbz import FORMATE, Course, Section, Writer, glossary_import_xml, moodle_format  # noqa: E402
+from gen.website import vorschau_textfeld  # noqa: E402
 from check import check_mbz, report  # noqa: E402
 
 
@@ -96,7 +99,7 @@ def main():
                     help="Sicherung mit users=1 (nur Glossare), Einträge ohne XML-Import; nur wenn die Plattform es zulässt")
     ap.add_argument("--website", nargs="?", const="ja", metavar="ANZEIGE",
                     help="Website-Modus für alle Abschnitte (überschreibt kurs.website): ja (eingebettet), vollbild, "
-                         "'neues fenster' (Pop-up) oder nein")
+                         "'neues fenster' (Pop-up), textfeld (Übungen als Block im Textfeld) oder nein")
     args = ap.parse_args()
 
     content_dir = os.path.abspath(args.content)
@@ -107,6 +110,9 @@ def main():
     if args.website:
         sb.setdefault("kurs", {})
         sb["kurs"] = dict(sb["kurs"] or {}, website=args.website)
+    if args.format:
+        sb.setdefault("kurs", {})
+        sb["kurs"] = dict(sb["kurs"] or {}, format=args.format)
     design = (sb.get("kurs", {}) or {}).get("design") or {}
     T.EMOJI = bool(design.get("emoji_marker", False))
     try:
@@ -178,6 +184,11 @@ def main():
         ziel = os.path.splitext(out)[0] + f"_website{n if len(k['websites']) > 1 else ''}.html"
         shutil.copyfile(path, ziel)
         print(f"Website „{titel}“: Vorschau {ziel}")
+    if k.get("textfelder"):
+        ziel = os.path.splitext(out)[0] + "_textfeld.html"
+        with open(ziel, "w", encoding="utf-8") as f:
+            f.write(vorschau_textfeld(k["textfelder"], name))
+        print(f"Übungen im Textfeld: {len(k['textfelder'])}, Vorschau {ziel}")
     if not args.no_check:
         errors, info, warnings = check_mbz(out)
         report(out, errors, info, warnings)

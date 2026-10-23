@@ -34,6 +34,8 @@ PFLICHT_TOP = ["moodle_backup.xml", "files.xml", "moodle_backup.log", "roles.xml
 PFLICHT_COURSE = ["course", "inforef", "roles", "filters", "calendar", "contentbank", "completiondefaults", "enrolments"]
 PFLICHT_ACT = ["module", "grades", "inforef", "roles", "filters", "calendar", "grade_history"]
 LIBSTR = re.compile(r"^H5P\.\w+ \d+\.\d+$")
+# Zeichenfolgen, die Moodle-Filter in Textfeldern umschreiben (TeX/MathJax, Emoticons); im Skript eines Blocks tabu
+FILTER_FOLGEN = ("$$", "\\(", "\\[", "(y)", "(n)", "(h)", "( )", ":-", ":)", ";)", "8-)", "B-)", ":o)", "}:-]")
 PLUGINFILE = re.compile(r"@@PLUGINFILE@@/([^\"'\s<>)]+)")
 AVAIL_OPS = {"&", "|", "!&", "!|"}
 
@@ -526,6 +528,7 @@ class Pruefung:
             self.err(wo, f"Datei „{name}“ (files.xml {have[name]['id']}, {filearea}) wird im HTML nicht verwendet")
 
     def inhalte(self):
+        self.kmb_ids = set()
         for a in self.acts:
             modx = a["mod"]
             if modx is None:
@@ -537,6 +540,8 @@ class Pruefung:
             mod = a["modname"]
             areas = {"intro"}
             self._pluginfiles(a, "intro", _text(inner, "intro", ""), wo)
+            if mod == "label" and 'class="kmb"' in _text(inner, "intro", ""):
+                self.textfeld_block(_text(inner, "intro", ""), wo)
             if mod == "page":
                 areas.add("content")
                 self._pluginfiles(a, "content", _text(inner, "content", ""), wo)
@@ -593,6 +598,45 @@ class Pruefung:
                 self.err(wo, f"Website: Bild „{name}“ fehlt im Bilderverzeichnis der Seite")
         if len(data) > 15 * 1024 * 1024:
             self.warn(wo, f"Website {len(data) // 1024 // 1024} MB: große Datei, Bilder verkleinern")
+
+    def textfeld_block(self, html, wo):
+        """Textfeld-Modus (AP7b): ein Block je Textfeld, eindeutige id, CSS nur unter der id, Skript in eigener Funktion
+        ohne globale Namen, keine Zeichenfolgen, die Moodle-Filter im Textfeld umschreiben, nichts von außen."""
+        ids = re.findall(r'<div class="kmb" id="([^"]+)"', html)
+        if len(ids) != 1:
+            self.err(wo, f"Textfeld-Block: genau ein Block je Textfeld erwartet, {len(ids)} gefunden")
+            return
+        bid = ids[0]
+        if not re.match(r"^kmb-[0-9a-f]{8}$", bid):
+            self.err(wo, f"Textfeld-Block: id „{bid}“ hat nicht die Form kmb-xxxxxxxx")
+        if bid in self.kmb_ids:
+            self.err(wo, f"Textfeld-Block: id „{bid}“ kommt im Kurs mehrfach vor (Blöcke würden sich gegenseitig steuern)")
+        self.kmb_ids.add(bid)
+        for css in re.findall(r"<style>(.*?)</style>", html, re.S):
+            for line in css.splitlines():
+                m = re.match(r"^([^@{}]+)\{.*\}$", line.strip())
+                if m and not all(x.strip() == f"#{bid}" or x.strip().startswith(f"#{bid} ")
+                                 for x in m.group(1).split(",")):
+                    self.err(wo, f"Textfeld-Block: CSS-Regel wirkt außerhalb des Blocks: {m.group(1)[:60]}")
+        skripte = re.findall(r"<script>(.*?)</script>", html, re.S)
+        if len(skripte) != 1:
+            self.err(wo, f"Textfeld-Block: genau ein Skript erwartet, {len(skripte)} gefunden")
+        for js in skripte:
+            js = js.strip()
+            if not (js.startswith("(function () {") and js.endswith("})();")) or \
+                    f'document.getElementById("{bid}")' not in js:
+                self.err(wo, "Textfeld-Block: Skript muss eine eigene Funktion sein, die nur ihren Block sucht")
+        for name in set(re.findall(r'\bname="([^"]+)"', html)):
+            if not name.startswith(bid + "-"):
+                self.err(wo, f"Textfeld-Block: Feldname „{name}“ ohne die id des Blocks (Auswahl springt zwischen Blöcken)")
+        code = "".join(skripte) + "".join(re.findall(r"<style>(.*?)</style>", html, re.S))
+        for seq in FILTER_FOLGEN:
+            if seq in code:
+                self.err(wo, f"Textfeld-Block: „{seq}“ in Skript oder CSS, ein Moodle-Filter schreibt das um")
+        if re.search(r'<(?:script|link|iframe|img)[^>]+(?:src|href)="(?:https?:)?//', html):
+            self.err(wo, "Textfeld-Block lädt von außen; Bilder gehören als Datei ins Textfeld")
+        if len(html) > 60 * 1024:
+            self.warn(wo, f"Textfeld-Block {len(html) // 1024} KB: bläht die Kursseite, Übung teilen oder als Aktivität bauen")
 
     def bewertung(self, a, wo, grademax):
         """Bewertungsposten passt zur Maximalbewertung des Moduls (0 = kein Posten)."""

@@ -1,5 +1,8 @@
 """Website-Modus (AP7): ein Abschnitt als eine HTML-Datei (mod_resource) mit Startseite, Kapitelnavigation,
 Textbausteinen aus gen/html.py und kleinen JS-Übungen mit Rückmeldung, ohne Bewertung.
+Textfeld-Modus (AP7b): eine Übung als Block in einem Textfeld (mod_label), ohne iframe. CSS und Skript der Übungen
+(templates/uebungen.css, uebungen.js) teilen sich beide Modi; im Block gilt jede CSS-Regel nur unter der id des Blocks,
+das Skript läuft in einer eigenen Funktion ohne globale Namen, Bilder liegen als Dateien im Textfeld (@@PLUGINFILE@@).
 
 Der Parser (gen/kursdatei.py) liefert je Element die Daten, die er auch für H5P nutzt (frage_daten, _story_daten);
 hier wird daraus HTML. Seite und Skript stehen in templates/website.html, ohne externe Quellen (läuft auch offline,
@@ -17,6 +20,8 @@ from . import html as T
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "..", "templates", "website.html")
+UEB_CSS = os.path.join(HERE, "..", "templates", "uebungen.css")
+UEB_JS = os.path.join(HERE, "..", "templates", "uebungen.js")
 
 # Elementtypen, die im Website-Modus Kapitel werden; alle anderen bleiben Aktivitäten der Plattform.
 WEB_TYPEN = {"Banner", "Textfeld", "Seite", "Überblick", "Link", "Video", "Lesebuch", "Quiz", "Zuordnen", "Lernkarten",
@@ -24,17 +29,58 @@ WEB_TYPEN = {"Banner", "Textfeld", "Seite", "Überblick", "Link", "Video", "Lese
 ART = {"Textfeld": "Lesen", "Seite": "Lesen", "Lesebuch": "Lesen", "Quiz": "Üben", "Zuordnen": "Üben",
        "Lückentext": "Üben", "Lernkarten": "Wiederholen", "Geschichte": "Entscheiden", "Video": "Video", "Link": "Link",
        "Überblick": "Überblick"}
+# Textfeld-Modus: nur Übungen werden Blöcke; Lesetexte, Lesebuch, Banner, Überblick, Video bleiben, wie sie sind.
+BLOCK_TYPEN = {"Quiz", "Zuordnen", "Lernkarten", "Lückentext", "Geschichte"}
+# Nur im Block: Rahmen, Abstände, Farben (Website: Seiten-CSS in website.html)
+BLOCK_CSS = """
+{margin:16px 0;padding:16px 18px 18px;border:1px solid var(--line);border-top:4px solid var(--hue);border-radius:var(--r);background:#fff;color:var(--ink);font-size:16px;line-height:1.55;--ok:#15803D;--okbg:#ECFDF3;--bad:#B42318;--badbg:#FEF3F2}
+*{box-sizing:border-box}
+img{max-width:100%;height:auto}
+.km-bt{font-size:1.2em;line-height:1.25;margin:2px 0 8px;color:var(--ink)}
+.km-kicker{margin:0}
+.km-q{border:0;border-top:1px solid var(--line);border-radius:0;padding:14px 0 0;margin:14px 0 0;background:none}
+.km-nojs{padding:8px 12px;border-radius:8px;background:var(--tint);font-size:14px}
+"""
 _RE_SRC = re.compile(r'src="@@PLUGINFILE@@/([^"]+)"')
 _RE_GAP = re.compile(r"\*([^*]+)\*")
+_RE_IMG = re.compile(r'data-km-img="([^"]+)"')
 
 
 def esc(s):
     return _html.escape(str(s), quote=True)
 
 
+def _lies(path):
+    with open(path, encoding="utf-8") as f:
+        return f.read()
+
+
+def css_block(css, bid):
+    """Jede Regel (eine je Zeile) nur unter #bid; Zeilen von @media und Kommentare bleiben bzw. fallen weg."""
+    out = []
+    for line in re.sub(r"/\*.*?\*/", "", css, flags=re.S).splitlines():
+        s = line.strip()
+        if not s:
+            continue
+        m = re.match(r"^([^@{}]*)\{(.*)\}$", s)
+        if m:
+            sel = ",".join(f"#{bid} {x.strip()}".rstrip() for x in m.group(1).split(",")) if m.group(1).strip() \
+                else f"#{bid}"
+            out.append(sel + "{" + m.group(2) + "}")
+        else:
+            out.append(s)
+    return "\n".join(out)
+
+
+def js_kompakt(js):
+    """Einrückung und ganze Kommentarzeilen weg (Textfeld wird kleiner, Inhalt gleich)."""
+    return "\n".join(z.strip() for z in js.splitlines() if z.strip() and not z.strip().startswith("//"))
+
+
 class Website:
-    def __init__(self, name, hue, anzeige="eingebettet"):
+    def __init__(self, name, hue, anzeige="eingebettet", prefix=""):
         self.name, self.hue, self.anzeige = name, hue, anzeige
+        self.prefix = prefix    # vor jedem name/id einer Übung: Blöcke auf einer Kursseite dürfen sich nicht berühren
         self.kapitel = []       # dict(titel, gruppe, html, minuten, art)
         self.kopf = None        # (titel, untertitel, bildname | None)
         self.start = []         # HTML-Teile der Startseite unter dem Kopf (Überblick)
@@ -59,7 +105,7 @@ class Website:
 
     def uid(self, p="q"):
         self._n += 1
-        return f"{p}{self._n}"
+        return f"{self.prefix}{p}{self._n}"
 
     # ----- Übungen (Markup; Prüfen und Rückmeldung im Skript der Vorlage)
     def _frage(self, typ, inner, titel=None, fb_ok="", fb_bad=""):
@@ -220,6 +266,25 @@ class Website:
                 f'<p class="km-hint">{esc(url)}</p>')
 
     # ----- Ausgabe
+    def block(self, bid, art):
+        """Textfeld-Modus: Kapitel als ein Block für ein Textfeld -> (html, [(pfad, dateiname)])."""
+        inhalt = "".join(k["html"] for k in self.kapitel)
+        inhalt = _RE_IMG.sub(lambda m: f'src="@@PLUGINFILE@@/{m.group(1)}"', inhalt)
+        img = {n: f"@@PLUGINFILE@@/{n}" for n in self.bilder if json.dumps(n) in inhalt}   # Geschichte: Bild im JSON
+        namen = set(_RE_SRC.findall(inhalt)) | set(img)
+        files = [(self.bilder[n], n) for n in sorted(namen) if n in self.bilder]
+        stil = (f"--hue:{self.hue};--tint:{T._tint(self.hue)};--ink:{T.D['ink']};--muted:{T.D['muted']};"
+                f"--line:{T.D['line']};--r:{T.D['r']}px")
+        css = css_block(_lies(UEB_CSS) + BLOCK_CSS, bid)
+        js = (f'(function () {{\n"use strict";\nvar R = document.getElementById("{bid}");\n'
+              f'if (!R || R.getAttribute("data-km-an")) return;\nR.setAttribute("data-km-an", "1");\n'
+              f'var IMG = {json.dumps(img)};\n{js_kompakt(_lies(UEB_JS))}\n}})();')
+        html = (f'<div class="kmb" id="{bid}" style="{stil}"><style>\n{css}\n</style>'
+                f'<div class="km-kicker">{esc(art)}</div><h3 class="km-bt">{self.name}</h3>'
+                '<p class="km-nojs">Diese Übung braucht JavaScript. Läuft sie hier nicht, die Kursseite im Browser '
+                f'öffnen.</p>{inhalt}<script>\n{js}\n</script></div>')
+        return html, files
+
     def _bilder_setzen(self, html):
         return _RE_SRC.sub(lambda m: f'data-km-img="{esc(m.group(1))}"', html)
 
@@ -269,10 +334,30 @@ class Website:
             "{{MAIN}}": main,
             "{{SCHLUESSEL}}": esc("km:" + re.sub(r"\W+", "-", _strip_tags(self.name).lower())[:60]),
             "{{BILDER}}": json.dumps(bilder).replace("</", "<\\/"),
+            "{{UEBUNGEN_CSS}}": _lies(UEB_CSS).strip(),
+            "{{UEBUNGEN_JS}}": _lies(UEB_JS).strip(),
         }
         for k, v in ids.items():
             tpl = tpl.replace(k, v)
         return tpl
+
+
+def vorschau_textfeld(bloecke, titel):
+    """Vorschau aller Textfeld-Blöcke eines Kurses als eine HTML-Seite (Bilder als data-URI), wie auf der Kursseite
+    untereinander. bloecke: [(titel, html, [(pfad, dateiname)])]."""
+    teile = []
+    for _, html, files in bloecke:
+        for path, name in files:
+            with open(path, "rb") as f:
+                mime = "image/png" if name.lower().endswith(".png") else "image/jpeg"
+                html = html.replace(f"@@PLUGINFILE@@/{name}", f"data:{mime};base64," + base64.b64encode(f.read()).decode())
+        teile.append(f'<div class="activity">{html}</div>')
+    return ('<!doctype html>\n<html lang="de">\n<head>\n<meta charset="utf-8">\n'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+            f'<title>{esc(_strip_tags(titel))} – Übungen im Textfeld</title>\n'
+            '<style>body{margin:0;background:#F6F7F9;font:16px/1.5 system-ui,sans-serif;color:#1F2937}'
+            'main{max-width:820px;margin:0 auto;padding:16px}</style>\n</head>\n<body>\n<main>\n'
+            + "\n".join(teile) + '\n</main>\n</body>\n</html>\n')
 
 
 def _strip_tags(s):

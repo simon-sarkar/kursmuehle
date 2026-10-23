@@ -37,8 +37,11 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
    je Abschnitt `kachelbild:` (PNG 900 × 600, eigenes Motiv je Abschnitt; `banner.py --kachel --nummer 1-N`) oder
    `kachelicon:`, Abschnittstitel dann höchstens ~35 Zeichen. Kursbild und Kachelbilder ohne Text (die Plattform setzt
    Namen darüber); Banner mit Text nur als `Bild:` im Abschnitt.
-   Website-Modus (Abschnitt als eine HTML-Seite mit Kapitelnavigation, Übungen ohne Bewertung): `kurs.website: ja` im
-   Steckbrief oder `website: ja` am Abschnitt; Kursdatei bleibt gleich (kursdatei.md §7a).
+   Darstellungsweg der Übungen, Rangfolge (intake.md §3): Textfeld-JS für formative Übungen (`website: textfeld`, jede
+   Übung ein Block direkt auf der Kursseite), H5P- oder Moodle-Aktivität für alles Bewertete und Abschlussrelevante
+   (bleibt im Textfeld-Modus automatisch Aktivität, wenn `abschluss: bestehen` gilt, beim Quiz Standard), Website-Datei für
+   eine ganze Einheit am Stück (`website: ja`, `vollbild`, `neues fenster`). Angabe im Steckbrief (`kurs.website`) oder am
+   Abschnitt; die Kursdatei bleibt gleich (kursdatei.md §7a). Im Kachelformat fällt ein Überblick in Allgemeines weg.
    `python3 scripts/build.py --content <kursordner> --proto` (Erstkurs) oder ohne `--proto`.
    Etappen: `--delta` (alle `status: pending`) oder `--delta le2,le3`; Teile = `teil:` im Abschnitt. Freigabe nach Datum:
    `sichtbar_ab:` im Steckbrief oder `sichtbar ab:` in der Kursdatei. Parserfehler nennen Zeile und Element: beheben, nicht raten.
@@ -62,12 +65,12 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
   als fünf Zeilen auf dem Handy; kein HTML im Drehbuch.
 - Mischung statt H5P-Kette: Input als Textfeld (kurz, direkt auf der Kursseite), Seite (länger, mit Bildern), Buch oder
   Lesebuch, Videos als Link (`Url`, display embed – die Plattform bettet YouTube/Vimeo ein); Anteil und Rhythmus nach
-  `references/didaktik.md` D2 und D7.
+  `references/intake.md` §3, D2 und D7.
 - Moodle-Module, wenn die Lehrkraft Bewertung, Abgaben oder Austausch braucht: `Test` (benotet, Versuche, Fragensammlung; nur
   MC, RF, Kurzantwort) für die Kontrolle mit Note, `Quiz` (H5P) für Zwischenchecks; `Aufgabe` für Abgaben, `Forum` für
   Fragen, `Abstimmung` für Meinungsbilder, `Buch` für längere Lesetexte ohne Fragen, `Datei`/`Verzeichnis` für Material der
   Lehrkraft, `Glossar` für Begriffe. Syntax: `references/kursdatei.md` §3, Beispiel `examples/module/`.
-- Didaktik nach `references/didaktik.md`: Standardannahmen D1–D10, Rangfolge Lehrkraft vor Material vor Standard;
+- Didaktik nach `references/intake.md` §3: Standardannahmen D1–D10, Rangfolge Lehrkraft vor Material vor Standard;
   Abweichungen bauen und als `Abweichung: …` im Drehbuch-Kopf vermerken. Inhaltsregeln (Distraktoren, Meta-Text, absolute
   Aussagen, Genderzeichen, Fachprüfung) als Markerliste in `references/qualitaet.md`.
 - Delta-Sicherungen: Abschnitt 0 leer, Teile als Top-Level-Abschnitte, keine Badges/Kursbild (spec §O).
@@ -77,8 +80,7 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
 - `references/spec.md` – Plattformkonstanten, Archivaufbau, Schemata aller Module, H5P-Strukturen, Etappen (§A–O).
 - `references/h5p-vorlagen.md` – `json_content`-Vorlagen mit deutschen UI-Strings (Stand 2026-10-22).
 - `references/skelette.md` – `moodle_backup.xml`-Kopf, Settings, `course.xml`, leere Standarddateien.
-- `references/intake.md` – Fragerunden, Drehbuch-/Kursdatei-Format (eine Seite), Steckbrief-Schema.
-- `references/didaktik.md` – Rangfolge und Standardannahmen D1–D10 für Gliederung und Drehbuch.
+- `references/intake.md` – Fragerunden, Darstellungsweg, Standardannahmen D1–D10, Drehbuch-/Kursdatei-Format, Steckbrief.
 - `references/qualitaet.md` – Prüfdurchlauf: Markerliste mit Proben, Fachprüfung, `Offen:`-Zeilen.
 - `references/kursdatei.md` – vollständige Referenz der Kursdatei (alle Typen, Angaben, Bausteine, Grenzen).
 - `scripts/` – Generator: `gen/kursdatei.py` (Parser), `gen/html.py` (Textbausteine), `gen/mbz.py` (Writer),
@@ -96,6 +98,10 @@ Kursformate Themen, Kacheln, Wochen, Ein-Themen, Komprimiert, Einzelaktivität (
 nur Test (MC, RF, Kurzantwort), Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar (keine Lektion, Wiki, Datenbank,
 Workshop); H5P nur die Typen aus §B.2; geänderte Teile eines Kurses lassen sich per Sicherung nicht aktualisieren (löschen +
 Delta). Website-Modus: Übungen ohne Bewertung, Badge-Voraussetzungen bleiben Aktivitäten (Import-Test offen).
+Textfeld-Modus: Die Moodle-App führt Textfeld-JS möglicherweise nicht aus (die Übung zeigt dann einen Hinweis); große
+Inline-Blöcke blähen die Kursseite (je Block etwa 10 KB Stil und Skript, `check.py` warnt ab 60 KB); die
+Nutzungsbedingungen der Plattform erlauben Lehrkräften JavaScript (4.1.3). Probe am 23.10.: JavaScript läuft im
+Textfeld (Themenformat).
 Delta-Zusammenführen hängt neue Abschnitte hinten an (verifiziert 2026-10-23). Glossareinträge kommen per XML-Import nach der
 Wiederherstellung. Kursformate außer Themen, Kachelbilder, Test und Buch sind noch nicht per Import
 auf der Plattform verifiziert (Stand 0.8): beim ersten Einsatz in einen Testkurs importieren.

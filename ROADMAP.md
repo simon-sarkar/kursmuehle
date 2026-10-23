@@ -14,7 +14,7 @@ gemessen – macht sie den Dialog einfacher, und hält sie die Tokenkosten unten
 verschlechtern, warten.
 
 Drei Kriterien für das Ergebnis: einfach zu erstellen, brauchbar (kein Slop), ansprechend gestaltet
-(zurückhaltend, nicht nach Masse). Didaktische Standardannahmen (`references/didaktik.md`, seit 0.9) gelten
+(zurückhaltend, nicht nach Masse). Didaktische Standardannahmen (D1–D10 in `references/intake.md` §3, seit 0.9) gelten
 mit Rangfolge: ausdrückliche Angabe der Lehrkraft vor eigenem Material vor Standardannahme; Abweichungen
 werden gebaut und im Drehbuch mit einer Zeile `Abweichung:` vermerkt, nicht blockiert. **Zweck und Quelle je
 Element stehen nur im Drehbuch** (Stichpunkt); im Kurs selbst erscheinen sie nie – eine Zweck- oder
@@ -36,10 +36,12 @@ Vorgestellt wurde 0.1 bereits, Durchlauf mit ChatGPT (inklusive selbst generiert
 4. **Die meistgenutzten Module und das Kachelformat** – Test, Aufgabe, Datei/Verzeichnis, Forum, Buch;
    Kursformat Kacheln. Braucht je einen Test-Export (Punkte 2, 3). Alles Weitere nach 1.0.
    Module seit 0.6 (AP5), Kursformate seit 0.7 (AP6) gebaut; Import-Tests offen.
-5. **Kern-H5P im Textfeld** – Fünf-Minuten-Test auf der Plattform; Ergebnis entscheidet (Punkt 7).
+5. **Kern-H5P im Textfeld** – Fünf-Minuten-Test auf der Plattform; Ergebnis entscheidet (Punkt 7). JS-Probe 23.10.:
+   JavaScript läuft im Textfeld; seit 0.9.1 (AP7b) Übungen als Block im Textfeld (Website-Renderer ohne iframe).
+   Der Kern-H5P-Filter ist nicht geprüft.
 6. **Website-Modus als Vorlage** – eine HTML-Ressource mit Navigation, Inhalten und einem kleinen
-   JS-Quiz; eigene Spiele und Simulationen als Beispiele erst nach 1.0 (Punkt 7). Seit 0.8 (AP7) gebaut; Import-Test
-   und JS-Probe (`tools/jsprobe`) offen.
+   JS-Quiz; eigene Spiele und Simulationen als Beispiele erst nach 1.0 (Punkt 7). Seit 0.8 (AP7) gebaut; JS-Probe
+   23.10. bestanden (eingebettete Datei läuft in voller Rahmenhöhe); Vollbild und Pop-up auf der Plattform offen.
 7. **Zweiter Fremdtest** mit frischem Agenten nur mit dem Repo, dann Release 1.0.
 
 Geklärt 23.10.: Import mit Platzhalter-`site.json` in einem anderen Account funktioniert – die Werte sind bedeutungslos,
@@ -103,11 +105,14 @@ Zwei Wege, beide 1.0:
   Übungen zwischen Lesetexten; Bewertung/Abschluss bleiben Aktivitäten.
 - **Vorab prüfen:** Die Nutzungsbedingungen erlauben Lehrkräften ausdrücklich Beiträge mit JavaScript (4.1.3).
   Filtert die Plattform JS aus Textfeldern von Lehrkraft-Konten wirklich? Wenn nicht, geht One-Page ohne
-  den Umweg über eine HTML-Ressource. Gehört in den Fünf-Minuten-Test (seit 0.8 als Sicherung `tools/jsprobe`;
-  Ergebnis offen).
+  den Umweg über eine HTML-Ressource. Gehört in den Fünf-Minuten-Test (seit 0.8 als Sicherung `tools/jsprobe`).
+  Ergebnis 23.10.: Probe 1 bestanden, JavaScript im Textfeld läuft; Probe 2 bestanden, die eingebettete Datei läuft in
+  voller Rahmenhöhe. Folge seit 0.9.1 (AP7b): Textfeld-Modus (`website: textfeld`), jede formative Übung ein Block im
+  Textfeld; Rangfolge Textfeld für formative Übungen, Aktivität für Bewertetes, Website-Datei für eine ganze Einheit.
+  Offen: Probe 3 (zwei Blöcke auf einer Kursseite), Moodle-App, Kachelformat.
 - **Kurs als eigene Website:** eine HTML-Datei (Ressource, eingebettet oder Vollbild) mit eigener
-  Navigation, Inhalten, Bildern und **eigenen Spielen/Interaktionen in JavaScript** – Textfelder
-  filtern JS, eingebettete Dateien nicht. Damit sind Custom-Spiele, Simulationen, Lernpfade möglich;
+  Navigation, Inhalten, Bildern und **eigenen Spielen/Interaktionen in JavaScript** (läuft in der
+  eingebetteten Datei, Probe 23.10.). Damit sind Custom-Spiele, Simulationen, Lernpfade möglich;
   bewertete Teile laufen weiter über Plattform-Aktivitäten. Sky is the limit.
   Seit 0.8 (AP7) gebaut: Website-Modus je Abschnitt aus derselben Kursdatei (`website:`, `build.py --website`),
   Startseite, Kapitelnavigation, Übungen mit Rückmeldung ohne Bewertung; Import-Test offen. Eigene Spiele und

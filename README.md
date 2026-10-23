@@ -2,9 +2,9 @@
 
 # Kursmühle – Lernplattform-Kurse aus einem Prompt
 
-![Version 0.9](docs/badge-version.svg) ![Status: Tech-Demo auf dem Weg zu 1.0](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
+![Version 0.9.1](docs/badge-version.svg) ![Status: Tech-Demo auf dem Weg zu 1.0](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
 
-**Version 0.9** (Stand 23.10.2026) · siehe [`ROADMAP.md`](ROADMAP.md) und [`CHANGELOG.md`](CHANGELOG.md)
+**Version 0.9.1** (Stand 23.10.2026) · siehe [`ROADMAP.md`](ROADMAP.md) und [`CHANGELOG.md`](CHANGELOG.md)
 
 **Ein KI-Assistent baut aus einer Beschreibung oder eigenem Unterrichtsmaterial eine importierbare Kurssicherung (`.mbz`) für die ByCS-Lernplattform.**
 
@@ -41,7 +41,7 @@ fertige Kurssicherung zum Import.
    Testkurs. Dabei *Kurseinstellungen überschreiben: Ja* wählen, sonst behält
    der Kurs sein bisheriges Kursformat.
 
-> **Projektstatus: Version 0.9 (Tech-Demo).**
+> **Projektstatus: Version 0.9.1 (Tech-Demo).**
 > Der Ablauf Intake → Drehbuch → Generator → Import ist an zwei Beispielkursen
 > durchgespielt, einschließlich H5P-Inhalten, Badge und Nachlieferung in einen
 > laufenden Kurs, mit Claude Code und mit ChatGPT. Die Moodle-Module Test,
@@ -50,9 +50,11 @@ fertige Kurssicherung zum Import.
 > Einzelaktivität (seit 0.7) sind gebaut und geprüft, ebenso der Website-Modus
 > (seit 0.8: ein Abschnitt als eine HTML-Seite mit Kapiteln und Übungen). Seit
 > 0.9 prüft der Assistent jedes Drehbuch gegen didaktische Standardannahmen und
-> eine Markerliste, bevor die Lehrkraft es sieht. Der
-> Import-Test auf der Plattform steht für die neuen Formate und den
-> Website-Modus noch aus. Glossar-Einträge kommen über eine mitgelieferte
+> eine Markerliste, bevor die Lehrkraft es sieht. Seit 0.9.1 stehen formative
+> Übungen auf Wunsch als Block im Textfeld direkt auf der Kursseite. Die
+> JS-Probe vom 23.10.2026 bestätigt, dass JavaScript im Textfeld läuft und
+> die eingebettete Website-Datei in voller Rahmenhöhe läuft; der Import-Test
+> der neuen Formate und der Übungsblöcke im Textfeld steht noch aus. Glossar-Einträge kommen über eine mitgelieferte
 > XML-Datei in den Kurs (fester Schritt nach dem Import). Kein offizielles Produkt der
 > Plattform; wenn sich die Lernplattform ändert, wird der Skill angepasst.
 
@@ -67,24 +69,79 @@ fertige Kurssicherung zum Import.
   Dieselbe Datei ist die Kursdatei: Der Generator liest sie direkt, nichts
   wird nach der Freigabe noch einmal abgetippt. Bevor die Lehrkraft das
   Drehbuch sieht, prüft der Assistent es gegen zehn didaktische
-  Standardannahmen und eine Markerliste mit Proben (`references/didaktik.md`,
+  Standardannahmen und eine Markerliste mit Proben (`references/intake.md` §3,
   `references/qualitaet.md`); Zweck und Quelle je Element stehen nur im Drehbuch.
 - Die Sicherung ist nicht an einen Account gebunden; der Import läuft in jedem
   Kurs der Plattform ohne Vorarbeit. Vor der Lieferung prüft `scripts/check.py`
   jede Sicherung auf Struktur, Dateien, IDs und H5P-Versionen.
 
-## Features
+## Was Kursmühle kann
 
-- Textfelder und Seiten mit formatierten Lesetexten (Überschriften, Schritte,
-  Vergleichstabellen, Merk- und Beispielkästen), angepasst an die Filter des
-  Plattform-Themes; drei Designvorlagen (schlicht, kacheln, magazin)
-- H5P-Inhalte als JSON, ohne Klicken im H5P-Editor
-- Der Intake-Leitfaden gibt die Reihenfolge Lesen → Üben → Sichern vor
-  (erst Input, dann Kontrolle)
-- Kurs in Etappen: „sichtbar ab Datum“ je Abschnitt oder Delta-Sicherung zum
-  Nachliefern in einen laufenden Kurs
-- Steuerungsgrad wählbar: selbst entscheiden, Vorschläge freigeben oder
-  „KI macht alles“
+### Drei Darstellungswege für Übungen
+
+- **Übung im Textfeld:** Quiz, Zuordnen, Lernkarten, Lückentext und Geschichte stehen als Block direkt zwischen den
+  Lesetexten auf der Kursseite, ohne Nachladen und ohne Bewertung (`website: textfeld`).
+- **Einheit als Website-Datei:** Ein Abschnitt wird eine HTML-Seite mit Startseite, Kapitelnavigation, Fortschritt und
+  Übungen, eingebettet, im Vollbild oder in einem neuen Fenster (`website: ja`).
+- **H5P- und Moodle-Aktivitäten für Bewertung und Abschluss:** Was eine Bestehensgrenze hat, für ein Badge zählt oder
+  abgegeben wird, bleibt eine Aktivität der Plattform und erscheint im Abschlussstatus oder im Bewertungsbuch.
+
+Vorbehalte beim Textfeld:
+
+- Die Moodle-App führt JavaScript im Textfeld möglicherweise nicht aus; die Übung zeigt dann den Hinweis, die Kursseite
+  im Browser zu öffnen.
+- Große Inline-Blöcke blähen die Kursseite; jeder Block bringt etwa 10 KB Stil und Skript mit.
+- Die Nutzungsbedingungen der Plattform erlauben Lehrkräften Beiträge mit JavaScript (4.1.3), und die Probe vom
+  23.10.2026 zeigt, dass Skripte im Textfeld laufen (`tools/jsprobe`).
+
+### Sechs Kursformate
+
+| Format | Was die Lernenden sehen |
+|---|---|
+| Themen | Alle Abschnitte untereinander auf einer Seite. |
+| Kacheln | Jeder Abschnitt ist eine Kachel mit eigenem textfreiem Kachelbild oder Icon und Fortschrittsanzeige; ein Überblick in Allgemeines entfällt, weil er die Kacheln doppelt. |
+| Wochen | Die Abschnitte tragen Datumsbereiche ab dem Kursbeginn aus dem Steckbrief. |
+| Ein-Themen | Die Abschnitte erscheinen als Reiter, sichtbar ist immer einer. |
+| Komprimiert | Die Abschnitte lassen sich auf- und zuklappen. |
+| Einzelaktivität | Der Kurs besteht aus genau einer Aktivität, etwa einem Test oder einem Forum. |
+
+### Elementtypen
+
+| Element | Was es ist |
+|---|---|
+| Banner | Bild, Titel und ein Satz als erstes Element des Kurses. |
+| Textfeld | Kurzer formatierter Text direkt auf der Kursseite. |
+| Seite | Längerer Lesetext mit Bildern auf einer eigenen Seite. |
+| Überblick | Kopfkarte einer Einheit mit Dauer und Ablauf. |
+| Link, Video | Verweis auf eine Webseite; YouTube und Vimeo werden eingebettet. |
+| Lesebuch | H5P-Buch mit mehreren Seiten und eingebauten Kontrollfragen. |
+| Quiz | H5P-Fragenset mit Multiple Choice, Richtig/Falsch, Einsetzen, Markieren und Lückentext. |
+| Zuordnen | Elemente werden in Kategorien sortiert. |
+| Lernkarten | Karten mit Vorder- und Rückseite, auf Wunsch mit Bild. |
+| Geschichte | Szenen und Entscheidungen mit mehreren Enden. |
+| Lückentext | Text mit Eingabelücken, Alternativen und Tipps. |
+| Umfrage | Selbsteinschätzung auf einer Skala (Moodle-Feedback). |
+| Badge | Abzeichen, das nach dem Abschluss festgelegter Elemente verliehen wird. |
+| Unterabschnitt | Gruppe von Elementen innerhalb eines Abschnitts. |
+| Test | Moodle-Test mit Fragensammlung, Versuchen und Eintrag im Bewertungsbuch. |
+| Aufgabe | Abgabe als Text oder Datei mit Bewertung und Fälligkeit. |
+| Datei | Eine Datei der Lehrkraft, etwa ein Arbeitsblatt als PDF. |
+| Verzeichnis | Mehrere Dateien in einem Ordner. |
+| Forum | Austausch oder Fragen und Antworten. |
+| Buch | Moodle-Buch mit Kapiteln und Unterkapiteln für längere Lesetexte. |
+| Abstimmung | Meinungsbild mit einer oder mehreren Antworten. |
+| Glossar | Begriffe mit Erklärungen und Aliassen. |
+
+### Weiteres
+
+- **Designvorlagen:** Drei Vorlagen (schlicht, kacheln, magazin) färben alle Textbausteine ein, gewählt im Steckbrief.
+- **Glossar-Import:** Die Einträge eines Glossars liegen als XML-Datei neben der Sicherung und kommen über
+  *Einträge importieren* in den Kurs.
+- **Delta-Sicherungen:** Neue Abschnitte kommen als eigene Sicherung per *Zusammenführen* in einen laufenden Kurs, der
+  Lernfortschritt bleibt erhalten.
+- **Prüfdurchlauf:** Bevor die Lehrkraft das Drehbuch sieht, prüft der Assistent es gegen die Standardannahmen D1–D10
+  und eine Markerliste mit Proben und behebt die Treffer.
+- **Steuerungsgrad:** Die Lehrkraft entscheidet selbst, gibt Vorschläge frei oder lässt die KI alles machen.
 
 ## Was der Generator kann – und was (noch) nicht
 
@@ -97,6 +154,7 @@ fertige Kurssicherung zum Import.
 | Feedback-Umfragen, Links/Videos (eingebettet), Badges, Kursbild, Abschlussverfolgung | Gruppen, Termine, Kursabschluss-Kriterien |
 | Kursbanner als erstes Element (Bild, Titel, ein Satz); Bild von der KI erzeugt, gerendert (`scripts/banner.py`) oder von der Lehrkraft nach Prompt; Kursbild und Kachelbilder textfrei (`banner.py --kachel`: eigenes Motiv je Abschnitt) | Abschnitts- und Kachelbilder automatisch aus dem Material |
 | Website-Modus: ein Abschnitt als eine HTML-Seite (eingebettet, Vollbild oder neues Fenster) mit Startseite, Kapitelnavigation, Fortschritt und Übungen mit Rückmeldung (Quiz, Zuordnen, Lückentext, Markieren, Lernkarten, Geschichte); dieselbe Kursdatei, `build.py --website` | Bewertung und Abschluss je Übung in der Website, eigene Spiele und Simulationen als Vorlage |
+| Textfeld-Modus: formative Übungen (Quiz, Zuordnen, Lernkarten, Lückentext, Geschichte) als Block im Textfeld zwischen Lesetexten, ohne iframe, mehrere Blöcke je Kursseite; Abschlussrelevantes bleibt Aktivität; `website: textfeld` | Ausführung in der Moodle-App, Import-Test von Probe 3 |
 | Zugriffsbeschränkung „sichtbar ab Datum“; Nachlieferung per Delta-Sicherung | Andere Zugriffsbedingungen (Abschluss von X, Bewertung, Gruppe) |
 | Prüfdurchlauf vor der Freigabe: Standardannahmen D1–D10, Markerliste mit Proben, Fachprüfung gegen das Bezugselement; Drehbuch-Zeilen `Abweichung:` und `Offen:` und der Marker `[Zweck: …]` gelangen nie in den Kurs | Automatische Warnung des Parsers bei mechanisch erkennbaren Markern (Ausrufezeichen, Emojis, Genderzeichen) |
 
@@ -107,15 +165,15 @@ SKILL.md       Einstieg für den KI-Agenten: Ablauf, harte Regeln, Grenzen
 references/    spec.md (Sicherungsformat, Plattformwerte, H5P-Strukturen),
                kursdatei.md (Format der Kursdatei kurs.md), formate.md (Kursformate),
                h5p-vorlagen.md (json_content aller Typen, deutsche UI-Texte),
-               skelette.md (XML-Skelette), intake.md (Fragerunden, Drehbuch, Steckbrief),
-               didaktik.md (Standardannahmen), qualitaet.md (Prüfdurchlauf)
+               skelette.md (XML-Skelette), intake.md (Fragerunden, Darstellungsweg,
+               Standardannahmen D1–D10, Drehbuch, Steckbrief), qualitaet.md (Prüfdurchlauf)
 scripts/       Generator (gen/), build.py, check.py (Sicherung prüfen), Vorlagen, tests/
 examples/      netzwerk9/  – eine Einheit, 25 min: Vorbild für neue Kurse
                alltagskompetenz/ – großer Kurs mit Unterabschnitten, Badge, Delta
                module/ – ein Abschnitt mit Test, Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar
                (je kurs.md, assets/, steckbrief.yaml)
 tools/h5ptest/ Render-Test der H5P-Inhalte außerhalb der Plattform (h5p-standalone + Playwright)
-tools/jsprobe/ Fünf-Minuten-Test: läuft JavaScript im Textfeld und in einer eingebetteten Website?
+tools/jsprobe/ Fünf-Minuten-Test: läuft JavaScript im Textfeld und in einer eingebetteten Website? (Ergebnis im README dort)
 CHANGELOG.md   Versionen und bekannte Lücken
 ```
 
@@ -141,13 +199,19 @@ mit `scripts/check.py` (auch einzeln: `python3 scripts/check.py <datei.mbz>`, Au
 `python3 scripts/tests/test_kursdatei.py` prüft Parser und Beispiele, `scripts/tests/test_check.py` das Prüfskript,
 `scripts/tests/mbz_diff.py` vergleicht zwei Sicherungen ohne IDs und Zeitstempel, `scripts/tests/render_vorlagen.py`
 rendert die Kursseite je Designvorlage bei 390 und 1200 px (Playwright; `--vorlage` an `build.py` wählt die Vorlage),
-`scripts/tests/test_website.py` baut netzwerk9 und alltagskompetenz als Website und klickt Navigation und Übungen bei
-390 und 1280 px durch.
+`scripts/tests/test_website.py` baut netzwerk9 und alltagskompetenz als Website und im Textfeld-Modus und klickt
+Navigation, Übungen und mehrere Blöcke auf einer Seite bei 390 und 1280 px durch.
 
 Website-Variante des Beispiels (eine HTML-Seite statt zehn Aktivitäten; Vorschau `…_website.html` neben der `.mbz`):
 
 ```bash
 python3 scripts/build.py --content examples/netzwerk9 --website
+```
+
+Übungen als Blöcke im Textfeld (Vorschau aller Blöcke `…_textfeld.html` neben der `.mbz`):
+
+```bash
+python3 scripts/build.py --content examples/netzwerk9 --website textfeld
 ```
 
 ![Website-Modus: netzwerk9 am Desktop und auf dem Handy](docs/website-netzwerk9.png)
@@ -181,7 +245,8 @@ verloren.
 - [x] Modultypen für 1.0: Test, Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar (Import-Test offen)
 - [x] Kursformate Kacheln (Kachelbild/-icon je Abschnitt), Wochen, Ein-Themen, Komprimiert, Einzelaktivität (Import-Test offen)
 - [ ] Abschnitts- und Kachelbilder aus dem Material
-- [ ] One-Page-Darstellung ohne Ladezeiten: H5P im Textfeld, Kurs als eigene Website mit eigenen Spielen
+- [x] One-Page-Darstellung ohne Ladezeiten: Übungen im Textfeld (seit 0.9.1), Einheit als Website-Datei (seit 0.8); Import-Test offen
+- [ ] Eigene Spiele und Simulationen als Vorlagen im Website-Modus
 
 Reihenfolge und Details in [`ROADMAP.md`](ROADMAP.md); die Liste dort definiert Version 1.0.
 

@@ -1,5 +1,55 @@
 # Changelog
 
+## 0.9.1 – 2026-10-23 (AP7b: Textfeld-Modus nach der JS-Probe; didaktik.md in intake.md)
+
+- JS-Probe auf der Plattform (23.10., `tools/jsprobe`): Probe 1 bestanden, JavaScript im Textfeld läuft; Probe 2
+  bestanden, die eingebettete Datei läuft in voller Rahmenhöhe. Ergebnis in `tools/jsprobe/README.md` und ROADMAP
+  Punkt 5–7; neue Probe 3 (zwei Übungen als Blöcke im Textfeld) für den nächsten Import-Test.
+- Textfeld-Modus (`website: textfeld` im Steckbrief oder am Abschnitt, `build.py --website textfeld`): Quiz, Zuordnen,
+  Lernkarten, Lückentext und Geschichte werden je ein Block in einem Textfeld, direkt zwischen den Lesetexten, ohne
+  iframe. Der Block nutzt die Übungen des Website-Renderers; CSS und Skript der Übungen liegen dafür in
+  `scripts/templates/uebungen.css` und `uebungen.js` und werden von Website und Block geteilt. Im Block steht jede
+  CSS-Regel unter der id des Blocks (`#kmb-…`), das Skript läuft in einer eigenen Funktion ohne globale Namen und
+  sucht nur seinen Block; Feldnamen tragen die id, ein zweiter Lauf (Abschnitt nachgeladen) bleibt wirkungslos. Bilder
+  liegen als Dateien im Textfeld (`@@PLUGINFILE@@`, auch das Startbild der Geschichte). Ohne JavaScript zeigt der Block
+  den Hinweis, die Kursseite im Browser zu öffnen. Das Skript meidet Zeichenfolgen, die Moodle-Filter umschreiben
+  (zwei Dollarzeichen, Backslash-Klammer, Emoticons); der Platzhalter-Vergleich im Lückentext kommt ohne RegExp aus.
+  Je Block etwa 10 KB Stil und Skript.
+- Rangfolge im Generator: Was für den Abschluss zählt (`abschluss: bestehen`, beim Quiz Standard), Badge-
+  Voraussetzungen und Elemente mit `website: nein` bleiben im Textfeld-Modus H5P-Aktivität; Lesebuch, Textfeld, Seite,
+  Banner, Überblick, Video und Moodle-Module bleiben unverändert. `website:` am Element meldet jetzt auch im
+  Textfeld-Modus einen Fehler, wenn der Wert nicht `nein` ist.
+- Vorschau aller Blöcke als `<kurs>_textfeld.html` neben der `.mbz` (`gen/website.vorschau_textfeld`).
+- `check.py`: Textfeld-Blöcke (eine id je Textfeld, im Kurs eindeutig; CSS nur unter der id; ein Skript als eigene
+  Funktion mit `getElementById` der eigenen id; Feldnamen mit der id; keine Filter-Zeichenfolgen; nichts von außen;
+  Warnung ab 60 KB je Block).
+- Kachelformat: Ein `### Überblick:` in Allgemeines entfällt automatisch (doppelt die Kacheln), mit Hinweis beim Bau;
+  Überblicke in den Abschnitten bleiben. `build.py --format` erreicht dafür auch den Parser.
+- D1–D10 und die Rangfolge Lehrkraft > Material > Standardannahme stehen jetzt in `references/intake.md` §3, dazu der
+  Darstellungsweg (Textfeld für formative Übungen, Aktivität für Bewertetes und Abschlussrelevantes, Website-Datei für
+  eine ganze Einheit). `references/didaktik.md` entfällt; Verweise in SKILL.md, intake.md, qualitaet.md, kursdatei.md,
+  spec.md, README, ROADMAP angepasst (CHANGELOG und AP8-Unterlagen bleiben als Verlauf). CLAUDE.md: Der Assistent liest
+  im Einsatz `SKILL.md`, das Kursdatei-Format, `intake.md` und `qualitaet.md`.
+- SKILL.md: Rangfolge im Bau-Schritt, Vorbehalte unter Grenzen (Moodle-App, Größe der Kursseite, Nutzungsbedingungen
+  4.1.3). intake.md: Gestaltungsfrage mit Textfeld oder Website, Steckbrief `website: textfeld`. kursdatei.md §2, §4
+  (Kachelformat), §7a (Textfeld-Modus).
+- README: Abschnitt „Was Kursmühle kann“ (drei Darstellungswege mit Vorbehalten, sechs Kursformate, alle Elementtypen,
+  Designvorlagen, Glossar-Import, Delta, Prüfdurchlauf, Steuerungsgrad) statt der kurzen Feature-Liste; Kann/Noch-
+  nicht-Tabelle mit Zeile Textfeld-Modus; Status und Roadmap-Liste. `docs/website-netzwerk9.png` mit dem aktuellen
+  netzwerk9 neu gerendert, `docs/badge-version.svg` 0.9.1. `arbeitspakete/AP7b.md` neu.
+- Tests: `test_website.py` baut netzwerk9 und alltagskompetenz zusätzlich mit `--website textfeld` und prüft in der
+  Vorschau mit fremden Elementen davor (bei 390 und 1280 px): keine Anfrage nach außen, eindeutige ids, keine globalen
+  Namen, jedes Blockskript läuft, Bilder gesetzt, CSS erreicht fremde Elemente nicht, Auswahl und Prüfen in einem Block
+  lassen andere Blöcke unberührt, Quiz falsch/richtig mit Zähler, Zuordnen, Lernkarte (nur diese dreht), zweiter
+  Skriptlauf doppelt nichts, Lückentext, Geschichte mit Startbild bis zu einem Ende. `test_check.py`: beide
+  Textfeld-Builds OK, fünf neue Fehlerfälle (doppelte id, CSS ohne id, Feldname ohne id, Filter-Zeichenfolge, Skript
+  mit globalem Namen). `test_kursdatei.py`: Zuordnung der Elemente im Textfeld-Modus, Kachelformat ohne Überblick in
+  Allgemeines, zwei neue Fehlerfälle. Sicherungen ohne Website- und Textfeld-Modus sind inhaltsgleich zu 0.9
+  (netzwerk9, alltagskompetenz, module; `mbz_diff.py`, bei module nur der Zeitstempel verschieden).
+- Offen: Import-Test von Probe 3 auf der Plattform; Verhalten in der Moodle-App; Kachelformat (lädt Abschnitte nach,
+  der Schutz gegen doppelten Lauf ist im Browser getestet, nicht auf der Plattform); Bearbeiten eines Block-Textfelds
+  im Editor nach dem Import. Der Baustein `Kacheln:` in Allgemeines (alltagskompetenz) bleibt im Kachelformat stehen.
+
 ## 0.9 – 2026-10-23 (AP8: didaktik.md und qualitaet.md, überarbeitet nach dem AP8-Review)
 
 Grundlage ist der Entwurf aus PR #7, auf 0.8 geholt; alle 20 Funde aus `arbeitspakete/AP8-Review.md` sind eingearbeitet.
