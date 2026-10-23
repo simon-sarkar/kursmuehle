@@ -4,6 +4,15 @@ Stand 2026-10-23. Version 0.1 ist eine Tech-Demo; die Punkte hier definieren, wa
 Reihenfolge innerhalb der Blöcke ist Priorität. Jeder Punkt braucht in der Regel genau einmal einen
 Test-Export von der Plattform (leerer Kurs mit dem Element), danach gilt die Erweiterung für alle.
 
+## Leitlinie
+
+Der Wert des Skills liegt zur Hälfte in der **Gesprächsführung**: Die Fragen des Assistenten leiten die
+Lehrkraft durch den Prozess – wenig Fragen, die richtigen, zur richtigen Zeit, mit Vorschlägen statt
+leerer Felder. Die andere Hälfte sind **Importdoku und Generator-Skripte**, die den Bau deterministisch
+machen und Token sparen: Der Assistent schreibt Inhalte, nicht Archive. Jede Erweiterung wird an beidem
+gemessen – macht sie den Dialog einfacher, und hält sie die Tokenkosten unten? Features, die eins davon
+verschlechtern, warten.
+
 ## Umfang und Reihenfolge für 1.0 (Entscheidung 23.10.)
 
 Ziel: in wenigen Tagen nutzbar für andere Lehrkräfte mit beliebigem Code-ausführendem Assistenten.
