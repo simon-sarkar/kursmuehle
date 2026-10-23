@@ -22,5 +22,8 @@ Regeln:
 - **Tests**: `python3 scripts/build.py --content examples/netzwerk9 --no-render` muss nach jeder Änderung laufen.
   Neue Modultypen bekommen einen Eintrag in `examples/` und in der Kann/Noch-nicht-Tabelle der README.
 - **Lizenz**: PolyForm Noncommercial (Code), CC BY-NC-SA 4.0 (Texte). Nichts einbauen, was damit unvereinbar ist.
-- **Abschluss eines Pakets**: CHANGELOG.md ergänzen, README-Tabelle aktualisieren, PR gegen `main` mit kurzer
-  Beschreibung (was, wie getestet, was offen).
+- **Abschluss eines Pakets**: Versionsnummer um 0.1 erhöhen (AP1 → 0.2, AP2 → 0.3 …; 1.0 nach AP9), CHANGELOG.md
+  mit dieser Version ergänzen, README-Tabelle aktualisieren, PR gegen `main` mit kurzer Beschreibung (was, wie
+  getestet, was offen).
+- **Name**: Das Projekt heißt ab der Umbenennung „Kursmühle“ (Repo `kursmuehle`); bis dahin bleibt `bycs-kurs` in
+  Pfaden stehen, nicht eigenmächtig umbenennen.
