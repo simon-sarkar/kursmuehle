@@ -1,6 +1,12 @@
 # Drehbuch v1 · Informatik 9 – Netzwerkkomponenten · 25 min
 farbe: #0F766E
 
+## Allgemeines
+
+### Banner: Netzwerkkomponenten
+bild: banner.png
+untertitel: Wie kommt das Internet von der Wand auf dein Handy? Eine Einheit, etwa 25 Minuten.
+
 ## Netzwerkkomponenten – von der Wand aufs Handy · 25 min
 teil: netz
 

@@ -8,15 +8,30 @@ description: Baut komplette Kurse für die ByCS-Lernplattform (Bayern, Moodle-ba
 Ergebnis ist immer eine `.mbz`, die die Lehrkraft über Kurs → Mehr → Kurs wiederverwenden → Wiederherstellen einspielt.
 Code-Ausführung (Python 3.11+, PyYAML, Pillow; Playwright+Chromium nur für Bilder) ist Voraussetzung.
 
+## Selbstabfrage (vor der ersten Nachricht, nicht an die Lehrkraft)
+
+Drei Fragen an sich selbst; die Antworten stehen im Steckbrief unter `assistent:` und bestimmen den Weg bei Bau und Bildern.
+Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Testbild).
+
+| Kann ich … | ja | nein |
+|---|---|---|
+| Code ausführen (Python 3.11+, PyYAML, Pillow)? | Kurs bauen wie unten | Drehbuch und Steckbrief liefern; Bau in einem Assistenten mit Code-Ausführung empfehlen |
+| Dateien lesen (PDF, PPTX, Bilder)? | Material der Lehrkraft lesen, Fotos übernehmen | Lehrkraft bitten, Text einzufügen und Fotos zu beschreiben |
+| Bilder erzeugen? | Banner, Kursbild, Abschnittsbilder selbst erzeugen und in `assets/` legen (intake.md §4) | `python3 scripts/banner.py` rendern (Playwright), sonst Banner ohne Bild und `Bildwunsch:`-Zeilen für die Lehrkraft |
+
 ## Ablauf
 
-1. **Intake** nach `references/intake.md`: erste Frage Steuerungsgrad (entscheide / Vorschlag / KI macht alles), dann
-   Rahmen + Material, Gliederung als Vorschlag, Formate, Gestaltung. Ergebnis: `steckbrief.yaml` (Schema in intake.md §6).
+1. **Einstieg** nach `references/intake.md`: erste Nachricht „Womit starten wir?“ mit fünf Wegen (nur Thema · Material ·
+   Material + Fragen · Fragen · bestehenden Kurs erweitern), Steuerungsgrad (entscheide / Vorschläge freigeben / KI macht
+   alles) und Rahmen in einem Satz. Danach höchstens **eine Fragerunde** (Kursformat mit Empfehlung, Umfang, Abschluss,
+   Gestaltung; jede Frage mit Vorschlag) und ein Gliederungsvorschlag. Bei „nur Thema“ keine Rückfrage: Annahmen stehen
+   als `Angenommen:` oben im Drehbuch. Ergebnis: `steckbrief.yaml` (Schema in intake.md §6).
 2. **Drehbuch = Kursdatei** (intake.md §5, Referenz `references/kursdatei.md`): gesamter Inhalt als `kurs.md` im
    Drehbuch-Format mit Quellenmarkierung und Zeitcheck → Freigabe durch die Lehrkraft (entfällt nur bei „KI macht alles“).
    Bei Revision nur Änderungsliste + geänderte Blöcke zeigen. Die freigegebene Datei wird unverändert gebaut.
 3. **Bau**: Kursordner mit `kurs.md`, `assets/` (PNG), `steckbrief.yaml` (Vorbild `examples/netzwerk9/` = minimal,
-   `examples/alltagskompetenz/` = alle Elementtypen). Kein Python schreiben.
+   `examples/alltagskompetenz/` = alle Elementtypen). Kein Python schreiben. Erstes Element in `## Allgemeines` ist
+   `### Banner:` (Bild + Titel + ein Satz); Bild nach intake.md §4: selbst erzeugt, `python3 scripts/banner.py`, oder ohne `bild:`.
    `python3 scripts/build.py --content <kursordner> --proto` (Erstkurs) oder ohne `--proto`.
    Etappen: `--delta` (alle `status: pending`) oder `--delta le2,le3`; Teile = `teil:` im Abschnitt. Freigabe nach Datum:
    `sichtbar_ab:` im Steckbrief oder `sichtbar ab:` in der Kursdatei. Parserfehler nennen Zeile und Element: beheben, nicht raten.

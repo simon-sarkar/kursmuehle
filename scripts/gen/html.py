@@ -91,6 +91,26 @@ def meta_line(parts, hue=HUE):
             + ' <span style="color:{hue};font-weight:700">·</span> '.replace("{hue}", hue).join(parts) + '</p>')
 
 
+def banner(title, subtitle="", image=None, alt="", hue=HUE):
+    """Kursbanner: großes Bild (optional) + Titel + ein Satz. Erstes Element in Abschnitt 0.
+    Ohne Bild ein Block in Akzentfarbe, damit der Kurs auch vor der Bildlieferung fertig aussieht."""
+    sub = f'<div style="font-size:1.05em;margin-top:6px;line-height:1.45;color:{{c}}">{subtitle}</div>' if subtitle else ''
+    if image:
+        pic = (f'<p style="margin:0"><img src="@@PLUGINFILE@@/{image}" alt="{alt or title}" '
+               f'style="width:100%;height:auto;display:block;border-radius:14px 14px 0 0"></p>')
+        cell = (f'<td style="border:0;border-left:6px solid {hue};background:{_tint(hue)};border-radius:0 0 14px 14px;'
+                f'padding:18px 22px;vertical-align:top">'
+                f'<div style="font-size:1.6em;font-weight:800;color:{INK};line-height:1.15">{title}</div>'
+                + sub.format(c=MUTED) + '</td>')
+    else:
+        pic = ''
+        cell = (f'<td style="border:0;background:{hue};border-radius:14px;padding:30px 28px;vertical-align:top">'
+                f'<div style="font-size:1.7em;font-weight:800;color:#fff;line-height:1.15">{title}</div>'
+                + sub.format(c="#E4EAF6") + '</td>')
+    return (pic + f'<table style="width:100%;border-collapse:separate;border-spacing:0;margin:0 0 16px 0;border:0">'
+            f'<tr>{cell}</tr></table>')
+
+
 # ---------------------------------------------------------------- Karten für die Kursseite
 def _chip(text, hue, filled=False):
     if filled:

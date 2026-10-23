@@ -1,97 +1,135 @@
-# Intake: ByCS-Kurs per Fragen planen – Anleitung für den KI-Agenten
+# Intake: Kurs im Gespräch planen – Anleitung für den Assistenten
 
-Zweck: Aus einem Gespräch mit der Lehrkraft einen **Kurs-Steckbrief** (YAML, Abschnitt 5) erzeugen, aus dem der Generator
-den Kurs baut. Gilt zusammen mit „Leitfaden ByCS-Kurs per KI generieren“ (Spezifikation, Teil 2).
+Zweck: Aus einem kurzen Gespräch mit der Lehrkraft entstehen der **Steckbrief** (`steckbrief.yaml`, §6) und das
+**Drehbuch** (`kurs.md`, §5), aus denen der Generator den Kurs baut. Ziel: unter zehn Minuten Lehrkraft-Zeit bis zum
+Drehbuch. Vorher hat der Assistent die Selbstabfrage aus `SKILL.md` beantwortet (Code, Dateien, Bilder).
 
 ## 0. Regeln für das Gespräch
 
-- **Erste Frage immer: Steuerungsgrad.** (a) „Ich entscheide“ – alle Runden, Drehbuch-Freigabe vor dem Bau.
-  (b) „Vorschlag mit Freigabe“ (Standard) – KI schlägt vor, Lehrkraft bestätigt Gliederung und Drehbuch.
-  (c) „KI macht alles“ – nur Runde 1, kein Drehbuch, direkt Kurs; Drehbuch wird trotzdem mitgeliefert, zum Nachlesen.
-- Vier Runden, je höchstens vier Fragen. Jede Frage hat einen Standard; „weiter“ nimmt alle Standards der Runde an.
-- Nach Runde 1 **Vorschlag statt Frage**: Gliederung und Formate werden von der KI vorgeschlagen, die Lehrkraft streicht/ändert.
-- Fachbegriffe (H5P, Branching, Blanks) nicht verwenden; Formate heißen Lesebuch, Lernkarten, Zuordnen, Quiz, Geschichte, Lückentext.
-- Keine Frage, deren Antwort aus einer früheren folgt. Keine Rückfrage zu Dingen, die der Steckbrief-Standard abdeckt.
+- Erste Nachricht ist immer „Womit starten wir?“ (§1). Danach höchstens **eine Fragerunde** (§2), dann Vorschlag (§3)
+  und Drehbuch (§5). Mehr Runden gibt es nicht; was fehlt, wird angenommen und im Drehbuch oben als `Angenommen: …` genannt.
+- Jede Frage hat einen Vorschlag. „Weiter“, „passt“ oder keine Antwort nimmt alle Vorschläge an.
+- Keine Frage, deren Antwort im Material steht oder aus einer früheren Antwort folgt. Material wird vor der Fragerunde gelesen.
+- Nachfragen nur, wenn eine falsche Annahme teuer wäre: Jahrgangsstufe, Fach, Umfang, Format. Gestaltung, Ton, Bestehensgrenzen
+  sind nie eine Rückfrage wert; dafür gibt es Vorschläge und das Drehbuch.
+- Fachbegriffe vermeiden (H5P, Branching, Label). Formate heißen Lesebuch, Lernkarten, Zuordnen, Quiz, Geschichte, Lückentext.
 - Antworten wörtlich in den Steckbrief; Unklares als `offen:` markieren, nicht raten.
-- Nach den Runden: Steckbrief zeigen, bestätigen lassen, **Drehbuch** schreiben (Abschnitt 5), freigeben lassen, dann bauen.
-  Kein Bau ohne Drehbuch-Freigabe, außer bei Steuerungsgrad (c).
+- Kein Bau ohne Drehbuch-Freigabe, außer bei „KI macht alles“; das Drehbuch wird dann zum Nachlesen mitgeliefert.
 
-## 1. Runde 1 – Rahmen und Material
+## 1. Einstieg: „Womit starten wir?“
 
-| Frage | Standard | Steckbrief-Feld |
+Eine Nachricht mit drei Blöcken. Die Lehrkraft antwortet in einem Satz oder mit Ziffern und Buchstaben.
+
+**Weg** (genau diese fünf):
+
+1. **Nur ein Thema nennen** – der Assistent macht alles, die Lehrkraft liest das Drehbuch.
+2. **Eigenes Material abgeben** (Folien, Fotos, Arbeitsblätter, PDFs, Links) – der Assistent baut daraus.
+3. **Material und ein paar Fragen** – Material plus eine Fragerunde.
+4. **Fragen ohne Material** – eine Fragerunde, der Assistent schreibt den Inhalt.
+5. **Bestehenden Kurs erweitern** – Nachlieferung (Delta) in einen laufenden Kurs.
+
+**Steuerungsgrad** (Vorschlag folgt aus dem Weg: 1 → c, 2 und 3 → b, 4 → b, 5 → b):
+
+- (a) **Ich entscheide** – Fragerunde, Gliederung und Drehbuch werden einzeln freigegeben.
+- (b) **Vorschläge freigeben** – Gliederung steht oben im Drehbuch, eine Freigabe für beides.
+- (c) **KI macht alles** – kein Halt, Kurs wird direkt gebaut, Drehbuch liegt bei.
+
+**Rahmen in einem Satz**, soweit nicht schon genannt: Fach, Thema, Jahrgangsstufe und Schulart, Einsatz
+(Selbstlernkurs, unterrichtsbegleitend, Vertretung) und Umfang in Schülerminuten. Vorschläge: Einsatz unterrichtsbegleitend,
+Umfang 45 min. Fehlt die Jahrgangsstufe, gilt Mittelstufe (8–10) als Annahme; nachgefragt wird nur bei Weg 4.
+
+Beispiel der ersten Nachricht (so kurz):
+
+```
+Womit starten wir?
+1 nur ein Thema nennen · 2 eigenes Material abgeben · 3 Material + ein paar Fragen · 4 Fragen ohne Material ·
+5 bestehenden Kurs erweitern
+Wie viel entscheidest du? a ich entscheide · b Vorschläge freigeben · c KI macht alles
+Dazu in einem Satz: Fach, Thema, Jahrgangsstufe, Einsatz, Minuten (Vorschlag: begleitend, 45 min).
+```
+
+Bei Weg 1 folgt auf die Antwort keine weitere Frage: Format nach Empfehlung (§2), Gestaltung schlicht mit Banner, Bilder
+nach §4, Annahmen oben im Drehbuch. Bei Weg 2 liest der Assistent das Material und stellt nur Fragen, die es nicht
+beantwortet; meist bleibt die Formatfrage. Bei Weg 5 braucht er das alte Drehbuch oder eine Liste der vorhandenen
+Abschnitte; die Fragerunde fragt dann, was dazukommt und ab wann es sichtbar ist (Bau mit `--delta`, Regeln spec §O).
+
+Ableiten, nicht fragen: Sprachniveau und Ton aus der Jahrgangsstufe (≤ 7: einfach, kurze Sätze; 8–10: sachlich-jugendnah,
+Du; Oberstufe und Erwachsene: sachlich, Sie nur auf Wunsch), Abschlussverfolgung aus dem Einsatz (Selbstlernkurs: an mit
+Bestehensgrenzen; begleitend: an, nur Ansehen).
+
+## 2. Die Fragerunde
+
+Eine Nachricht, höchstens vier Fragen, jede mit Vorschlag. Welche Fragen, hängt vom Weg ab; bei Weg 1 entfällt die Runde.
+
+| Frage | Vorschlag | Weg |
 |---|---|---|
-| Fach und Thema des Kurses? (ein Satz) | – (Pflicht) | kurs.fach, kurs.titel |
-| Jahrgangsstufe(n) und Schulart? | – (Pflicht) | kurs.jahrgangsstufe, kurs.schulart |
-| Einsatz: Selbstlernkurs, unterrichtsbegleitend oder Vertretung/Hausaufgabe? | selbstlernkurs | kurs.einsatz |
-| Gesamtumfang in Schülerminuten, und soll er in Wochen/Lektionen portioniert werden? | 45 min, eine Lieferung | kurs.umfang_min, kurs.portionierung |
-| Vorhandenes Material? eigene Folien, Arbeitsblätter, Notizen, PDFs, Links – bitte anhängen. | keins, KI erstellt | kurs.material |
+| **Kursformat?** Empfehlung nach Kurstyp (Tabelle unten), die Lehrkraft entscheidet. | Empfehlung | 2, 3, 4 |
+| Umfang und Portionierung: eine Lieferung, oder in Wochen bzw. Etappen sichtbar werden lassen? | eine Lieferung | 3, 4 |
+| Abschluss: Abschlusstest mit Badge? Bestehensgrenze? | ja, 70 %, ein Badge am Ende (Selbstlernkurs); nein (begleitend) | 3, 4 |
+| Gestaltung: schlicht mit Banner in einer Akzentfarbe, oder gestaltet (Karten, Abschnittsbilder)? Farbwunsch? | schlicht, Farbe wählt der Assistent | 3, 4 |
+| Was kommt dazu, hinter welchem Abschnitt, ab wann sichtbar? | hinten anhängen, sofort sichtbar | 5 |
 
-Material wird vor Runde 2 gelesen (Fotos per Texterkennung); es bestimmt Gliederung und Fachinhalt. Fachliches kommt aus dem
-Material, die KI ergänzt nur, wo es fehlt, und markiert das im Drehbuch.
+Bei Weg 2 nur die Fragen stellen, die das Material offenlässt, in der Regel das Kursformat; Umfang und Gliederung
+ergeben sich aus dem Material.
 
-Ableiten, nicht fragen: Sprachniveau (aus Jahrgangsstufe), Ton (Jgst ≤ 7: einfach, kurze Sätze; 8–10: sachlich-jugendnah,
-Du; Oberstufe/Erwachsene: sachlich, Sie nur auf Wunsch), Abschlussverfolgung (Selbstlern: an, Bestehensgrenzen; begleitend: an,
-nur Ansehen).
+**Formatfrage** – früh und ausdrücklich, mit Empfehlung:
 
-## 2. Runde 2 – Gliederung (Vorschlag)
+| Kurstyp | Empfehlung | Warum |
+|---|---|---|
+| Selbstlernkurs mit mehreren Einheiten | **Kacheln** | eine Kachel je Einheit, Fortschritt sichtbar, auf dem Handy übersichtlich |
+| Wochenplan, Begleitung über mehrere Wochen | **Wochen** | Abschnitte tragen Datumsbereiche, aktuelle Woche hervorgehoben |
+| Materialsammlung, Vertretung, eine einzelne Einheit | **Themen** | alles auf einer Seite, nichts versteckt |
+| Nur ein Test, ein Forum, eine Abgabe | **Einzelaktivität** | der Kurs ist die Aktivität |
 
-KI schlägt vor: 3–6 Abschnitte (Themen) mit je 2–4 Lerneinheiten, Titel + ein Satz Inhalt + Dauer, Summe = Umfang.
-Dann genau diese Fragen:
+Weitere Formate (Ein-Themen-Format, komprimierte Abschnitte, Lernlandkarte) nur, wenn die Lehrkraft sie nennt.
+Der Generator baut derzeit das Format **Themen**; jedes andere Format wird im Steckbrief (`format:`) vorgemerkt, der Bau
+meldet einen Hinweis, und die Lehrkraft stellt nach dem Import unter Kurseinstellungen → Kursformat um; der Inhalt bleibt.
+Die Entwicklerliste aller Formate steht in `references/formate.md` und wird im Gespräch nicht gebraucht.
 
-| Frage | Standard |
-|---|---|
-| Streichen, ergänzen, umbenennen? | Vorschlag übernehmen |
-| Welche Lerneinheiten jetzt voll ausarbeiten, welche nur als Platzhalter anlegen? | alle voll |
-| Reihenfolge fest (sequenziell) oder frei wählbar? | sequenziell, keine Sperren |
-| Soll es einen Abschlusstest mit Badge geben? | ja, 70 %, ein Badge am Ende |
+## 3. Vorschlag statt Fragen: Gliederung und Formate
 
-Bei Portionierung (Runde 1): je Lerneinheit ein Datum „sichtbar ab“ erfragen oder Lieferung in Etappen festlegen
-(siehe „Sukzessiver Aufbau“ im Hauptleitfaden, Abschnitt O).
+Nach der Fragerunde (bei Weg 1 sofort) schlägt der Assistent vor; die Lehrkraft streicht, ergänzt oder sagt „passt“.
+Bei Steuerungsgrad (a) ist der Vorschlag eine eigene Nachricht, bei (b) steht er als Überblick oben im Drehbuch, bei (c)
+entfällt die Freigabe.
 
-## 3. Runde 3 – Aufgabenformate
+Gliederung: bis 45 min ein Abschnitt mit einer Lerneinheit; darüber 3–6 Abschnitte mit je 2–4 Lerneinheiten, je Einheit
+Titel, ein Satz Inhalt und Dauer; Summe = Umfang. Standards, die ohne Frage gelten: alle Einheiten voll ausgearbeitet,
+Reihenfolge frei ohne Sperren, Übungsquiz 60 %, Abschlusstest 70 %, Mischung aus Wissen und Anwendung mit Vorrang für
+Anwendung, erfundene Fälle und fiktive Marken.
 
-Menü zeigen, je Format ein Satz; Lehrkraft wählt je Lerneinheit oder nimmt den Standard.
+Formate je Lerneinheit, ein Satz je Format:
 
 | Format | Wofür | Standard |
 |---|---|---|
-| Textfeld | kurzer Input direkt auf der Kursseite (Einstieg, Fall, Hinweis) | Einstieg jeder LE |
-| Seite | längerer Input mit Bildern, zum Lesen | Haupt-Input jeder LE |
+| Banner | Bild, Titel, ein Satz als erstes Element des Kurses | immer, in Abschnitt 0 |
+| Textfeld | kurzer Input direkt auf der Kursseite (Einstieg, Fall, Hinweis) | Einstieg jeder Einheit |
+| Seite | längerer Input mit Bildern, zum Lesen | Haupt-Input jeder Einheit |
 | Video | Link, eingebettet; Link liefert die Lehrkraft | bei Bedarf |
-| Lesebuch | Input in mehreren Seiten mit eingebauten Kontrollfragen (H5P) | nur bei längeren LEs |
-| Lernkarten | Begriffe, Regeln, Vokabeln (Vorderseite/Rückseite) | bei Begriffs-LEs |
-| Zuordnen | Sortieren, Kategorien, richtig/falsch zuordnen | 1× je LE |
-| Quiz | Abschluss einer LE mit Bestehensgrenze | am Ende jeder LE |
-| Lückentext | Formulierungen, Fachsprache, Rechenschritte | bei Sprach-/Rechen-LEs |
-| Geschichte | Entscheidungen mit Folgen, mehrere Enden | 1× je Kurs (Ernstfall) |
-| Selbsteinschätzung | drei Sätze vorher/nachher | bei Selbstlernkurs |
+| Lesebuch | Input in mehreren Seiten mit eingebauten Kontrollfragen | nur bei längeren Einheiten |
+| Lernkarten | Begriffe, Regeln, Vokabeln (Vorderseite, Rückseite) | bei Begriffs-Einheiten |
+| Zuordnen | Sortieren, Kategorien, richtig/falsch zuordnen | einmal je Einheit |
+| Quiz | Abschluss einer Einheit mit Bestehensgrenze | am Ende jeder Einheit |
+| Lückentext | Formulierungen, Fachsprache, Rechenschritte | bei Sprach- und Rechen-Einheiten |
+| Geschichte | Entscheidungen mit Folgen, mehrere Enden | einmal je Kurs |
+| Selbsteinschätzung | drei Sätze vorher und nachher | bei Selbstlernkurs |
 | Praxisauftrag | Seite mit Auftrag außerhalb des Kurses | optional |
 
-Rhythmus: Lesen → Üben → Lesen → Üben → Sichern. Höchstens die Hälfte der Elemente H5P.
+Rhythmus: Lesen → Üben → Lesen → Üben → Sichern. Höchstens die Hälfte der Elemente sind interaktive Übungen.
 
-Fragen:
+## 4. Bilder
 
-| Frage | Standard |
-|---|---|
-| Formate je Lerneinheit (oder „Standard“)? | Standard-Spalte |
-| Bestehensgrenze für Quizze? | 70 % (Abschlusstest), Übungsquiz 60 % |
-| Aufgaben eher Wissen (richtig/falsch) oder Anwendung (Fälle entscheiden)? | Mischung, Anwendung bevorzugt |
-| Darf die KI Fälle, Namen, Marken erfinden (empfohlen), oder gibt es Vorgaben? | erfinden, fiktive Marken |
+Was der Assistent kann, hat die Selbstabfrage ergeben (`assistent.bilder` im Steckbrief). Daraus folgt einer von drei Wegen:
 
-## 4. Runde 4 – Gestaltung und Lieferung
+| Kann Bilder erzeugen | Weg | Steckbrief `bilder:` |
+|---|---|---|
+| ja | Bilder selbst erzeugen und als PNG nach `assets/` legen: `banner.png` (1600 × 420, Kursbanner), `kurs.png` (1600 × 520, Kursbild; fehlt es, dient das Banner als Kursbild), bei „gestaltet“ je Abschnitt ein Bild (1600 × 420). | selbst |
+| nein, aber Code | `python3 scripts/banner.py --farbe "#RRGGBB" --out <kursordner>/assets/banner.png` rendert ein textfreies Banner in der Akzentfarbe (braucht Playwright und Chromium; `--motiv` wählt das Muster). Scheitert das, Banner ohne `bild:`. | gerendert |
+| nein | Banner-Element ohne `bild:` bauen (farbiger Block mit Titel und Satz) und am Ende des Drehbuch-Kopfs je Bild eine Zeile `Bildwunsch: banner.png \| 1600 × 420 \| <Prompt>` liefern. Die Lehrkraft erzeugt die Bilder, legt sie in `assets/`, der Assistent trägt `bild:` nach und baut neu. | lehrkraft |
 
-Gestaltung ist Geschmack, keine Vorgabe: fragen, nicht setzen. Wer nicht entscheiden will, bekommt bei der ersten
-Lieferung zwei Varianten einer Abschnittsseite zur Auswahl.
-
-| Frage | Standard |
-|---|---|
-| Kursseite eher schlicht (Überschriften, kurze Texte) oder gestaltet (Banner, Karten, Kacheln je Lerneinheit)? | schlicht |
-| Eine Akzentfarbe für den Kurs oder je Abschnitt eine eigene? Farbwunsch? | eine Farbe, KI wählt |
-| Banner-Bilder oben in Abschnitten: ja, nein, nur Kursbild? | nur Kursbild |
-| Emojis oder Symbole als Marker auf Kacheln: ja/nein? | nein |
-| Bilder im Inhalt: nur gerenderte Mock-Screenshots, eigene Fotos, oder KI-Bilder nach Prompt? | nur gerendert |
-| Lieferung: Prototyp zuerst (empfohlen beim ersten Kurs) oder direkt Vollkurs? | Prototyp |
-
-Antworten unter `kurs.design` im Steckbrief; bei „weiß nicht“: `design.varianten: true` → zwei Varianten zeigen.
+Regeln für erzeugte Bilder und Prompts: ruhig und flächig, eine Akzentfarbe, Motiv aus dem Thema, **kein Text im Bild**
+(Titel und Satz setzt das Banner-Element als HTML, auf dem Handy lesbar), keine Gesichter, keine Logos. Fotos aus dem
+Material der Lehrkraft (Heftbilder, Folien) werden als PNG übernommen und mit sprechendem Dateinamen referenziert. Wenige,
+große Bilder: Banner immer, Abschnittsbilder nur bei „gestaltet“, keine Bilder als Dekoration zwischen Absätzen.
 
 ## 5. Drehbuch = Kursdatei – Inhalt zum Lesen vor dem Bau
 
@@ -106,9 +144,15 @@ Format (Markdown, Überschriften tragen die Struktur, Angaben stehen klein gesch
 ```
 # Drehbuch v1 · <Kurstitel> · <Umfang> min
 v2: S2 gekürzt · Frage 3 ersetzt                       Änderungsliste (wird ignoriert)
+Angenommen: Jgst 9, begleitend, 45 min                 Annahmen bei Weg 1 (wird ignoriert)
+Bildwunsch: banner.png | 1600 × 420 | <Prompt>          nur wenn die Lehrkraft Bilder erzeugt (wird ignoriert)
 farbe: #0F766E                                          optional: Akzentfarbe, kursbild: datei.png
 
-## <Abschnitt> · 25 min                                 ## Allgemeines = Abschnitt 0 (optional)
+## Allgemeines                                          Abschnitt 0
+### Banner: <Kurstitel>                                 erstes Element: Bild + Titel + ein Satz
+bild: banner.png                                        weglassen, solange es kein Bild gibt
+untertitel: <ein Satz>
+## <Abschnitt> · 25 min
 teil: le1                                               Schlüssel für Steckbrief, --delta, sichtbar ab
 ### Überblick: <Titel>                                  Kopfkarte; untertitel:, dauer:, dann - Lesen: … / - Üben: …
 ### Textfeld: <Name> · 2 min [Quelle: Folie 3]          kurzer Input auf der Kursseite
@@ -162,6 +206,8 @@ Regeln:
 - **Zeitcheck**: je Aufgabe/Seite Minuten schätzen (Lesen 150 Wörter/min, MC 45 s, Karte 20 s, Quizfrage 45 s, Geschichtsknoten 40 s),
   je LE summieren, gegen Soll ausweisen (`Zeit LE 1: …`); Abweichung > 20 % mit Vorschlag (kürzen/ergänzen) melden.
 - Umfang: eine 45-Minuten-Stunde ≈ 2–3 Seiten Drehbuch. Länger nur, wenn der Inhalt es verlangt.
+- **Annahmen** bei Weg 1 und überall, wo der Assistent ohne Frage entschieden hat: eine Zeile `Angenommen: …` im Kopf.
+  Die Lehrkraft korrigiert dort, statt gefragt zu werden.
 - **Änderungsliste** bei jeder Revision oben im Drehbuch: `v2: S2 gekürzt · Frage 3 ersetzt · N4 neu · Zeit LE 1 20 → 18 min`.
   Nur die Änderungsliste und die geänderten Blöcke erneut zeigen, nicht das ganze Drehbuch, außer auf Wunsch.
 - Freigabe = „passt“ der Lehrkraft (oder Steuerungsgrad c). Danach die Datei unverändert als `kurs.md` bauen; keine
@@ -171,7 +217,7 @@ Regeln:
 
 ```yaml
 kurs:
-  titel: "…"                      # Kursname in ByCS-Lernplattform
+  titel: "…"                      # Kursname in der ByCS-Lernplattform
   kurzname: "…"                   # ≤ 20 Zeichen
   beschreibung: "<p>…</p>"
   fach: "…"
@@ -181,12 +227,17 @@ kurs:
   ton: "…"                        # abgeleitet
   umfang_min: 90
   portionierung: keine            # keine | wochen | etappen
+  format: themen                  # themen | kacheln | wochen | einzelaktivitaet (Empfehlung §2; gebaut wird bis auf Weiteres themen)
   badge: "…"                      # Name oder null
   bestehensgrenze: 70
   farbe: "#1D5FD1"
-  design: {stil: schlicht, banner: kursbild, farbe_je_abschnitt: false, emoji_marker: false, varianten: false}
+  design: {stil: schlicht, banner: true, farbe_je_abschnitt: false, emoji_marker: false, varianten: false}
+  weg: thema                      # thema | material | material_fragen | fragen | delta
   steuerung: vorschlag            # entscheide | vorschlag | ki
+  assistent: {code: ja, dateien: ja, bilder: nein}   # Selbstabfrage aus SKILL.md
+  bilder: gerendert               # selbst | gerendert | lehrkraft (§4)
   material: []                    # Dateinamen/Links der Lehrkraft
+  angenommen: []                  # Annahmen ohne Rückfrage, auch im Drehbuch-Kopf
   offen: []                       # ungeklärte Punkte, vor dem Bau klären
 teile:                            # Schlüssel frei, Reihenfolge = Kursreihenfolge
   start: {status: pending, titel: "Allgemeines", inhalt: "Banner, So funktioniert der Kurs, Selbsteinschätzung vorher"}
@@ -203,6 +254,7 @@ Delta neu einspielen). `sichtbar_ab: YYYY-MM-DD` erzeugt eine Datums-Zugriffsbes
 
 1. Kursordner anlegen: `kurs.md` (freigegebenes Drehbuch), `steckbrief.yaml`, `assets/` (PNG, per Dateiname referenziert).
    Teile-Schlüssel des Steckbriefs (`teile:`) = `teil:` an Abschnitten und Unterabschnitten der Kursdatei.
-2. `python3 scripts/build.py --content <kursordner> --proto` (Erstkurs) oder ohne `--proto`; Etappen:
+2. Bilder nach §4: selbst erzeugt, mit `scripts/banner.py` gerendert, oder vorerst ohne `bild:`.
+3. `python3 scripts/build.py --content <kursordner> --proto` (Erstkurs) oder ohne `--proto`; Etappen:
    `--delta` (alle `pending`) oder `--delta le2,le3`.
-3. Nach erfolgreichem Import die gelieferten Teile auf `delivered` setzen.
+4. Nach erfolgreichem Import die gelieferten Teile auf `delivered` setzen.
