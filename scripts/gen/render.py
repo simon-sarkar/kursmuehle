@@ -187,7 +187,7 @@ def clickbait_html():
 </div></body></html>"""
 
 
-def badge_html(label="Problemlösen", hue="#1D5FD1"):
+def badge_html(label="Problemlösen", hue="#1D5FD1", sub="Alltagskompetenz"):
     return f"""<html><head><style>{BASE_CSS}</style></head><body style="background:transparent">
 <div id="shot" style="width:600px;height:600px;position:relative;background:transparent">
 <svg width="600" height="600" viewBox="0 0 600 600" style="position:absolute;inset:0">
@@ -198,7 +198,7 @@ def badge_html(label="Problemlösen", hue="#1D5FD1"):
  <path d="M 215 310 L 275 370 L 395 240" fill="none" stroke="#fff" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
 <div class="disp" style="position:absolute;left:0;right:0;top:420px;text-align:center;color:#fff;font-weight:800;font-size:40px;letter-spacing:-.01em">{label}</div>
-<div style="position:absolute;left:0;right:0;top:470px;text-align:center;color:#D7DCE6;font-weight:600;font-size:21px;letter-spacing:.12em;text-transform:uppercase">Alltagskompetenz</div>
+<div style="position:absolute;left:0;right:0;top:470px;text-align:center;color:#D7DCE6;font-weight:600;font-size:21px;letter-spacing:.12em;text-transform:uppercase">{sub}</div>
 </div></body></html>"""
 
 

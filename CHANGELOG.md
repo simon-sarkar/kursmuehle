@@ -1,5 +1,50 @@
 # Changelog
 
+## 1.0 – 2026-10-23 (AP9: Fremdtest, Release-Zip, Projektseite, Wiederherstellungsanleitung)
+
+- Fremdtest (AP9): ein frischer Assistent der Sonnet-Klasse bekam nur das Release-Zip und den Satz „Mach mir eine Einheit
+  zu Bruchrechnen für Jgst 6, 45 Minuten, Selbstlernkurs“ und lief ohne Hilfe bis zur `.mbz`; zwei Durchläufe, der zweite
+  mit den Änderungen aus dem ersten. Protokoll mit Lesereihenfolge, Rückfragen, Ratestellen, Abweichungen, Slop-Prüfung,
+  Laufzeit und Tokens: `docs/entwicklung/protokolle/AP9_fremdtest.md`; Richtwerte in der README.
+- Folgen aus Durchlauf 1 in SKILL.md, intake.md, kursdatei.md: Nennt die erste Nachricht schon Thema, Jahrgangsstufe,
+  Einsatz und Minuten, entfällt „Womit starten wir?“ (Weg 1, KI macht alles); zu breites Thema grenzt der Assistent als
+  `Angenommen:` ein. Eine einzelne Einheit bekommt das Themenformat, auch als Selbstlernkurs. Geschichte erst ab etwa
+  90 min; Selbsteinschätzung vorher in Allgemeines, nachher als letztes Element. Übungsquiz im Textfeld braucht
+  `abschluss: ansehen`. Badge-Bild: `banner.py --badge --titel … --kicker …` (neu) oder selbst erzeugt. Rechenzeichen in
+  der Kursdatei (Brüche `3/8`, ` · ` ist Trennzeichen, Malzeichen `×`, keine LaTeX-Formeln). Zeitcheck bis Jgst 7 mit
+  100 Wörtern/min, Rechenlücke 30 s. `--proto` erklärt (nur für einen Prototyp zum Ansehen), Ausgabeordner `out/` genannt.
+  Dateiname der `.mbz` jetzt ASCII ohne Leerzeichen (`brueche-6_kurs_…`), Umlaute ausgeschrieben.
+- Wiederherstellungsanleitung Schritt für Schritt, wie sie auf der Plattform aussieht (Kurs → Mehr → Kurs wiederherstellen;
+  Bestätigen; Ziel mit drei Varianten; Einstellungen; Schema mit „Kurseinstellungen überschreiben: Ja“ bei Formatwechsel;
+  danach Glossar-XML und Badge) in SKILL.md (Text für die Lieferung) und README. Sicherungen höchstens 500 MB;
+  `check.py` warnt ab 400 MB (`GROESSE_WARNUNG_MB`, Testfall in `test_check.py`).
+- Textfeld-Regel oben in SKILL.md und README: Ein Übungs-Textfeld, das eine Lehrkraft mit „Einstellungen bearbeiten“
+  speichert, verliert Skript und Stil (Plattformtest 23.10.); Änderungen über Drehbuch und Delta oder Neuimport. Als
+  ungeprüfter Ausweg dokumentiert: Texteditor in den Nutzereinstellungen auf „Textbereich“ stellen.
+- `AGENTS.md` als neutraler Name für die Arbeitsregeln; `CLAUDE.md` ist nur noch `@AGENTS.md`. `arbeitspakete/` liegt
+  jetzt unter `docs/entwicklung/`, mit Prompt-Vorlage in dessen README; Verweise angepasst (ältere CHANGELOG-Einträge
+  bleiben als Verlauf).
+- `scripts/package.py`: Release-Zip `dist/kursmuehle.zip` (SKILL.md, README, CHANGELOG, ROADMAP, Lizenzen, references/
+  ohne export-schemata, scripts/, examples/ ohne out/, docs/ ohne entwicklung/; ohne tools/, AGENTS.md, CLAUDE.md), alles
+  unter `kursmuehle/`. Der Dateiname bleibt fest, damit `releases/latest/download/kursmuehle.zip` stabil ist.
+- README: „Drei Wege“ (ByLKI und AIS-Chat mit der Browser-Fassung 2.0; ChatGPT und Claude mit dem Skill-Zip; Agenten mit dem
+  Repo), Schnellstart mit Download-Link, Projektstatus 1.0, Wiederherstellen auf der Plattform, Rückmeldung geben,
+  Richtwerte aus dem Fremdtest, Struktur mit docs/ und AGENTS.md, Status-Liste mit 1.1 und 2.0.
+- `docs/index.html`: Projektseite für GitHub Pages (Logo und Palette aus docs/, Pitch, Schnellstart, Download über
+  `releases/latest/download/`, Wiederherstellen, Rückmeldung mit Platzhalter-Link, den der Autor einträgt).
+- `docs/fortgeschrittene.md`: Repo klonen, eigene Kurssicherung lokal als Vorlage analysieren (bleibt lokal), eigene
+  Designvorlage, Textbausteine, Fachregeln, Beispielordner, Zip neu packen, Beitragsregel. `docs/erfahrungen.md` für
+  Rückmeldungen und gebaute Kurse.
+- `docs/entwicklung/protokolle/`: Vorlagen für die Durchläufe des Autors (Import-Test 1.0, ChatGPT Free, Claude Free,
+  ByLKI), so weit ausgefüllt, wie es ohne Plattform und fremde Konten geht; Messfelder leer.
+- ROADMAP: 1.0 erreicht; unter „Nach 1.0“ als 1.1 vorgemerkt: `vorlage_aus_sicherung.py`, Übungsblöcke, die ohne
+  Skript als Tabelle oder Fragenliste lesbar bleiben, Website als SCORM-Paket für Bewertung und Abschluss.
+- `test_kursdatei.py` baut jeden Ordner unter `examples/` mit `kurs.md`. Badge `docs/badge-status.svg` „Release“,
+  `badge-version.svg` 1.0.
+- Offen (Autor): Pages aktivieren, Release v1.0 mit `kursmuehle.zip` anlegen, Feedback-Link eintragen, Durchläufe nach den
+  Protokollvorlagen; Import-Test des Fremdtest-Kurses. Nicht umgesetzt aus dem Fremdtest: Kürzung von `intake.md` §5
+  (der Syntaxblock bleibt als Kurzfassung, `kursdatei.md` als Referenz).
+
 ## 0.9.1 – 2026-10-23 (AP7b: Textfeld-Modus nach der JS-Probe; didaktik.md in intake.md)
 
 - JS-Probe auf der Plattform (23.10., `tools/jsprobe`): Probe 1 bestanden, JavaScript im Textfeld läuft; Probe 2

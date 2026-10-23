@@ -82,7 +82,7 @@ if __name__ == "__main__":
         "wortmarke.svg": wortmarke(),
         "banner-kursmuehle-v8.svg": banner(),
         "badge-version.svg": badge("Version", version, 62, 48),
-        "badge-status.svg": badge("Status", "Tech-Demo → 1.0", 52, 110),
+        "badge-status.svg": badge("Status", "Release", 52, 64),
         "badge-lizenz.svg": badge("Lizenz", "nicht kommerziell", 52, 116, BG),
         "badge-plattform.svg": badge("Plattform", "ByCS-Lernplattform · Moodle 5.2", 68, 196, BG),
     }

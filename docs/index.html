@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kursmühle</title>
+<meta name="description" content="Kursmühle: Ein KI-Assistent baut aus einer Beschreibung oder eigenem Material eine importierbare Kurssicherung für die ByCS-Lernplattform.">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<style>
+  :root {
+    --creme: #f3e9d8; --anthrazit: #2a2a2a; --ocker: #d9a441; --grau: #6b6257;
+    --bg: var(--creme); --fg: var(--anthrazit); --karte: #ffffff; --linie: rgba(42,42,42,.25);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1f1d1a; --fg: #f3e9d8; --karte: #2a2724; --grau: #b8aea0; --linie: rgba(243,233,216,.25); }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 17px/1.55 "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+  header { display: flex; align-items: center; gap: 18px; padding: 8px 0 24px; }
+  header img { width: 88px; height: 88px; flex: none; }
+  h1 { margin: 0; font-size: 2.1rem; letter-spacing: -0.5px; line-height: 1.1; }
+  .pitch { margin: 4px 0 0; font-size: 1.15rem; color: var(--grau); }
+  h2 { font-size: 1.35rem; margin: 40px 0 12px; padding-top: 12px; border-top: 1px solid var(--linie); }
+  p { margin: 0 0 12px; }
+  .knopf { display: inline-block; background: var(--ocker); color: var(--anthrazit); font-weight: 600; text-decoration: none;
+           padding: 12px 20px; border-radius: 10px; margin: 8px 12px 8px 0; }
+  .knopf.leise { background: transparent; color: var(--fg); border: 1.5px solid var(--linie); }
+  .wege { display: grid; gap: 14px; grid-template-columns: 1fr; }
+  @media (min-width: 700px) { .wege { grid-template-columns: 1fr 1fr 1fr; } }
+  .karte { background: var(--karte); border: 1px solid var(--linie); border-radius: 12px; padding: 16px; }
+  .karte h3 { margin: 0 0 8px; font-size: 1.05rem; }
+  .karte p, .karte ol { margin: 0 0 8px; font-size: 0.97rem; }
+  ol, ul { padding-left: 22px; }
+  li { margin-bottom: 6px; }
+  code { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 0.92em;
+         background: rgba(127,127,127,.14); padding: 1px 5px; border-radius: 5px; }
+  a { color: inherit; text-decoration-color: var(--ocker); text-decoration-thickness: 2px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.97rem; }
+  td, th { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--linie); vertical-align: top; }
+  .hinweis { border-left: 4px solid var(--ocker); padding: 8px 14px; background: var(--karte); border-radius: 0 10px 10px 0; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--linie); font-size: 0.92rem; color: var(--grau); }
+  img.ablauf { width: 100%; height: auto; border-radius: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="logo.svg" alt="Kursmühle">
+    <div>
+      <h1>Kursmühle</h1>
+      <p class="pitch">Kurse wiederherstellen, die es noch nie gab.</p>
+    </div>
+  </header>
+
+  <p>Ein KI-Assistent baut aus einer Beschreibung oder aus eigenem Unterrichtsmaterial eine Kurssicherung
+  (<code>.mbz</code>) für die <a href="https://www.bycs.de/">ByCS-Lernplattform</a> (Bayern, Moodle-basiert, früher mebis).
+  Die Lehrkraft liest vorher ein kurzes Drehbuch, gibt es frei und stellt die Sicherung im eigenen Kurs wieder her.
+  Abschnitte, Lesetexte, Übungen, Tests, Badges und Kursbild kommen fertig an.</p>
+
+  <p>
+    <a class="knopf" href="https://github.com/simon-sarkar/kursmuehle/releases/latest/download/kursmuehle.zip">Skill-Zip herunterladen</a>
+    <a class="knopf leise" href="https://github.com/simon-sarkar/kursmuehle">Repository auf GitHub</a>
+  </p>
+
+  <img class="ablauf" src="ablauf.svg" alt="Ablauf: Lehrkraft, KI-Assistent, Drehbuch, Generator, Kurssicherung, Lernplattform">
+
+  <h2 id="schnellstart">Schnellstart</h2>
+  <div class="wege">
+    <div class="karte">
+      <h3>ChatGPT oder Claude</h3>
+      <ol>
+        <li>Skill-Zip herunterladen.</li>
+        <li>Zip hochladen und schreiben: „Entpacke das und lies SKILL.md.“ Dahinter den Kurswunsch, zum Beispiel
+          „Mach mir eine Einheit zu Bruchrechnen für Jgst 6, 45 Minuten, Selbstlernkurs.“</li>
+        <li>Drehbuch lesen, „passt“ sagen, <code>.mbz</code> herunterladen.</li>
+      </ol>
+      <p>Code-Ausführung muss im Assistenten eingeschaltet sein.</p>
+    </div>
+    <div class="karte">
+      <h3>ByLKI oder AIS-Chat</h3>
+      <p>Diese Angebote führen keinen Code aus. Eine Fassung im Browser, die aus dem Drehbuch die Sicherung baut, kommt mit
+      Version 2.0. Bis dahin: Drehbuch dort schreiben lassen, Bau mit ChatGPT, Claude oder einem Agenten.</p>
+    </div>
+    <div class="karte">
+      <h3>Claude Code, Codex, eigener Agent</h3>
+      <p>Repository klonen und dem Agenten die Seite <a href="https://github.com/simon-sarkar/kursmuehle/blob/main/docs/fortgeschrittene.md">für Fortgeschrittene</a>
+      geben: eigene Kurssicherung als Vorlage, eigene Designvorlagen, Textbausteine und Fachregeln, Zip neu packen.</p>
+    </div>
+  </div>
+
+  <h2 id="was">Was dabei herauskommt</h2>
+  <ul>
+    <li>Kursformate Themen, Kacheln (mit Kachelbild je Abschnitt), Wochen, Ein-Themen, Komprimiert, Einzelaktivität.</li>
+    <li>Lesetexte als formatierte Textfelder und Seiten, Lesebuch, Buch; Übungen als Quiz, Zuordnen, Lernkarten, Lückentext,
+      Geschichte mit Entscheidungen; Test mit Fragensammlung, Aufgabe, Forum, Abstimmung, Glossar, Datei und Verzeichnis.</li>
+    <li>Übungen auf Wunsch direkt auf der Kursseite ohne Nachladen, oder eine ganze Einheit als eine Seite mit Kapiteln.</li>
+    <li>Kursbanner und Kursbild, Badge am Ende, Nachlieferungen in einen laufenden Kurs, Freigabe nach Datum.</li>
+    <li>Vor dem Drehbuch prüft der Assistent gegen zehn didaktische Standardannahmen und eine Liste von Sprachmarkern.</li>
+  </ul>
+
+  <h2 id="wiederherstellen">Wiederherstellen auf der Plattform</h2>
+  <ol>
+    <li>Kurs öffnen → Mehr → Kurs wiederherstellen → Datei hochladen → Wiederherstellen.</li>
+    <li>Bestätigen: nur Weiter.</li>
+    <li>Ziel: als neuen Kurs in eine Kategorie; oder in diesen Kurs mit „löschen und dann wiederherstellen“ (nur so kommt
+      ein anderes Kursformat mit); oder „zusammenführen“ für Nachlieferungen, die hinten anhängen.</li>
+    <li>Einstellungen: Weiter. Schema: bei Formatwechsel „Kurseinstellungen überschreiben: Ja“. Wiederherstellen.</li>
+    <li>Danach Glossar-Einträge importieren (Glossar → Mehr → Einträge importieren, XML-Datei neben der Sicherung) und
+      Badge aktivieren.</li>
+  </ol>
+  <p class="hinweis">Übungs-Textfelder nicht mit „Einstellungen bearbeiten“ speichern: der Editor entfernt Skript und Stil.
+  Änderungen laufen über das Drehbuch und eine neue Sicherung. Eine Sicherung darf höchstens 500 MB haben.</p>
+
+  <h2 id="rueckmeldung">Rückmeldung</h2>
+  <!-- Autor: im Link darunter die Adresse des Formulars oder der Projektadresse eintragen (href) -->
+  <p>Ohne GitHub-Konto: <a id="feedback-link" href="#rueckmeldung">Rückmeldung senden</a>.
+  Mit GitHub-Konto: <a href="https://github.com/simon-sarkar/kursmuehle/issues">Issue anlegen</a>.
+  Am meisten hilft: Fach, Jahrgangsstufe, Assistent, Dauer, und wo es gehakt hat.
+  Gesammelte Rückmeldungen stehen in <a href="https://github.com/simon-sarkar/kursmuehle/blob/main/docs/erfahrungen.md">Erfahrungen</a>.</p>
+
+  <footer>
+    <p>Nicht kommerziell: Code unter PolyForm Noncommercial 1.0.0, Texte und Beispiele unter CC BY-NC-SA 4.0. Mit dem
+    Skill erzeugte Kurse gehören der Lehrkraft, die sie gebaut hat.</p>
+    <p>Keine Verbindung zum Betreiber der Lernplattform. Sicherungen vor dem Einsatz in einem Testkurs prüfen; die fachliche
+    Verantwortung für die Inhalte bleibt bei der Lehrkraft.</p>
+  </footer>
+</main>
+</body>
+</html>

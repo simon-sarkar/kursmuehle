@@ -111,6 +111,10 @@ aber nur MC, RF und Kurzantwort. Für Zwischenchecks Quiz, für die benotete Kon
 Inline überall: `**fett**` → `<b>`, `*kursiv*` → `<i>`, `==markiert==` → farbig hinterlegt, HTML (`<br>`, `<b>`,
 `<i>`) bleibt stehen. In Zeilen mit `*Lücken*` (Einsetzen, Markieren, Lückentext) wird nichts umgewandelt.
 
+Rechenzeichen: Brüche als `3/8`, auch neben Lücken (`*3*/8`, `1/*2*`); Minus als `−` oder `-`; das Mittelpunkt-Zeichen ` · `
+trennt in Fragen-, Karten- und Zuordnen-Zeilen die Antworten, als Malzeichen deshalb `×` oder „mal“ schreiben; Potenzen
+als `2<sup>3</sup>`; keine LaTeX-Formeln (`$$`, `\(`), die Plattform filtert sie in Übungsblöcken nicht sicher.
+
 ## 4. Textbausteine (Textfeld, Seite, Lesebuch-Seiten, Kästen)
 
 | Zeile | Ergebnis |

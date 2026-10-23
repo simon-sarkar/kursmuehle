@@ -12,7 +12,7 @@ Bewertungsposten passt nicht; aus dem module-Build mit Nutzerdaten: users.xml fe
 Abschnitts-userinfo; aus dem Website-Build von netzwerk9: Bild fehlt im Verzeichnis der Seite, externe Quelle; aus dem
 Textfeld-Build von netzwerk9: doppelte Block-id, CSS-Regel ohne Block-id, Feldname ohne Block-id, Filter-Zeichenfolge im
 Skript, Skript ohne eigene Funktion;
-Warnung bei users=1 (und nur dort) und bei langem Kacheltitel.
+Warnung bei users=1 (und nur dort), bei langem Kacheltitel und bei einer Sicherung ab 400 MB (Schwelle im Test auf 0 gesetzt).
 """
 import io
 import os
@@ -26,6 +26,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 
+import check  # noqa: E402
 from check import check_mbz  # noqa: E402
 
 BUILD = os.path.join(ROOT, "scripts", "build.py")
@@ -348,6 +349,15 @@ def main():
                 print(f"FEHLT  {name}: erwartet „{want}“, gemeldet: {msgs[:5] or 'nichts'}")
             else:
                 print(f"ok     {name}: {len(errors)} Fehler gemeldet, darunter „{want}“")
+        # Größenwarnung: Schwelle auf 0 MB, dann muss jede Sicherung warnen; danach zurück
+        check.GROESSE_WARNUNG_MB = 0
+        _, _, warnings = check_mbz(gut[0])
+        check.GROESSE_WARNUNG_MB = 400
+        if not any("höchstens 500 MB" in was for _, was in warnings):
+            bad += 1
+            print(f"FEHLT  Größenwarnung: {warnings}")
+        else:
+            print("ok     Größenwarnung ab Schwelle: gemeldet")
         # Datei, die kein Archiv ist
         kein = os.path.join(d, "kein.mbz")
         with open(kein, "wb") as f:
