@@ -48,7 +48,9 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
 - `json_content` aus `references/h5p-vorlagen.md` übernehmen, nur Inhalte ersetzen; jede `subContentId` eine eigene UUID.
 - Bilder in H5P-Inhalten ins Filearea `mod_hvp/content` (spec §H) – häufigster stiller Fehler.
 - Kursseiten-HTML nur mit filtersicherem CSS (spec §K); jede `<td>` setzt `border` explizit; keine verschachtelten Tabellen.
-- Gestaltung ist Präferenz der Lehrkraft (Steckbrief `design`), Standard schlicht; Emojis nur auf Wunsch.
+- Gestaltung ist Präferenz der Lehrkraft: Steckbrief `design.vorlage` (`schlicht` Standard, `kacheln`, `magazin`), Emojis nur
+  auf Wunsch. Lesetexte formatiert (Überschrift, Schritte, Tabelle, Kästen, Merke nach `kursdatei.md` §4), kein Absatz länger
+  als fünf Zeilen auf dem Handy; kein HTML im Drehbuch.
 - Mischung statt H5P-Kette: Input als Textfeld (kurz, direkt auf der Kursseite) oder Seite (länger, mit Bildern), Videos als
   Link (`Url`, display embed – die Plattform bettet YouTube/Vimeo ein), H5P nur für Übung und Kontrolle. Richtwert: höchstens die
   Hälfte der Elemente einer Einheit sind H5P; Rhythmus Lesen → Üben → Lesen → Üben → Sichern.
@@ -67,7 +69,7 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
 - `references/kursdatei.md` – vollständige Referenz der Kursdatei (alle Typen, Angaben, Bausteine, Grenzen).
 - `scripts/` – Generator: `gen/kursdatei.py` (Parser), `gen/html.py` (Textbausteine), `gen/mbz.py` (Writer),
   `gen/h5p.py` (H5P-Builder), `gen/render.py` (Banner/Mocks), `build.py`, `check.py` (Sicherung prüfen), `templates/`,
-  `tests/` (Regressionstests, `.mbz`-Vergleich). Enthält keinen Kursinhalt.
+  `tests/` (Regressionstests, `.mbz`-Vergleich, `render_vorlagen.py`: Vorlagen bei 390 und 1200 px). Enthält keinen Kursinhalt.
 - `examples/netzwerk9/` – minimaler Beispielkurs (eine Einheit, 25 min, aus Folien + Fotos einer Lehrkraft): Vorbild für neue Kurse.
 - `examples/alltagskompetenz/` – großer Beispielkurs (Tech-Demo, Unterabschnitte, Lesebuch, Geschichte, Badge, Delta).
   `python3 scripts/build.py --content examples/<kurs>` baut sie.

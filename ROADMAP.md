@@ -69,12 +69,12 @@ Datei/Verzeichnis, Kern-H5P-Aktivität, Lektion, Wiki, Datenbank, Chat, Workshop
 1.0 enthält Test, Aufgabe, Datei/Verzeichnis, Forum, Buch; der Rest folgt.
 Je Modul: Testkurs mit einer Instanz exportieren → Schema in `references/spec.md` → Klasse in `gen/mbz.py`.
 
-### 4. Schlanke Designvorlagen
+### 4. Schlanke Designvorlagen (seit 0.5: schlicht, kacheln, magazin)
 Drei bis vier austauschbare Vorlagen (z. B. *schlicht*, *kacheln*, *magazin*, *dunkel*) als Token-Sätze
 (Farben, Abstände, Kartenform) in `scripts/gen/html.py`, wählbar im Steckbrief. Standard bleibt schlicht,
 Emojis aus. Keine harten Designregeln im Skill – Vorlieben kommen aus dem Intake.
 
-### 5. HTML-Formatierung für Textinhalte
+### 5. HTML-Formatierung für Textinhalte (seit 0.5)
 Lesetexte in Textfeldern und Seiten kommen formatiert, nicht als Fließtext: Zwischenüberschriften, kurze
 Absätze, Listen, Hervorhebungen, Merkkasten, Beispiel-Box, Tabelle für Vergleiche, Bild mit Unterschrift.
 Die Bausteine dafür liegen in `scripts/gen/html.py` und werden von der Designvorlage eingefärbt; der Agent

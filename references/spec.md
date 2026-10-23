@@ -156,8 +156,14 @@ Bild siehe H. Nach Import inaktiv.
 - Bilder: PNG ≤ 1600 px Breite skalieren sauber; Text in Bildern ist auf Mobilgeräten klein → Text bevorzugt als HTML.
 - Label-Namen erscheinen im Kursindex → sprechend benennen.
 - Gestaltung (Banner, Karten, Farben, Marker, Buchfarbe) ist Präferenz der Lehrkraft: aus dem Steckbrief `design`
-  übernehmen (intake.md §2); ohne Angabe schlicht bauen (Kursbanner, keine Abschnittsbilder, keine Emojis, eine Akzentfarbe) und
-  bei der ersten Lieferung zwei Varianten einer Abschnittsseite zur Auswahl zeigen.
+  übernehmen (intake.md §2); ohne Angabe schlicht bauen (Kursbanner, keine Abschnittsbilder, keine Emojis, eine Akzentfarbe).
+- Designvorlagen: Token-Sätze `schlicht`, `kacheln`, `magazin` in `gen/html.py` (`VORLAGEN`: Farben, Rundung, Abstände,
+  Kartenform, Schriftgrößen); `build.py` setzt sie aus `design.vorlage`. Alle Bausteine (Textfeld, Seite, Buchtext, Karten)
+  lesen die Tokens beim Aufruf; Kursinhalt enthält keine Gestaltungsangaben. Render-Test: `scripts/tests/render_vorlagen.py`
+  (Playwright, 390 und 1200 px, Theme-Rahmen um `<td>` nachgebildet).
+- Textbausteine für Lesetexte (kursdatei.md §4): Zwischenüberschrift, Vorspann, Absatz, Listen, Schritte, Begriffstabelle,
+  Vergleichstabelle (ohne `table-layout:fixed`, damit vier Spalten auf dem Handy umbrechen), Kasten/Beispiel/Hinweis,
+  Hervorhebung, Merke, Bild mit Unterschrift, Bildzeile. Mit Banner tragen Überblickskarten keinen Titel.
 
 ### L. Inhaltsregeln
 

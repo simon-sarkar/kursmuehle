@@ -66,7 +66,7 @@ Eine Nachricht, höchstens vier Fragen, jede mit Vorschlag. Welche Fragen, häng
 | **Kursformat?** Empfehlung nach Kurstyp (Tabelle unten), die Lehrkraft entscheidet. | Empfehlung | 2, 3, 4 |
 | Umfang und Portionierung: eine Lieferung, oder in Wochen bzw. Etappen sichtbar werden lassen? | eine Lieferung | 3, 4 |
 | Abschluss: Abschlusstest mit Badge? Bestehensgrenze? | ja, 70 %, ein Badge am Ende (Selbstlernkurs); nein (begleitend) | 3, 4 |
-| Gestaltung: schlicht mit Banner in einer Akzentfarbe, oder gestaltet (Karten, Abschnittsbilder)? Farbwunsch? | schlicht, Farbe wählt der Assistent | 3, 4 |
+| Gestaltung: Vorlage schlicht (weiße Karten, Haarlinien), kacheln (getönte Flächen, runder) oder magazin (Linien, Weißraum)? Farbwunsch? Abschnittsbilder? | schlicht, Farbe wählt der Assistent, keine Abschnittsbilder | 3, 4 |
 | Was kommt dazu, hinter welchem Abschnitt, ab wann sichtbar? | hinten anhängen, sofort sichtbar | 5 |
 
 Bei Weg 2 nur die Fragen stellen, die das Material offenlässt, in der Regel das Kursformat; Umfang und Gliederung
@@ -157,13 +157,15 @@ teil: le1                                               Schlüssel für Steckbri
 ### Überblick: <Titel>                                  Kopfkarte; untertitel:, dauer:, dann - Lesen: … / - Üben: …
 ### Textfeld: <Name> · 2 min [Quelle: Folie 3]          kurzer Input auf der Kursseite
 Vorspann: <Einleitungssatz>
-<Absatz>                                               Leerzeile = neuer Absatz; **fett**, *kursiv*, <br>
-- <Punkt> / 1. <Schritt>                                Liste / Schritte
-| <Begriff> | <Erklärung> |                             Tabelle
+<Absatz>                                               Leerzeile = neuer Absatz; **fett**, *kursiv*, ==markiert==, <br>
+Überschrift: <Zwischenüberschrift>                      Hervorhebung: <Kernsatz>
+- <Punkt> / 1. <Schritt>                                Liste / nummerierte Liste
+Schritte: <Titel>  + 1. <Schritt>                       Anleitung mit Nummern
+| <Begriff> | <Erklärung> |                             Tabelle; mit Kopfzeile und |---|---| darunter: Vergleichstabelle
 Kasten: <Titel>   (auch Beispiel:, Hinweis:)            Inhalt zwei Leerzeichen eingerückt
   <Absatz oder Liste>
 Merke: <Merksatz>
-Bild: <datei.png> | <Alt-Text>                          Bild aus assets/
+Bild: <datei.png> | <Alt-Text> | <Unterschrift>         Bild aus assets/
 ### Seite: <Titel> · 5 min                              längerer Input, gleiche Bausteine
 ### Video: <Titel>                                      Link, eingebettet; darunter die https://-Zeile
 ### Lesebuch: <Titel> · 12 min
@@ -206,6 +208,9 @@ Regeln:
 - **Zeitcheck**: je Aufgabe/Seite Minuten schätzen (Lesen 150 Wörter/min, MC 45 s, Karte 20 s, Quizfrage 45 s, Geschichtsknoten 40 s),
   je LE summieren, gegen Soll ausweisen (`Zeit LE 1: …`); Abweichung > 20 % mit Vorschlag (kürzen/ergänzen) melden.
 - Umfang: eine 45-Minuten-Stunde ≈ 2–3 Seiten Drehbuch. Länger nur, wenn der Inhalt es verlangt.
+- **Lesetexte formatiert, nicht als Fließtext**: je Textsorte den Baustein wählen (Erklärung: Überschriften, kurze Absätze,
+  Begriffstabelle; Fall: `Beispiel:`; Anleitung: `Schritte:`; Merksatz: `Merke:`), kein Absatz länger als fünf Zeilen auf dem
+  Handy (etwa 60 Wörter). Gestaltung kommt aus der Vorlage im Steckbrief, nicht aus HTML im Drehbuch.
 - **Annahmen** bei Weg 1 und überall, wo der Assistent ohne Frage entschieden hat: eine Zeile `Angenommen: …` im Kopf.
   Die Lehrkraft korrigiert dort, statt gefragt zu werden.
 - **Änderungsliste** bei jeder Revision oben im Drehbuch: `v2: S2 gekürzt · Frage 3 ersetzt · N4 neu · Zeit LE 1 20 → 18 min`.
@@ -231,7 +236,7 @@ kurs:
   badge: "…"                      # Name oder null
   bestehensgrenze: 70
   farbe: "#1D5FD1"
-  design: {stil: schlicht, banner: true, farbe_je_abschnitt: false, emoji_marker: false, varianten: false}
+  design: {vorlage: schlicht, banner: true, farbe_je_abschnitt: false, emoji_marker: false}   # vorlage: schlicht | kacheln | magazin
   weg: thema                      # thema | material | material_fragen | fragen | delta
   steuerung: vorschlag            # entscheide | vorschlag | ki
   assistent: {code: ja, dateien: ja, bilder: nein}   # Selbstabfrage aus SKILL.md
