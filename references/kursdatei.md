@@ -19,6 +19,7 @@ untertitel: Wie kommt das Internet aufs Handy?
 …
 ## <Abschnittstitel> · 25 min                    Abschnitt; „· N min“ am Ende wird entfernt
 teil: netz                                       Angaben zum Abschnitt
+kachelbild: kachel.png                           Kachelbild (nur Kursformat Kacheln; sonst ignoriert)
 ### <Typ>: <Titel> · 4 min [Quelle: …]           Element
 angabe: wert                                     Angaben zum Element, direkt unter der Überschrift
 <Inhalt>
@@ -44,6 +45,7 @@ sind Fehler, keine Vermutungen.
 | Kurs | `kursbild` | PNG aus `assets/` als Kursbild |
 | Abschnitt | `teil` | Schlüssel für `--delta` und `sichtbar_ab` im Steckbrief (`teile:`) |
 | Abschnitt | `farbe` | Akzentfarbe des Abschnitts (vererbt an Unterabschnitte und Elemente) |
+| Abschnitt | `kachelbild`, `kachelicon` | Kachelformat: PNG aus `assets/` als Kachelbild, FontAwesome-4-Name (book, lightbulb-o, flask, globe, laptop, puzzle-piece, trophy …) als Icon; in anderen Formaten ohne Wirkung. Alternativ im Steckbrief unter `teile.<teil>.kachelbild` / `.kachelicon` |
 | Abschnitt, Unterabschnitt, Element | `sichtbar ab` | `JJJJ-MM-TT`, Datumsbedingung 06:00 Uhr; überschreibt den Steckbrief |
 | Abschnitt, Unterabschnitt, Element | `prototyp: nein` | wird bei `--proto` weggelassen |
 | Unterabschnitt | `teil` | wie beim Abschnitt |
@@ -218,18 +220,26 @@ Nachschlagetexte und längere Lesetexte. Beispiel mit allen Moodle-Modulen: `exa
 
 ## 7. Steckbrief und Bau
 
-`steckbrief.yaml` liefert Titel, Kurzname, Beschreibung, `design.vorlage` (`schlicht` Standard, `kacheln`, `magazin`;
-Token-Sätze in `scripts/gen/html.py`, `build.py --vorlage` überschreibt), `design.emoji_marker` und je `teil` den Status
-(`pending`/`delivered`) und `sichtbar_ab`. Bau: `python3 scripts/build.py --content <ordner>`; `--proto` lässt alles mit
-`prototyp: nein` weg und hängt „Prototyp“ an den Kursnamen; `--delta` baut die Teile mit `status: pending`,
-`--delta le2,le3` die genannten; jeder Teil wird dabei ein eigener Abschnitt (Unterabschnitte werden Abschnitte).
+`steckbrief.yaml` liefert Titel, Kurzname, Beschreibung, `format` (`themen` Standard, `kacheln`, `wochen`, `einthemen`,
+`komprimiert`, `einzelaktivitaet`; `build.py --format` überschreibt; `formatoptionen: {name: wert}` für einzelne
+Kursoptionen aus `formate.md`; `start: JJJJ-MM-TT` als Kursbeginn, ab dem das Wochenformat zählt), `design.vorlage`
+(`schlicht` Standard, `kacheln`, `magazin`; Token-Sätze in `scripts/gen/html.py`, `build.py --vorlage` überschreibt),
+`design.emoji_marker` und je `teil` den Status (`pending`/`delivered`), `sichtbar_ab`, `kachelbild`, `kachelicon`.
+Bau: `python3 scripts/build.py --content <ordner>`; `--proto` lässt alles mit `prototyp: nein` weg und hängt „Prototyp“ an
+den Kursnamen; `--delta` baut die Teile mit `status: pending`, `--delta le2,le3` die genannten; jeder Teil wird dabei ein
+eigener Abschnitt (Unterabschnitte werden Abschnitte). Einzelaktivität: die Kursdatei enthält genau ein Element.
+
+Glossare mit Einträgen: Moodle stellt Einträge nur mit Nutzerdaten wieder her. Die Sicherung trägt deshalb `users=1`
+(nur das Glossar und seine Abschnitte haben `userinfo=1`), und `build.py` legt je Glossar eine XML-Datei neben die `.mbz`
+(`<kurs>_glossar.xml`) für Glossar → Mehr → Einträge importieren. Sperrt die Plattform beim Wiederherstellen „Nutzer
+einbeziehen“, fehlen Einträge und Badges: dann `--ohne-nutzerdaten` bauen und die Einträge über die XML-Datei einspielen.
 
 Python bleibt als Ausweg: Liegt keine `kurs.md`, aber `content/course.py` mit `build(A, sb, proto)` im Kursordner,
 wird sie genutzt (Bausteine in `scripts/gen/html.py`).
 
 ## 8. Grenzen
 
-Nicht ausdrückbar in 1.0: Rückmeldung „nicht gewählt“ bei MC, Bilder in Szenen einer Geschichte, Buchdeckel,
+Nicht ausdrückbar in 1.0: Kursformate Lernlandkarte und Mimo, Rückmeldung „nicht gewählt“ bei MC, Bilder in Szenen einer Geschichte, Buchdeckel,
 Rückmeldungsbereiche des Quiz, Tipps bei Einsetzen/MC, Hintergrundbild mit Koordinaten beim Zuordnen (nur automatische
 Anordnung), im Test andere Fragetypen als MC/RF/Kurzantwort, Zeitlimits und Öffnungszeiten bei Test und Aufgabe,
 Forum-Diskussionen (Nutzerdaten), Unterordner im Verzeichnis. Wer das braucht, nimmt den Python-Ausweg.

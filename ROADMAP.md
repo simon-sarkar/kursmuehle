@@ -35,6 +35,7 @@ Vorgestellt wurde 0.1 bereits, Durchlauf mit ChatGPT (inklusive selbst generiert
    ein zusammenhängender Block ohne Plattform-Export.
 4. **Die meistgenutzten Module und das Kachelformat** – Test, Aufgabe, Datei/Verzeichnis, Forum, Buch;
    Kursformat Kacheln. Braucht je einen Test-Export (Punkte 2, 3). Alles Weitere nach 1.0.
+   Module seit 0.6 (AP5), Kursformate seit 0.7 (AP6) gebaut; Import-Tests offen.
 5. **Kern-H5P im Textfeld** – Fünf-Minuten-Test auf der Plattform; Ergebnis entscheidet (Punkt 7).
 6. **Website-Modus als Vorlage** – eine HTML-Ressource mit Navigation, Inhalten und einem kleinen
    JS-Quiz; eigene Spiele und Simulationen als Beispiele erst nach 1.0 (Punkt 7).
@@ -60,14 +61,18 @@ Danach Steuerungsgrad und höchstens eine Fragerunde. Ziel: ein Kurs in unter ze
 bis zum Drehbuch. Nachfragen nur, wenn eine falsche Annahme teuer wäre.
 
 ### 2. Alle Kursformate
-Themen (0.1) → **Kacheln** (1.0), danach Grid, Wochen, Einzelaktivität, Buttons/One-Topic – je ein Test-Export für
-`course.xml`-Felder und Format-Optionen; Kachelbilder und Kachelfarben aus dem Steckbrief.
+Themen (0.1) → **Kacheln** (1.0), danach Wochen, Einzelaktivität, Ein-Themen, Komprimiert – je ein Test-Export für
+`course.xml`-Felder und Format-Optionen; Kachelbilder und Kachelfarben aus Kursdatei und Steckbrief. Seit 0.7 (AP6)
+gebaut: Kacheln (Kachelbild/-icon je Abschnitt, Grundfarbe aus der Akzentfarbe), Wochen, Ein-Themen, Komprimiert,
+Einzelaktivität; Import-Test offen. Kein Grid auf der Plattform; Lernlandkarte und Mimo nach 1.0.
 
 ### 3. Alle Modultypen
 Reihenfolge nach Nutzen: Test (mit Fragensammlung), Aufgabe, Forum, Buch, Glossar, Abstimmung,
 Datei/Verzeichnis, Kern-H5P-Aktivität, Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool.
 1.0 enthält Test, Aufgabe, Datei/Verzeichnis, Forum, Buch; der Rest folgt. Seit 0.6 (AP5) gebaut: Test (MC, Wahr/Falsch,
 Kurzantwort), Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar; Import-Test des Beispiels `examples/module` offen.
+Import-Test 2 (0.6): Glossareinträge kommen nur mit Nutzerdaten an; seit 0.7 `users=1` nur für Glossare plus XML-Datei
+zum Einträge-Import als Ausweg.
 Je Modul: Testkurs mit einer Instanz exportieren → Schema in `references/spec.md` → Klasse in `gen/mbz.py`.
 
 ### 4. Schlanke Designvorlagen (seit 0.5: schlicht, kacheln, magazin)

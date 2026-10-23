@@ -2,9 +2,9 @@
 
 # Kursmühle – Lernplattform-Kurse aus einem Prompt
 
-![Version 0.6](docs/badge-version.svg) ![Status: Tech-Demo auf dem Weg zu 1.0](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
+![Version 0.7](docs/badge-version.svg) ![Status: Tech-Demo auf dem Weg zu 1.0](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
 
-**Version 0.6** (Stand 23.10.2026) · siehe [`ROADMAP.md`](ROADMAP.md) und [`CHANGELOG.md`](CHANGELOG.md)
+**Version 0.7** (Stand 23.10.2026) · siehe [`ROADMAP.md`](ROADMAP.md) und [`CHANGELOG.md`](CHANGELOG.md)
 
 **Ein KI-Assistent baut aus einer Beschreibung oder eigenem Unterrichtsmaterial eine importierbare Kurssicherung (`.mbz`) für die ByCS-Lernplattform.**
 
@@ -38,17 +38,20 @@ fertige Kurssicherung zum Import.
    früh gefragt und empfohlen (Kacheln, Wochen, Themen, Einzelaktivität).
 3. **Drehbuch lesen und freigeben.** Die gelieferte `.mbz` importierst du über
    Kurs → Mehr → *Kurs wiederverwenden* → *Wiederherstellen*, zuerst in einen
-   Testkurs.
+   Testkurs. Dabei *Kurseinstellungen überschreiben: Ja* wählen, sonst behält
+   der Kurs sein bisheriges Kursformat.
 
-> **Projektstatus: Version 0.6 (Tech-Demo).**
+> **Projektstatus: Version 0.7 (Tech-Demo).**
 > Der Ablauf Intake → Drehbuch → Generator → Import ist an zwei Beispielkursen
 > durchgespielt, einschließlich H5P-Inhalten, Badge und Nachlieferung in einen
 > laufenden Kurs, mit Claude Code und mit ChatGPT. Die Moodle-Module Test,
 > Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung und Glossar (seit 0.6)
-> sind gebaut und geprüft, der Import-Test auf der Plattform steht noch aus.
-> Offen sind weitere Kursformate und Modultypen (siehe Tabelle unten). Kein
-> offizielles Produkt der Plattform; wenn sich die Lernplattform ändert, wird
-> der Skill angepasst.
+> und die Kursformate Kacheln, Wochen, Ein-Themen, Komprimiert und
+> Einzelaktivität (seit 0.7) sind gebaut und geprüft; der Import-Test auf der
+> Plattform steht für Test, Buch und die neuen Formate noch aus. Glossar-
+> Einträge kommen beim Import nur mit „Nutzer einbeziehen“ an, sonst über eine
+> mitgelieferte XML-Datei (Import-Test 2). Kein offizielles Produkt der
+> Plattform; wenn sich die Lernplattform ändert, wird der Skill angepasst.
 
 ## Systemübersicht
 
@@ -82,12 +85,12 @@ fertige Kurssicherung zum Import.
 
 | Kann | Noch nicht |
 |---|---|
-| Kursformat „Themen“, beliebig viele Abschnitte und Unterabschnitte | Andere Kursformate (Kachel, Grid, Einzelaktivität) |
+| Kursformate Themen, Kacheln (mit Kachelbild oder Icon je Abschnitt), Wochen, Ein-Themen, Komprimierte Abschnitte, Einzelaktivität; beliebig viele Abschnitte und Unterabschnitte | Lernlandkarte, Mimo (kein Grid auf der Plattform) |
 | Textfelder und Seiten mit Textbausteinen (Überschrift, Schritte, Tabellen, Kästen, Merke, Bild mit Unterschrift) in drei Designvorlagen (schlicht, kacheln, magazin), wählbar im Steckbrief | Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool |
 | Moodle-Module: Test (Multiple Choice, Wahr/Falsch, Kurzantwort; Fragen in der Fragensammlung), Aufgabe (Text- und Dateiabgabe), Datei, Verzeichnis, Forum, Buch mit Kapiteln, Abstimmung, Glossar | Weitere Fragetypen im Test (Zuordnung, Lückentext, numerisch), Zeitlimits, Forum-Diskussionen |
 | H5P: Interactive Book, Branching Scenario, Question Set, Drag and Drop, Fill in the Blanks, Dialog Cards, Course Presentation; Bausteine Text, Bild, Multiple Choice, True/False, Drag the Words, Mark the Words, Summary, Single Choice Set | Weitere H5P-Typen (Interactive Video, Image Hotspots, Memory …) |
 | Feedback-Umfragen, Links/Videos (eingebettet), Badges, Kursbild, Abschlussverfolgung | Gruppen, Termine, Kursabschluss-Kriterien |
-| Kursbanner als erstes Element (Bild, Titel, ein Satz); Bild von der KI erzeugt, gerendert (`scripts/banner.py`) oder von der Lehrkraft nach Prompt | Abschnitts- und Kachelbilder automatisch aus dem Material |
+| Kursbanner als erstes Element (Bild, Titel, ein Satz); Bild von der KI erzeugt, gerendert (`scripts/banner.py`) oder von der Lehrkraft nach Prompt; Kachelbilder aus `assets/` | Abschnitts- und Kachelbilder automatisch aus dem Material |
 | Zugriffsbeschränkung „sichtbar ab Datum“; Nachlieferung per Delta-Sicherung | Andere Zugriffsbedingungen (Abschluss von X, Bewertung, Gruppe) |
 
 ## Repository-Struktur
@@ -95,7 +98,7 @@ fertige Kurssicherung zum Import.
 ```
 SKILL.md       Einstieg für den KI-Agenten: Ablauf, harte Regeln, Grenzen
 references/    spec.md (Sicherungsformat, Plattformwerte, H5P-Strukturen),
-               kursdatei.md (Format der Kursdatei kurs.md),
+               kursdatei.md (Format der Kursdatei kurs.md), formate.md (Kursformate),
                h5p-vorlagen.md (json_content aller Typen, deutsche UI-Texte),
                skelette.md (XML-Skelette), intake.md (Fragerunden, Drehbuch, Steckbrief)
 scripts/       Generator (gen/), build.py, check.py (Sicherung prüfen), Vorlagen, tests/
@@ -110,8 +113,11 @@ CHANGELOG.md   Versionen und bekannte Lücken
 ## Nach dem Import
 
 Badge aktivieren (Mehr → Badges), Kursbild prüfen, Probedurchlauf als
-Schüler/in. Wenn etwas nicht passt, reicht ein Screenshot an den Assistenten;
-er ändert die Inhalte und baut die Sicherung neu.
+Schüler/in. Hat der Kurs ein Glossar mit Einträgen und sind sie nach dem Import
+leer, die mitgelieferte Datei `…_glossar.xml` über Glossar → Mehr →
+*Einträge importieren* einspielen. Wenn etwas nicht passt, reicht ein
+Screenshot an den Assistenten; er ändert die Inhalte und baut die Sicherung
+neu.
 
 ## Ohne KI bauen (für Entwickler)
 
@@ -152,15 +158,11 @@ verloren.
 - [x] Drehbuch-Parser: Das Drehbuch ist die Kursdatei (`kurs.md`), der Generator liest sie direkt
 - [x] Prüfskript `check.py`: jede Sicherung wird vor dem Import auf Struktur, Dateien und H5P-Versionen geprüft
 - [x] Menüführung: „Womit starten wir?“ – Thema, altes Material, Material + Fragen, Fragen-Intake
-- [ ] Alle Kursformate (Kacheln, Grid, Wochen …) und alle Modultypen (Test, Aufgabe, Forum …)
 - [x] Schlanke Designvorlagen zur Auswahl; Kursbanner, generiert vom Assistenten, wenn er es kann
-- [ ] Abschnitts- und Kachelbilder aus dem Material
 - [x] HTML-Formatierung für Lesetexte: Überschriften, Listen, Merk- und Beispielkästen statt Fließtext
-- [ ] Menüführung: „Womit starten wir?“ – Thema, altes Material, Material + Fragen, Fragen-Intake
 - [x] Modultypen für 1.0: Test, Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar (Import-Test offen)
-- [ ] Alle Kursformate (Kacheln, Grid, Wochen …); weitere Modultypen nach 1.0
-- [ ] Schlanke Designvorlagen zur Auswahl; Kursbanner und Bilder sinnvoll eingebunden, generiert vom Assistenten, wenn er es kann
-- [ ] HTML-Formatierung für Lesetexte: Überschriften, Listen, Merk- und Beispielkästen statt Fließtext
+- [x] Kursformate Kacheln (Kachelbild/-icon je Abschnitt), Wochen, Ein-Themen, Komprimiert, Einzelaktivität (Import-Test offen)
+- [ ] Abschnitts- und Kachelbilder aus dem Material
 - [ ] One-Page-Darstellung ohne Ladezeiten: H5P im Textfeld, Kurs als eigene Website mit eigenen Spielen
 
 Reihenfolge und Details in [`ROADMAP.md`](ROADMAP.md); die Liste dort definiert Version 1.0.

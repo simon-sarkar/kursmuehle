@@ -5,6 +5,7 @@ kurs:
   fach: Alltagskompetenz (fiktiv)
   jahrgangsstufe: 8–10
   einsatz: selbstlernkurs
+  format: kacheln                 # Selbstlernkurs mit mehreren Einheiten -> Kacheln (intake.md §2); Kachelbilder je Themenfeld in kurs.md
   ton: sachlich-jugendnah, Du-Ansprache, keine Running Gags
   umfang_min: 100
   badge: Problemlösen

@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.7 – 2026-10-23 (AP6: Kursformate; Glossareinträge beim Import)
+
+- Glossar-Fehler aus Import-Test 2 (0.6): Moodle stellt Glossareinträge nur mit Nutzerdaten wieder her
+  (`restore_glossary_stepslib.php`, `if ($userinfo)`), die Sicherung hatte `users=0`. Beide Wege gebaut:
+  (A) `moodle_backup.xml` mit `users=1`, `userinfo=1` nur für Glossare mit Einträgen, ihren Abschnitt und bei
+  Unterabschnitten die Kette darüber (sonst sperrt Moodle das Modul-Setting), alle anderen Module `userinfo=0`, leere
+  `users.xml`, Einträge `userid 0`. Gegen den Moodle-Quellcode (5.0) geprüft: die Vorprüfung lädt `users.xml` nur bei
+  `users=1` und findet keine Nutzer; fehlt der Lehrkraft `moodle/restore:userinfo`, setzt `restore_check` das Setting
+  auf 0 statt abzubrechen, dann fehlen die Einträge und (Abhängigkeit `users → badges`) auch die Badges.
+  (B) `gen/mbz.py glossary_import_xml()`: je Glossar eine Moodle-Glossar-XML (`GLOSSARY/INFO/ENTRIES/ENTRY`, Aliasse)
+  neben der `.mbz` (`<kurs>_glossar.xml`) für Glossar → Mehr → Einträge importieren; `build.py` nennt den Weg.
+  `build.py --ohne-nutzerdaten` baut (A) ab. `check.py` prüft `users`/`userinfo` (users.xml vorhanden, Kette
+  Abschnitt → Unterabschnitt-Modul) und warnt (`WARNUNG`, Exit 0) bei Einträgen mit `userinfo=0` sowie bei `users=1` mit Badges.
+- AP6 Kursformate: Steckbrief `kurs.format` themen, kacheln, wochen, einthemen, komprimiert, einzelaktivitaet (oder
+  Moodle-Name; `build.py --format` überschreibt). `course.xml` bekommt `<format>` und die `courseformatoptions` je Format
+  mit den Plattformstandards aus `references/formate.md` (`kurs.formatoptionen` überschreibt einzelne Werte),
+  `moodle_backup.xml` das passende `original_course_format`. Kacheln: `basecolour` = nächste Plattformfarbe zur
+  Akzentfarbe, `courseshowtileprogress 1`; je Abschnitt `kachelbild:` (PNG aus `assets/`, Datei `format_tiles/tilephoto/`
+  im Kurskontext, `plugin_format_tiles_section` + `course_format_options` nach `export-schemata/kachelformat/`,
+  fileref in der inforef des Abschnitts) und `kachelicon:` (FontAwesome-Name, nur `course_format_options`); auch im
+  Steckbrief unter `teile.<teil>`. Wochen zählen ab `kurs.start`. Einzelaktivität: genau ein Element, landet in
+  Abschnitt 0, `activitytype` = sein Modul; mehr Elemente brechen den Bau ab. Der 0.4-Hinweis „Format vorgemerkt“ entfällt.
+- `check.py`: Kursformat bekannt, Formatoptionen mit passendem Format, Kacheloptionen nur im Kachelformat und nur an
+  regulären Abschnitten, Kachelbild als Datei mit Kurs-Kontext/itemid/filepath und fileref aus der Abschnitts-inforef,
+  Einzelaktivität (eine Aktivität in Abschnitt 0, activitytype); Abschnitts-inforefs werden jetzt mitgeprüft.
+  `check_mbz()` gibt zusätzlich die Warnungen zurück.
+- Beispiele: `alltagskompetenz` im Kachelformat mit Kachelbild je Themenfeld, `netzwerk9` mit `kachelbild:` (wirkt nur
+  bei `--format kacheln`). Tests: `test_check.py` baut netzwerk9 in jedem Format, `module` mit und ohne Nutzerdaten
+  (Warnung erwartet), prüft den Abbruch der Einzelaktivität und fünf neue Fehlerfälle (Formatoption mit fremdem Format,
+  Kachelbild ohne Datei, Kacheloption im Themenformat, users.xml fehlt, Glossar-userinfo ohne Abschnitts-userinfo);
+  `test_kursdatei.py` zwei neue Fehlerfälle (Kachelbild fehlt, Icon-Name).
+- Doku: `formate.md` (Umsetzung, Import-Regeln: `course.xml` nur mit „Kurseinstellungen überschreiben: Ja“,
+  Abschnittsoptionen nur bei gleichem Format), `spec.md` §A/§B.1/§D/§E/§G/§H/§N, `kursdatei.md` §1/§2/§7/§8,
+  `intake.md` §2/§6/§7, SKILL.md (Bau, Lieferung, Grenzen), README (Tabelle, Status, Nach dem Import).
+- Offen: Import-Test durch den Autor für Kacheln (Kachelbild, Icon, `basecolour`), Wochen, Ein-Themen, Komprimiert,
+  Einzelaktivität sowie Weg (A) beim Glossar (ob die Plattform Lehrkräften `moodle/restore:userinfo` gibt). Das Kachel-Icon
+  ist nur aus dem Mechanismus abgeleitet (kein Export mit Icon); die Plugin-Quelle von `format_tiles` war nicht
+  erreichbar. Lernlandkarte und Mimo nach 1.0.
+
 ## 0.6 – 2026-10-23 (AP5: Moodle-Module Test, Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar)
 
 - Acht Generator-Klassen in `scripts/gen/mbz.py` nach den Schemata in `references/export-schemata/aktivitaeten/`:

@@ -7,8 +7,10 @@ moodle_backup.xml gegen die Ordner, Abschnitts-/Modulnummern und IDs, files.xml 
 referenziert), inforef.xml (Dateien, Bewertungsposten, Fragenkategorien), H5P (Bibliotheksversionen aus gen/libs.py,
 json_content, Bilder in images/), Bilder in Textfeldern/Seiten/Buchkapiteln, Datei/Verzeichnis (Dateibereich content),
 Test (Fragenverweise gegen questions.xml, Kategorie im Modulkontext, sumgrades, Bewertungsposten, Fragetypen),
-Aufgabe (Bewertungsposten), Abstimmung (Optionen), Glossar (Einträge), Badges, Verfügbarkeits-JSON.
-Ausgabe: `OK <datei> …` oder Zeilen `FEHLER <wo> <was>`; Exit-Code 1 bei Fehlern.
+Aufgabe (Bewertungsposten), Abstimmung (Optionen), Glossar (Einträge, Nutzerdaten-Settings), Badges, Verfügbarkeits-JSON,
+Kursformat (course.xml, Formatoptionen, Kachelbilder je Abschnitt, Einzelaktivität), users/userinfo-Settings.
+Ausgabe: `OK <datei> …` oder Zeilen `FEHLER <wo> <was>`; Exit-Code 1 bei Fehlern. Zeilen `WARNUNG <wo> <was>` (Exit 0):
+die Sicherung ist gültig, aber beim Import geht voraussichtlich etwas verloren (z. B. Glossareinträge ohne userinfo=1).
 `build.py` ruft die Prüfung nach jedem Bau selbst auf. Neue Modultypen brauchen hier einen Eintrag (Dateibereiche, inhalte()).
 """
 import hashlib
@@ -23,7 +25,7 @@ from urllib.parse import unquote
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from gen.libs import LIBS  # noqa: E402
-from gen.mbz import MODULE_VERSIONS, QTYPES  # noqa: E402
+from gen.mbz import FORMAT_OPTIONEN, MODULE_VERSIONS, QTYPES  # noqa: E402
 
 NULL = "$@NULL@$"
 PFLICHT_TOP = ["moodle_backup.xml", "files.xml", "moodle_backup.log", "roles.xml", "scales.xml", "outcomes.xml",
@@ -44,6 +46,9 @@ class Pruefung:
     def __init__(self, path):
         self.path = path
         self.errors = []          # (wo, was)
+        self.warnings = []        # (wo, was): gültig, aber beim Import geht voraussichtlich etwas verloren
+        self.settings = {}        # moodle_backup.xml Settings name -> value
+        self.format = None        # Kursformat aus course.xml
         self.entries = {}         # Archivpfad -> bytes
         self.xml = {}             # Archivpfad -> ElementTree-Root
         self.acts = []            # dicts: cmid, sectionid, modname, dir, instanceid, contextid, module, mod
@@ -55,6 +60,9 @@ class Pruefung:
 
     def err(self, wo, was):
         self.errors.append((wo, was))
+
+    def warn(self, wo, was):
+        self.warnings.append((wo, was))
 
     # ---------------------------------------------------------------- Archiv
     def lade(self):
@@ -143,8 +151,24 @@ class Pruefung:
             if _text(info, "original_course_contextid") != self.course_ctx:
                 self.err("moodle_backup.xml", "original_course_contextid ≠ course.xml contextid")
         settings = {_text(s, "name"): _text(s, "value") for s in info.findall("settings/setting")}
+        self.settings = settings
         if settings.get("filename") != _text(info, "name"):
             self.err("moodle_backup.xml", "Setting „filename“ ≠ <name>")
+        if course is not None:
+            self.format = _text(course, "format", "")
+            if self.format not in FORMAT_OPTIONEN:
+                self.err("course/course.xml", f"Kursformat „{self.format}“ nicht umgesetzt (erlaubt: {', '.join(FORMAT_OPTIONEN)})")
+            if _text(info, "original_course_format") != self.format:
+                self.err("moodle_backup.xml", f"original_course_format {_text(info, 'original_course_format')} ≠ course.xml format {self.format}")
+            for o in course.findall("courseformatoptions/courseformatoption"):
+                if _text(o, "format") != self.format or _text(o, "sectionid") != "0":
+                    self.err("course/course.xml", f"courseformatoption „{_text(o, 'name')}“: format {_text(o, 'format')}, "
+                                                  f"sectionid {_text(o, 'sectionid')}; erwartet {self.format}, 0")
+        if settings.get("users") == "1":
+            if "users.xml" not in self.entries:
+                self.err("users.xml", "fehlt, obwohl Setting users=1 (die Restore-Vorprüfung lädt die Datei)")
+            elif self.xml.get("users.xml") is not None and self.xml["users.xml"].tag != "users":
+                self.err("users.xml", "Wurzelelement <users> erwartet")
 
         seen_dirs = set()
         for a in info.findall("contents/activities/activity"):
@@ -164,7 +188,8 @@ class Pruefung:
             module = self.xml.get(f"{d}/module.xml")
             modx = self.xml.get(f"{d}/{mod}.xml")
             act = {"cmid": cmid, "sectionid": sid, "modname": mod, "dir": d, "module": module, "mod": modx,
-                   "instanceid": None, "contextid": None, "insub": insub == "1", "title": _text(a, "title", "")}
+                   "instanceid": None, "contextid": None, "insub": insub == "1", "title": _text(a, "title", ""),
+                   "userinfo": settings.get(f"{mod}_{cmid}_userinfo", "0")}
             if module is not None:
                 if module.get("id") != cmid:
                     self.err(f"{d}/module.xml", f"id {module.get('id')} ≠ moduleid {cmid}")
@@ -199,7 +224,8 @@ class Pruefung:
                     self.err("moodle_backup.xml", f"Setting section_{sid}_{suffix} fehlt")
             root_s = self.xml.get(f"{d}/section.xml")
             sec = {"id": sid, "dir": d, "root": root_s, "number": None, "sequence": [], "parentcmid": _text(s, "parentcmid", ""),
-                   "modname": _text(s, "modname", ""), "component": None, "itemid": None}
+                   "modname": _text(s, "modname", ""), "component": None, "itemid": None,
+                   "userinfo": settings.get(f"section_{sid}_userinfo", "0"), "tilephoto": None, "tileicon": None}
             if root_s is not None:
                 if root_s.get("id") != sid:
                     self.err(f"{d}/section.xml", f"id {root_s.get('id')} ≠ sectionid {sid}")
@@ -211,6 +237,7 @@ class Pruefung:
                 seq = _text(root_s, "sequence", "")
                 sec["sequence"] = [c for c in seq.split(",") if c]
                 sec["component"], sec["itemid"] = _text(root_s, "component", NULL), _text(root_s, "itemid", NULL)
+                self.kacheln(sec)
             if sid in self.secs:
                 self.err("moodle_backup.xml", f"Abschnitt {sid} doppelt gelistet")
             self.secs[sid] = sec
@@ -222,6 +249,69 @@ class Pruefung:
                 if d not in seen_dirs:
                     self.err(d, "liegt im Archiv, ist aber in moodle_backup.xml nicht gelistet")
                     seen_dirs.add(d)
+
+    def kacheln(self, sec):
+        """Kachelbild/-icon eines Abschnitts (section.xml): nur im Kachelformat, Werte konsistent, Datei folgt in inforefs()."""
+        root_s, wo = sec["root"], f"{sec['dir']}/section.xml"
+        opts = {_text(o, "name", ""): _text(o, "value", "") for o in root_s.findall("course_format_options")}
+        plugin = root_s.find("plugin_format_tiles_section")
+        if not opts and plugin is None:
+            return
+        if self.format != "tiles":
+            self.err(wo, f"Kacheloptionen ({', '.join(opts) or 'plugin_format_tiles_section'}), aber Kursformat {self.format}")
+        if sec["parentcmid"]:
+            self.err(wo, "Kacheloptionen an einem Unterabschnitt (nur reguläre Abschnitte sind Kacheln)")
+        for o in root_s.findall("course_format_options"):
+            if _text(o, "format", "") != "tiles" or _text(o, "name", "") not in ("tilephoto", "tileicon"):
+                self.err(wo, f"course_format_options „{_text(o, 'name', '')}“ (format {_text(o, 'format', '')}): erwartet tiles/tilephoto oder tileicon")
+        sec["tilephoto"], sec["tileicon"] = opts.get("tilephoto"), opts.get("tileicon")
+        if plugin is not None:
+            if plugin.get("sectionid") != sec["id"] or _text(plugin, "optiontype", "") != "1":
+                self.err(wo, f"plugin_format_tiles_section braucht sectionid {sec['id']} und optiontype 1 (Foto)")
+            if _text(plugin, "optionvalue", "") != sec["tilephoto"]:
+                self.err(wo, f"Kachelbild „{_text(plugin, 'optionvalue', '')}“ (Plugin) ≠ „{sec['tilephoto']}“ (course_format_options tilephoto)")
+        elif sec["tilephoto"]:
+            self.err(wo, "tilephoto ohne plugin_format_tiles_section (export-schemata/kachelformat)")
+
+    def nutzerdaten(self):
+        """users/userinfo-Settings: userinfo=1 nur mit users=1 und entlang der Kette Abschnitt → Unterabschnitt-Modul."""
+        users = self.settings.get("users") == "1"
+        by_cmid = {a["cmid"]: a for a in self.acts}
+        on = [a for a in self.acts if a["userinfo"] == "1"] + [s for s in self.secs.values() if s["userinfo"] == "1"]
+        if on and not users:
+            self.err("moodle_backup.xml", "userinfo=1 gesetzt, aber root-Setting users=0 (Moodle sperrt userinfo dann auf 0)")
+        for a in [a for a in self.acts if a["userinfo"] == "1"]:
+            s, seen = self.secs.get(a["sectionid"]), set()
+            while s is not None and s["id"] not in seen:
+                seen.add(s["id"])
+                if s["userinfo"] != "1":
+                    self.err("moodle_backup.xml", f"{a['modname']}_{a['cmid']}_userinfo=1, aber section_{s['id']}_userinfo=0 "
+                                                  "(Moodle sperrt das Modul-Setting)")
+                sub = by_cmid.get(s["parentcmid"]) if s["parentcmid"] else None
+                if sub is not None and sub["userinfo"] != "1":
+                    self.err("moodle_backup.xml", f"{a['modname']}_{a['cmid']}_userinfo=1 im Unterabschnitt, aber "
+                                                  f"subsection_{sub['cmid']}_userinfo=0")
+                s = self.secs.get(sub["sectionid"]) if sub is not None else None
+        if users and self.xml.get("badges.xml") is not None and self.xml["badges.xml"].findall("badge"):
+            self.warn("moodle_backup.xml", "users=1 (Glossareinträge) und Badges: sperrt die Plattform „Nutzer einbeziehen“ "
+                                           "beim Wiederherstellen, fallen Einträge und Badges weg (build.py --ohne-nutzerdaten, "
+                                           "Einträge per XML-Import)")
+
+    def kursformat(self):
+        """Einzelaktivität: genau eine Aktivität in Abschnitt 0, activitytype passend."""
+        if self.format != "singleactivity":
+            return
+        course = self.xml.get("course/course.xml")
+        opts = {_text(o, "name", ""): _text(o, "value", "") for o in course.findall("courseformatoptions/courseformatoption")}
+        if len(self.acts) != 1:
+            self.err("course/course.xml", f"Einzelaktivität mit {len(self.acts)} Aktivitäten (genau eine erwartet)")
+            return
+        a = self.acts[0]
+        s = self.secs.get(a["sectionid"])
+        if s is None or s["number"] != 0:
+            self.err("course/course.xml", "Einzelaktivität: die Aktivität muss in Abschnitt 0 liegen")
+        if opts.get("activitytype") != a["modname"]:
+            self.err("course/course.xml", f"activitytype „{opts.get('activitytype')}“ ≠ Modul {a['modname']}")
 
     def ids_und_nummern(self):
         def dupes(items):
@@ -370,6 +460,12 @@ class Pruefung:
                     if gi.get("id") not in have:
                         self.err(f"{a['dir']}/inforef.xml", f"grade_itemref {gi.get('id')} fehlt (grades.xml hat den Posten)")
         check_inforef("course/inforef.xml", self.course_ctx)
+        sec_refs = {}   # Datei-ID -> Abschnitt, der sie referenziert
+        for s in self.secs.values():
+            check_inforef(f"{s['dir']}/inforef.xml", self.course_ctx)
+            ir = self.xml.get(f"{s['dir']}/inforef.xml")
+            for fid in [_text(f, "id", "") for f in ir.findall("fileref/file")] if ir is not None else []:
+                sec_refs[fid] = s
 
         for rec in self.files:
             wo = f"files.xml Datei {rec['id']} ({rec['filename']})"
@@ -385,8 +481,20 @@ class Pruefung:
             elif comp in ("course", "badges"):
                 if rec["contextid"] != self.course_ctx:
                     self.err(wo, f"component {comp} braucht den Kurs-Kontext {self.course_ctx}")
+            elif comp == "format_tiles":
+                s = self.secs.get(rec["itemid"])
+                if rec["contextid"] != self.course_ctx or rec["filearea"] != "tilephoto" or rec["filepath"] != "/tilephoto/":
+                    self.err(wo, "Kachelbild braucht Kurs-Kontext, filearea tilephoto und filepath /tilephoto/")
+                if s is None or s["tilephoto"] != rec["filename"]:
+                    self.err(wo, f"itemid {rec['itemid']} ist kein Abschnitt mit tilephoto „{rec['filename']}“")
+                elif sec_refs.get(rec["id"]) is not s:
+                    self.err(wo, f"muss aus {s['dir']}/inforef.xml referenziert werden")
             else:
                 self.err(wo, f"unbekannte component „{comp}“")
+        for s in self.secs.values():
+            if s["tilephoto"] and not any(r["component"] == "format_tiles" and r["itemid"] == s["id"]
+                                          and r["filename"] == s["tilephoto"] for r in self.files):
+                self.err(f"{s['dir']}/section.xml", f"Kachelbild „{s['tilephoto']}“ steht nicht in files.xml (format_tiles/tilephoto, itemid = Abschnitts-ID)")
 
     # ---------------------------------------------------------------- Inhalte
     def _files_for(self, act, filearea):
@@ -442,10 +550,15 @@ class Pruefung:
                     self.err(wo, "Abstimmung mit weniger als zwei Optionen")
             elif mod == "glossary":
                 areas |= {"entry", "attachment"}
-                for e in inner.findall("entries/entry"):
+                entries = inner.findall("entries/entry")
+                for e in entries:
                     if _text(e, "approved", "1") != "1" or _text(e, "teacherentry", "1") != "1":
                         self.err(wo, f"Eintrag „{_text(e, 'concept', '')}“: approved und teacherentry müssen 1 sein "
                                      "(ohne Nutzerdaten nur Einträge der Lehrkraft)")
+                if entries and (a["userinfo"] != "1" or self.settings.get("users") != "1"):
+                    self.warn(wo, f"{len(entries)} Einträge, aber userinfo=0: Moodle stellt Glossareinträge nur mit "
+                                  "Nutzerdaten wieder her (restore_glossary_stepslib), sie gehen beim Import verloren; "
+                                  "Ausweg: XML-Datei neben der .mbz über Glossar → Einträge importieren")
             for r in [r for r in self.files if r["contextid"] == a["contextid"] and r["filearea"] not in areas]:
                 self.err(wo, f"Datei „{r['filename']}“ in unbekanntem Dateibereich {r['component']}/{r['filearea']}")
 
@@ -688,6 +801,8 @@ class Pruefung:
         self.xml_wohlgeformt()
         self.pflichtdateien()
         self.backup_xml()
+        self.nutzerdaten()
+        self.kursformat()
         self.ids_und_nummern()
         self.abschnitte()
         self.dateien()
@@ -699,18 +814,21 @@ class Pruefung:
         return self.errors
 
     def kurzinfo(self):
-        return f"{len(self.acts)} Aktivitäten, {len(self.secs)} Abschnitte, {len(self.files)} Dateien"
+        fmt = f", Format {self.format}" if self.format else ""
+        return f"{len(self.acts)} Aktivitäten, {len(self.secs)} Abschnitte, {len(self.files)} Dateien{fmt}"
 
 
 def check_mbz(path):
-    """Gibt die Fehlerliste zurück (leer = OK) und eine Kurzinfo."""
+    """Gibt (Fehlerliste, Kurzinfo, Warnungen) zurück; leere Fehlerliste = OK."""
     p = Pruefung(path)
     errors = p.run()
-    return errors, p.kurzinfo()
+    return errors, p.kurzinfo(), p.warnings
 
 
-def report(path, errors, info, out=sys.stdout):
+def report(path, errors, info, warnings=(), out=sys.stdout):
     name = os.path.basename(path)
+    for wo, was in warnings:
+        print(f"WARNUNG {wo}: {was}", file=out)
     if errors:
         for wo, was in errors:
             print(f"FEHLER {wo}: {was}", file=out)
@@ -730,8 +848,8 @@ def main(argv=None):
             print(f"FEHLER {path}: Datei nicht gefunden")
             rc = 1
             continue
-        errors, info = check_mbz(path)
-        report(path, errors, info)
+        errors, info, warnings = check_mbz(path)
+        report(path, errors, info, warnings)
         if errors:
             rc = 1
     return rc

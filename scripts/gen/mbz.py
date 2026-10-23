@@ -3,12 +3,16 @@
 Templated from test exports of 2026-10-22/23 (Moodle 5.2.4, mod_hvp 2026062501; Schemata in
 references/export-schemata/). Supported modules: label, page, url, hvp, subsection, feedback, quiz (mit Fragensammlung in
 questions.xml), assign, resource, folder, forum, book, choice, glossary. Plus badges, files.
+Kursformate: topics, tiles (Kachelbild/-icon je Abschnitt), weeks, onetopic, topcoll, singleactivity (references/formate.md).
+Glossareinträge: Moodle stellt sie nur mit Nutzerdaten wieder her; daher users=1 und userinfo=1 nur für Glossare mit
+Einträgen (users.xml leer, userid 0) und zusätzlich `glossary_import_xml()` für den Import über das Glossar selbst.
 """
 import hashlib
 import io
 import json
 import mimetypes
 import os
+import re
 import tarfile
 import time
 from xml.sax.saxutils import escape
@@ -37,6 +41,57 @@ MODULE_VERSIONS = {"hvp": "2026062501", "subsection": "2026042000", "label": "20
 SHOW_DESCRIPTION = {"page", "url", "hvp", "feedback", "resource", "folder"}
 # Fragetypen des Moodle-Tests (questions.xml); nur diese drei sind umgesetzt.
 QTYPES = ("multichoice", "truefalse", "shortanswer")
+# Kursformate (references/formate.md): Steckbrief-Name -> Moodle-Format; Kursoptionen mit Plattformstandard.
+FORMATE = {"themen": "topics", "kacheln": "tiles", "wochen": "weeks", "einthemen": "onetopic",
+           "komprimiert": "topcoll", "einzelaktivitaet": "singleactivity"}
+FORMAT_OPTIONEN = {
+    "topics": [("hiddensections", "1"), ("coursedisplay", "0")],
+    "weeks": [("hiddensections", "1"), ("coursedisplay", "0")],
+    "tiles": [("basecolour", "#00A8D5"), ("coursedisplay", "0"), ("courseshownewactivities", "1"),
+              ("courseshowtileprogress", "1"), ("courseusebarforheadings", "1"), ("courseusesubtiles", "0"),
+              ("defaulttileicon", "pie-chart"), ("displayfilterbar", "0"), ("hiddensections", "1"),
+              ("usesubtilesseczero", "0")],
+    "onetopic": [("hiddensections", "1"), ("hidetabsbar", "0"), ("coursedisplay", "0"), ("templatetopic", "0"),
+                 ("templatetopic_icons", "0"), ("tabsview", "0"), ("usessectionsnavigation", "0"),
+                 ("usescourseindex", "2")],
+    "topcoll": [("hiddensections", "1"), ("displayinstructions", "0"), ("layoutelement", "0"), ("layoutstructure", "0"),
+                ("layoutcolumnorientation", "0"), ("layoutcolumns", "0"), ("flexiblemodules", "0"),
+                ("toggleallenabled", "0"), ("viewsinglesectionenabled", "0"), ("togglealignment", "0"),
+                ("toggleiconposition", "0"), ("toggleiconset", "-"), ("toggleiconfontclosed", "-"),
+                ("toggleiconfontopen", "-"), ("onesection", "0"), ("toggleallhover", "0"),
+                ("toggleforegroundcolour", "-"), ("toggleforegroundopacity", "-"), ("toggleforegroundhovercolour", "-"),
+                ("toggleforegroundhoveropacity", "-"), ("togglebackgroundcolour", "-"), ("togglebackgroundopacity", "-"),
+                ("togglebackgroundhovercolour", "-"), ("togglebackgroundhoveropacity", "-"), ("showsectionsummary", "0")],
+    "singleactivity": [("activitytype", "forum")],
+}
+# Kachelformat: Grundfarben der Plattform (Auswahlliste der Kurseinstellungen) und Plugin-Version des Exports.
+TILES_FARBEN = ["#00A8D5", "#305b83", "#a42e49", "#8f2a59", "#5a307e", "#3e4e5b"]
+TILES_VERSION = "2026012570"
+
+
+def moodle_format(name):
+    """Steckbrief- oder Moodle-Name -> Moodle-Format; ValueError bei unbekanntem Format."""
+    n = (name or "themen").strip().lower().replace("ä", "ae")
+    if n in FORMATE:
+        return FORMATE[n]
+    if n in FORMATE.values():
+        return n
+    raise ValueError(f"Kursformat „{name}“ unbekannt (erlaubt: {', '.join(FORMATE)})")
+
+
+def naechste_farbe(hexfarbe, auswahl=TILES_FARBEN):
+    """Nächstliegende Farbe aus einer Auswahlliste; ungültige Eingabe -> erste Farbe."""
+    m = re.match(r"^#?([0-9A-Fa-f]{6})$", str(hexfarbe or ""))
+    if not m:
+        return auswahl[0]
+    r, g, b = (int(m.group(1)[i:i + 2], 16) for i in (0, 2, 4))
+
+    def dist(c):
+        """„Redmean“-Abstand: gewichtet wie das Auge, besser als reiner RGB-Abstand."""
+        cr, cg, cb = (int(c[1:][i:i + 2], 16) for i in (0, 2, 4))
+        rm = (r + cr) / 2
+        return (2 + rm / 256) * (r - cr) ** 2 + 4 * (g - cg) ** 2 + (2 + (255 - rm) / 256) * (b - cb) ** 2
+    return min(auswahl, key=dist)
 
 
 def guess_mimetype(filename):
@@ -292,12 +347,14 @@ class Glossary(Item):
 
 
 class Section:
-    def __init__(self, name, summary="", items=None, visible=True, available_from=None):
+    def __init__(self, name, summary="", items=None, visible=True, available_from=None, tile_photo=None, tile_icon=None):
         self.name = name
         self.summary = summary
         self.items = items or []
         self.visible = visible
         self.available_from = available_from   # unix ts -> section visible from that date
+        self.tile_photo = tile_photo   # (lokaler Pfad, Dateiname) -> Kachelbild (nur Kachelformat)
+        self.tile_icon = tile_icon     # FontAwesome-Name -> Kachel-Icon (nur Kachelformat)
         self.id = self.number = None
         self.parentcmid = None   # for delegated sections
 
@@ -312,12 +369,74 @@ class Badge:
 
 class Course:
     def __init__(self, fullname, shortname, summary="", sections=None, badges=None,
-                 image_path=None, startdate=None):
+                 image_path=None, startdate=None, format="topics", format_options=None, glossar_nutzerdaten=True):
         self.fullname, self.shortname, self.summary = fullname, shortname, summary
         self.sections = sections or []
         self.badges = badges or []
         self.image_path = image_path
         self.startdate = startdate or int(time.time())
+        self.format = moodle_format(format)
+        self.format_options = dict(format_options or {})   # überschreibt FORMAT_OPTIONEN[format]
+        # Glossareinträge stellt Moodle nur mit Nutzerdaten wieder her (restore_glossary_stepslib: if $userinfo).
+        # True: Sicherung mit users=1 und userinfo=1 nur für Glossare mit Einträgen; False: users=0, Einträge nur per XML-Import.
+        self.glossar_nutzerdaten = glossar_nutzerdaten
+
+    def format_option_list(self):
+        """[(name, wert)] für course.xml: Plattformstandard, überschrieben durch format_options."""
+        opts = dict(FORMAT_OPTIONEN[self.format])
+        for k, v in self.format_options.items():
+            opts[str(k)] = str(v)
+        if self.format == "tiles":
+            opts["basecolour"] = naechste_farbe(opts.get("basecolour"))
+        return list(opts.items())
+
+
+# ---------------------------------------------------------------- Glossar-XML (Ausweg ohne Nutzerdaten)
+def glossary_import_xml(g: Glossary):
+    """Einträge eines Glossars im Moodle-Glossar-XML-Format (mod/glossary/import.php: GLOSSARY/INFO/ENTRIES/ENTRY).
+    Import durch die Lehrkraft: Glossar öffnen -> Mehr -> Einträge importieren -> Datei, Ziel „aktuelles Glossar“.
+    Moodle setzt dabei userid auf die importierende Lehrkraft, approved und teacherentry auf 1."""
+    ents = []
+    for concept, definition, aliases in g.entries:
+        al = "".join(f"""
+          <ALIAS>
+            <NAME>{x(a)}</NAME>
+          </ALIAS>""" for a in aliases)
+        ents.append(f"""      <ENTRY>
+        <CONCEPT>{x(concept)}</CONCEPT>
+        <DEFINITION>{x(definition)}</DEFINITION>
+        <FORMAT>1</FORMAT>
+        <USEDYNALINK>1</USEDYNALINK>
+        <CASESENSITIVE>0</CASESENSITIVE>
+        <FULLMATCH>0</FULLMATCH>
+        <TEACHERENTRY>1</TEACHERENTRY>
+        <ALIASES>{al}
+        </ALIASES>
+        <CATEGORIES>
+        </CATEGORIES>
+      </ENTRY>""")
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<GLOSSARY>
+  <INFO>
+    <NAME>{x(g.name)}</NAME>
+    <INTRO>{x(g.intro)}</INTRO>
+    <INTROFORMAT>1</INTROFORMAT>
+    <ALLOWDUPLICATEDENTRIES>0</ALLOWDUPLICATEDENTRIES>
+    <DISPLAYFORMAT>{x(g.displayformat)}</DISPLAYFORMAT>
+    <SHOWSPECIAL>1</SHOWSPECIAL>
+    <SHOWALPHABET>1</SHOWALPHABET>
+    <SHOWALL>1</SHOWALL>
+    <ALLOWCOMMENTS>0</ALLOWCOMMENTS>
+    <USEDYNALINK>1</USEDYNALINK>
+    <DEFAULTAPPROVAL>1</DEFAULTAPPROVAL>
+    <GLOBALGLOSSARY>0</GLOBALGLOSSARY>
+    <ENTBYPAGE>10</ENTBYPAGE>
+    <ENTRIES>
+{chr(10).join(ents)}
+    </ENTRIES>
+  </INFO>
+</GLOSSARY>
+"""
 
 
 # ---------------------------------------------------------------- writer
@@ -335,6 +454,10 @@ class Writer:
         self.all_items = []     # flat, in course order (with subsection items)
         self.all_sections = []  # regular + delegated
         self.qcats = []         # XML der Fragenkategorien (questions.xml), je Test zwei (top + Standard)
+        self.userinfo = set()   # Settings (section_<id>, <mod>_<cmid>), die userinfo=1 bekommen (Glossar mit Einträgen)
+        self.users = False      # root-Setting users (1 nur, wenn ein Glossar Einträge hat und glossar_nutzerdaten gilt)
+        self.glossare = []      # Glossar-Items mit Einträgen (für den XML-Export neben der .mbz)
+        self.section_files = {} # section id -> [File] (Kachelbild)
 
     def nid(self):
         self._id += 1
@@ -371,6 +494,24 @@ class Writer:
         it.contextid = self.nid()
         it.section = section
         self.all_items.append(it)
+
+    def mark_userinfo(self):
+        """Glossare mit Einträgen: userinfo=1 für das Modul, seinen Abschnitt und (bei Unterabschnitten) die Kette darüber.
+        Moodle sperrt das Modul-Setting, wenn Abschnitt oder Unterabschnitt-Modul userinfo=0 haben (restore_activity_task)."""
+        self.glossare = [it for it in self.all_items if isinstance(it, Glossary) and it.entries]
+        if not (self.glossare and self.c.glossar_nutzerdaten):
+            return
+        self.users = True
+        for it in self.glossare:
+            self.userinfo.add(f"glossary_{it.cmid}")
+            s = it.section
+            while s is not None:
+                self.userinfo.add(f"section_{s.id}")
+                if s.parentcmid:
+                    self.userinfo.add(f"subsection_{s.parentcmid}")
+                    s = s.sub.section
+                else:
+                    s = None
 
     # ----- files
     def add_file(self, local, component, filearea, itemid, contextid, filename, filepath="/", sortorder=0):
@@ -1223,12 +1364,37 @@ class Writer:
         return d
 
     # ----- sections
+    def tiles_section_xml(self, s: Section):
+        """Kachelbild und -icon eines Abschnitts (export-schemata/kachelformat/section_mit_tilephoto.xml);
+        Bild als Datei format_tiles/tilephoto/<Abschnitts-ID>/tilephoto/, referenziert aus der inforef des Abschnitts."""
+        if self.c.format != "tiles" or s.parentcmid or not (s.tile_photo or s.tile_icon):
+            return ""
+        out = []
+        files = self.section_files.setdefault(s.id, [])
+        if s.tile_photo:
+            local, fname = s.tile_photo
+            files.append(self.add_file(local, "format_tiles", "tilephoto", s.id, self.course_ctx, fname, "/tilephoto/"))
+            out.append(f"""  <plugin_format_tiles_section sectionid="{s.id}">
+    <optiontype>1</optiontype>
+    <optionvalue>{x(fname)}</optionvalue>
+    <tilesversion>{TILES_VERSION}</tilesversion>
+  </plugin_format_tiles_section>""")
+        for name, value in (("tilephoto", s.tile_photo[1] if s.tile_photo else None), ("tileicon", s.tile_icon)):
+            if value:
+                out.append(f"""  <course_format_options id="{self.nid()}">
+    <format>tiles</format>
+    <name>{name}</name>
+    <value>{x(value)}</value>
+  </course_format_options>""")
+        return "\n" + "\n".join(out)
+
     def write_section(self, s: Section):
         d = f"sections/section_{s.id}"
         seq = ",".join(str(it.cmid) for it in s.items)
         comp = "mod_subsection" if s.parentcmid else NULL
         itemid = s.sub.instanceid if s.parentcmid else NULL
         name = x(s.name) if s.name is not None else NULL
+        tiles = self.tiles_section_xml(s)
         self.entries[f"{d}/section.xml"] = f"""<?xml version="1.0" encoding="UTF-8"?>
 <section id="{s.id}">
   <number>{s.number}</number>
@@ -1240,11 +1406,9 @@ class Writer:
   <availabilityjson>{x(availability_json(s.available_from))}</availabilityjson>
   <component>{comp}</component>
   <itemid>{itemid}</itemid>
-  <timemodified>{self.now}</timemodified>
+  <timemodified>{self.now}</timemodified>{tiles}
 </section>"""
-        self.entries[f"{d}/inforef.xml"] = """<?xml version="1.0" encoding="UTF-8"?>
-<inforef>
-</inforef>"""
+        self.entries[f"{d}/inforef.xml"] = self.inforef_xml(self.section_files.get(s.id, []))
         return d
 
     # ----- course
@@ -1257,7 +1421,7 @@ class Writer:
   <idnumber></idnumber>
   <summary>{x(c.summary)}</summary>
   <summaryformat>1</summaryformat>
-  <format>topics</format>
+  <format>{c.format}</format>
   <showgrades>1</showgrades>
   <newsitems>0</newsitems>
   <startdate>{c.startdate}</startdate>
@@ -1295,18 +1459,7 @@ class Writer:
 {self.customfields_xml()}
   </customfields>
   <courseformatoptions>
-    <courseformatoption>
-      <format>topics</format>
-      <sectionid>0</sectionid>
-      <name>coursedisplay</name>
-      <value>0</value>
-    </courseformatoption>
-    <courseformatoption>
-      <format>topics</format>
-      <sectionid>0</sectionid>
-      <name>hiddensections</name>
-      <value>1</value>
-    </courseformatoption>
+{self.courseformatoptions_xml()}
   </courseformatoptions>
 </course>"""
         self.entries["course/inforef.xml"] = self.inforef_xml(course_files).replace(
@@ -1376,6 +1529,18 @@ class Writer:
   </enrols>
 </enrolments>"""
 
+    def courseformatoptions_xml(self):
+        opts = self.c.format_option_list()
+        if self.c.format == "singleactivity":
+            # Die Einzelaktivität ist das erste Modul in Abschnitt 0; der Generator legt es dorthin (build()).
+            opts = [(n, self.all_items[0].modname if (n == "activitytype" and self.all_items) else v) for n, v in opts]
+        return "\n".join(f"""    <courseformatoption>
+      <format>{self.c.format}</format>
+      <sectionid>0</sectionid>
+      <name>{x(n)}</name>
+      <value>{x(v)}</value>
+    </courseformatoption>""" for n, v in opts)
+
     def customfields_xml(self):
         out = []
         for cid, shortname, ctype, value in CUSTOMFIELDS:
@@ -1419,6 +1584,9 @@ class Writer:
   </grade_grades>
 </grade_history>"""
         self.entries["completion.xml"] = '<?xml version="1.0" encoding="UTF-8"?>\n<course_completion>\n</course_completion>'
+        if self.users:
+            # Pflicht bei users=1 (restore_prechecks_helper lädt users.xml); leer, weil keine Nutzerdaten enthalten sind.
+            self.entries["users.xml"] = '<?xml version="1.0" encoding="UTF-8"?>\n<users>\n</users>'
         self.entries["moodle_backup.log"] = ""
         self.entries["gradebook.xml"] = f"""<?xml version="1.0" encoding="UTF-8"?>
 <gradebook>
@@ -1583,7 +1751,7 @@ class Writer:
           <parentcmid>{s.parentcmid or ''}</parentcmid>
           <modname>{'subsection' if s.parentcmid else ''}</modname>
         </section>""")
-        root_settings = [("filename", filename), ("users", 0), ("anonymize", 0), ("role_assignments", 0),
+        root_settings = [("filename", filename), ("users", 1 if self.users else 0), ("anonymize", 0), ("role_assignments", 0),
                          ("activities", 1), ("blocks", 1), ("files", 1), ("filters", 1), ("comments", 0),
                          ("badges", 1), ("calendarevents", 1), ("userscompletion", 0), ("logs", 0),
                          ("grade_histories", 0), ("groups", 1), ("competencies", 0), ("customfield", 1),
@@ -1595,7 +1763,7 @@ class Writer:
       </setting>""" for n, v in root_settings]
         for s, d in sec_dirs:
             sid = f"section_{s.id}"
-            for suffix, val in (("included", 1), ("userinfo", 0)):
+            for suffix, val in (("included", 1), ("userinfo", 1 if sid in self.userinfo else 0)):
                 settings.append(f"""      <setting>
         <level>section</level>
         <section>{sid}</section>
@@ -1605,7 +1773,7 @@ class Writer:
             for it, ad in act_dirs:
                 if it.section is s:
                     aid = f"{it.modname}_{it.cmid}"
-                    for suffix, val in (("included", 1), ("userinfo", 0)):
+                    for suffix, val in (("included", 1), ("userinfo", 1 if aid in self.userinfo else 0)):
                         settings.append(f"""      <setting>
         <level>activity</level>
         <activity>{aid}</activity>
@@ -1627,7 +1795,7 @@ class Writer:
     <original_wwwroot>{WWWROOT}</original_wwwroot>
     <original_site_identifier_hash>{SITE_HASH}</original_site_identifier_hash>
     <original_course_id>{self.course_id}</original_course_id>
-    <original_course_format>topics</original_course_format>
+    <original_course_format>{self.c.format}</original_course_format>
     <original_course_fullname>{x(self.c.fullname)}</original_course_fullname>
     <original_course_shortname>{x(self.c.shortname)}</original_course_shortname>
     <original_course_startdate>{self.c.startdate}</original_course_startdate>
@@ -1666,7 +1834,14 @@ class Writer:
     # ----- main
     def build(self):
         filename = os.path.basename(self.out)
+        if self.c.format == "singleactivity":
+            items = [it for s in self.c.sections for it in s.items]
+            if len(items) != 1 or isinstance(items[0], SubSection):
+                raise ValueError(f"Kursformat Einzelaktivität braucht genau ein Element (kein Unterabschnitt), "
+                                 f"die Kursdatei hat {len(items)}")
+            self.c.sections = [Section(None, items=items)]
         self.assign()
+        self.mark_userinfo()
         act_dirs, sec_dirs = [], []
         sort = 2
         for it in self.all_items:

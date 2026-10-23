@@ -9,6 +9,7 @@ untertitel: Wie kommt das Internet von der Wand auf dein Handy? Eine Einheit, et
 
 ## Netzwerkkomponenten – von der Wand aufs Handy · 25 min
 teil: netz
+kachelbild: router.png
 
 ### Überblick: Netzwerkkomponenten
 untertitel: Wie kommt das Internet von der Wand auf dein Handy?
