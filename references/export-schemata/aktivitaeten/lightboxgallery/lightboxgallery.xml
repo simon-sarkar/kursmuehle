@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<activity id="169082" moduleid="103628081" modulename="lightboxgallery" contextid="138144362">
+  <lightboxgallery id="169082">
+    <course>2769749</course>
+    <name>Test lightboxgallery</name>
+    <perpage>0</perpage>
+    <comments>0</comments>
+    <extinfo>0</extinfo>
+    <timemodified>1792766227</timemodified>
+    <ispublic>0</ispublic>
+    <rss>0</rss>
+    <autoresize>1</autoresize>
+    <resize>1</resize>
+    <perrow>0</perrow>
+    <captionfull>0</captionfull>
+    <captionpos>0</captionpos>
+    <intro>&lt;p&gt;Test&lt;/p&gt;</intro>
+    <introformat>1</introformat>
+    <usercomments>
+    </usercomments>
+    <image_metas>
+    </image_metas>
+  </lightboxgallery>
+</activity>

@@ -24,7 +24,7 @@ den Kurs baut. Gilt zusammen mit „Leitfaden ByCS-Kurs per KI generieren“ (Sp
 | Jahrgangsstufe(n) und Schulart? | – (Pflicht) | kurs.jahrgangsstufe, kurs.schulart |
 | Einsatz: Selbstlernkurs, unterrichtsbegleitend oder Vertretung/Hausaufgabe? | selbstlernkurs | kurs.einsatz |
 | Gesamtumfang in Schülerminuten, und soll er in Wochen/Lektionen portioniert werden? | 45 min, eine Lieferung | kurs.umfang_min, kurs.portionierung |
-| Vorhandenes Material? Buchseiten (Foto), Arbeitsblätter, PDFs, Links – bitte anhängen. | keins, KI erstellt | kurs.material |
+| Vorhandenes Material? eigene Folien, Arbeitsblätter, Notizen, PDFs, Links – bitte anhängen. | keins, KI erstellt | kurs.material |
 
 Material wird vor Runde 2 gelesen (Fotos per Texterkennung); es bestimmt Gliederung und Fachinhalt. Fachliches kommt aus dem
 Material, die KI ergänzt nur, wo es fehlt, und markiert das im Drehbuch.

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<activity id="155096" moduleid="103628039" modulename="board" contextid="138144317">
+  <board id="155096">
+    <course>2769749</course>
+    <name>Test board</name>
+    <timemodified>1792766189</timemodified>
+    <intro>&lt;p&gt;Test&lt;/p&gt;</intro>
+    <introformat>1</introformat>
+    <historyid>0</historyid>
+    <background_color></background_color>
+    <addrating>0</addrating>
+    <hideheaders>0</hideheaders>
+    <sortby>3</sortby>
+    <postby>0</postby>
+    <userscanedit>0</userscanedit>
+    <singleusermode>0</singleusermode>
+    <completionnotes>0</completionnotes>
+    <embed>0</embed>
+    <columns>
+      <column id="622013">
+        <boardid>155096</boardid>
+        <name>Überschrift</name>
+        <sortorder>1</sortorder>
+        <notes>
+        </notes>
+      </column>
+      <column id="622016">
+        <boardid>155096</boardid>
+        <name>Überschrift</name>
+        <sortorder>2</sortorder>
+        <notes>
+        </notes>
+      </column>
+      <column id="622019">
+        <boardid>155096</boardid>
+        <name>Überschrift</name>
+        <sortorder>3</sortorder>
+        <notes>
+        </notes>
+      </column>
+    </columns>
+  </board>
+</activity>

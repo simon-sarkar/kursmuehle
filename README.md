@@ -10,8 +10,8 @@ einzeln anklicken, befüllen und formatieren. Mit diesem Skill beschreibst du
 den Kurs oder gibst vorhandenes Material ab, und der KI-Assistent liefert eine
 fertige Kurssicherung zum Import.
 
-- Ausgangsmaterial kann eine Beschreibung sein, alte Folien, Arbeitsblätter
-  oder Fotos von Buchseiten.
+- Ausgangsmaterial kann eine Beschreibung sein oder eigene Unterlagen: Folien,
+  Arbeitsblätter, Notizen, Fotos von eigenem Material.
 - Vor dem Bau bekommst du ein kurzes Drehbuch zum Gegenlesen. Darin ist
   markiert, was aus deinem Material stammt und was die KI ergänzt hat.
 - Ein Kurs lässt sich in Etappen liefern, das Design nachträglich wechseln und
@@ -56,8 +56,8 @@ Lehrkraft ──▶ KI-Assistent ──▶ Drehbuch (Text, zum Gegenlesen)
   je Element und Quellenmarkierung (aus dem Material / von der KI ergänzt).
   Gebaut wird erst nach Freigabe. Vor der Lieferung prüft ein zweiter,
   unabhängiger Lauf Inhalt und Aufgabenlogik.
-- Plattformspezifische Werte stehen in einer lokalen `site.json`, nicht im
-  Skill.
+- Die Sicherung ist nicht an einen Account gebunden; der Import läuft in jedem
+  Kurs der Plattform ohne Vorarbeit.
 
 ## Features
 
@@ -88,7 +88,7 @@ SKILL.md       Einstieg für den KI-Agenten: Ablauf, harte Regeln, Grenzen
 references/    spec.md (Sicherungsformat, Plattformwerte, H5P-Strukturen),
                h5p-vorlagen.md (json_content aller Typen, deutsche UI-Texte),
                skelette.md (XML-Skelette), intake.md (Fragerunden, Drehbuch, Steckbrief)
-scripts/       Generator (gen/), build.py, Vorlagen, site.json
+scripts/       Generator (gen/), build.py, Vorlagen
 examples/      netzwerk9/  – eine Einheit, 25 min: Vorbild für neue Kurse
                alltagskompetenz/ – großer Kurs mit Unterabschnitten, Badge, Delta
 tools/h5ptest/ Render-Test der H5P-Inhalte außerhalb der Plattform (h5p-standalone + Playwright)
@@ -109,8 +109,6 @@ Beispielkurs direkt aus dem Generator (Python 3.11+, PyYAML, Pillow):
 python3 scripts/build.py --content examples/netzwerk9 --no-render
 ```
 
-`scripts/site.json` enthält Platzhalter. Eigene Plattformwerte (aus einer
-Test-Sicherung der eigenen Plattform) dort eintragen und nicht committen.
 Die Bilder in `examples/netzwerk9/assets` sind ebenfalls Platzhalter.
 
 ## Kurs in Etappen

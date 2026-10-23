@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<activity id="471947" moduleid="103628219" modulename="mootyper" contextid="138144515">
+  <mootyper id="471947">
+    <name>Test mootyper</name>
+    <intro>&lt;p&gt;Test&lt;/p&gt;</intro>
+    <introformat>1</introformat>
+    <timecreated>1792766364</timecreated>
+    <timemodified>0</timemodified>
+    <timeopen>0</timeopen>
+    <timeclose>0</timeclose>
+    <assessed>0</assessed>
+    <assesstimestart>0</assesstimestart>
+    <scale>100</scale>
+    <grade_mootyper>0</grade_mootyper>
+    <usepassword>0</usepassword>
+    <password></password>
+    <exercise>$@NULL@$</exercise>
+    <lesson>16792</lesson>
+    <isexam>0</isexam>
+    <requiredgoal>90</requiredgoal>
+    <requiredwpm>0</requiredwpm>
+    <timelimit>0</timelimit>
+    <layout>101</layout>
+    <showkeyboard>1</showkeyboard>
+    <continuoustype>0</continuoustype>
+    <countmistypedspaces>0</countmistypedspaces>
+    <statsbgc>#e6e6e6</statsbgc>
+    <keytoptextc>#000000</keytoptextc>
+    <keytopbgc>#e6e6e6</keytopbgc>
+    <keybdbgc>#999999</keybdbgc>
+    <textalign>0</textalign>
+    <cursorcolor>#00c5fa</cursorcolor>
+    <textbgc>#e6e6e6</textbgc>
+    <texterrorcolor>#e6e6e6</texterrorcolor>
+    <countmistakes>0</countmistakes>
+    <completionexercise>0</completionexercise>
+    <completionlesson>0</completionlesson>
+    <completionprecision>0</completionprecision>
+    <completionwpm>0</completionwpm>
+    <completionmootypergrade>0</completionmootypergrade>
+    <attempts>
+    </attempts>
+    <layouts>
+      <layout id="101">
+        <name>German(V5)-icons</name>
+      </layout>
+    </layouts>
+    <lessons>
+      <lesson id="16792">
+        <lessonname></lessonname>
+        <authorid>5685455</authorid>
+        <visible>2</visible>
+        <editable>2</editable>
+        <courseid>1947049</courseid>
+      </lesson>
+    </lessons>
+    <exercises>
+      <exercise id="33355">
+        <texttotype>sss sss sss sss sss sss sss sss sss sss sss sss\nfsf fsf fsf fsf fsf fsf fsf fsf fsf fsf fsf fsf\nsfs sfs sfs sfs sfs sfs sfs sfs sfs sfs sfs sfs\n \nlll lll lll lll lll lll lll lll lll lll lll lll\njlj jlj jlj jlj jlj jlj jlj jlj jlj jlj jlj jlj\nljl ljl ljl ljl ljl ljl ljl ljl ljl ljl ljl ljl\n \nfds jkl fds jkl fds jkl fds jkl fds jkl fds jkl\nsdf lkj sdf lkj sdf lkj sdf lkj sdf lkj sdf lkj\nsss lll lkl sds lfl sjs ldl sks sss lll fds jkl\n \naaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa\nfaf faf faf faf faf faf faf faf faf faf faf faf\nafa afa afa afa afa afa afa afa afa afa afa afa\n \nööö ööö ööö ööö ööö ööö ööö ööö ööö ööö ööö ööö\njöj jöj jöj jöj jöj jöj jöj jöj jöj jöj jöj jöj\nöjö öjö öjö öjö öjö öjö öjö öjö öjö öjö öjö öjö\n \naaa ööö dsa klö dsa klö asd ölk asd ölk dsa klö\ndas das das las las las als als als das las als\nals das las als das las als das las als das las\nlad fad lös lad fad lös lad fad lös lad fad lös\nfall das las ja falls als all da lös lad fad allda</texttotype>
+        <exercisename>1 </exercisename>
+        <lesson>16792</lesson>
+        <snumber>1</snumber>
+        <dictationdata>$@NULL@$</dictationdata>
+        <dictationdataformat>0</dictationdataformat>
+      </exercise>
+      <exercise id="33358">
+        <texttotype>sss sss sss sss sss sss sss sss sss sss sss sss sss sss sss \nfsf fsf fsf fsf fsf fsf fsf fsf fsf fsf fsf fsf fsf fsf fsf \nsfs sfs sfs sfs sfs sfs sfs sfs sfs sfs sfs sfs sfs sfs sfs \n \nlll lll lll lll lll lll lll lll lll lll lll lll lll lll lll \njlj jlj jlj jlj jlj jlj jlj jlj jlj jlj jlj jlj jlj jlj jlj \nljl ljl ljl ljl ljl ljl ljl ljl ljl ljl ljl ljl ljl ljl ljl \n \nfds jkl fds jkl fds jkl fds jkl fds jkl fds jkl fds jkl fds \nsdf lkj sdf lkj sdf lkj sdf lkj sdf lkj sdf lkj sdf lkj sdf \nsss lll lkl sds lfl sjs ldl sks sss lll fds jkl sdf lkj sls \n \naaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa \nfaf faf faf faf faf faf faf faf faf faf faf faf faf faf faf \nafa afa afa afa afa afa afa afa afa afa afa afa afa afa afa \n \nööö ööö ööö ööö ööö ööö ööö ööö ööö ööö ööö ööö ööö ööö ööö \njöj jöj jöj jöj jöj jöj jöj jöj jöj jöj jöj jöj jöj jöj jöj \nöjö öjö öjö öjö öjö öjö öjö öjö öjö öjö öjö öjö öjö öjö öjö \n \naaa ööö dsa klö dsa klö asd ölk asd ölk dsa klö dsa klö asd \ndas das das las las las als als als das las als das las als \nals das las als das las als das las als das las als das las \nlad fad lös lad fad lös lad fad lös lad fad lös lad fad lös \nfall das las ja falls als all da lös lad fad allda öd allda</texttotype>
+        <exercisename>2 </exercisename>
+        <lesson>16792</lesson>
+        <snumber>2</snumber>
+        <dictationdata>$@NULL@$</dictationdata>
+        <dictationdataformat>0</dictationdataformat>
+      </exercise>
+      <exercise id="33361">
+        <texttotype></texttotype>
+        <exercisename></exercisename>
+        <lesson>16792</lesson>
+        <snumber>3</snumber>
+        <dictationdata>$@NULL@$</dictationdata>
+        <dictationdataformat>0</dictationdataformat>
+      </exercise>
+    </exercises>
+    <grades>
+    </grades>
+  </mootyper>
+</activity>

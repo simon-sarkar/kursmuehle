@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<activity id="7366322" moduleid="103628156" modulename="url" contextid="138144443">
+  <url id="7366322">
+    <name>Test url</name>
+    <intro>&lt;p&gt;Test&lt;/p&gt;</intro>
+    <introformat>1</introformat>
+    <externalurl>https://www.youtube.com/watch?v=dQw4w9WgXcQ</externalurl>
+    <display>3</display>
+    <displayoptions>a:0:{}</displayoptions>
+    <parameters>a:0:{}</parameters>
+    <timemodified>1792766276</timemodified>
+  </url>
+</activity>

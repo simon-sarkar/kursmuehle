@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<activity id="194021" moduleid="103628048" modulename="checklist" contextid="138144326">
+  <checklist id="194021">
+    <name>Test checklist</name>
+    <intro>&lt;p&gt;Test&lt;/p&gt;</intro>
+    <introformat>1</introformat>
+    <timecreated>1792766193</timecreated>
+    <timemodified>0</timemodified>
+    <useritemsallowed>0</useritemsallowed>
+    <studentcomments>0</studentcomments>
+    <teacheredit>0</teacheredit>
+    <theme>default</theme>
+    <duedatesoncalendar>0</duedatesoncalendar>
+    <teachercomments>1</teachercomments>
+    <maxgrade>100</maxgrade>
+    <autopopulate>0</autopopulate>
+    <autoupdate>1</autoupdate>
+    <completionpercent>0</completionpercent>
+    <completionpercenttype>percent</completionpercenttype>
+    <emailoncomplete>0</emailoncomplete>
+    <lockteachermarks>0</lockteachermarks>
+    <items>
+    </items>
+  </checklist>
+</activity>

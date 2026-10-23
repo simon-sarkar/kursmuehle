@@ -40,7 +40,8 @@ Vorgestellt wurde 0.1 bereits, Durchlauf mit ChatGPT (inklusive selbst generiert
    JS-Quiz; eigene Spiele und Simulationen als Beispiele erst nach 1.0 (Punkt 7).
 7. **Zweiter Fremdtest** mit frischem Agenten nur mit dem Repo, dann Release 1.0.
 
-Vorab klären: `site.json` – die Lernplattform ist eine Moodle-Instanz, site_hash für alle gleich,
+Geklärt 23.10.: Import mit Platzhalter-`site.json` in einem anderen Account funktioniert – die Werte sind bedeutungslos,
+`site.json` wird entfernt (AP2). Alt: `site.json` – die Lernplattform ist eine Moodle-Instanz, site_hash für alle gleich,
 Kategorie beim Import in einen bestehenden Kurs ohne Bedeutung; bestätigt sich das, entfällt die Hürde
 in der Anleitung. Moodle-Version (derzeit 5.2.4) als Feld im Steckbrief plus README-Hinweis für
 „Version nicht unterstützt“.

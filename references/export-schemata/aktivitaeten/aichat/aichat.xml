@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<activity id="44039" moduleid="103628078" modulename="aichat" contextid="138144359">
+  <aichat id="44039">
+    <course>2769749</course>
+    <name>Test aichat</name>
+    <intro>&lt;p&gt;Test&lt;/p&gt;</intro>
+    <introformat>1</introformat>
+    <timemodified>0</timemodified>
+    <personas>
+    </personas>
+    <personas_selected>
+    </personas_selected>
+    <chat_options>
+    </chat_options>
+  </aichat>
+</activity>

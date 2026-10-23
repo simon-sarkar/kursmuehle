@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<activity id="197852" moduleid="103628060" modulename="journal" contextid="138144338">
+  <journal id="197852">
+    <name>Test journal</name>
+    <intro>&lt;p&gt;Test&lt;/p&gt;</intro>
+    <introformat>1</introformat>
+    <days>0</days>
+    <grade>100</grade>
+    <timemodified>1792766205</timemodified>
+    <completion_create_entry>0</completion_create_entry>
+    <notifyteachers>1</notifyteachers>
+    <notifystudents>1</notifystudents>
+    <entries>
+    </entries>
+  </journal>
+</activity>

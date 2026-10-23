@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<activity id="536120" moduleid="103628165" modulename="choice" contextid="138144452">
+  <choice id="536120">
+    <name>Test choice</name>
+    <intro>&lt;p&gt;Test&lt;/p&gt;</intro>
+    <introformat>1</introformat>
+    <publish>0</publish>
+    <showresults>0</showresults>
+    <display>0</display>
+    <allowupdate>0</allowupdate>
+    <allowmultiple>0</allowmultiple>
+    <showunanswered>0</showunanswered>
+    <limitanswers>0</limitanswers>
+    <timeopen>0</timeopen>
+    <timeclose>0</timeclose>
+    <timemodified>1792766283</timemodified>
+    <completionsubmit>1</completionsubmit>
+    <showpreview>0</showpreview>
+    <includeinactive>0</includeinactive>
+    <showavailable>0</showavailable>
+    <options>
+      <option id="2940695">
+        <text>A</text>
+        <maxanswers>0</maxanswers>
+        <timemodified>1792766283</timemodified>
+      </option>
+      <option id="2940698">
+        <text>B</text>
+        <maxanswers>0</maxanswers>
+        <timemodified>1792766283</timemodified>
+      </option>
+    </options>
+    <answers>
+    </answers>
+  </choice>
+</activity>

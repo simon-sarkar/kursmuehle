@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<activity id="3754820" moduleid="103628003" modulename="folder" contextid="138144281">
+  <folder id="3754820">
+    <name>Test folder</name>
+    <intro>&lt;p&gt;Test&lt;/p&gt;</intro>
+    <introformat>1</introformat>
+    <revision>1</revision>
+    <timemodified>1792766156</timemodified>
+    <display>0</display>
+    <showexpanded>0</showexpanded>
+    <forcedownload>1</forcedownload>
+    <studentedit>0</studentedit>
+  </folder>
+</activity>

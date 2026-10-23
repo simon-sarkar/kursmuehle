@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section id="26577791">
+  <number>1</number>
+  <name>Kachel eins</name>
+  <summary></summary>
+  <summaryformat>1</summaryformat>
+  <sequence>103627844,103627964,103628003,103628009,103628012,103628015,103628018,103628021,103628036,103628039,103628048,103628051,103628060,103628063,103628066,103628069,103628072,103628075,103628078,103628081,103628099,103628150,103628156,103628165,103628168,103628210,103628213,103628219,103628423</sequence>
+  <visible>1</visible>
+  <availabilityjson>$@NULL@$</availabilityjson>
+  <component>$@NULL@$</component>
+  <itemid>$@NULL@$</itemid>
+  <timemodified>1792767065</timemodified>
+  <plugin_format_tiles_section sectionid="26577791">
+    <optiontype>1</optiontype>
+    <optionvalue>kachel1_lns.png</optionvalue>
+    <tilesversion>2026012570</tilesversion>
+  </plugin_format_tiles_section>
+  <course_format_options id="69540851">
+    <format>tiles</format>
+    <name>tilephoto</name>
+    <value>kachel1_lns.png</value>
+  </course_format_options>
+</section>

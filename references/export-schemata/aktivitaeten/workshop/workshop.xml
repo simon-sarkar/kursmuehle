@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<activity id="43589" moduleid="103628036" modulename="workshop" contextid="138144314">
+  <workshop id="43589">
+    <name>Test workshop</name>
+    <intro>&lt;p&gt;Test&lt;/p&gt;</intro>
+    <introformat>1</introformat>
+    <instructauthors></instructauthors>
+    <instructauthorsformat>1</instructauthorsformat>
+    <instructreviewers></instructreviewers>
+    <instructreviewersformat>1</instructreviewersformat>
+    <timemodified>1792766185</timemodified>
+    <phase>10</phase>
+    <useexamples>0</useexamples>
+    <usepeerassessment>1</usepeerassessment>
+    <useselfassessment>0</useselfassessment>
+    <grade>80.00000</grade>
+    <gradinggrade>20.00000</gradinggrade>
+    <strategy>accumulative</strategy>
+    <evaluation>best</evaluation>
+    <gradedecimals>0</gradedecimals>
+    <submissiontypetext>1</submissiontypetext>
+    <submissiontypefile>1</submissiontypefile>
+    <nattachments>1</nattachments>
+    <submissionfiletypes></submissionfiletypes>
+    <latesubmissions>0</latesubmissions>
+    <maxbytes>524288000</maxbytes>
+    <examplesmode>0</examplesmode>
+    <submissionstart>0</submissionstart>
+    <submissionend>0</submissionend>
+    <assessmentstart>0</assessmentstart>
+    <assessmentend>0</assessmentend>
+    <conclusion></conclusion>
+    <conclusionformat>1</conclusionformat>
+    <overallfeedbackmode>1</overallfeedbackmode>
+    <overallfeedbackfiles>0</overallfeedbackfiles>
+    <overallfeedbackfiletypes></overallfeedbackfiletypes>
+    <overallfeedbackmaxbytes>524288000</overallfeedbackmaxbytes>
+    <subplugin_workshopform_accumulative_workshop>
+    </subplugin_workshopform_accumulative_workshop>
+    <subplugin_workshopform_comments_workshop>
+    </subplugin_workshopform_comments_workshop>
+    <subplugin_workshopform_numerrors_workshop>
+    </subplugin_workshopform_numerrors_workshop>
+    <subplugin_workshopform_rubric_workshop>
+    </subplugin_workshopform_rubric_workshop>
+    <subplugin_workshopeval_best_workshop>
+    </subplugin_workshopeval_best_workshop>
+    <examplesubmissions>
+    </examplesubmissions>
+    <submissions>
+    </submissions>
+    <aggregations>
+    </aggregations>
+  </workshop>
+</activity>

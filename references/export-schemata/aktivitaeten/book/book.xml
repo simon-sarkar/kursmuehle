@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<activity id="397262" moduleid="103627964" modulename="book" contextid="138144242">
+  <book id="397262">
+    <name>Test book</name>
+    <intro>&lt;p&gt;Test&lt;/p&gt;</intro>
+    <introformat>1</introformat>
+    <numbering>1</numbering>
+    <navstyle>1</navstyle>
+    <customtitles>0</customtitles>
+    <timecreated>1792766154</timecreated>
+    <timemodified>1792766154</timemodified>
+    <chapters>
+    </chapters>
+    <chaptertags>
+    </chaptertags>
+  </book>
+</activity>
