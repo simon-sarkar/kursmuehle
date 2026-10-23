@@ -2,9 +2,9 @@
 
 # Kursmühle – für die ByCS-Lernplattform
 
-![Version 1.0.1](docs/badge-version.svg) ![Status: Release](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
+![Version 1.0.2](docs/badge-version.svg) ![Status: Release](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
 
-**Version 1.0.1** (Stand 23.10.2026) · [Projektseite](https://simon-sarkar.github.io/kursmuehle/) ·
+**Version 1.0.2** (Stand 23.10.2026) · [Projektseite](https://simon-sarkar.github.io/kursmuehle/) ·
 [Skill-Zip herunterladen](https://github.com/simon-sarkar/kursmuehle/releases/latest/download/kursmuehle.zip) ·
 [`ROADMAP.md`](ROADMAP.md) · [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -34,7 +34,9 @@ und der KI-Assistent liefert eine Kurssicherung zum Import.
   herunterladen und dem Assistenten geben.
   - ChatGPT: ZIP hochladen und schreiben: „Entpacke das und lies SKILL.md.“ Dahinter den Kurswunsch, zum Beispiel
     „Mach mir eine Einheit zu Bruchrechnen für Jgst 6, 45 Minuten, Selbstlernkurs. Zeig mir zuerst das Drehbuch.“
-    Die Code-Ausführung gehört je nach Version als „Datenanalyse“ zum Standardmodell.
+    Die Code-Ausführung gehört je nach Version als „Datenanalyse“ zum Standardmodell. Den Aufwand auf „Extra High“
+    stellen (gibt es auch im Gratiskonto); mit mittlerem Aufwand wurde der Kurs im Test deutlich dünner, ohne Grafiken
+    und mit falschem Halt vor dem Bau.
   - Claude: ZIP hochladen und denselben Satz schreiben, oder das ZIP in den Einstellungen als Skill anlegen; dann genügt
     der Kurswunsch. Die Code-Ausführung steht je nach Version in den Einstellungen unter „Dateien erstellen und
     analysieren“ und muss eingeschaltet sein.
@@ -89,10 +91,11 @@ Plattform speichern (siehe [Vorbehalte beim Textfeld](#vorbehalte-beim-textfeld)
 | Tokens | Die Einheit, in der KI-Anbieter Textmenge abrechnen und begrenzen; 90 KB Text sind grob 25 000 Tokens. |
 | Sonnet-Klasse | Die mittlere, günstigere Modellstufe von Anthropic (Claude Sonnet); der Skill soll ohne das teuerste Modell auskommen. |
 
-> **Projektstatus: Version 1.0.1.**
+> **Projektstatus: Version 1.0.2.**
 > Mit 1.0 getestet in Claude Code (Agent mit Dateizugriff), im Fremdtest mit einem frischen Assistenten der
-> Sonnet-Klasse, der nur das Skill-Zip und einen Satz bekam. Durchläufe in ChatGPT und claude.ai mit 1.0 stehen aus; mit
-> Version 0.1 lief ein Kurs in ChatGPT. Ob ein kostenloses Konto reicht, ist offen.
+> Sonnet-Klasse, der nur das Skill-Zip und einen Satz bekam. Am 23.10.2026 entstand in ChatGPT mit einem kostenlosen
+> Konto in zwei Durchläufen je ein Kurs zum Satz des Pythagoras ([Richtwerte](#richtwerte)); der Import von Kurs B steht aus.
+> Durchläufe in claude.ai stehen aus.
 > Import getestet 23.10.2026, siehe [Protokoll](docs/entwicklung/protokolle/import-tests-2-5.md): Themen- und
 > Kachelformat mit Kachelbildern, alle acht Moodle-Module, Glossar-XML, Website-Modus (eingebettet) und Textfeld-Modus mit
 > mehreren Blöcken; Delta-Sicherungen seit 0.1. Nicht per Import geprüft sind die Formate Wochen, Ein-Themen, Komprimiert
@@ -242,8 +245,22 @@ nur das Skill-Zip und den Satz „Mach mir eine Einheit zu Bruchrechnen für Jgs
 
 Der Fremdtest lief in Claude Code (Agent mit Dateizugriff), nicht über den Upload in ChatGPT oder claude.ai. Mit
 Version 0.1 lag ein kompletter Kurs mit mehreren Abschnitten und vom Assistenten erzeugten Bildern in ChatGPT bei etwa
-sieben Minuten (Einzelbeobachtung, nicht protokolliert). Durchläufe mit 1.0 in ChatGPT, claude.ai, mit kostenlosen
-Konten und mit ByLKI stehen aus; die Protokollvorlagen liegen in `docs/entwicklung/protokolle/`.
+sieben Minuten (Einzelbeobachtung, nicht protokolliert).
+
+ChatGPT mit kostenlosem Konto, 23.10.2026 (`docs/entwicklung/protokolle/chatgpt-free.md`): Eingaben „Entpacke das und lies
+SKILL.md“, „Starte den Skill“, dann Weg „Fragen“, Steuerungsgrad c und „Mathematik Satz des Pythagoras, 9. Klasse
+Mittelschule, Selbstlernkurs ca. 45 min, eine Einheit“.
+
+| Größe | A: GPT-5.6 Terra, Aufwand Medium | B: GPT-6 Luna, Aufwand Extra High |
+|---|---|---|
+| Dauer | 9 min (22:05–22:14), davon 4 min Halt mit der falschen Meldung, es gebe keine lauffähige Python-Umgebung | 4 min (22:21–22:25), ohne Halt |
+| Bilder | keine | drei selbst gezeichnete: beschriftetes Dreieck, Banner, Badge |
+| Lesetext | drei kurze Lesetexte | rund 900 Wörter mit durchgerechneten Beispielen |
+| Übungen | zwei Übungsblöcke | zwei Übungsblöcke |
+| Abschluss | Abschlusstest | H5P-Abschlusstest mit zehn Fragen, davon acht Fälle |
+
+Der Import von Kurs B auf der Plattform steht aus. Durchläufe in claude.ai und mit ByLKI stehen aus; die
+Protokollvorlagen liegen in `docs/entwicklung/protokolle/`.
 
 
 ## Ohne KI bauen (für Entwickler)
