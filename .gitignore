@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+examples/*/out/
+*.mbz
+scripts/site.json.local
+.DS_Store

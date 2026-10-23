@@ -1,0 +1,21 @@
+{
+ "site_hash": "6aa9a12f353641854c7eaa8a0fcd932f",
+ "category_id": 1,
+ "category_name": "Kategorie",
+ "customfields": [
+  {
+   "id": 1,
+   "shortname": "schule",
+   "type": "text",
+   "value": ""
+  },
+  {
+   "id": 2,
+   "shortname": "participants",
+   "type": "checkbox",
+   "value": "0"
+  }
+ ],
+ "original_course_id": 1000000,
+ "original_course_contextid": 1000001
+}

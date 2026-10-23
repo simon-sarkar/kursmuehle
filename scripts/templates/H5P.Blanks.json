@@ -1,0 +1,61 @@
+{
+ "library": "H5P.Blanks 1.14",
+ "params": {
+  "media": {
+   "type": {
+    "params": {}
+   },
+   "disableImageZooming": false
+  },
+  "text": "Trage die fehlenden Wörter ein!",
+  "overallFeedback": [
+   {
+    "from": 0,
+    "to": 100
+   }
+  ],
+  "showSolutions": "Lösung anzeigen",
+  "tryAgain": "Wiederholen",
+  "checkAnswer": "Überprüfen",
+  "submitAnswer": "Absenden",
+  "notFilledOut": "Bitte fülle alle Lücken aus, um die Lösung ansehen zu können",
+  "answerIsCorrect": "':ans' ist korrekt",
+  "answerIsWrong": "':ans' ist falsch",
+  "answeredCorrectly": "Korrekt beantwortet",
+  "answeredIncorrectly": "Falsch beantwortet",
+  "solutionLabel": "Korrekte Antwort:",
+  "inputLabel": "Lücke @num von @total",
+  "inputHasTipLabel": "Tipp verfügbar",
+  "tipLabel": "Tipp",
+  "behaviour": {
+   "enableRetry": true,
+   "allowRetryIfCorrect": false,
+   "enableSolutionsButton": true,
+   "enableCheckButton": true,
+   "autoCheck": false,
+   "caseSensitive": true,
+   "showSolutionsRequiresInput": true,
+   "separateLines": false,
+   "confirmCheckDialog": false,
+   "confirmRetryDialog": false,
+   "acceptSpellingErrors": false
+  },
+  "scoreBarLabel": "Du hast :num von :total Punkten erreicht.",
+  "a11yCheck": "Die Antworten überprüfen. Die Eingaben werden als richtig, falsch oder unbeantwortet markiert.",
+  "a11yShowSolution": "Die Lösung anzeigen. Die richtigen Lösungen werden in der Aufgabe angezeigt.",
+  "a11yRetry": "Die Aufgabe wiederholen. Alle Eingaben werden zurückgesetzt und die Aufgabe wird erneut gestartet.",
+  "a11yCheckingModeHeader": "Überprüfen-Modus aktiv",
+  "confirmCheck": {
+   "header": "Beenden?",
+   "body": "Ganz sicher beenden?",
+   "cancelLabel": "Abbrechen",
+   "confirmLabel": "Beenden"
+  },
+  "confirmRetry": {
+   "header": "Wiederholen?",
+   "body": "Ganz sicher wiederholen?",
+   "cancelLabel": "Abbrechen",
+   "confirmLabel": "Bestätigen"
+  }
+ }
+}

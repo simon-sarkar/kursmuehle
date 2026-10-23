@@ -1,0 +1,230 @@
+{
+ "library": "H5P.BranchingScenario 1.11",
+ "params": {
+  "branchingScenario": {
+   "endScreens": [
+    {
+     "endScreenTitle": "",
+     "endScreenSubtitle": "",
+     "contentId": -1,
+     "endScreenScore": 0
+    }
+   ],
+   "scoringOptionGroup": {
+    "scoringOption": "no-score",
+    "includeInteractionsScores": true
+   },
+   "startScreen": {
+    "startScreenTitle": "",
+    "startScreenSubtitle": ""
+   },
+   "behaviour": {
+    "enableBackwardsNavigation": false,
+    "forceContentFinished": false,
+    "randomizeBranchingQuestions": false
+   },
+   "l10n": {
+    "startScreenButtonText": "Kurs starten",
+    "endScreenButtonText": "Kurs neu starten",
+    "backButtonText": "Zurück",
+    "disableProceedButtonText": "Nötig, um das aktuelle Modul abzuschließen",
+    "replayButtonText": "Video wiederholen",
+    "scoreText": "Deine Punktzahl:",
+    "fullscreenAria": "Vollbild"
+   },
+   "content": [
+    {
+     "type": {
+      "library": "H5P.BranchingQuestion 1.0",
+      "params": {
+       "branchingQuestion": {
+        "alternatives": [
+         {
+          "nextContentId": 2,
+          "feedback": {
+           "title": "",
+           "subtitle": ""
+          },
+          "text": "asdasd"
+         },
+         {
+          "nextContentId": 1,
+          "feedback": {
+           "title": "",
+           "subtitle": ""
+          },
+          "text": "asd"
+         }
+        ],
+        "question": "<p>asdasd</p>"
+       }
+      },
+      "subContentId": "bd28e8cc-98c7-4ebb-a7dc-b3a087401c92",
+      "metadata": {
+       "contentType": "Branching Question",
+       "license": "U",
+       "title": "Unbenannt: Branching Question",
+       "authors": [],
+       "changes": [],
+       "extraTitle": "Unbenannt: Branching Question"
+      }
+     },
+     "showContentTitle": false,
+     "proceedButtonText": "Weiter",
+     "forceContentFinished": "useBehavioural",
+     "feedback": {
+      "title": "",
+      "subtitle": ""
+     },
+     "contentBehaviour": "useBehavioural"
+    },
+    {
+     "type": {
+      "library": "H5P.AdvancedText 1.1",
+      "params": {
+       "text": "<p>asdasd</p>"
+      },
+      "subContentId": "59b7aeef-51d6-44b3-a1a4-0ba60d947f13",
+      "metadata": {
+       "contentType": "Text",
+       "license": "U",
+       "title": "Unbenannt: Text",
+       "authors": [],
+       "changes": [],
+       "extraTitle": "Unbenannt: Text"
+      }
+     },
+     "showContentTitle": false,
+     "proceedButtonText": "Weiter",
+     "forceContentFinished": "useBehavioural",
+     "feedback": {
+      "title": "",
+      "subtitle": ""
+     },
+     "contentBehaviour": "useBehavioural",
+     "nextContentId": -1
+    },
+    {
+     "type": {
+      "library": "H5P.CoursePresentation 1.27",
+      "params": {
+       "presentation": {
+        "slides": [
+         {
+          "elements": [],
+          "keywords": [],
+          "slideBackgroundSelector": {
+           "fillSlideBackground": null
+          }
+         }
+        ],
+        "keywordListEnabled": true,
+        "globalBackgroundSelector": {
+         "fillGlobalBackground": null
+        },
+        "keywordListAlwaysShow": false,
+        "keywordListAutoHide": false,
+        "keywordListOpacity": 100
+       },
+       "override": {
+        "activeSurface": false,
+        "hideSummarySlide": false,
+        "summarySlideSolutionButton": true,
+        "summarySlideRetryButton": true,
+        "enablePrintButton": false,
+        "social": {
+         "showFacebookShare": false,
+         "facebookShare": {
+          "url": "@currentpageurl",
+          "quote": "Ich habe @score von @maxScore Punkten bei der Aufgabe @currentpageurl erreicht."
+         },
+         "showTwitterShare": false,
+         "twitterShare": {
+          "statement": "Ich habe @score von @maxScore Punkten bei der Aufgabe @currentpageurl erreicht.",
+          "url": "@currentpageurl",
+          "hashtags": "h5p, Kurs"
+         },
+         "showGoogleShare": false,
+         "googleShareUrl": "@currentpageurl"
+        }
+       },
+       "l10n": {
+        "slide": "Folie",
+        "slides": "Slides",
+        "score": "Punktzahl",
+        "yourScore": "Deine Punktzahl",
+        "maxScore": "Maximale Punktzahl",
+        "total": "Summe",
+        "totalScore": "Gesamtpunktzahl",
+        "showSolutions": "Lösungen anzeigen",
+        "retry": "Wiederholen",
+        "exportAnswers": "Text exportieren",
+        "hideKeywords": "Stichwortliste verbergen",
+        "showKeywords": "Stichwortliste anzeigen",
+        "fullscreen": "Vollbild",
+        "exitFullscreen": "Vollbild beenden",
+        "prevSlide": "Vorherige Folie",
+        "nextSlide": "Nächste Folie",
+        "currentSlide": "Aktuelle Folie",
+        "lastSlide": "Letzte Folie",
+        "solutionModeTitle": "Lösungsmodus beenden",
+        "solutionModeText": "Lösungsmodus",
+        "summaryMultipleTaskText": "Mehrere Aufgaben",
+        "scoreMessage": "Du hast erreicht:",
+        "shareFacebook": "Auf Facebook teilen",
+        "shareTwitter": "Auf Twitter teilen",
+        "shareGoogle": "Auf Google+ teilen",
+        "summary": "Zusammenfassung",
+        "solutionsButtonTitle": "Kommentare anzeigen",
+        "printTitle": "Drucken",
+        "printIngress": "Wie möchtest du diese Präsentation drucken?",
+        "printAllSlides": "Alle Folien drucken",
+        "printCurrentSlide": "Aktuelle Folie drucken",
+        "noTitle": "Kein Titel",
+        "accessibilitySlideNavigationExplanation": "Verwende die linke oder rechte Cursortaste, um zur Folie in der jeweiligen Richtung zu blättern, wenn der Präsentationsbereich ausgewählt ist.",
+        "accessibilityCanvasLabel": "Präsentationsbereich. Verwende die linke oder rechte Cursortaste, um zwischen den Folien zu navigieren.",
+        "accessibilityProgressBarLabel": "Wähle das zu zeigende Schaubild",
+        "containsNotCompleted": "@slideName enthält eine nicht abgeschlossene Interaktion",
+        "containsCompleted": "@slideName wurde abgeschlossen",
+        "slideCount": "Folie @index von @total",
+        "containsOnlyCorrect": "@slideName enthält nur richtige Antworten",
+        "containsIncorrectAnswers": "@slideName enthält falsche Antworten",
+        "resultHeader": "Results",
+        "amountCorrect": "@value / @max correct",
+        "amountCorrectAria": "@value out of @max correct",
+        "shareResult": "Ergebnis teilen",
+        "accessibilityTotalScore": "Du hast insgesamt @score von @maxScore Punkten erreicht.",
+        "accessibilityEnteredFullscreen": "Vollbild aktiviert",
+        "accessibilityExitedFullscreen": "Vollbild deaktiviert",
+        "confirmDialogHeader": "Antworten übermitteln",
+        "confirmDialogText": "Damit werden deine Ergebnisse übermittelt. Möchtest du fortfahren?",
+        "confirmDialogConfirmText": "Senden und Ergebnisse ansehen",
+        "slideshowNavigationLabel": "Schaubild-Navigation",
+        "confirmDialogConfirmLabel": "Confirm",
+        "confirmDialogCancelLabel": "Cancel"
+       }
+      },
+      "subContentId": "afaf5466-1e4b-4fc2-a227-ee86877a236a",
+      "metadata": {
+       "contentType": "Course Presentation",
+       "license": "U",
+       "title": "Unbenannt: Course Presentation",
+       "authors": [],
+       "changes": [],
+       "extraTitle": "Unbenannt: Course Presentation"
+      }
+     },
+     "showContentTitle": false,
+     "proceedButtonText": "Weiter",
+     "forceContentFinished": "useBehavioural",
+     "feedback": {
+      "title": "",
+      "subtitle": ""
+     },
+     "contentBehaviour": "useBehavioural",
+     "nextContentId": -1
+    }
+   ]
+  }
+ }
+}

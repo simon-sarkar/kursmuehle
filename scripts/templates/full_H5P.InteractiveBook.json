@@ -1,0 +1,503 @@
+{
+ "library": "H5P.InteractiveBook 1.15",
+ "params": {
+  "showCoverPage": false,
+  "bookCover": {
+   "coverDescription": "<p style=\"text-align: center;\"></p>",
+   "coverMedium": {
+    "params": {}
+   }
+  },
+  "chapters": [
+   {
+    "params": {
+     "content": [
+      {
+       "useSeparator": "auto",
+       "content": {
+        "params": {
+         "text": "<p>asfsygdfgsd</p>"
+        },
+        "library": "H5P.AdvancedText 1.1",
+        "metadata": {
+         "contentType": "Text",
+         "license": "U",
+         "title": "Unbenannt: Text",
+         "authors": [],
+         "changes": []
+        },
+        "subContentId": "f3ce7f77-07c4-4cdb-a91b-5eaaaeef25b7"
+       }
+      },
+      {
+       "useSeparator": "auto",
+       "content": {
+        "params": {
+         "decorative": false,
+         "contentName": "Bild",
+         "expandImage": "Bild vergrößern",
+         "minimizeImage": "Bild verkleinern",
+         "file": {
+          "path": "images/file-6ada2241e9540.jpg#tmp",
+          "mime": "image/jpeg",
+          "copyright": {
+           "license": "U"
+          },
+          "width": 1024,
+          "height": 559
+         }
+        },
+        "library": "H5P.Image 1.1",
+        "metadata": {
+         "contentType": "Image",
+         "license": "U",
+         "title": "Unbenannt: Image",
+         "authors": [],
+         "changes": []
+        },
+        "subContentId": "7b3c89e5-c41e-4aee-b2cc-7fe688abaf51"
+       }
+      },
+      {
+       "content": {
+        "params": {
+         "media": {
+          "type": {
+           "params": {}
+          },
+          "disableImageZooming": false
+         },
+         "answers": [
+          {
+           "correct": true,
+           "tipsAndFeedback": {
+            "tip": "",
+            "chosenFeedback": "",
+            "notChosenFeedback": ""
+           },
+           "text": "<div>ddd</div>"
+          },
+          {
+           "correct": false,
+           "tipsAndFeedback": {
+            "tip": "",
+            "chosenFeedback": "",
+            "notChosenFeedback": ""
+           },
+           "text": "<div>sdfsdf</div>"
+          }
+         ],
+         "overallFeedback": [
+          {
+           "from": 0,
+           "to": 100
+          }
+         ],
+         "behaviour": {
+          "enableRetry": true,
+          "enableSolutionsButton": true,
+          "enableCheckButton": true,
+          "type": "auto",
+          "singlePoint": false,
+          "randomAnswers": true,
+          "showSolutionsRequiresInput": true,
+          "confirmCheckDialog": false,
+          "confirmRetryDialog": false,
+          "autoCheck": false,
+          "passPercentage": 100,
+          "showScorePoints": true
+         },
+         "UI": {
+          "checkAnswerButton": "Überprüfen",
+          "submitAnswerButton": "Absenden",
+          "showSolutionButton": "Lösung anzeigen",
+          "tryAgainButton": "Wiederholen",
+          "tipsLabel": "Hinweis anzeigen",
+          "scoreBarLabel": "Du hast :num von :total Punkten erreicht.",
+          "tipAvailable": "Hinweis verfügbar",
+          "feedbackAvailable": "Rückmeldung verfügbar",
+          "readFeedback": "Rückmeldung vorlesen",
+          "wrongAnswer": "Falsche Antwort",
+          "correctAnswer": "Richtige Antwort",
+          "shouldCheck": "Hätte gewählt werden müssen",
+          "shouldNotCheck": "Hätte nicht gewählt werden sollen",
+          "noInput": "Bitte antworte, bevor du die Lösung ansiehst",
+          "a11yCheck": "Die Antworten überprüfen. Die Auswahlen werden als richtig, falsch oder fehlend markiert.",
+          "a11yShowSolution": "Die Lösung anzeigen. Die richtigen Lösungen werden in der Aufgabe angezeigt.",
+          "a11yRetry": "Die Aufgabe wiederholen. Alle Versuche werden zurückgesetzt und die Aufgabe wird erneut gestartet."
+         },
+         "confirmCheck": {
+          "header": "Beenden?",
+          "body": "Ganz sicher beenden?",
+          "cancelLabel": "Abbrechen",
+          "confirmLabel": "Beenden"
+         },
+         "confirmRetry": {
+          "header": "Wiederholen?",
+          "body": "Ganz sicher wiederholen?",
+          "cancelLabel": "Abbrechen",
+          "confirmLabel": "Bestätigen"
+         },
+         "question": "<p>asdfsadf</p>"
+        },
+        "library": "H5P.MultiChoice 1.16",
+        "metadata": {
+         "contentType": "Multiple Choice",
+         "license": "U",
+         "title": "Unbenannt: Multiple Choice",
+         "authors": [],
+         "changes": [],
+         "extraTitle": "Unbenannt: Multiple Choice"
+        },
+        "subContentId": "e232410b-cbdb-4438-9856-1c4fbe8ace17"
+       },
+       "useSeparator": "auto"
+      },
+      {
+       "content": {
+        "params": {
+         "media": {
+          "type": {
+           "params": {}
+          },
+          "disableImageZooming": false
+         },
+         "correct": "false",
+         "behaviour": {
+          "enableRetry": true,
+          "enableSolutionsButton": true,
+          "enableCheckButton": true,
+          "confirmCheckDialog": false,
+          "confirmRetryDialog": false,
+          "autoCheck": false
+         },
+         "l10n": {
+          "trueText": "Wahr",
+          "falseText": "Falsch",
+          "score": "Du hast @score von @total Punkten erreicht.",
+          "checkAnswer": "Überprüfen",
+          "submitAnswer": "Absenden",
+          "showSolutionButton": "Lösung anzeigen",
+          "tryAgain": "Wiederholen",
+          "wrongAnswerMessage": "Falsche Antwort",
+          "correctAnswerMessage": "Richtige Antwort",
+          "scoreBarLabel": "Du hast :num von :total Punkten erreicht.",
+          "a11yCheck": "Die Antworten überprüfen. Die Antwort wird als richtig, falsch oder unbeantwortet markiert.",
+          "a11yShowSolution": "Die Lösung anzeigen. Die richtige Lösung wird in der Aufgabe angezeigt.",
+          "a11yRetry": "Die Aufgabe wiederholen. Alle Versuche werden zurückgesetzt, und die Aufgabe wird erneut gestartet."
+         },
+         "confirmCheck": {
+          "header": "Beenden?",
+          "body": "Ganz sicher beenden?",
+          "cancelLabel": "Abbrechen",
+          "confirmLabel": "Beenden"
+         },
+         "confirmRetry": {
+          "header": "Wiederholen?",
+          "body": "Ganz sicher wiederholen?",
+          "cancelLabel": "Abbrechen",
+          "confirmLabel": "Bestätigen"
+         },
+         "question": "<p>asdfasdfasdf</p>"
+        },
+        "library": "H5P.TrueFalse 1.8",
+        "metadata": {
+         "contentType": "True/False Question",
+         "license": "U",
+         "title": "Unbenannt: True/False Question",
+         "authors": [],
+         "changes": [],
+         "extraTitle": "Unbenannt: True/False Question"
+        },
+        "subContentId": "a5e27a23-479d-4347-9925-f99a45c8a36f"
+       },
+       "useSeparator": "auto"
+      },
+      {
+       "content": {
+        "params": {
+         "media": {
+          "type": {
+           "params": {}
+          },
+          "disableImageZooming": false
+         },
+         "taskDescription": "Ziehe die Wörter in die richtigen Felder!",
+         "overallFeedback": [
+          {
+           "from": 0,
+           "to": 100
+          }
+         ],
+         "checkAnswer": "Überprüfen",
+         "submitAnswer": "Absenden",
+         "tryAgain": "Wiederholen",
+         "showSolution": "Lösung anzeigen",
+         "dropZoneIndex": "Ablagefeld @index.",
+         "empty": "Ablagefeld @index ist leer.",
+         "contains": "Ablagefeld @index enthält ziehbaren Text @draggable.",
+         "ariaDraggableIndex": "@index von @count ziehbaren Texten.",
+         "tipLabel": "Tipp anzeigen",
+         "correctText": "Richtig!",
+         "incorrectText": "Falsch!",
+         "resetDropTitle": "Ablagefelder zurücksetzen",
+         "resetDropDescription": "Bist du sicher, dass du dieses Ablagefeld zurücksetzen möchtest?",
+         "grabbed": "Ziehbarer Text wurde aufgenommen.",
+         "cancelledDragging": "Ziehen abgebrochen.",
+         "correctAnswer": "Korrekte Antwort:",
+         "feedbackHeader": "Rückmeldung",
+         "behaviour": {
+          "enableRetry": true,
+          "enableSolutionsButton": true,
+          "enableCheckButton": true,
+          "instantFeedback": false
+         },
+         "scoreBarLabel": "Du hast :num von :total Punkten erreicht.",
+         "a11yCheck": "Die Antworten überprüfen. Die Eingaben werden als richtig, falsch oder unbeantwortet markiert.",
+         "a11yShowSolution": "Die Lösung anzeigen. Die richtigen Lösungen werden in der Aufgabe angezeigt.",
+         "a11yRetry": "Die Aufgabe wiederholen. Alle Eingaben werden zurückgesetzt und die Aufgabe wird erneut gestartet."
+        },
+        "library": "H5P.DragText 1.10",
+        "metadata": {
+         "contentType": "Drag the Words",
+         "license": "U",
+         "title": "Unbenannt: Drag the Words",
+         "authors": [],
+         "changes": [],
+         "extraTitle": "Unbenannt: Drag the Words"
+        },
+        "subContentId": "38146a4b-17d2-406c-a247-3b0ea46d7591"
+       },
+       "useSeparator": "auto"
+      },
+      {
+       "content": {
+        "params": {
+         "media": {
+          "type": {
+           "params": {}
+          },
+          "disableImageZooming": false
+         },
+         "overallFeedback": [
+          {
+           "from": 0,
+           "to": 100
+          }
+         ],
+         "checkAnswerButton": "Überprüfen",
+         "submitAnswerButton": "Absenden",
+         "tryAgainButton": "Wiederholen",
+         "showSolutionButton": "Lösung anzeigen",
+         "behaviour": {
+          "enableRetry": true,
+          "enableSolutionsButton": true,
+          "enableCheckButton": true,
+          "showScorePoints": true
+         },
+         "correctAnswer": "Richtig!",
+         "incorrectAnswer": "Falsch!",
+         "missedAnswer": "Nicht gefunden!",
+         "displaySolutionDescription": "Die Lösungen sind nun im Text markiert.",
+         "scoreBarLabel": "Du hast :num von :total Punkten erreicht.",
+         "a11yFullTextLabel": "Gesamter lesbarer Text",
+         "a11yClickableTextLabel": "Gesamter Text, wo Wörter markiert werden können",
+         "a11ySolutionModeHeader": "Lösungsmodus",
+         "a11yCheckingHeader": "Antworten überprüfen-Modus",
+         "a11yCheck": "Die Antworten überprüfen. Die Auswahlen werden als richtig, falsch oder fehlend markiert.",
+         "a11yShowSolution": "Die Lösung anzeigen. Die richtigen Lösungen werden in der Aufgabe angezeigt.",
+         "a11yRetry": "Die Aufgabe wiederholen. Alle Versuche werden zurückgesetzt und die Aufgabe wird erneut gestartet.",
+         "taskDescription": "<p>afsdfasdfasdfasdfasdfsd adsf</p>",
+         "textField": "<p>gaga</p>"
+        },
+        "library": "H5P.MarkTheWords 1.11",
+        "metadata": {
+         "contentType": "Mark the Words",
+         "license": "U",
+         "title": "Unbenannt: Mark the Words",
+         "authors": [],
+         "changes": [],
+         "extraTitle": "Unbenannt: Mark the Words"
+        },
+        "subContentId": "3f69bc04-f52d-487a-a6e6-75f1317e73c1"
+       },
+       "useSeparator": "auto"
+      },
+      {
+       "content": {
+        "params": {
+         "intro": "<p>Wähle die korrekte Aussage.</p>",
+         "summaries": [
+          {
+           "subContentId": "38d58334-0659-4e14-bf6d-852e426507f8",
+           "summary": [
+            "<p>fasdfasdfasdfasdf</p>",
+            "<p>afsdfasdfasdfasdfasdfasdfasdfasdfasdf</p>"
+           ],
+           "tip": ""
+          }
+         ],
+         "overallFeedback": [
+          {
+           "from": 0,
+           "to": 100
+          }
+         ],
+         "solvedLabel": "Fortschritt:",
+         "scoreLabel": "Falsche Antworten:",
+         "resultLabel": "Dein Ergebnis",
+         "labelCorrect": "Richtig.",
+         "labelIncorrect": "Falsch! Bitte versuche es noch einmal.",
+         "alternativeIncorrectLabel": "Falsch",
+         "labelCorrectAnswers": "Richtige Antwort(en).",
+         "tipButtonLabel": "Tipp anzeigen",
+         "scoreBarLabel": "Du hast :num von :total Punkten erreicht.",
+         "progressText": "Fortschritt :num von :total"
+        },
+        "library": "H5P.Summary 1.10",
+        "metadata": {
+         "contentType": "Summary",
+         "license": "U",
+         "title": "Unbenannt: Summary",
+         "authors": [],
+         "changes": [],
+         "extraTitle": "Unbenannt: Summary"
+        },
+        "subContentId": "956f682c-b2b9-495c-9396-02541e4d09dd"
+       },
+       "useSeparator": "auto"
+      },
+      {
+       "content": {
+        "params": {
+         "choices": [
+          {
+           "subContentId": "c446ea29-4eea-411b-aaa1-675db3422fbd",
+           "question": "<p>agsdgasdfsdf</p>",
+           "answers": [
+            "<p>fdsaf</p>",
+            "<p>asdfasdf</p>"
+           ]
+          },
+          {
+           "subContentId": "272d1ae0-5c73-4614-a55f-83617740d6ed",
+           "question": "<p>asdfasdf</p>",
+           "answers": [
+            "<p>fasdfdsf</p>",
+            "<p>afsdfasdfasdf</p>"
+           ]
+          }
+         ],
+         "overallFeedback": [
+          {
+           "from": 0,
+           "to": 100
+          }
+         ],
+         "behaviour": {
+          "autoContinue": true,
+          "timeoutCorrect": 2000,
+          "timeoutWrong": 3000,
+          "soundEffectsEnabled": true,
+          "enableRetry": true,
+          "enableSolutionsButton": true,
+          "passPercentage": 100
+         },
+         "l10n": {
+          "nextButtonLabel": "Weiter",
+          "nextButton": "Next",
+          "showResultsButtonLabel": "Show results",
+          "retryButtonLabel": "Wiederholen",
+          "solutionViewTitle": "Lösung",
+          "correctText": "Richtig!",
+          "incorrectText": "Falsch!",
+          "shouldSelect": "Hätte gewählt werden müssen",
+          "shouldNotSelect": "Hätte nicht gewählt werden sollen",
+          "muteButtonLabel": "Stumm schalten",
+          "closeButtonLabel": "Schließen",
+          "slideOfTotal": "Seite :num von :total",
+          "scoreBarLabel": "Du hast :num von :total Punkten erreicht.",
+          "solutionListQuestionNumber": "Frage :num",
+          "a11yShowSolution": "Die Lösung anzeigen. Die richtigen Lösungen werden in der Aufgabe angezeigt.",
+          "a11yRetry": "Die Aufgabe wiederholen. Alle Versuche werden zurückgesetzt und die Aufgabe wird erneut gestartet.",
+          "resultHeader": "Dein Ergebnis:",
+          "totalScore": ":score von :maxScore korrekt",
+          "resultTableHeader": "Frage",
+          "resultScoreTableHeader": "Punkte",
+          "correctAnswerIntroduction": "Richtige Antwort"
+         }
+        },
+        "library": "H5P.SingleChoiceSet 1.11",
+        "metadata": {
+         "contentType": "Single Choice Set",
+         "license": "U",
+         "title": "Unbenannt: Single Choice Set",
+         "authors": [],
+         "changes": [],
+         "extraTitle": "Unbenannt: Single Choice Set"
+        },
+        "subContentId": "a5deedc9-a3d5-4881-885f-8e7f34ac638d"
+       },
+       "useSeparator": "auto"
+      }
+     ]
+    },
+    "library": "H5P.Column 1.22",
+    "subContentId": "28cbbeea-3360-42f2-b62b-16772c388ef1",
+    "metadata": {
+     "contentType": "Page",
+     "license": "U",
+     "title": "Unbenannt: Page",
+     "authors": [],
+     "changes": [],
+     "extraTitle": "Unbenannt: Page"
+    }
+   }
+  ],
+  "behaviour": {
+   "baseColor": "#1768c4",
+   "defaultTableOfContents": true,
+   "progressIndicators": true,
+   "progressAuto": true,
+   "displaySummary": true,
+   "enableRetry": true
+  },
+  "read": "Öffnen",
+  "displayTOC": "Inhaltsverzeichnis anzeigen",
+  "hideTOC": "Inhaltsverzeichnis ausblenden",
+  "page": "Page",
+  "next": "Next",
+  "nextPage": "Nächste Seite",
+  "previous": "Previous",
+  "previousPage": "Vorherige Seite",
+  "chapterCompleted": "Seite abgeschlossen!",
+  "partCompleted": "@pages von @total Seiten abgeschlossen",
+  "incompleteChapter": "Unvollständige Seite",
+  "navigateToTop": "Nach oben springen",
+  "markAsFinished": "Ich habe diese Seite abgeschlossen",
+  "fullscreen": "Vollbild",
+  "exitFullscreen": "Vollbild beenden",
+  "bookProgressSubtext": "@count von @total Seiten",
+  "interactionsProgressSubtext": "@count von @total Interaktionen",
+  "submitReport": "Report absenden",
+  "restartLabel": "Neustart",
+  "summaryHeader": "Zusammenfassung",
+  "allInteractions": "Alle Interaktionen",
+  "unansweredInteractions": "Unbeantwortete Interaktionen",
+  "scoreText": "@score / @maxscore",
+  "leftOutOfTotalCompleted": "@left von @max Interaktionen abgeschlossen",
+  "noInteractions": "Keine Interaktionen",
+  "score": "Punkte",
+  "summaryAndSubmit": "Zusammenfassung und Einsenden",
+  "noChapterInteractionBoldText": "Du hast noch keine Seiten bearbeitet.",
+  "noChapterInteractionText": "Du musst wenigstens eine Seite bearbeiten, um die Zusammenfassung zu sehen.",
+  "yourAnswersAreSubmittedForReview": "Deine Antworten wurden zur Begutachtung versendet!",
+  "bookProgress": "Buchfortschritt",
+  "interactionsProgress": "Interaktionsfortschritt",
+  "totalScoreLabel": "Gesamtpunktzahl",
+  "a11y": {
+   "progress": "Seite @page von @total.",
+   "menu": "Inhaltsverzeichnis ein- bzw. ausschalten"
+  }
+ }
+}

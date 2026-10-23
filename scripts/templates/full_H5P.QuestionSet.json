@@ -1,0 +1,347 @@
+{
+ "library": "H5P.QuestionSet 1.21",
+ "params": {
+  "introPage": {
+   "showIntroPage": false,
+   "startButtonText": "Quiz starten",
+   "introduction": ""
+  },
+  "progressType": "dots",
+  "passPercentage": 50,
+  "disableBackwardsNavigation": false,
+  "randomQuestions": false,
+  "endGame": {
+   "showResultPage": true,
+   "showSolutionButton": true,
+   "showRetryButton": true,
+   "noResultMessage": "Quiz beendet",
+   "message": "Results",
+   "amountCorrect": "@finals of @totals correct",
+   "scoreBarLabel": "Du hast @score von @total Punkten erreicht.",
+   "scoreHeader": "Score",
+   "overallFeedback": [
+    {
+     "from": 0,
+     "to": 100
+    }
+   ],
+   "solutionButtonText": "Lösung anzeigen",
+   "retryButtonText": "Wiederholen",
+   "finishButtonText": "Beenden",
+   "submitButtonText": "Absenden",
+   "showAnimations": false,
+   "skippable": false,
+   "skipButtonText": "Video überspringen"
+  },
+  "override": {
+   "checkButton": true
+  },
+  "texts": {
+   "prevButton": "Zurück",
+   "previous": "Previous",
+   "nextButton": "Weiter",
+   "next": "Next",
+   "finishButton": "Beenden",
+   "submitButton": "Absenden",
+   "textualProgress": "Aktuelle Frage: @current von @total Fragen",
+   "jumpToQuestion": "Frage %d von %total",
+   "questionLabel": "Frage",
+   "readSpeakerProgress": "Frage @current von @total",
+   "unansweredText": "Unbeantwortet",
+   "answeredText": "Beantwortet",
+   "currentQuestionText": "Aktuelle Frage",
+   "navigationLabel": "Fragen",
+   "questionSetInstruction": "Choose question to display"
+  },
+  "questions": [
+   {
+    "params": {
+     "media": {
+      "type": {
+       "params": {}
+      },
+      "disableImageZooming": false
+     },
+     "answers": [
+      {
+       "correct": false,
+       "tipsAndFeedback": {
+        "tip": "",
+        "chosenFeedback": "",
+        "notChosenFeedback": ""
+       },
+       "text": "<div>asdfasdf</div>"
+      },
+      {
+       "correct": false,
+       "tipsAndFeedback": {
+        "tip": "",
+        "chosenFeedback": "",
+        "notChosenFeedback": ""
+       },
+       "text": "<div>fdsafsdf</div>"
+      }
+     ],
+     "overallFeedback": [
+      {
+       "from": 0,
+       "to": 100
+      }
+     ],
+     "behaviour": {
+      "enableRetry": true,
+      "enableSolutionsButton": true,
+      "enableCheckButton": true,
+      "type": "auto",
+      "singlePoint": false,
+      "randomAnswers": true,
+      "showSolutionsRequiresInput": true,
+      "confirmCheckDialog": false,
+      "confirmRetryDialog": false,
+      "autoCheck": false,
+      "passPercentage": 100,
+      "showScorePoints": true
+     },
+     "UI": {
+      "checkAnswerButton": "Überprüfen",
+      "submitAnswerButton": "Absenden",
+      "showSolutionButton": "Lösung anzeigen",
+      "tryAgainButton": "Wiederholen",
+      "tipsLabel": "Hinweis anzeigen",
+      "scoreBarLabel": "Du hast :num von :total Punkten erreicht.",
+      "tipAvailable": "Hinweis verfügbar",
+      "feedbackAvailable": "Rückmeldung verfügbar",
+      "readFeedback": "Rückmeldung vorlesen",
+      "wrongAnswer": "Falsche Antwort",
+      "correctAnswer": "Richtige Antwort",
+      "shouldCheck": "Hätte gewählt werden müssen",
+      "shouldNotCheck": "Hätte nicht gewählt werden sollen",
+      "noInput": "Bitte antworte, bevor du die Lösung ansiehst",
+      "a11yCheck": "Die Antworten überprüfen. Die Auswahlen werden als richtig, falsch oder fehlend markiert.",
+      "a11yShowSolution": "Die Lösung anzeigen. Die richtigen Lösungen werden in der Aufgabe angezeigt.",
+      "a11yRetry": "Die Aufgabe wiederholen. Alle Versuche werden zurückgesetzt und die Aufgabe wird erneut gestartet."
+     },
+     "confirmCheck": {
+      "header": "Beenden?",
+      "body": "Ganz sicher beenden?",
+      "cancelLabel": "Abbrechen",
+      "confirmLabel": "Beenden"
+     },
+     "confirmRetry": {
+      "header": "Wiederholen?",
+      "body": "Ganz sicher wiederholen?",
+      "cancelLabel": "Abbrechen",
+      "confirmLabel": "Bestätigen"
+     },
+     "question": "<p>asdfasdfasdf</p>"
+    },
+    "library": "H5P.MultiChoice 1.16",
+    "metadata": {
+     "contentType": "Multiple Choice",
+     "license": "U",
+     "title": "Unbenannt: Multiple Choice",
+     "authors": [],
+     "changes": [],
+     "extraTitle": "Unbenannt: Multiple Choice"
+    },
+    "subContentId": "f17d7ca0-e86c-4dbe-9ea6-71c3cf37d45c"
+   },
+   {
+    "params": {
+     "scoreShow": "Überprüfen",
+     "submit": "Übermitteln",
+     "tryAgain": "Wiederholen",
+     "scoreExplanation": "Richtige Antworten geben +1 Punkte. Bei falschen Antworten gibt es -1 Punkt. Die kleinstmögliche Punktzahl ist 0.",
+     "question": {
+      "settings": {
+       "size": {
+        "width": 620,
+        "height": 310
+       }
+      },
+      "task": {
+       "elements": [],
+       "dropZones": []
+      }
+     },
+     "overallFeedback": [
+      {
+       "from": 0,
+       "to": 100
+      }
+     ],
+     "behaviour": {
+      "enableRetry": true,
+      "enableCheckButton": true,
+      "singlePoint": false,
+      "applyPenalties": true,
+      "enableScoreExplanation": true,
+      "dropZoneHighlighting": "dragging",
+      "autoAlignSpacing": 2,
+      "enableFullScreen": false,
+      "showScorePoints": true,
+      "showTitle": true,
+      "dragHandleVisibility": true
+     },
+     "grabbablePrefix": "Ziehbares Element {num} von {total}.",
+     "grabbableSuffix": "Abgelegt in Ablagezone {num}.",
+     "dropzonePrefix": "Ablagezone {num} von {total}.",
+     "noDropzone": "Keine Ablagezone.",
+     "tipLabel": "Hinweis zeigen",
+     "tipAvailable": "Hinweis verfügbar",
+     "correctAnswer": "Richtige Antwort",
+     "wrongAnswer": "Falsche Antwort",
+     "feedbackHeader": "Rückmeldung",
+     "scoreBarLabel": "Du hast :num von :total Punkten erreicht.",
+     "scoreExplanationButtonLabel": "Zeige Erklärung der Punktevergabe",
+     "a11yCheck": "Die Antworten überprüfen. Die Eingaben werden als richtig, falsch oder unbeantwortet markiert.",
+     "a11yRetry": "Die Aufgabe wiederholen. Alle Versuche werden zurückgesetzt und die Aufgabe wird erneut gestartet.",
+     "localize": {
+      "fullscreen": "Vollbild",
+      "exitFullscreen": "Vollbild beenden"
+     }
+    },
+    "library": "H5P.DragQuestion 1.15",
+    "metadata": {
+     "contentType": "Drag and Drop",
+     "license": "U",
+     "title": "Unbenannt: Drag and Drop",
+     "authors": [],
+     "changes": [],
+     "extraTitle": "Unbenannt: Drag and Drop"
+    },
+    "subContentId": "2571b9e2-e857-4384-9550-c08ac1e3a0ff"
+   },
+   {
+    "params": {
+     "media": {
+      "type": {
+       "params": {}
+      },
+      "disableImageZooming": false
+     },
+     "correct": "true",
+     "behaviour": {
+      "enableRetry": true,
+      "enableSolutionsButton": true,
+      "enableCheckButton": true,
+      "confirmCheckDialog": false,
+      "confirmRetryDialog": false,
+      "autoCheck": false
+     },
+     "l10n": {
+      "trueText": "Wahr",
+      "falseText": "Falsch",
+      "score": "Du hast @score von @total Punkten erreicht.",
+      "checkAnswer": "Überprüfen",
+      "submitAnswer": "Absenden",
+      "showSolutionButton": "Lösung anzeigen",
+      "tryAgain": "Wiederholen",
+      "wrongAnswerMessage": "Falsche Antwort",
+      "correctAnswerMessage": "Richtige Antwort",
+      "scoreBarLabel": "Du hast :num von :total Punkten erreicht.",
+      "a11yCheck": "Die Antworten überprüfen. Die Antwort wird als richtig, falsch oder unbeantwortet markiert.",
+      "a11yShowSolution": "Die Lösung anzeigen. Die richtige Lösung wird in der Aufgabe angezeigt.",
+      "a11yRetry": "Die Aufgabe wiederholen. Alle Versuche werden zurückgesetzt, und die Aufgabe wird erneut gestartet."
+     },
+     "confirmCheck": {
+      "header": "Beenden?",
+      "body": "Ganz sicher beenden?",
+      "cancelLabel": "Abbrechen",
+      "confirmLabel": "Beenden"
+     },
+     "confirmRetry": {
+      "header": "Wiederholen?",
+      "body": "Ganz sicher wiederholen?",
+      "cancelLabel": "Abbrechen",
+      "confirmLabel": "Bestätigen"
+     },
+     "question": "<p>sadasdas</p>"
+    },
+    "library": "H5P.TrueFalse 1.8",
+    "metadata": {
+     "contentType": "True/False Question",
+     "license": "U",
+     "title": "Unbenannt: True/False Question",
+     "authors": [],
+     "changes": [],
+     "extraTitle": "Unbenannt: True/False Question"
+    },
+    "subContentId": "3e04cf62-b615-4aa8-b1af-e56cfe3d38a0"
+   },
+   {
+    "params": {
+     "media": {
+      "type": {
+       "params": {}
+      },
+      "disableImageZooming": false
+     },
+     "text": "Trage die fehlenden Wörter ein!",
+     "overallFeedback": [
+      {
+       "from": 0,
+       "to": 100
+      }
+     ],
+     "showSolutions": "Lösung anzeigen",
+     "tryAgain": "Wiederholen",
+     "checkAnswer": "Überprüfen",
+     "submitAnswer": "Absenden",
+     "notFilledOut": "Bitte fülle alle Lücken aus, um die Lösung ansehen zu können",
+     "answerIsCorrect": "':ans' ist korrekt",
+     "answerIsWrong": "':ans' ist falsch",
+     "answeredCorrectly": "Korrekt beantwortet",
+     "answeredIncorrectly": "Falsch beantwortet",
+     "solutionLabel": "Korrekte Antwort:",
+     "inputLabel": "Lücke @num von @total",
+     "inputHasTipLabel": "Tipp verfügbar",
+     "tipLabel": "Tipp",
+     "behaviour": {
+      "enableRetry": true,
+      "allowRetryIfCorrect": false,
+      "enableSolutionsButton": true,
+      "enableCheckButton": true,
+      "autoCheck": false,
+      "caseSensitive": true,
+      "showSolutionsRequiresInput": true,
+      "separateLines": false,
+      "confirmCheckDialog": false,
+      "confirmRetryDialog": false,
+      "acceptSpellingErrors": false
+     },
+     "scoreBarLabel": "Du hast :num von :total Punkten erreicht.",
+     "a11yCheck": "Die Antworten überprüfen. Die Eingaben werden als richtig, falsch oder unbeantwortet markiert.",
+     "a11yShowSolution": "Die Lösung anzeigen. Die richtigen Lösungen werden in der Aufgabe angezeigt.",
+     "a11yRetry": "Die Aufgabe wiederholen. Alle Eingaben werden zurückgesetzt und die Aufgabe wird erneut gestartet.",
+     "a11yCheckingModeHeader": "Überprüfen-Modus aktiv",
+     "confirmCheck": {
+      "header": "Beenden?",
+      "body": "Ganz sicher beenden?",
+      "cancelLabel": "Abbrechen",
+      "confirmLabel": "Beenden"
+     },
+     "confirmRetry": {
+      "header": "Wiederholen?",
+      "body": "Ganz sicher wiederholen?",
+      "cancelLabel": "Abbrechen",
+      "confirmLabel": "Bestätigen"
+     },
+     "questions": [
+      "<p>asdfsdajfiasdjfadf *asdfdas*s</p>"
+     ]
+    },
+    "library": "H5P.Blanks 1.14",
+    "metadata": {
+     "contentType": "Fill in the Blanks",
+     "license": "U",
+     "title": "Unbenannt: Fill in the Blanks",
+     "authors": [],
+     "changes": [],
+     "extraTitle": "Unbenannt: Fill in the Blanks"
+    },
+    "subContentId": "eff430c5-a046-414e-9969-97b84ce0b0ef"
+   }
+  ]
+ }
+}

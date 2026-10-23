@@ -1,0 +1,87 @@
+{
+ "library": "H5P.InteractiveBook 1.15",
+ "params": {
+  "showCoverPage": false,
+  "bookCover": {
+   "coverDescription": "<p style=\"text-align: center;\"></p>",
+   "coverMedium": {
+    "params": {}
+   }
+  },
+  "chapters": [
+   {
+    "params": {
+     "content": [
+      {
+       "content": {
+        "params": {}
+       },
+       "useSeparator": "auto"
+      },
+      {
+       "content": {
+        "params": {}
+       },
+       "useSeparator": "auto"
+      }
+     ]
+    },
+    "library": "H5P.Column 1.22",
+    "subContentId": "28cbbeea-3360-42f2-b62b-16772c388ef1",
+    "metadata": {
+     "contentType": "Page",
+     "license": "U",
+     "title": "Unbenannt: Page",
+     "authors": [],
+     "changes": [],
+     "extraTitle": "Unbenannt: Page"
+    }
+   }
+  ],
+  "behaviour": {
+   "baseColor": "#1768c4",
+   "defaultTableOfContents": true,
+   "progressIndicators": true,
+   "progressAuto": true,
+   "displaySummary": true,
+   "enableRetry": true
+  },
+  "read": "Öffnen",
+  "displayTOC": "Inhaltsverzeichnis anzeigen",
+  "hideTOC": "Inhaltsverzeichnis ausblenden",
+  "page": "Page",
+  "next": "Next",
+  "nextPage": "Nächste Seite",
+  "previous": "Previous",
+  "previousPage": "Vorherige Seite",
+  "chapterCompleted": "Seite abgeschlossen!",
+  "partCompleted": "@pages von @total Seiten abgeschlossen",
+  "incompleteChapter": "Unvollständige Seite",
+  "navigateToTop": "Nach oben springen",
+  "markAsFinished": "Ich habe diese Seite abgeschlossen",
+  "fullscreen": "Vollbild",
+  "exitFullscreen": "Vollbild beenden",
+  "bookProgressSubtext": "@count von @total Seiten",
+  "interactionsProgressSubtext": "@count von @total Interaktionen",
+  "submitReport": "Report absenden",
+  "restartLabel": "Neustart",
+  "summaryHeader": "Zusammenfassung",
+  "allInteractions": "Alle Interaktionen",
+  "unansweredInteractions": "Unbeantwortete Interaktionen",
+  "scoreText": "@score / @maxscore",
+  "leftOutOfTotalCompleted": "@left von @max Interaktionen abgeschlossen",
+  "noInteractions": "Keine Interaktionen",
+  "score": "Punkte",
+  "summaryAndSubmit": "Zusammenfassung und Einsenden",
+  "noChapterInteractionBoldText": "Du hast noch keine Seiten bearbeitet.",
+  "noChapterInteractionText": "Du musst wenigstens eine Seite bearbeiten, um die Zusammenfassung zu sehen.",
+  "yourAnswersAreSubmittedForReview": "Deine Antworten wurden zur Begutachtung versendet!",
+  "bookProgress": "Buchfortschritt",
+  "interactionsProgress": "Interaktionsfortschritt",
+  "totalScoreLabel": "Gesamtpunktzahl",
+  "a11y": {
+   "progress": "Seite @page von @total.",
+   "menu": "Inhaltsverzeichnis ein- bzw. ausschalten"
+  }
+ }
+}

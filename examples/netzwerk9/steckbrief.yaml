@@ -1,0 +1,13 @@
+kurs:
+  titel: "Informatik 9 – Netzwerkkomponenten"
+  kurzname: "Netzwerk9"
+  beschreibung: "<p>Kurze Einheit: Wie kommt das Internet von der Wand aufs Handy? Lesebuch, Lernkarten, Zuordnen, Quiz. Ca. 25 Minuten.</p>"
+  fach: "Informatik"
+  jahrgangsstufe: "9"
+  einsatz: begleitend
+  steuerung: ki
+  umfang_min: 25
+  design: {stil: schlicht, banner: false, emoji_marker: false}
+  material: ["1. Netzwerkkomponenten.pptx", "Heftbilder Netzwerkkomponenten.pdf"]
+teile:
+  netz: {status: pending, titel: "Netzwerkkomponenten – von der Wand aufs Handy", dauer_min: 25, formate: [lesebuch, lernkarten, zuordnen, quiz]}

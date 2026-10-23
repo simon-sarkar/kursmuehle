@@ -1,0 +1,79 @@
+kurs:
+  titel: Alltagskompetenz – Probleme selbst lösen (Selbstlernkurs 8–10)
+  kurzname: Alltagskompetenz
+  beschreibung: <p>Selbstlernkurs für die Jahrgangsstufen 8–10 im fiktiven Fach Alltagskompetenz. Themenfeld 1 vollständig, Themenfelder 2–8 exemplarisch.</p>
+  fach: Alltagskompetenz (fiktiv)
+  jahrgangsstufe: 8–10
+  einsatz: selbstlernkurs
+  ton: sachlich-jugendnah, Du-Ansprache, keine Running Gags
+  umfang_min: 100
+  badge: Problemlösen
+  farbe: '#1D5FD1'
+  design:
+    stil: gestaltet
+    banner: true
+    farbe_je_abschnitt: true
+    emoji_marker: false
+    varianten: false
+teile:
+  start:
+    status: delivered
+    titel: 'Allgemeines: Banner, So funktioniert der Kurs, Selbsteinschätzung vorher'
+  tf1:
+    status: delivered
+    titel: 'TF 1 Kopf: Banner + Fahrplan'
+  le1:
+    status: delivered
+    titel: LE 1 Das Problem zerlegen
+    dauer_min: 20
+    formate:
+    - lesebuch
+    - lernkarten
+    - zuordnen
+  le2:
+    status: delivered
+    titel: LE 2 Suchen und Quellen prüfen
+    dauer_min: 25
+    formate:
+    - lesebuch
+    - zuordnen
+    - quiz
+  le3:
+    status: delivered
+    titel: LE 3 KI als Werkzeug
+    dauer_min: 25
+    formate:
+    - lesebuch
+    - lernkarten
+    - quiz
+    - lueckentext
+  le4:
+    status: delivered
+    titel: LE 4 Der Ernstfall
+    dauer_min: 30
+    formate:
+    - geschichte
+    - abschlusstest
+    - selbsteinschaetzung
+    - praxis
+  tf2:
+    status: delivered
+    titel: TF 2 Digitale Selbstbestimmung (exemplarisch)
+  tf3:
+    status: delivered
+    titel: TF 3 Mentale Gesundheit (exemplarisch + Beispielquiz)
+  tf4:
+    status: delivered
+    titel: TF 4 Körper, Ernährung, Gesundheitssystem (exemplarisch)
+  tf5:
+    status: delivered
+    titel: TF 5 Geld und Finanzen (exemplarisch + Beispielquiz)
+  tf6:
+    status: delivered
+    titel: TF 6 Konsum, Verträge, Rechte (exemplarisch)
+  tf7:
+    status: delivered
+    titel: TF 7 Wohnen, Haushalt, Bürokratie (exemplarisch)
+  tf8:
+    status: delivered
+    titel: TF 8 Ich und die anderen (exemplarisch)
