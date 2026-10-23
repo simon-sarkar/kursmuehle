@@ -21,6 +21,7 @@
   header img { width: 88px; height: 88px; flex: none; }
   h1 { margin: 0; font-size: 2.1rem; letter-spacing: -0.5px; line-height: 1.1; }
   .pitch { margin: 4px 0 0; font-size: 1.15rem; color: var(--grau); }
+  .unterzeile { margin: 4px 0 0; font-size: 1rem; }
   h2 { font-size: 1.35rem; margin: 40px 0 12px; padding-top: 12px; border-top: 1px solid var(--linie); }
   p { margin: 0 0 12px; }
   .knopf { display: inline-block; background: var(--ocker); color: var(--anthrazit); font-weight: 600; text-decoration: none;
@@ -50,13 +51,15 @@
     <div>
       <h1>Kursmühle</h1>
       <p class="pitch">Kurse wiederherstellen, die es noch nie gab.</p>
+      <p class="unterzeile">Kurse für die ByCS-Lernplattform aus einer Beschreibung oder eigenem Material – mit gängigen KI-Assistenten.</p>
     </div>
   </header>
 
-  <p>Ein KI-Assistent baut aus einer Beschreibung oder aus eigenem Unterrichtsmaterial eine Kurssicherung
+  <p>Der KI-Assistent schreibt den Kurs als kurzes Drehbuch, ein Generator baut daraus eine Kurssicherung
   (<code>.mbz</code>) für die <a href="https://www.bycs.de/">ByCS-Lernplattform</a> (Bayern, Moodle-basiert, früher mebis).
-  Die Lehrkraft liest vorher ein kurzes Drehbuch, gibt es frei und stellt die Sicherung im eigenen Kurs wieder her.
-  Abschnitte, Lesetexte, Übungen, Tests, Badges und Kursbild kommen fertig an.</p>
+  Die Lehrkraft liest vorher das Drehbuch, gibt es frei und stellt die Sicherung im eigenen Kurs wieder her.
+  Abschnitte, Lesetexte, Übungen, Tests und Kursbild sind in der Sicherung enthalten; Glossareinträge und Badge brauchen
+  nach dem Import je einen Handgriff.</p>
 
   <p>
     <a class="knopf" href="https://github.com/simon-sarkar/kursmuehle/releases/latest/download/kursmuehle.zip">Skill-Zip herunterladen</a>
@@ -72,22 +75,31 @@
       <ol>
         <li>Skill-Zip herunterladen.</li>
         <li>Zip hochladen und schreiben: „Entpacke das und lies SKILL.md.“ Dahinter den Kurswunsch, zum Beispiel
-          „Mach mir eine Einheit zu Bruchrechnen für Jgst 6, 45 Minuten, Selbstlernkurs.“</li>
-        <li>Drehbuch lesen, „passt“ sagen, <code>.mbz</code> herunterladen.</li>
+          „Mach mir eine Einheit zu Bruchrechnen für Jgst 6, 45 Minuten, Selbstlernkurs. Zeig mir zuerst das Drehbuch.“</li>
+        <li>Drehbuch lesen, „passt“ sagen, <code>.mbz</code> herunterladen und <a href="#wiederherstellen">wiederherstellen</a>.</li>
       </ol>
-      <p>Code-Ausführung muss im Assistenten eingeschaltet sein.</p>
+      <p>Der Assistent braucht Code-Ausführung. Bei ChatGPT gehört sie je nach Version als „Datenanalyse“ zum
+      Standardmodell, bei Claude steht sie je nach Version in den Einstellungen unter „Dateien erstellen und analysieren“.</p>
     </div>
     <div class="karte">
       <h3>ByLKI oder AIS-Chat</h3>
       <p>Diese Angebote führen keinen Code aus. Eine Fassung im Browser, die aus dem Drehbuch die Sicherung baut, kommt mit
-      Version 2.0. Bis dahin: Drehbuch dort schreiben lassen, Bau mit ChatGPT, Claude oder einem Agenten.</p>
+      Version 2.0.</p>
+      <p>Bis dahin, noch nicht getestet: <code>SKILL.md</code>, <code>references/intake.md</code> und
+      <code>references/kursdatei.md</code> aus dem Skill-Zip als Text in den Chat einfügen und das Drehbuch schreiben
+      lassen. Den Bau übernimmt dann ein Assistent mit Code-Ausführung oder ab 2.0 die Fassung im Browser.</p>
     </div>
     <div class="karte">
       <h3>Claude Code, Codex, eigener Agent</h3>
       <p>Repository klonen und dem Agenten die Seite <a href="https://github.com/simon-sarkar/kursmuehle/blob/main/docs/fortgeschrittene.md">für Fortgeschrittene</a>
-      geben: eigene Kurssicherung als Vorlage, eigene Designvorlagen, Textbausteine und Fachregeln, Zip neu packen.</p>
+      geben: eigene Kurssicherung als Vorlage, eigene Designvorlagen, Textbausteine und Fachregeln, Zip neu packen.
+      Auf dem eigenen Rechner nötig: Python 3.11+, PyYAML und Pillow.</p>
     </div>
   </div>
+  <p class="hinweis">Keine Schülerdaten, keine Namen oder Fotos von Personen ins Material. Ob private KI-Konten dienstlich
+  genutzt werden dürfen, regeln Schule und Sachaufwandsträger.</p>
+  <p>Mit 1.0 getestet in Claude Code (Agent mit Dateizugriff). Durchläufe in ChatGPT und claude.ai mit 1.0 stehen aus;
+  mit Version 0.1 lief ein Kurs in ChatGPT. Ob ein kostenloses Konto reicht, ist offen.</p>
 
   <h2 id="was">Was dabei herauskommt</h2>
   <ul>
@@ -96,12 +108,13 @@
       Geschichte mit Entscheidungen; Test mit Fragensammlung, Aufgabe, Forum, Abstimmung, Glossar, Datei und Verzeichnis.</li>
     <li>Übungen auf Wunsch direkt auf der Kursseite ohne Nachladen, oder eine ganze Einheit als eine Seite mit Kapiteln.</li>
     <li>Kursbanner und Kursbild, Badge am Ende, Nachlieferungen in einen laufenden Kurs, Freigabe nach Datum.</li>
-    <li>Vor dem Drehbuch prüft der Assistent gegen zehn didaktische Standardannahmen und eine Liste von Sprachmarkern.</li>
+    <li>Nachdem der Assistent das Drehbuch geschrieben hat und bevor die Lehrkraft es sieht, ist er angewiesen, es gegen
+      zehn didaktische Standardannahmen und eine Liste von Sprachmarkern zu prüfen.</li>
   </ul>
 
   <h2 id="wiederherstellen">Wiederherstellen auf der Plattform</h2>
   <ol>
-    <li>Kurs öffnen → Mehr → Kurs wiederherstellen → Datei hochladen → Wiederherstellen.</li>
+    <li>Kurs öffnen (beim ersten Mal einen Testkurs) → Mehr → Kurs wiederherstellen → Datei hochladen → Wiederherstellen.</li>
     <li>Bestätigen: nur Weiter.</li>
     <li>Ziel: als neuen Kurs in eine Kategorie; oder in diesen Kurs mit „löschen und dann wiederherstellen“ (nur so kommt
       ein anderes Kursformat mit); oder „zusammenführen“ für Nachlieferungen, die hinten anhängen.</li>
@@ -109,14 +122,16 @@
     <li>Danach Glossar-Einträge importieren (Glossar → Mehr → Einträge importieren, XML-Datei neben der Sicherung) und
       Badge aktivieren.</li>
   </ol>
-  <p class="hinweis">Übungs-Textfelder nicht mit „Einstellungen bearbeiten“ speichern: der Editor entfernt Skript und Stil.
+  <p class="hinweis">Übungs-Textfelder nicht mit „Einstellungen bearbeiten“ speichern, denn der Editor entfernt Skript und Stil.
   Änderungen laufen über das Drehbuch und eine neue Sicherung. Eine Sicherung darf höchstens 500 MB haben.</p>
+  <p>Ausführlich mit allen Varianten: <a href="https://github.com/simon-sarkar/kursmuehle#wiederherstellen">README, Abschnitt Wiederherstellen</a>.</p>
 
   <h2 id="rueckmeldung">Rückmeldung</h2>
-  <!-- Autor: im Link darunter die Adresse des Formulars oder der Projektadresse eintragen (href) -->
-  <p>Ohne GitHub-Konto: <a id="feedback-link" href="#rueckmeldung">Rückmeldung senden</a>.
-  Mit GitHub-Konto: <a href="https://github.com/simon-sarkar/kursmuehle/issues">Issue anlegen</a>.
-  Am meisten hilft: Fach, Jahrgangsstufe, Assistent, Dauer, und wo es gehakt hat.
+  <p>Der Autor möchte wissen, ob Kursmühle im Unterrichtsalltag hilft und was fehlt.
+  Rückmeldungen per E-Mail an <a href="mailto:kursmuehle@pm.me?subject=R%C3%BCckmeldung%20Kursm%C3%BChle">kursmuehle@pm.me</a>,
+  ein GitHub-Konto ist dafür nicht nötig. Wer am Code mitarbeitet, kann zusätzlich ein
+  <a href="https://github.com/simon-sarkar/kursmuehle/issues">Issue anlegen</a>.
+  Am meisten hilft, wenn Fach, Jahrgangsstufe, Assistent, Dauer und die Stelle genannt sind, an der es gehakt hat.
   Gesammelte Rückmeldungen stehen in <a href="https://github.com/simon-sarkar/kursmuehle/blob/main/docs/erfahrungen.md">Erfahrungen</a>.</p>
 
   <footer>

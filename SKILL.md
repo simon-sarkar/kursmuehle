@@ -1,12 +1,13 @@
 ---
 name: kursmuehle
-description: Baut komplette Kurse für die ByCS-Lernplattform (Bayern, Moodle-basiert, früher mebis) als importierbare .mbz-Sicherung – Abschnitte, Seiten, H5P-Inhalte (Interaktiver Inhalt), Tests, Aufgaben, Foren, Bücher, Abstimmungen, Glossare, Dateien, Umfragen, Badges – aus einer Kursbeschreibung oder einem Fragen-Intake. Verwenden, wenn jemand einen ByCS-/mebis-/Moodle-Kurs, eine Kurssicherung, H5P-Aktivitäten für die Lernplattform oder eine Nachlieferung (Delta) zu einem bestehenden Kurs will.
+description: Baut komplette Kurse für die ByCS-Lernplattform (Bayern, Moodle-basiert, früher mebis) als importierbare .mbz-Sicherung – Abschnitte, Seiten, H5P-Inhalte (Interaktiver Inhalt), Tests, Aufgaben, Foren, Bücher, Abstimmungen, Glossare, Dateien, Umfragen, Badges – aus einer Kursbeschreibung oder einem Fragen-Intake. Verwenden, wenn jemand einen Kurs für die ByCS-Lernplattform (früher mebis) oder einen Moodle-Kurs, eine Kurssicherung, H5P-Aktivitäten für die Lernplattform oder eine Nachlieferung (Delta) zu einem bestehenden Kurs will.
 ---
 
 # ByCS-Lernplattform-Kurs generieren
 
-Ergebnis ist immer eine `.mbz`, die die Lehrkraft über Kurs → Mehr → Kurs wiederherstellen einspielt (Anleitung unten).
-Code-Ausführung (Python 3.11+, PyYAML, Pillow; Playwright+Chromium nur für Bilder) ist Voraussetzung.
+Ergebnis ist eine `.mbz`, die die Lehrkraft über Kurs → Mehr → Kurs wiederherstellen einspielt (Anleitung unten); ohne
+Code-Ausführung sind es Drehbuch und Steckbrief (Selbstabfrage).
+Für den Bau ist Code-Ausführung (Python 3.11+, PyYAML, Pillow; Playwright+Chromium nur für Bilder) Voraussetzung.
 
 **Regel vor allem anderen:** Ein Textfeld mit Übungsblock (Textfeld-Modus, `website: textfeld`) darf die Lehrkraft nie mit
 „Einstellungen bearbeiten“ öffnen und speichern. Der Editor der Plattform entfernt Skript und Stil, die Übung ist danach ein
@@ -30,7 +31,8 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
 1. **Einstieg** nach `references/intake.md`: erste Nachricht „Womit starten wir?“ mit fünf Wegen (nur Thema · Material ·
    Material + Fragen · Fragen · bestehenden Kurs erweitern), Steuerungsgrad (entscheide / Vorschläge freigeben / KI macht
    alles) und Rahmen in einem Satz. Nennt die erste Nachricht schon Thema, Jahrgangsstufe, Einsatz und Minuten, entfällt
-   diese Frage: Weg „nur Thema“, KI macht alles, sofort bauen. Sonst höchstens **eine Fragerunde** (Kursformat mit
+   diese Frage: Weg „nur Thema“, KI macht alles, sofort bauen; verlangt die Lehrkraft das Drehbuch zuerst („Zeig mir zuerst das
+   Drehbuch“), Drehbuch zeigen und nach der Freigabe bauen. Sonst höchstens **eine Fragerunde** (Kursformat mit
    Empfehlung, Umfang, Abschluss, Gestaltung; jede Frage mit Vorschlag) und ein Gliederungsvorschlag. Bei „nur Thema“ keine
    Rückfrage: Annahmen stehen als `Angenommen:` oben im Drehbuch. Ergebnis: `steckbrief.yaml` (Schema in intake.md §6).
 2. **Drehbuch = Kursdatei** (intake.md §5, Referenz `references/kursdatei.md`): gesamter Inhalt als `kurs.md` im
@@ -60,8 +62,9 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
    `python3 scripts/check.py <datei.mbz>`. Wenn möglich Rendertest mit h5p-standalone und den Bibliotheken aus §B.2.
 5. **Lieferung**: `.mbz`, dazu die Wiederherstellungsanleitung (unten) in der passenden Variante (neuer Kurs, in diesen
    Kurs, Delta), bei Glossar der XML-Schritt, bei Badge das Aktivieren, bei Übungsblöcken im Textfeld die Regel von oben.
-   Steckbrief-Teile erst auf `delivered`, wenn die Lehrkraft den Import bestätigt hat. Ein Satz zum Schluss, einmal je Kurs: Rückmeldungen zum Skill nimmt die Projektseite
-   entgegen (https://simon-sarkar.github.io/kursmuehle/, Abschnitt Rückmeldung).
+   Steckbrief-Teile erst auf `delivered`, wenn die Lehrkraft den Import bestätigt hat. Ein Satz zum Schluss, einmal je
+   Kurs: Der Autor möchte wissen, ob Kursmühle im Unterrichtsalltag hilft und was fehlt; Rückmeldung per E-Mail an
+   kursmuehle@pm.me (wer am Code mitarbeitet, auch als Issue auf GitHub).
 
 ## Wiederherstellen auf der ByCS-Lernplattform (Text für die Lieferung)
 
@@ -105,7 +108,8 @@ Eine Sicherung darf höchstens 500 MB haben; `check.py` warnt ab 400 MB (Bilder 
 - `references/kursdatei.md` – vollständige Referenz der Kursdatei (alle Typen, Angaben, Bausteine, Grenzen).
 - `scripts/` – Generator (`build.py`, `check.py`, `banner.py`); die übrigen Dateien dort und in `references/` sind
   Entwicklerdoku und Code, im Einsatz nicht zu lesen.
-- `examples/netzwerk9/` – minimaler Beispielkurs (eine Einheit, 25 min, aus Folien + Fotos einer Lehrkraft): Vorbild für neue Kurse.
+- `examples/netzwerk9/` – minimaler Beispielkurs (eine Einheit, 25 min; die Bilder sind einfache, selbst erzeugte
+  Schemazeichnungen): Vorbild für neue Kurse.
 - `examples/alltagskompetenz/` – großer Beispielkurs (Tech-Demo, Unterabschnitte, Lesebuch, Geschichte, Badge, Delta).
 - `examples/module/` – ein Abschnitt mit den Moodle-Modulen Buch, Datei, Verzeichnis, Glossar, Forum, Abstimmung, Aufgabe, Test.
   `python3 scripts/build.py --content examples/<kurs>` baut sie.
@@ -116,12 +120,14 @@ Eine Sicherung darf höchstens 500 MB haben; `check.py` warnt ab 400 MB (Bilder 
 Kursformate Themen, Kacheln, Wochen, Ein-Themen, Komprimiert, Einzelaktivität (keine Lernlandkarte, kein Mimo); Moodle-Module
 nur Test (MC, RF, Kurzantwort), Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar (keine Lektion, Wiki, Datenbank,
 Workshop); H5P nur die Typen aus §B.2; geänderte Teile eines Kurses lassen sich per Sicherung nicht aktualisieren (löschen +
-Delta). Website-Modus: Übungen ohne Bewertung, Badge-Voraussetzungen bleiben Aktivitäten (Import-Test offen).
+Delta). Website-Modus: Übungen ohne Bewertung, Badge-Voraussetzungen bleiben Aktivitäten; Vollbild und neues Fenster
+nicht per Import geprüft.
 Textfeld-Modus: Die Moodle-App führt Textfeld-JS möglicherweise nicht aus (die Übung zeigt dann einen Hinweis); große
 Inline-Blöcke blähen die Kursseite (je Block etwa 10 KB Stil und Skript, `check.py` warnt ab 60 KB); die
 Nutzungsbedingungen der Plattform erlauben Lehrkräften JavaScript (4.1.3). Probe am 23.10.: JavaScript läuft im
-Textfeld (Themenformat); ein im Editor gespeichertes Übungs-Textfeld verliert Skript und Stil (Regel oben).
+Textfeld (Themenformat), auch mehrere Blöcke; ein im Editor gespeichertes Übungs-Textfeld verliert Skript und Stil
+(Regel oben).
 Delta-Zusammenführen hängt neue Abschnitte hinten an (verifiziert 2026-10-23). Glossareinträge kommen per XML-Import nach der
-Wiederherstellung. Per Import verifiziert: Themen- und Kachelformat mit Kachelbildern, Test, Buch, Textfeld-Modus
-(Stand 23.10.); die übrigen Kursformate und Module beim ersten Einsatz in einen Testkurs importieren. Sicherungen über
-500 MB nimmt die Plattform nicht an.
+Wiederherstellung. Per Import verifiziert (23.10.): Themen- und Kachelformat mit Kachelbildern, alle acht Moodle-Module,
+Website-Modus eingebettet, Textfeld-Modus; Wochen, Ein-Themen, Komprimiert und Einzelaktivität beim ersten Einsatz in
+einen Testkurs importieren. Sicherungen über 500 MB nimmt die Plattform nicht an.

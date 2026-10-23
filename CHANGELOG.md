@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.1 – 2026-10-23
+
+- Beispielbilder in `examples/netzwerk9/assets/` durch einfache, selbst erzeugte Schemazeichnungen ersetzt.
+- README, Projektseite, `SKILL.md`, `docs/fortgeschrittene.md` und ROADMAP nach dem Gutachten zur Außendarstellung
+  (`docs/entwicklung/protokolle/README_gutachten_1.0.md`) überarbeitet: Teststand ehrlich (mit 1.0 nur Claude Code),
+  Beispielsatz mit „Zeig mir zuerst das Drehbuch.“, Datenschutzsatz, Schritt für ByLKI und AIS-Chat, Begriffe,
+  Wiederherstellen direkt hinter „Drei Wege“, Richtwerte korrigiert.
+- Rückmeldeadresse kursmuehle@pm.me auf Projektseite, in README und am Ende des Ablaufs in `SKILL.md`; der Platzhalter-Link
+  ist entfernt.
+- Import-Protokoll `docs/entwicklung/protokolle/import-tests-2-5.md` (Import-Tests 2–5, 23.10.2026); README, ROADMAP und
+  `SKILL.md` beziehen ihre Import-Stände darauf.
+
 ## 1.0 – 2026-10-23 (AP9: Fremdtest, Release-Zip, Projektseite, Wiederherstellungsanleitung)
 
 - Fremdtest (AP9): ein frischer Assistent der Sonnet-Klasse bekam nur das Release-Zip und den Satz „Mach mir eine Einheit

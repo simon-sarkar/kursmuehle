@@ -5,6 +5,10 @@ Agent). Lehrkräfte ohne Agenten brauchen sie nicht; für sie reicht das Skill-Z
 
 ## 1. Repo klonen, Agent einweisen
 
+Anders als beim Upload in ChatGPT oder Claude läuft der Generator hier auf dem eigenen Rechner. Nötig sind Python 3.11+
+mit PyYAML und Pillow (`pip install pyyaml pillow`); Playwright mit Chromium nur für gerenderte Bilder (`scripts/banner.py`)
+und die Render-Tests.
+
 ```bash
 git clone https://github.com/simon-sarkar/kursmuehle.git
 cd kursmuehle
@@ -17,9 +21,10 @@ Arbeit am Generator selbst, nicht für den Kursbau.
 
 ## 2. Eigene Kurssicherung als Vorlage
 
-Wer schon Kurse auf der Plattform hat, kann eine davon als Vorbild nehmen: Der Agent analysiert die Sicherung lokal und
-leitet daraus Steckbrief und Designvorlage ab. Die Sicherung bleibt auf dem eigenen Rechner. Sie geht nie ins Repo, nie
-in einen Pull Request und nie in einen Beispielordner (Nutzungsbedingungen der Plattform: keine Weitergabe an Dritte;
+Wer schon Kurse auf der Plattform hat, kann eine davon als Vorbild nehmen: Der Agent entpackt die Sicherung auf dem eigenen Rechner und
+leitet daraus Steckbrief und Designvorlage ab. Die Datei bleibt lokal; was der Agent daraus liest, geht an den
+Modellanbieter. Deshalb nur eigene Kurse nehmen, gesichert ohne Nutzerdaten. Die Sicherung geht nie ins Repo, nie in
+einen Pull Request und nie in einen Beispielordner (Nutzungsbedingungen der Plattform: keine Weitergabe an Dritte;
 außerdem enthält sie Namen und IDs).
 
 Ablauf:

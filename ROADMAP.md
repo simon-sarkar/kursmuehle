@@ -1,8 +1,9 @@
 # Roadmap
 
 Stand 2026-10-23. Version 1.0 ist erschienen (AP9); die Punkte unter „Umfang und Reihenfolge“ definieren, was **1.0**
-heißt, und bleiben als Nachweis stehen. Offen für 1.0 sind nur noch die Durchläufe des Autors auf der Plattform und mit
-fremden Konten (`docs/entwicklung/protokolle/`).
+heißt, und bleiben als Nachweis stehen. Import getestet 23.10.2026, siehe
+[Protokoll](docs/entwicklung/protokolle/import-tests-2-5.md) (Import-Tests 2–5). Offen sind der Import-Test 1.0 (Wochen, Ein-Themen, Komprimiert, Einzelaktivität, Fremdtest-Kurs) und die Durchläufe
+mit ChatGPT, claude.ai, kostenlosen Konten und ByLKI (`docs/entwicklung/protokolle/`).
 Reihenfolge innerhalb der Blöcke ist Priorität. Jeder Punkt braucht in der Regel genau einmal einen
 Test-Export von der Plattform (leerer Kurs mit dem Element), danach gilt die Erweiterung für alle.
 
@@ -37,10 +38,11 @@ Vorgestellt wurde 0.1 bereits, Durchlauf mit ChatGPT (inklusive selbst generiert
    ein zusammenhängender Block ohne Plattform-Export.
 4. **Die meistgenutzten Module und das Kachelformat** – Test, Aufgabe, Datei/Verzeichnis, Forum, Buch;
    Kursformat Kacheln. Braucht je einen Test-Export (Punkte 2, 3). Alles Weitere nach 1.0.
-   Module seit 0.6 (AP5), Kursformate seit 0.7 (AP6) gebaut; Import-Tests offen.
+   Module seit 0.6 (AP5), Kursformate seit 0.7 (AP6) gebaut. Import getestet 23.10.2026, siehe
+   [Protokoll](docs/entwicklung/protokolle/import-tests-2-5.md), für alle acht Module und das Kachelformat; die übrigen Kursformate offen.
 5. **Kern-H5P im Textfeld** – Fünf-Minuten-Test auf der Plattform; Ergebnis entscheidet (Punkt 7). JS-Probe 23.10.:
    JavaScript läuft im Textfeld; seit 0.9.1 (AP7b) Übungen als Block im Textfeld (Website-Renderer ohne iframe).
-   Der Kern-H5P-Filter ist nicht geprüft.
+   Probe 3 (zwei Blöcke in einem Textfeld) bestanden (Import-Test 5). Der Kern-H5P-Filter ist nicht geprüft.
 6. **Website-Modus als Vorlage** – eine HTML-Ressource mit Navigation, Inhalten und einem kleinen
    JS-Quiz; eigene Spiele und Simulationen als Beispiele erst nach 1.0 (Punkt 7). Seit 0.8 (AP7) gebaut; JS-Probe
    23.10. bestanden (eingebettete Datei läuft in voller Rahmenhöhe); Vollbild und Pop-up auf der Plattform offen.
@@ -70,13 +72,16 @@ bis zum Drehbuch. Nachfragen nur, wenn eine falsche Annahme teuer wäre.
 Themen (0.1) → **Kacheln** (1.0), danach Wochen, Einzelaktivität, Ein-Themen, Komprimiert – je ein Test-Export für
 `course.xml`-Felder und Format-Optionen; Kachelbilder und Kachelfarben aus Kursdatei und Steckbrief. Seit 0.7 (AP6)
 gebaut: Kacheln (Kachelbild/-icon je Abschnitt, Grundfarbe aus der Akzentfarbe), Wochen, Ein-Themen, Komprimiert,
-Einzelaktivität; Import-Test offen. Kein Grid auf der Plattform; Lernlandkarte und Mimo nach 1.0.
+Einzelaktivität. Kacheln mit textfreien Kachelbildern importiert (Import-Tests 3 und 4, siehe
+[Protokoll](docs/entwicklung/protokolle/import-tests-2-5.md)); Wochen, Ein-Themen, Komprimiert und Einzelaktivität nicht per Import geprüft. Kein Grid auf der Plattform; Lernlandkarte und
+Mimo nach 1.0.
 
 ### 3. Alle Modultypen
 Reihenfolge nach Nutzen: Test (mit Fragensammlung), Aufgabe, Forum, Buch, Glossar, Abstimmung,
 Datei/Verzeichnis, Kern-H5P-Aktivität, Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool.
 1.0 enthält Test, Aufgabe, Datei/Verzeichnis, Forum, Buch; der Rest folgt. Seit 0.6 (AP5) gebaut: Test (MC, Wahr/Falsch,
-Kurzantwort), Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar; Import-Test des Beispiels `examples/module` offen.
+Kurzantwort), Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar. Import getestet 23.10.2026 (Import-Test 2,
+siehe [Protokoll](docs/entwicklung/protokolle/import-tests-2-5.md)): alle acht laden.
 Import-Test 2 (0.6): Glossareinträge kommen nur mit Nutzerdaten an; seit 0.7 `users=1` nur für Glossare plus XML-Datei
 zum Einträge-Import als Ausweg. Nach Import-Test 3 (0.7) seit 0.8 users=0
 als Standard, XML-Import als fester Schritt, `--mit-nutzerdaten` optional.
@@ -97,29 +102,33 @@ Regel im Intake: kein Absatz länger als fünf Zeilen auf dem Handy.
 ### 6. Bilder sinnvoll
 - **Kursbanner** als erstes Element im Abschnitt 0 (großer optischer Unterschied) plus Kursbild.
 - **Bildgenerierung im Arbeitsschritt, wenn der Assistent es kann** (ChatGPT erzeugt Bilder direkt und
-  bindet sie ein – im Durchlauf vom 23.10. so gelaufen); kann er es nicht, liefert er Prompts, und die
+  bindet sie ein – im Durchlauf mit 0.1 so gelaufen); kann er es nicht, liefert er Prompts, und die
   Lehrkraft generiert selbst. Der Skill fragt die Fähigkeit ab, statt sie vorauszusetzen.
 - Abschnittsbilder/Kachelbilder, Fotos aus dem Material (Heftbilder, Folien) automatisch übernommen.
 - Wenige, große Bilder statt Deko.
 
 ### 7. One-Page-Darstellung ohne Ladezeiten
-Zwei Wege, beide 1.0:
+Geplant waren für 1.0 der Kern-H5P-Filter und die eigene Website. Geliefert sind die Website und an Stelle des Filters
+der Textfeld-Modus.
 - **Kern-H5P-Filter im Textfeld** (`.h5p` im Textfeld, inline gerendert, keine eigene Aktivität) für
-  Übungen zwischen Lesetexten; Bewertung/Abschluss bleiben Aktivitäten.
+  Übungen zwischen Lesetexten; Bewertung/Abschluss bleiben Aktivitäten. Nicht geliefert und nicht geprüft; an seiner
+  Stelle stehen seit 0.9.1 die Übungsblöcke im Textfeld (JavaScript, siehe unten).
 - **Vorab prüfen:** Die Nutzungsbedingungen erlauben Lehrkräften ausdrücklich Beiträge mit JavaScript (4.1.3).
   Filtert die Plattform JS aus Textfeldern von Lehrkraft-Konten wirklich? Wenn nicht, geht One-Page ohne
   den Umweg über eine HTML-Ressource. Gehört in den Fünf-Minuten-Test (seit 0.8 als Sicherung `tools/jsprobe`).
   Ergebnis 23.10.: Probe 1 bestanden, JavaScript im Textfeld läuft; Probe 2 bestanden, die eingebettete Datei läuft in
   voller Rahmenhöhe. Folge seit 0.9.1 (AP7b): Textfeld-Modus (`website: textfeld`), jede formative Übung ein Block im
   Textfeld; Rangfolge Textfeld für formative Übungen, Aktivität für Bewertetes, Website-Datei für eine ganze Einheit.
-  Offen: Probe 3 (zwei Blöcke auf einer Kursseite), Moodle-App, Kachelformat.
+  Probe 3 (zwei Blöcke auf einer Kursseite) bestanden (Import-Test 5, siehe
+  [Protokoll](docs/entwicklung/protokolle/import-tests-2-5.md)). Offen: Moodle-App; Textfeld-Übungen im Kachelformat, das Abschnitte nachlädt, sind nicht eigens protokolliert.
 - **Kurs als eigene Website:** eine HTML-Datei (Ressource, eingebettet oder Vollbild) mit eigener
   Navigation, Inhalten, Bildern und **eigenen Spielen/Interaktionen in JavaScript** (läuft in der
-  eingebetteten Datei, Probe 23.10.). Damit sind Custom-Spiele, Simulationen, Lernpfade möglich;
-  bewertete Teile laufen weiter über Plattform-Aktivitäten. Sky is the limit.
+  eingebetteten Datei, Probe 23.10.). Damit lassen sich eigene Spiele und Simulationen einbauen;
+  bewertete Teile laufen weiter über Plattform-Aktivitäten.
   Seit 0.8 (AP7) gebaut: Website-Modus je Abschnitt aus derselben Kursdatei (`website:`, `build.py --website`),
-  Startseite, Kapitelnavigation, Übungen mit Rückmeldung ohne Bewertung; Import-Test offen. Eigene Spiele und
-  Simulationen als Vorlagen nach 1.0.
+  Startseite, Kapitelnavigation, Übungen mit Rückmeldung ohne Bewertung. Import getestet 23.10.2026 (Import-Test 4,
+  eingebettet in voller Höhe, siehe [Protokoll](docs/entwicklung/protokolle/import-tests-2-5.md));
+  Vollbild und neues Fenster offen. Eigene Spiele und Simulationen als Vorlagen nach 1.0.
 
 ### 8. Drehbuch → Kurs ohne Handarbeit
 Parser, der das Drehbuch-Format direkt liest (seit 0.2: `kurs.md`, `gen/kursdatei.py`); „Vorausgesetzt:“-Zeile je Element;
@@ -128,7 +137,7 @@ Parser, der das Drehbuch-Format direkt liest (seit 0.2: `kurs.md`, `gen/kursdate
 ## 2.0 – Kursmühle im Browser
 Der Generator läuft als Webseite im Browser (Pyodide), ohne Server – Kursdatei einfügen,
   Bilder hineinziehen, `.mbz` herunterladen. Dann genügt jeder Chat, der Text schreiben kann (auch Angebote ohne
-  Code-Ausführung wie ByLKI oder der AIS-Chat, oder kostenlose Konten); die Gesprächsführung wird zu einem Prompt
+  Code-Ausführung wie ByLKI oder der AIS-Chat); die Gesprächsführung wird zu einem Prompt
   zum Kopieren. Voraussetzung ist das Kursdatei-Format aus AP1. Maßstab für 2.0: Ein einfacher, kostenloser Chatbot
   liefert damit einen verwertbaren Kurs.
   Plan: 2.0 erscheint als geschlossene Fassung (Webseite, Code gebündelt, Repo privat); 1.0 bleibt offen und
@@ -138,17 +147,18 @@ Der Generator läuft als Webseite im Browser (Pyodide), ohne Server – Kursdate
 
 ### 1.1 (vorgemerkt)
 - `scripts/vorlage_aus_sicherung.py`: Steckbrief und Designvorlage halbautomatisch aus einer fremden Kurssicherung ableiten
-  (Farben, Kursformat, Abschnittsaufbau, Elementmischung); die Sicherung bleibt lokal, nur die Ableitung geht in den
-  Kursordner. Handanleitung dafür steht seit 1.0 in `docs/fortgeschrittene.md`.
+  (Farben, Kursformat, Abschnittsaufbau, Elementmischung); die Datei bleibt lokal, nur die Ableitung geht in den
+  Kursordner. Was der Agent aus der Sicherung liest, geht an den Modellanbieter; deshalb nur eigene Kurse ohne
+  Nutzerdaten. Handanleitung dafür steht seit 1.0 in `docs/fortgeschrittene.md`.
 - Übungsblöcke, die ohne Skript sauber degradieren: Lernkarten als Tabelle, Quiz als Fragenliste mit Lösungen, damit die
   Moodle-App und ein im Editor gespeichertes Textfeld noch Inhalt zeigen statt eines leeren Gerüsts.
 - Website als SCORM-Paket für Bewertung und Abschluss ohne H5P (Punktestand und Abschluss der Website-Übungen im
   Bewertungsbuch).
 
 ### Später
-- Weitere Module (Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool) und Kursformate (Grid, Wochen, Einzelaktivität).
+- Weitere Module (Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool) und Kursformate (Lernlandkarte, Mimo; Grid
+  gibt es auf der Plattform nicht).
 - Beispiele für eigene Spiele und Simulationen im Website-Modus.
 - Rückmeldungen anderer Schulen einarbeiten. Test-Exporte bleiben privat (Nutzungsbedingungen der Plattform: keine Weitergabe von Dateien an Dritte); veröffentlicht werden nur die daraus abgeleiteten Schemata mit Platzhaltern.
 - Weitere H5P-Typen (Interactive Video, Image Hotspots, Memory, Game Map).
 - Andere Zugriffsbedingungen (Abschluss von X, Bewertung, Gruppe), Kursabschluss-Kriterien.
-- Lizenz für 1.0 prüfen (0.1 bleibt PolyForm Noncommercial / CC BY-NC-SA).

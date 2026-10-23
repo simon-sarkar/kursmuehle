@@ -2,21 +2,20 @@
 
 # Kursmühle – Lernplattform-Kurse aus einem Prompt
 
-![Version 1.0](docs/badge-version.svg) ![Status: Release](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
+![Version 1.0.1](docs/badge-version.svg) ![Status: Release](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
 
-**Version 1.0** (Stand 23.10.2026) · [Projektseite](https://simon-sarkar.github.io/kursmuehle/) ·
+**Version 1.0.1** (Stand 23.10.2026) · [Projektseite](https://simon-sarkar.github.io/kursmuehle/) ·
 [Skill-Zip herunterladen](https://github.com/simon-sarkar/kursmuehle/releases/latest/download/kursmuehle.zip) ·
 [`ROADMAP.md`](ROADMAP.md) · [`CHANGELOG.md`](CHANGELOG.md)
 
 **Ein KI-Assistent baut aus einer Beschreibung oder eigenem Unterrichtsmaterial eine importierbare Kurssicherung (`.mbz`) für die ByCS-Lernplattform.**
 
-## Was bringt das?
+## Wozu Kursmühle dient
 
 Einen Kurs in der [ByCS-Lernplattform](https://www.bycs.de/) (Bayern, Moodle-basiert,
-früher mebis) von Hand anzulegen heißt: jede Seite, jede H5P-Übung, jedes Quiz
-einzeln anklicken, befüllen und formatieren. Mit diesem Skill beschreibst du
-den Kurs oder gibst vorhandenes Material ab, und der KI-Assistent liefert eine
-fertige Kurssicherung zum Import.
+früher mebis) von Hand anzulegen heißt, jede Seite und jede Übung einzeln anzulegen und
+zu befüllen. Mit diesem Skill beschreibst du den Kurs oder gibst vorhandenes Material ab,
+und der KI-Assistent liefert eine Kurssicherung zum Import.
 
 - Ausgangsmaterial kann eine Beschreibung sein oder eigene Unterlagen: Folien,
   Arbeitsblätter, Notizen, Fotos von eigenem Material.
@@ -28,31 +27,77 @@ fertige Kurssicherung zum Import.
 ## Drei Wege
 
 - **Lehrkräfte mit ByLKI oder AIS-Chat:** Diese Angebote führen keinen Code aus. Für sie kommt mit Version 2.0 eine
-  Fassung im Browser, die aus dem Drehbuch die Sicherung baut (`ROADMAP.md`). Bis dahin: Drehbuch dort schreiben lassen und
-  den Bau in einem der beiden anderen Wege erledigen.
+  Fassung im Browser, die aus dem Drehbuch die Sicherung baut (`ROADMAP.md`). Bis dahin, noch nicht getestet:
+  `SKILL.md`, `references/intake.md` und `references/kursdatei.md` aus dem Skill-Zip als Text in den Chat einfügen und
+  das Drehbuch schreiben lassen; den Bau übernimmt dann ein Assistent mit Code-Ausführung oder ab 2.0 die Browser-Fassung.
 - **Lehrkräfte mit ChatGPT oder Claude:** das [Skill-Zip](https://github.com/simon-sarkar/kursmuehle/releases/latest/download/kursmuehle.zip)
   herunterladen und dem Assistenten geben.
-  - ChatGPT: ZIP hochladen und schreiben: „Entpacke das und lies SKILL.md.“ Dahinter den Kurswunsch in einem Satz.
-    Code-Ausführung muss eingeschaltet sein.
+  - ChatGPT: ZIP hochladen und schreiben: „Entpacke das und lies SKILL.md.“ Dahinter den Kurswunsch, zum Beispiel
+    „Mach mir eine Einheit zu Bruchrechnen für Jgst 6, 45 Minuten, Selbstlernkurs. Zeig mir zuerst das Drehbuch.“
+    Die Code-Ausführung gehört je nach Version als „Datenanalyse“ zum Standardmodell.
   - Claude: ZIP hochladen und denselben Satz schreiben, oder das ZIP in den Einstellungen als Skill anlegen; dann genügt
-    der Kurswunsch. Code-Ausführung muss eingeschaltet sein.
-  - Danach: Drehbuch lesen, „passt“ sagen, `.mbz` herunterladen, wiederherstellen (Anleitung unten).
+    der Kurswunsch. Die Code-Ausführung steht je nach Version in den Einstellungen unter „Dateien erstellen und
+    analysieren“ und muss eingeschaltet sein.
+  - Danach: Drehbuch lesen, „passt“ sagen, `.mbz` herunterladen, [wiederherstellen](#wiederherstellen).
+  - Keine Schülerdaten, keine Namen oder Fotos von Personen ins Material; ob private KI-Konten dienstlich genutzt
+    werden dürfen, regeln Schule und Sachaufwandsträger.
 - **Nutzer mit einem Agenten wie Claude Code oder Codex:** Repo klonen, dem Agenten `docs/fortgeschrittene.md` geben.
   Dort steht, wie eigene Kurssicherungen als Vorlage dienen, wie eigene Designvorlagen, Textbausteine und Fachregeln
-  entstehen und wie das Skill-Zip neu gepackt wird: [`docs/fortgeschrittene.md`](docs/fortgeschrittene.md).
+  entstehen und wie das Skill-Zip neu gepackt wird: [`docs/fortgeschrittene.md`](docs/fortgeschrittene.md). Dieser Weg
+  braucht auf dem eigenen Rechner Python 3.11+, PyYAML und Pillow.
 
-Auf dem eigenen Rechner wird nichts installiert. Die erste Frage des Assistenten lautet „Womit starten wir?“ mit fünf
-Wegen (nur ein Thema, eigenes Material, Material und Fragen, Fragen ohne Material, bestehenden Kurs erweitern); danach
-höchstens eine Fragerunde, jede Frage mit Vorschlag. Wer nur ein Thema nennt, bekommt keine Rückfrage, sondern das
-Drehbuch mit den Annahmen oben.
+Für ChatGPT und Claude wird auf dem eigenen Rechner nichts installiert. Die erste Frage des Assistenten lautet „Womit
+starten wir?“ mit fünf Wegen (nur ein Thema, eigenes Material, Material und Fragen, Fragen ohne Material, bestehenden
+Kurs erweitern); danach höchstens eine Fragerunde, jede Frage mit Vorschlag. Wer nur ein Thema nennt, bekommt keine
+Rückfrage; die Annahmen stehen oben im Drehbuch. Nennt der erste Satz Thema, Jahrgangsstufe, Einsatz und Minuten,
+entfällt auch die Einstiegsfrage, und der Assistent baut sofort; mit „Zeig mir zuerst das Drehbuch.“ baut er erst nach
+der Freigabe.
 
-> **Projektstatus: Version 1.0.**
-> Der Ablauf Intake → Drehbuch → Generator → Wiederherstellen ist an drei Beispielkursen durchgespielt, mit Claude Code,
-> mit ChatGPT und im Fremdtest mit einem frischen Assistenten der Sonnet-Klasse, der nur das Skill-Zip und einen Satz
-> bekam. Per Import auf der Plattform verifiziert sind Themen- und Kachelformat mit Kachelbildern, Test, Buch, Delta-
-> Sicherungen, Glossar-XML und der Textfeld-Modus; die übrigen Formate und Module baut der Generator nach den Schemata
-> der Plattform, beim ersten Einsatz in einen Testkurs importieren. Kein offizielles Produkt der Plattform; wenn sich
-> die Lernplattform ändert, wird der Skill angepasst.
+## Wiederherstellen
+
+So sieht der Import auf der ByCS-Lernplattform aus, Schritt für Schritt. Beim ersten Mal in einen Testkurs.
+
+1. **Kurs öffnen → Mehr → Kurs wiederherstellen.** Die `.mbz` in das Feld „Datei“ ziehen oder hochladen, dann
+   *Wiederherstellen*.
+2. **Schritt „Bestätigen“:** nur *Weiter*.
+3. **Schritt „Ziel“:** eine von drei Varianten.
+   - *Als neuen Kurs wiederherstellen* in eine Kategorie: der Kurs entsteht neu.
+   - *In diesen Kurs wiederherstellen* mit **löschen und dann wiederherstellen**: der Zielkurs wird geleert und neu
+     gefüllt. Nur so kommt ein anderes Kursformat (etwa Kacheln) mit.
+   - *In diesen Kurs wiederherstellen* mit **zusammenführen**: für Delta-Sicherungen, die neue Abschnitte hinten anhängen.
+4. **Schritt „Einstellungen“:** *Weiter*.
+5. **Schritt „Schema“:** bei einem Formatwechsel *Kurseinstellungen überschreiben: Ja*, sonst behält der Kurs sein
+   bisheriges Kursformat. *Weiter*.
+6. **Wiederherstellen.**
+7. **Danach:** Hat der Kurs ein Glossar mit Einträgen: Glossar → Mehr → *Einträge importieren* → die mitgelieferte Datei
+   `…_glossar.xml`. Badge aktivieren (Mehr → Badges). Kursbild prüfen. Probedurchlauf als Schüler/in.
+
+Eine Sicherung darf höchstens 500 MB haben; `scripts/check.py` warnt ab 400 MB. Wenn etwas nicht passt, reicht ein
+Screenshot an den Assistenten; er ändert die Inhalte und baut die Sicherung neu. Übungs-Textfelder nie im Editor der
+Plattform speichern (siehe [Vorbehalte beim Textfeld](#vorbehalte-beim-textfeld)).
+
+## Begriffe
+
+| Begriff | Bedeutung |
+|---|---|
+| Drehbuch, Kursdatei | Der ganze Kurs als kurzer Text (`kurs.md`), den die Lehrkraft gegenliest und aus dem der Generator die Sicherung baut. |
+| Steckbrief | Kurze Datei (`steckbrief.yaml`) mit den Rahmendaten des Kurses, etwa Jahrgangsstufe, Kursformat und Designvorlage. |
+| Delta-Sicherung | Sicherung nur mit neuen Abschnitten, die per *Zusammenführen* hinten an einen laufenden Kurs angehängt wird. |
+| Textfeld-Modus | Übungen stehen als Block direkt in einem Textfeld auf der Kursseite statt als eigene Aktivität. |
+| Website-Modus | Ein Abschnitt wird eine HTML-Seite mit Kapiteln und Übungen, die im Kurs eingebettet oder als eigenes Fenster erscheint. |
+| Skill-Zip | Die Datei `kursmuehle.zip` mit Anleitung, Generator und Beispielen, die man dem Assistenten gibt. |
+| Tokens | Die Einheit, in der KI-Anbieter Textmenge abrechnen und begrenzen; 90 KB Text sind grob 25 000 Tokens. |
+| Sonnet-Klasse | Die mittlere, günstigere Modellstufe von Anthropic (Claude Sonnet); der Skill soll ohne das teuerste Modell auskommen. |
+
+> **Projektstatus: Version 1.0.1.**
+> Mit 1.0 getestet in Claude Code (Agent mit Dateizugriff), im Fremdtest mit einem frischen Assistenten der
+> Sonnet-Klasse, der nur das Skill-Zip und einen Satz bekam. Durchläufe in ChatGPT und claude.ai mit 1.0 stehen aus; mit
+> Version 0.1 lief ein Kurs in ChatGPT. Ob ein kostenloses Konto reicht, ist offen.
+> Import getestet 23.10.2026, siehe [Protokoll](docs/entwicklung/protokolle/import-tests-2-5.md): Themen- und
+> Kachelformat mit Kachelbildern, alle acht Moodle-Module, Glossar-XML, Website-Modus (eingebettet) und Textfeld-Modus mit
+> mehreren Blöcken; Delta-Sicherungen seit 0.1. Nicht per Import geprüft sind die Formate Wochen, Ein-Themen, Komprimiert
+> und Einzelaktivität; sie beim ersten Einsatz in einen Testkurs importieren. Kein offizielles Produkt der Plattform;
+> wenn sich die Lernplattform ändert, wird der Skill angepasst.
 
 ## Systemübersicht
 
@@ -63,13 +108,15 @@ Drehbuch mit den Annahmen oben.
 - Das Drehbuch enthält den gesamten Kurs als kurzen Text mit Zeitschätzung
   je Element und Quellenmarkierung (aus dem Material / von der KI ergänzt).
   Dieselbe Datei ist die Kursdatei: Der Generator liest sie direkt, nichts
-  wird nach der Freigabe noch einmal abgetippt. Bevor die Lehrkraft das
-  Drehbuch sieht, prüft der Assistent es gegen zehn didaktische
-  Standardannahmen und eine Markerliste mit Proben (`references/intake.md` §3,
-  `references/qualitaet.md`); Zweck und Quelle je Element stehen nur im Drehbuch.
-- Die Sicherung ist nicht an einen Account gebunden; der Import läuft in jedem
-  Kurs der Plattform ohne Vorarbeit. Vor der Lieferung prüft `scripts/check.py`
-  jede Sicherung auf Struktur, Dateien, IDs und H5P-Versionen.
+  wird nach der Freigabe noch einmal abgetippt. Nachdem der Assistent das
+  Drehbuch geschrieben hat und bevor die Lehrkraft es sieht, ist er angewiesen,
+  es gegen zehn didaktische Standardannahmen und eine Markerliste mit Proben zu
+  prüfen (`references/intake.md` §3, `references/qualitaet.md`); im Fremdtest
+  blieb dabei je Durchlauf ein Marker übrig. Zweck und Quelle je Element stehen
+  nur im Drehbuch.
+- Die Sicherung ist nicht an ein Konto gebunden; in den Tests ließ sie sich ohne
+  Vorarbeit in Kurse eines anderen Kontos einspielen. Vor der Lieferung prüft
+  `scripts/check.py` jede Sicherung auf Struktur, Dateien, IDs und H5P-Versionen.
 
 ## Was Kursmühle kann
 
@@ -82,7 +129,7 @@ Drehbuch mit den Annahmen oben.
 - **H5P- und Moodle-Aktivitäten für Bewertung und Abschluss:** Was eine Bestehensgrenze hat, für ein Badge zählt oder
   abgegeben wird, bleibt eine Aktivität der Plattform und erscheint im Abschlussstatus oder im Bewertungsbuch.
 
-Vorbehalte beim Textfeld:
+#### Vorbehalte beim Textfeld
 
 - **Übungs-Textfelder nicht im Editor öffnen.** Bearbeitet eine Lehrkraft ein Textfeld mit Übungsblock über
   „Einstellungen bearbeiten“ und speichert, entfernt der Editor der Plattform Skript und Stil; die Übung ist danach ein
@@ -139,8 +186,8 @@ Vorbehalte beim Textfeld:
   *Einträge importieren* in den Kurs.
 - **Delta-Sicherungen:** Neue Abschnitte kommen als eigene Sicherung per *Zusammenführen* in einen laufenden Kurs, der
   Lernfortschritt bleibt erhalten.
-- **Prüfdurchlauf:** Bevor die Lehrkraft das Drehbuch sieht, prüft der Assistent es gegen die Standardannahmen D1–D10
-  und eine Markerliste mit Proben und behebt die Treffer.
+- **Prüfdurchlauf:** Nachdem der Assistent das Drehbuch geschrieben hat und bevor die Lehrkraft es sieht, ist er
+  angewiesen, es gegen die Standardannahmen D1–D10 und eine Markerliste mit Proben zu prüfen und Treffer zu beheben.
 - **Steuerungsgrad:** Die Lehrkraft entscheidet selbst, gibt Vorschläge frei oder lässt die KI alles machen.
 
 ## Was der Generator kann – und was (noch) nicht
@@ -150,36 +197,13 @@ Vorbehalte beim Textfeld:
 | Kursformate Themen, Kacheln (mit Kachelbild oder Icon je Abschnitt), Wochen, Ein-Themen, Komprimierte Abschnitte, Einzelaktivität; beliebig viele Abschnitte und Unterabschnitte | Lernlandkarte, Mimo (kein Grid auf der Plattform) |
 | Textfelder und Seiten mit Textbausteinen (Überschrift, Schritte, Tabellen, Kästen, Merke, Bild mit Unterschrift) in drei Designvorlagen (schlicht, kacheln, magazin), wählbar im Steckbrief | Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool |
 | Moodle-Module: Test (Multiple Choice, Wahr/Falsch, Kurzantwort; Fragen in der Fragensammlung), Aufgabe (Text- und Dateiabgabe), Datei, Verzeichnis, Forum, Buch mit Kapiteln, Abstimmung, Glossar | Weitere Fragetypen im Test (Zuordnung, Lückentext, numerisch), Zeitlimits, Forum-Diskussionen |
-| H5P: Interactive Book, Branching Scenario, Question Set, Drag and Drop, Fill in the Blanks, Dialog Cards, Course Presentation; Bausteine Text, Bild, Multiple Choice, True/False, Drag the Words, Mark the Words, Summary, Single Choice Set | Weitere H5P-Typen (Interactive Video, Image Hotspots, Memory …) |
+| H5P: Interactive Book, Branching Scenario, Question Set, Drag and Drop, Fill in the Blanks, Dialog Cards, Course Presentation (nur als Szene einer Geschichte, nicht einzeln wählbar); Bausteine Text, Bild, Multiple Choice, True/False, Drag the Words, Mark the Words, Summary, Single Choice Set | Weitere H5P-Typen (Interactive Video, Image Hotspots, Memory …) |
 | Feedback-Umfragen, Links/Videos (eingebettet), Badges, Kursbild, Abschlussverfolgung | Gruppen, Termine, Kursabschluss-Kriterien |
 | Kursbanner als erstes Element (Bild, Titel, ein Satz); Bild von der KI erzeugt, gerendert (`scripts/banner.py`) oder von der Lehrkraft nach Prompt; Kursbild und Kachelbilder textfrei (`banner.py --kachel`: eigenes Motiv je Abschnitt) | Abschnitts- und Kachelbilder automatisch aus dem Material |
 | Website-Modus: ein Abschnitt als eine HTML-Seite (eingebettet, Vollbild oder neues Fenster) mit Startseite, Kapitelnavigation, Fortschritt und Übungen mit Rückmeldung (Quiz, Zuordnen, Lückentext, Markieren, Lernkarten, Geschichte); dieselbe Kursdatei, `build.py --website` | Bewertung und Abschluss je Übung in der Website, eigene Spiele und Simulationen als Vorlage |
-| Textfeld-Modus: formative Übungen (Quiz, Zuordnen, Lernkarten, Lückentext, Geschichte) als Block im Textfeld zwischen Lesetexten, ohne iframe, mehrere Blöcke je Kursseite; Abschlussrelevantes bleibt Aktivität; `website: textfeld` | Ausführung in der Moodle-App, Import-Test von Probe 3 |
+| Textfeld-Modus: formative Übungen (Quiz, Zuordnen, Lernkarten, Lückentext, Geschichte) als Block im Textfeld zwischen Lesetexten, ohne iframe, mehrere Blöcke je Kursseite; Abschlussrelevantes bleibt Aktivität; `website: textfeld` | Ausführung in der Moodle-App |
 | Zugriffsbeschränkung „sichtbar ab Datum“; Nachlieferung per Delta-Sicherung | Andere Zugriffsbedingungen (Abschluss von X, Bewertung, Gruppe) |
 | Prüfdurchlauf vor der Freigabe: Standardannahmen D1–D10, Markerliste mit Proben, Fachprüfung gegen das Bezugselement; Drehbuch-Zeilen `Abweichung:` und `Offen:` und der Marker `[Zweck: …]` gelangen nie in den Kurs | Automatische Warnung des Parsers bei mechanisch erkennbaren Markern (Ausrufezeichen, Emojis, Genderzeichen) |
-
-## Wiederherstellen auf der ByCS-Lernplattform
-
-So sieht der Import auf der Plattform aus, Schritt für Schritt. Beim ersten Mal in einen Testkurs.
-
-1. **Kurs öffnen → Mehr → Kurs wiederherstellen.** Die `.mbz` in das Feld „Datei“ ziehen oder hochladen, dann
-   *Wiederherstellen*.
-2. **Schritt „Bestätigen“:** nur *Weiter*.
-3. **Schritt „Ziel“:** eine von drei Varianten.
-   - *Als neuen Kurs wiederherstellen* in eine Kategorie: der Kurs entsteht neu.
-   - *In diesen Kurs wiederherstellen* mit **löschen und dann wiederherstellen**: der Zielkurs wird geleert und neu
-     gefüllt. Nur so kommt ein anderes Kursformat (etwa Kacheln) mit.
-   - *In diesen Kurs wiederherstellen* mit **zusammenführen**: für Delta-Sicherungen, die neue Abschnitte hinten anhängen.
-4. **Schritt „Einstellungen“:** *Weiter*.
-5. **Schritt „Schema“:** bei einem Formatwechsel *Kurseinstellungen überschreiben: Ja*, sonst behält der Kurs sein
-   bisheriges Kursformat. *Weiter*.
-6. **Wiederherstellen.**
-7. **Danach:** Hat der Kurs ein Glossar mit Einträgen: Glossar → Mehr → *Einträge importieren* → die mitgelieferte Datei
-   `…_glossar.xml`. Badge aktivieren (Mehr → Badges). Kursbild prüfen. Probedurchlauf als Schüler/in.
-
-Eine Sicherung darf höchstens 500 MB haben; `scripts/check.py` warnt ab 400 MB. Wenn etwas nicht passt, reicht ein
-Screenshot an den Assistenten; er ändert die Inhalte und baut die Sicherung neu. Übungs-Textfelder nie im Editor der
-Plattform speichern (siehe oben).
 
 ## Repository-Struktur
 
@@ -212,13 +236,14 @@ nur das Skill-Zip und den Satz „Mach mir eine Einheit zu Bruchrechnen für Jgs
 |---|---|---|
 | Bis zur fertigen `.mbz` mit Protokoll | 5 min 10 s | 5 min 46 s (erste `.mbz` nach etwa 3 min) |
 | Tokens gesamt (Agent-Schnittstelle) | 138 000 | 154 000 |
-| Rückfragen an die Lehrkraft | 0 | 0 |
-| Nachrichten an die Lehrkraft | 2 | 1 |
+| Rückfragen, die der Assistent gestellt hätte | 2 | 0 |
+| Nachrichten an die Lehrkraft (Schätzung, ohne Lesezeit der Lehrkraft) | 2 | 1 |
 | Bauläufe bis `check.py` OK | 1 | 1 |
 
-Ein kompletter Kurs mit mehreren Abschnitten und vom Assistenten erzeugten Bildern lag mit Version 0.1 in ChatGPT bei etwa
-sieben Minuten. Durchläufe mit kostenlosen Konten (ChatGPT Free, Claude Free) und mit ByLKI stehen aus; die
-Protokollvorlagen dafür liegen in `docs/entwicklung/protokolle/`, das Ergebnis kommt als Zeile „läuft mit …“ hierher.
+Der Fremdtest lief in Claude Code (Agent mit Dateizugriff), nicht über den Upload in ChatGPT oder claude.ai. Mit
+Version 0.1 lag ein kompletter Kurs mit mehreren Abschnitten und vom Assistenten erzeugten Bildern in ChatGPT bei etwa
+sieben Minuten (Einzelbeobachtung, nicht protokolliert). Durchläufe mit 1.0 in ChatGPT, claude.ai, mit kostenlosen
+Konten und mit ByLKI stehen aus; die Protokollvorlagen liegen in `docs/entwicklung/protokolle/`.
 
 
 ## Ohne KI bauen (für Entwickler)
@@ -230,8 +255,8 @@ python3 scripts/build.py --content examples/netzwerk9
 ```
 
 Der Kursinhalt steht in `examples/netzwerk9/kurs.md` (Format: `references/kursdatei.md`);
-die Bilder in `examples/netzwerk9/assets` sind Platzhalter. `build.py` prüft die fertige Sicherung am Ende
-mit `scripts/check.py` (auch einzeln: `python3 scripts/check.py <datei.mbz>`, Ausgabe `OK` oder `FEHLER`-Zeilen).
+die Bilder in `examples/netzwerk9/assets` sind einfache, selbst erzeugte Schemazeichnungen. `build.py` prüft
+die fertige Sicherung am Ende mit `scripts/check.py` (auch einzeln: `python3 scripts/check.py <datei.mbz>`, Ausgabe `OK` oder `FEHLER`-Zeilen).
 `python3 scripts/tests/test_kursdatei.py` prüft Parser und Beispiele, `scripts/tests/test_check.py` das Prüfskript,
 `scripts/tests/mbz_diff.py` vergleicht zwei Sicherungen ohne IDs und Zeitstempel, `scripts/tests/render_vorlagen.py`
 rendert die Kursseite je Designvorlage bei 390 und 1200 px (Playwright; `--vorlage` an `build.py` wählt die Vorlage),
@@ -269,32 +294,33 @@ verloren.
 
 ## Status / Roadmap
 
-- [x] Generator für Sicherungen (Moodle 5.2, mod_hvp), Import getestet
+- [x] Generator für Sicherungen (Moodle 5.2, mod_hvp), Import getestet 23.10.2026, siehe [Protokoll](docs/entwicklung/protokolle/import-tests-2-5.md)
 - [x] H5P-Render-Test und inhaltliche Gegenprüfung durch zweiten Agenten
 - [x] Delta-Sicherung („Zusammenführen“) und „sichtbar ab Datum“
-- [x] Intake mit Steuerungsgrad, Drehbuch-Format, Zeitcheck, Änderungsliste
+- [x] Fragerunde (Intake) mit Steuerungsgrad, Drehbuch-Format, Zeitcheck, Änderungsliste
 - [x] Drehbuch-Parser: Das Drehbuch ist die Kursdatei (`kurs.md`), der Generator liest sie direkt
 - [x] Prüfskript `check.py`: jede Sicherung wird vor dem Import auf Struktur, Dateien und H5P-Versionen geprüft
 - [x] Menüführung: „Womit starten wir?“ – Thema, altes Material, Material + Fragen, Fragen-Intake
 - [x] Schlanke Designvorlagen zur Auswahl; Kursbanner, generiert vom Assistenten, wenn er es kann
 - [x] HTML-Formatierung für Lesetexte: Überschriften, Listen, Merk- und Beispielkästen statt Fließtext
-- [x] Modultypen für 1.0: Test, Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar (Test und Buch importiert)
+- [x] Modultypen für 1.0: Test, Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar (alle acht importiert)
 - [x] Kursformate Kacheln (Kachelbild/-icon je Abschnitt, importiert), Wochen, Ein-Themen, Komprimiert, Einzelaktivität
 - [x] One-Page-Darstellung ohne Ladezeiten: Übungen im Textfeld (seit 0.9.1, importiert), Einheit als Website-Datei (seit 0.8)
 - [x] Fremdtest mit frischem Assistenten der Sonnet-Klasse, Skill-Zip, Projektseite (1.0)
 - [ ] 1.1: Steckbrief und Designvorlage aus einer eigenen Sicherung ableiten (`vorlage_aus_sicherung.py`), Übungsblöcke, die
       ohne Skript als Tabelle oder Fragenliste lesbar bleiben, Website als SCORM-Paket für Bewertung und Abschluss
 - [ ] Abschnitts- und Kachelbilder aus dem Material; eigene Spiele und Simulationen als Vorlagen im Website-Modus
-- [ ] 2.0: Kursmühle im Browser, damit auch ByLKI, AIS-Chat und kostenlose Konten ohne Code-Ausführung bauen können
+- [ ] 2.0: Kursmühle im Browser, damit auch Chats ohne Code-Ausführung (ByLKI, AIS-Chat) bauen können
 
 Reihenfolge und Details in [`ROADMAP.md`](ROADMAP.md).
 
 ## Rückmeldung geben
 
-Ohne GitHub-Konto: über das Formular auf der [Projektseite](https://simon-sarkar.github.io/kursmuehle/#rueckmeldung)
-(der Link dort wird vom Autor eingetragen). Mit GitHub-Konto: als Issue. Was am meisten hilft: welches Fach, welche
-Jahrgangsstufe, welcher Assistent, wie lange es gedauert hat, wo es gehakt hat. Gesammelte Rückmeldungen und gebaute Kurse
-stehen in [`docs/erfahrungen.md`](docs/erfahrungen.md).
+Der Autor möchte wissen, ob Kursmühle im Unterrichtsalltag hilft und was fehlt. Rückmeldungen per E-Mail an
+kursmuehle@pm.me, ein GitHub-Konto ist dafür nicht nötig; wer am Code mitarbeitet, kann zusätzlich ein
+[Issue](https://github.com/simon-sarkar/kursmuehle/issues) anlegen. Am meisten hilft, wenn Fach,
+Jahrgangsstufe, Assistent, Dauer und die Stelle genannt sind, an der es gehakt hat. Gesammelte Rückmeldungen und
+gebaute Kurse stehen in [`docs/erfahrungen.md`](docs/erfahrungen.md).
 
 ## Mitmachen
 
@@ -328,8 +354,7 @@ veröffentlichte Fassungen bleiben unter ihrer Lizenz nutzbar.
 
 ## Danksagung
 
-- [ByCS-Lernplattform](https://www.bycs.de/) und [Moodle](https://moodle.org/)
-  für das dokumentierte Sicherungsformat
+- [Moodle](https://moodle.org/): quelloffener Backup-Code, an dem sich das Sicherungsformat ablesen lässt
 - [H5P](https://h5p.org/) und das Plugin [mod_hvp](https://github.com/h5p/moodle-mod_hvp):
   interaktive Inhalte als JSON
 - [h5p-standalone](https://github.com/tunapanda/h5p-standalone): Render-Test

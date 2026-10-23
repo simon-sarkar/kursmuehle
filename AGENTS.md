@@ -6,7 +6,7 @@ Dann `SKILL.md` und `references/spec.md`. Diese Datei gilt für jeden Agenten; `
 
 Regeln:
 - **Keine personenbezogenen Daten im Repo**: keine Namen (außer Lizenzinhaber), keine Schule, keine Kurs-, Kontext-
-  oder Kategorie-IDs einer echten Plattform, keine Mailadressen, keine Kurssicherungen von der Plattform. Platzhalter
+  oder Kategorie-IDs einer echten Plattform, keine Mailadressen (Ausnahme: die Projektadresse kursmuehle@pm.me), keine Kurssicherungen von der Plattform. Platzhalter
   statt echter Werte. Bilder in Beispielen nur selbst erzeugt oder CC0.
 - **Plattformname**: „ByCS-Lernplattform“, nie „mebis“ (außer im Satz „früher mebis“).
 - **Sprache**: Deutsch in Doku und Beispielen; Code-Kommentare kurz, Deutsch oder Englisch.
