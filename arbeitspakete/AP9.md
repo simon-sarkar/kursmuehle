@@ -23,3 +23,7 @@ Feedback und Verbreitung (Ziel des Autors: Nutzung im Alltag und Rückmeldungen)
 „Erfahrungen“ im Repo für Rückmeldungen und gebaute Kurse; die ersten Nutzer persönlich nach einer Woche fragen.
 Kanal für Lehrkräfte: fertiger Beispielkurs auf teachSHARE mit Hinweis „so entstanden“, Fortbildung oder Beitrag
 bei Medienpädagogischen Beratern – nicht GitHub.
+
+Kostenlos: Zusätzlich je ein Durchlauf mit einem kostenlosen Konto (ChatGPT Free, Gemini Free) – eine 25-Minuten-Einheit
+muss innerhalb des Tageslimits durchlaufen. Ergebnis als Zeile „läuft mit …“ in die README. Scheitert es, ist der
+Grund (Lesemenge, Ausgabemenge, fehlende Code-Ausführung) festzuhalten und zu beheben, nicht zu dokumentieren.
