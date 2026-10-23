@@ -316,11 +316,11 @@ Reihenfolge und Details in [`ROADMAP.md`](ROADMAP.md).
 
 ## Rückmeldung geben
 
-Der Autor möchte wissen, ob Kursmühle im Unterrichtsalltag hilft und was fehlt. Rückmeldungen per E-Mail an
+Ich freue mich über Rückmeldungen: Hilft Kursmühle im Unterrichtsalltag, was fehlt, wo hat es gehakt? Schreib mir an
 kursmuehle@pm.me, ein GitHub-Konto ist dafür nicht nötig; wer am Code mitarbeitet, kann zusätzlich ein
-[Issue](https://github.com/simon-sarkar/kursmuehle/issues) anlegen. Am meisten hilft, wenn Fach,
-Jahrgangsstufe, Assistent, Dauer und die Stelle genannt sind, an der es gehakt hat. Gesammelte Rückmeldungen und
-gebaute Kurse stehen in [`docs/erfahrungen.md`](docs/erfahrungen.md).
+[Issue](https://github.com/simon-sarkar/kursmuehle/issues) anlegen. Am meisten hilft mir, wenn Fach, Jahrgangsstufe,
+Assistent und Dauer dabeistehen. Gesammelte Rückmeldungen und gebaute Kurse stehen in
+[`docs/erfahrungen.md`](docs/erfahrungen.md).
 
 ## Mitmachen
 

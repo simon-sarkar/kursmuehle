@@ -63,8 +63,8 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
 5. **Lieferung**: `.mbz`, dazu die Wiederherstellungsanleitung (unten) in der passenden Variante (neuer Kurs, in diesen
    Kurs, Delta), bei Glossar der XML-Schritt, bei Badge das Aktivieren, bei Übungsblöcken im Textfeld die Regel von oben.
    Steckbrief-Teile erst auf `delivered`, wenn die Lehrkraft den Import bestätigt hat. Ein Satz zum Schluss, einmal je
-   Kurs: Der Autor möchte wissen, ob Kursmühle im Unterrichtsalltag hilft und was fehlt; Rückmeldung per E-Mail an
-   kursmuehle@pm.me (wer am Code mitarbeitet, auch als Issue auf GitHub).
+   Kurs: „Der Entwickler freut sich über eine Rückmeldung an kursmuehle@pm.me – hilft der Kurs im Unterricht, was fehlt?“
+   (wer am Code mitarbeitet, auch als Issue auf GitHub).
 
 ## Wiederherstellen auf der ByCS-Lernplattform (Text für die Lieferung)
 
