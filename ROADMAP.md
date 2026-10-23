@@ -66,7 +66,8 @@ Themen (0.1) → **Kacheln** (1.0), danach Grid, Wochen, Einzelaktivität, Butto
 ### 3. Alle Modultypen
 Reihenfolge nach Nutzen: Test (mit Fragensammlung), Aufgabe, Forum, Buch, Glossar, Abstimmung,
 Datei/Verzeichnis, Kern-H5P-Aktivität, Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool.
-1.0 enthält Test, Aufgabe, Datei/Verzeichnis, Forum, Buch; der Rest folgt.
+1.0 enthält Test, Aufgabe, Datei/Verzeichnis, Forum, Buch; der Rest folgt. Seit 0.6 (AP5) gebaut: Test (MC, Wahr/Falsch,
+Kurzantwort), Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar; Import-Test des Beispiels `examples/module` offen.
 Je Modul: Testkurs mit einer Instanz exportieren → Schema in `references/spec.md` → Klasse in `gen/mbz.py`.
 
 ### 4. Schlanke Designvorlagen (seit 0.5: schlicht, kacheln, magazin)

@@ -62,6 +62,14 @@ sind Fehler, keine Vermutungen.
 | Lückentext | `aufgabe` | Pflicht: Aufgabenstellung |
 | Umfrage | `einleitung`, `danach`, `skala` | Texte; `skala: 1 trifft gar nicht zu \| 2 \| 3 \| 4 \| 5 trifft voll zu` (Standard) |
 | Badge | `beschreibung`, `bild`, `voraussetzung` | `bild` und `voraussetzung` Pflicht; `voraussetzung` = Titel der Elemente, deren Abschluss zählt (`\|`-getrennt) |
+| Test | `bestehen`, `einleitung`, `versuche`, `mischen`, `rückmeldung`, `je seite`, `abschluss` | wie Quiz; `versuche` 0 = unbegrenzt (Standard); `mischen` ja (Standard); `rückmeldung` am ende (Standard) oder sofort; `je seite` Fragen je Seite (Standard 1); `abschluss` bestehen (Standard), ansehen, keine |
+| Aufgabe | `abgabe`, `bewertung`, `bestehen`, `fällig`, `abschluss` | `abgabe` text (Standard), datei oder `text, datei`; `bewertung` Punkte (Standard 100, `keine`); `bestehen` in Prozent; `fällig` JJJJ-MM-TT (23:59); `abschluss` abgabe (Standard), ansehen, keine |
+| Datei | `datei`, `abschluss` | Pflicht: Dateiname aus `assets/` (PDF, Bild, Office, Audio …) |
+| Verzeichnis | `anzeige`, `abschluss` | `seite` (Standard) oder `eingebettet` (Dateiliste auf der Kursseite) |
+| Forum | `typ`, `abschluss` | `allgemein` (Standard), `frage-antwort`, `je person`, `blog`; `abschluss` keine (Standard), beitrag, ansehen |
+| Buch | `abschluss` | ansehen (Standard) |
+| Abstimmung | `mehrfach`, `ergebnisse`, `ändern`, `abschluss` | `mehrfach` ja/nein; `ergebnisse` nie, nach abgabe (Standard), nach ende, immer; `ändern` ja = Antwort änderbar; `abschluss` abgabe (Standard) |
+| Glossar | `anzeige`, `abschluss` | `wörterbuch` (Standard), fortlaufend, lexikon, faq, liste; `abschluss` keine (Standard), eintrag, ansehen |
 
 ## 3. Elementtypen
 
@@ -81,6 +89,18 @@ sind Fehler, keine Vermutungen.
 | `Umfrage` | Feedback | `- Aussage` (Skala) oder `- Frage → a \| b \| c` |
 | `Badge` | Badge | nur Angaben; kein Element im Kurs, steht am sinnvollsten beim Abschlusstest |
 | `Unterabschnitt` | Unterabschnitt | Elemente mit `####` |
+| `Test` | Test (quiz, Fragensammlung) | nummerierte Fragen: MC, RF, Kurzantwort (§5a); bewertet, erscheint im Bewertungsbuch |
+| `Aufgabe` | Aufgabe (assign) | Textbausteine = Aufgabenstellung; Abgabe als Text und/oder Datei |
+| `Datei` | Datei (resource) | `datei: name.pdf`; Textbausteine darunter = Beschreibung |
+| `Verzeichnis` | Verzeichnis (folder) | Liste `- name.pdf` (Dateien aus `assets/`); Textbausteine = Beschreibung |
+| `Forum` | Forum | Textbausteine = Beschreibung |
+| `Buch` | Buch (book) | `Kapitel: Titel`, `Unterkapitel: Titel`, darunter Textbausteine und `Bild:` (§6a) |
+| `Abstimmung` | Abstimmung (choice) | Textbausteine = Frage, Liste `- Option` |
+| `Glossar` | Glossar (glossary) | `\| Begriff \| Erklärung \| Alias \|` oder `- Begriff → Erklärung`; Textbausteine = Beschreibung |
+
+Quiz oder Test? `Quiz` (H5P) läuft direkt auf der Seite, mit Einsetzen, Markieren und Lückentext, und zählt für
+Badges und Abschluss. `Test` ist das Moodle-Modul: Versuche, Bewertungsbuch, Fragen in der Fragensammlung der Lehrkraft,
+aber nur MC, RF und Kurzantwort. Für Zwischenchecks Quiz, für die benotete Kontrolle Test.
 
 Inline überall: `**fett**` → `<b>`, `*kursiv*` → `<i>`, `==markiert==` → farbig hinterlegt, HTML (`<br>`, `<b>`,
 `<i>`) bleibt stehen. In Zeilen mit `*Lücken*` (Einsetzen, Markieren, Lückentext) wird nichts umgewandelt.
@@ -145,6 +165,22 @@ Im Quiz darf die Nummerierung (`1.`) davorstehen; eine nummerierte Zeile mit ` �
 Antworttexte dürfen kein ` · ` enthalten (sonst Listenform nehmen). Standardtitel: Frage, Richtig oder falsch?,
 Wörter zuordnen, Wörter markieren, Lückentext, Zusammenfassung, Schnellquiz.
 
+## 5a. Test (Moodle-Fragensammlung)
+
+```
+### Test: Abschlusstest · 8 min (← Buch)
+bestehen: 75 %                                    versuche: 2 · rückmeldung: sofort · einleitung: <Text>
+1. Frage? · ✔A · B · C                            MC (Einfachauswahl); mehrere ✔ = Mehrfachauswahl (falsche Antworten zählen negativ)
+2. MC (Titel): Frage?                              oder als Liste mit Rückmeldung je Antwort
+- ✔ Antwort → Rückmeldung
+3. RF: Aussage ✘ → richtig: … → falsch: …         Rückmeldungen optional
+4. Kurzantwort (Titel): Frage? · Antwort · Alternative   jede Alternative zählt voll; `*` ist Platzhalter (Rout*)
+```
+
+Jede Frage ein Punkt; `bestehen` wie beim Quiz (`75 %` oder `6 von 8`). Einsetzen, Markieren, Lückentext, Aussagen und
+Schnellquiz gibt es im Test nicht (nur im Quiz und Lesebuch). Die Fragen landen in einer eigenen Kategorie
+„Standard für <Testname>“ der Fragensammlung.
+
 ## 6. Geschichte (Branching Scenario)
 
 ```
@@ -165,6 +201,21 @@ Frage (q1): Was tust du zuerst?
 Ziele sind Schlüssel von Szenen, Fragen oder Enden; unbekannte Ziele sind Fehler. Reihenfolge der Szenen = Reihenfolge
 in der Datei.
 
+## 6a. Buch (Moodle-Buch mit Kapiteln)
+
+```
+### Buch: Was ein gutes Passwort ausmacht · 8 min
+Kapitel: Warum Passwörter wichtig sind        erste Zeile; darunter Textbausteine (§4) und Bild:
+Vorspann: …
+Kapitel: Länge schlägt Komplexität
+Bild: schloss.png | Vorhängeschloss
+Unterkapitel: Passphrasen                     eingerückt in der Navigation; nicht vor dem ersten Kapitel
+```
+
+Lesebuch oder Buch? `Lesebuch` (H5P Interactive Book) erlaubt Fragen zwischen den Seiten und wird in einem Fenster
+geblättert. `Buch` ist das Moodle-Modul: schlichte Kapitelseiten mit Navigation, druckbar, ohne Fragen; gut für
+Nachschlagetexte und längere Lesetexte. Beispiel mit allen Moodle-Modulen: `examples/module/kurs.md`.
+
 ## 7. Steckbrief und Bau
 
 `steckbrief.yaml` liefert Titel, Kurzname, Beschreibung, `design.vorlage` (`schlicht` Standard, `kacheln`, `magazin`;
@@ -180,4 +231,5 @@ wird sie genutzt (Bausteine in `scripts/gen/html.py`).
 
 Nicht ausdrückbar in 1.0: Rückmeldung „nicht gewählt“ bei MC, Bilder in Szenen einer Geschichte, Buchdeckel,
 Rückmeldungsbereiche des Quiz, Tipps bei Einsetzen/MC, Hintergrundbild mit Koordinaten beim Zuordnen (nur automatische
-Anordnung). Wer das braucht, nimmt den Python-Ausweg.
+Anordnung), im Test andere Fragetypen als MC/RF/Kurzantwort, Zeitlimits und Öffnungszeiten bei Test und Aufgabe,
+Forum-Diskussionen (Nutzerdaten), Unterordner im Verzeichnis. Wer das braucht, nimmt den Python-Ausweg.

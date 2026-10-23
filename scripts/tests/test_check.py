@@ -2,10 +2,12 @@
 
 usage: python3 scripts/tests/test_check.py   (Exit 0 = alles gut)
 
-Baut netzwerk9 (Vollkurs, Prototyp) und alltagskompetenz (Vollkurs, Delta) in ein Temp-Verzeichnis, prüft sie,
+Baut netzwerk9 (Vollkurs, Prototyp), alltagskompetenz (Vollkurs, Delta) und module in ein Temp-Verzeichnis, prüft sie,
 und erzeugt aus dem netzwerk9-Build je eine kaputte Kopie: fehlende Datei, falscher Hash, kaputtes json_content,
 falsche Bibliotheksversion, fehlender Aktivitätsordner, Bild aus files.xml entfernt, fehlender fileref,
-ungültiges Verfügbarkeits-JSON, doppelte Abschnittsnummer, nicht wohlgeformtes XML.
+ungültiges Verfügbarkeits-JSON, doppelte Abschnittsnummer, nicht wohlgeformtes XML; aus dem module-Build: Fragenverweis
+ins Leere, Fragenkategorie in fremdem Kontext, sumgrades falsch, Kapitelbild entfernt, Datei ohne Inhalt, Bewertungsposten
+passt nicht.
 """
 import io
 import os
@@ -123,6 +125,49 @@ def f_xml_kaputt(e):
     sub(e, "course/course.xml", "</course>", "</kurs>")
 
 
+# ---- Fehlerfälle am Modulbeispiel (Test, Buch, Datei)
+def m_fragenverweis(e):
+    p = first(e, r"activities/quiz_\d+/quiz\.xml")
+    sub(e, p, "<questionbankentryid>", "<questionbankentryid>1")
+
+
+def m_kategorie_fremd(e):
+    s = e["questions.xml"].decode()
+    e["questions.xml"] = re.sub(r"<contextinstanceid>\d+</contextinstanceid>", "<contextinstanceid>1</contextinstanceid>", s).encode()
+
+
+def m_summe(e):
+    sub(e, first(e, r"activities/quiz_\d+/quiz\.xml"), "<sumgrades>", "<sumgrades>1")
+
+
+def m_kapitelbild(e):
+    s = e["files.xml"].decode()
+    m = re.search(r'  <file id="\d+">\n(?:(?!</file>).)*?<filearea>chapter</filearea>.*?</file>\n', s, flags=re.S)
+    assert m, "kein Kapitelbild in files.xml"
+    e["files.xml"] = (s[:m.start()] + s[m.end():]).encode()
+
+
+def m_datei_fehlt(e):
+    s = e["files.xml"].decode()
+    m = re.search(r'  <file id="\d+">\n(?:(?!</file>).)*?<component>mod_resource</component>.*?</file>\n', s, flags=re.S)
+    assert m, "keine mod_resource-Datei in files.xml"
+    e["files.xml"] = (s[:m.start()] + s[m.end():]).encode()
+
+
+def m_bewertung(e):
+    sub(e, first(e, r"activities/assign_\d+/grades\.xml"), "<grademax>10.00000</grademax>", "<grademax>99.00000</grademax>")
+
+
+MODUL_FAELLE = [
+    ("Fragenverweis ins Leere", m_fragenverweis, "steht nicht in questions.xml"),
+    ("Kategorie in fremdem Kontext", m_kategorie_fremd, "contextinstanceid"),
+    ("sumgrades falsch", m_summe, "sumgrades"),
+    ("Kapitelbild aus files.xml entfernt", m_kapitelbild, "im HTML, aber nicht in files.xml (mod_book/chapter)"),
+    ("Datei ohne Inhalt", m_datei_fehlt, "Datei braucht genau eine Datei"),
+    ("Bewertungsposten passt nicht", m_bewertung, "grademax 99 ≠ Bewertung des Moduls 10"),
+]
+
+
 FAELLE = [
     ("fehlende Datei", f_fehlende_datei, "fehlt im Archiv unter files/"),
     ("falscher Hash", f_falscher_hash, "Hash stimmt nicht"),
@@ -143,7 +188,8 @@ def main():
         gut = [build("netzwerk9", os.path.join(d, "n9.mbz")),
                build("netzwerk9", os.path.join(d, "n9_proto.mbz"), "--proto"),
                build("alltagskompetenz", os.path.join(d, "ak.mbz")),
-               build("alltagskompetenz", os.path.join(d, "ak_delta.mbz"), "--delta", "le2,le3")]
+               build("alltagskompetenz", os.path.join(d, "ak_delta.mbz"), "--delta", "le2,le3"),
+               build("module", os.path.join(d, "module.mbz"))]
         for path in gut:
             errors, info = check_mbz(path)
             if errors:
@@ -153,9 +199,9 @@ def main():
                     print(f"       {wo}: {was}")
             else:
                 print(f"ok     {os.path.basename(path)}: {info}")
-        base = load(gut[0])
-        for name, mut, want in FAELLE:
-            e = dict(base)
+        base, modul = load(gut[0]), load(gut[-1])
+        for name, mut, want, src in [(*f, base) for f in FAELLE] + [(*f, modul) for f in MODUL_FAELLE]:
+            e = dict(src)
             mut(e)
             path = save(e, os.path.join(d, "kaputt.mbz"))
             errors, _ = check_mbz(path)

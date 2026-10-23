@@ -11,7 +11,8 @@ import zoneinfo
 
 from . import h5p as H
 from . import html as T
-from .mbz import Badge, Feedback, HvpItem, Label, Page, Section, SubSection, Url
+from .mbz import (Assign, Badge, Book, Choice, Feedback, Folder, Forum, Glossary, HvpItem, Label, MultiChoice, Page,
+                  Quiz, Resource, Section, ShortAnswer, SubSection, TrueFalse, Url)
 
 
 class KursdateiFehler(Exception):
@@ -26,20 +27,30 @@ def ts_sichtbar_ab(d):
     return int(datetime.datetime.strptime(str(d), "%Y-%m-%d").replace(hour=6, tzinfo=tz).timestamp())
 
 
+def ts_faellig(d):
+    """'YYYY-MM-DD' -> Unix-Zeit 23:59 Europe/Berlin (Abgabetermin), sonst 0."""
+    if not d:
+        return 0
+    tz = zoneinfo.ZoneInfo("Europe/Berlin")
+    return int(datetime.datetime.strptime(str(d), "%Y-%m-%d").replace(hour=23, minute=59, tzinfo=tz).timestamp())
+
+
 # ---------------------------------------------------------------- Konstanten
 ELEMENTE = ["Banner", "Textfeld", "Seite", "Überblick", "Link", "Video", "Lesebuch", "Quiz", "Zuordnen", "Lernkarten",
-            "Geschichte", "Lückentext", "Umfrage", "Badge", "Unterabschnitt"]
+            "Geschichte", "Lückentext", "Umfrage", "Badge", "Unterabschnitt",
+            "Test", "Aufgabe", "Datei", "Verzeichnis", "Forum", "Buch", "Abstimmung", "Glossar"]
 DIRECTIVES = ["Vorspann", "Überschrift", "Hervorhebung", "Merke", "Kasten", "Beispiel", "Hinweis", "Schritte", "Vergleich",
               "Bild", "Bildzeile", "Text", "Seite",
-              "MC", "RF", "Einsetzen", "Markieren", "Lückentext", "Aussagen", "Schnellquiz",
-              "Szene", "Frage", "Ende", "Fahrplan", "Kacheln", "Themenfeld"]
+              "MC", "RF", "Einsetzen", "Markieren", "Lückentext", "Aussagen", "Schnellquiz", "Kurzantwort",
+              "Szene", "Frage", "Ende", "Fahrplan", "Kacheln", "Themenfeld", "Kapitel", "Unterkapitel"]
 FRAGEN = {"MC", "RF", "Einsetzen", "Markieren", "Lückentext", "Aussagen", "Schnellquiz"}
 # Was eine Direktive an Folgezeilen aufnimmt: nichts, nur eingerückten Inhalt, nur eine Liste, oder Textzeilen
-NO_FOLLOW = {"Seite", "Bild", "Bildzeile", "Vorspann", "Überschrift", "Hervorhebung", "Merke", "RF"}
+NO_FOLLOW = {"Seite", "Bild", "Bildzeile", "Vorspann", "Überschrift", "Hervorhebung", "Merke", "RF", "Kapitel", "Unterkapitel"}
 BOX_DIRS = {"Kasten", "Beispiel", "Hinweis", "Text"}
-LIST_DIRS = {"MC", "Schnellquiz", "Aussagen", "Frage", "Fahrplan", "Kacheln", "Themenfeld", "Vergleich", "Schritte"}
+LIST_DIRS = {"MC", "Schnellquiz", "Aussagen", "Frage", "Fahrplan", "Kacheln", "Themenfeld", "Vergleich", "Schritte", "Kurzantwort"}
 TEXT_DIRS = {"Einsetzen", "Markieren", "Lückentext", "Szene", "Ende"}
 QUIZ_FRAGEN = {"MC", "RF", "Einsetzen", "Markieren", "Lückentext"}
+TEST_FRAGEN = {"MC", "RF", "Kurzantwort"}      # Moodle-Test (questions.xml): nur diese drei Typen
 ATTRS = {
     "kurs": {"farbe", "kursbild"},
     "abschnitt": {"teil", "farbe", "sichtbar ab", "prototyp"},
@@ -58,8 +69,27 @@ ATTRS = {
     "Lückentext": {"aufgabe", "abschluss", "sichtbar ab", "prototyp"},
     "Umfrage": {"einleitung", "danach", "skala", "sichtbar ab", "prototyp"},
     "Badge": {"beschreibung", "bild", "voraussetzung"},
+    "Test": {"bestehen", "einleitung", "versuche", "mischen", "rückmeldung", "rueckmeldung", "je seite", "abschluss",
+             "sichtbar ab", "prototyp"},
+    "Aufgabe": {"abgabe", "bewertung", "bestehen", "fällig", "faellig", "abschluss", "sichtbar ab", "prototyp"},
+    "Datei": {"datei", "abschluss", "sichtbar ab", "prototyp"},
+    "Verzeichnis": {"anzeige", "abschluss", "sichtbar ab", "prototyp"},
+    "Forum": {"typ", "abschluss", "sichtbar ab", "prototyp"},
+    "Buch": {"abschluss", "sichtbar ab", "prototyp"},
+    "Abstimmung": {"mehrfach", "ergebnisse", "ändern", "aendern", "abschluss", "sichtbar ab", "prototyp"},
+    "Glossar": {"anzeige", "abschluss", "sichtbar ab", "prototyp"},
 }
-ABSCHLUSS = {"ansehen": "view", "bestehen": "pass", "keine": "none", "manuell": "manual", "abgabe": "submit"}
+ABSCHLUSS = {"ansehen": "view", "bestehen": "pass", "keine": "none", "manuell": "manual", "abgabe": "submit",
+             "beitrag": "post", "eintrag": "entry"}
+# Welche Abschlussarten ein Typ kennt (sonst: ansehen, keine, manuell; H5P und Quiz zusätzlich bestehen)
+ABSCHLUSS_TYP = {"Test": {"bestehen", "ansehen", "keine", "manuell"}, "Aufgabe": {"abgabe", "ansehen", "keine", "manuell"},
+                 "Forum": {"beitrag", "ansehen", "keine", "manuell"}, "Abstimmung": {"abgabe", "ansehen", "keine", "manuell"},
+                 "Glossar": {"eintrag", "ansehen", "keine", "manuell"}}
+FORUM_TYP = {"allgemein": "general", "frage-antwort": "qanda", "je person": "eachuser", "blog": "blog"}
+ERGEBNISSE = {"nie": 0, "nach abgabe": 1, "nach ende": 2, "immer": 3}
+GLOSSAR_ANZEIGE = {"wörterbuch": "dictionary", "woerterbuch": "dictionary", "fortlaufend": "continuous",
+                   "lexikon": "encyclopedia", "faq": "faq", "liste": "entrylist"}
+JA = ("ja", "yes", "true", "1")
 ANZEIGE = {"eingebettet": "embed", "automatisch": "auto", "neues fenster": "open", "popup": "popup"}
 FARBEN = {"rot": "#BE123C", "grün": "#15803D", "gruen": "#15803D", "blau": "#1D5FD1", "orange": "#B45309", "lila": "#6D28D9"}
 SKALA = ["1 trifft gar nicht zu", "2", "3", "4", "5 trifft voll zu"]
@@ -387,8 +417,12 @@ def block_html(b, k: Kontext):
         return T.tf_info(inl(parts[0]), les, inl(parts[1]) if len(parts) > 1 else "", k.hue)
     if name in FRAGEN:
         k.fehler(ln, f"{name} ist nur in Lesebuch oder Quiz erlaubt")
+    if name == "Kurzantwort":
+        k.fehler(ln, "Kurzantwort ist nur im Test erlaubt")
     if name == "Seite":
         k.fehler(ln, "„Seite:“ ist nur im Lesebuch erlaubt (Seitenwechsel)")
+    if name in ("Kapitel", "Unterkapitel"):
+        k.fehler(ln, f"„{name}:“ ist nur im Buch erlaubt")
     k.fehler(ln, f"{name} ist hier nicht erlaubt")
 
 
@@ -487,11 +521,56 @@ def frage(b, k: Kontext):
     k.fehler(ln, f"{name}: kein Fragetyp")
 
 
+def test_frage(b, k: Kontext):
+    """Frage eines Moodle-Tests (questions.xml): MC, RF, Kurzantwort -> gen.mbz.Frage."""
+    name, title, rest, ln = b["name"], b["title"], b["rest"], b["ln"]
+    if name == "MC":
+        if " · " in rest:
+            q, *ans = _split(rest)
+        else:
+            q, ans = rest, [t for _, _, t in b["list"]]
+        answers = [_answer(a) for a in ans]
+        if len(answers) < 2:
+            k.fehler(ln, "MC: mindestens zwei Antworten (` · `-getrennt oder als `- `-Liste)")
+        if not any(c for _, c, _ in answers):
+            k.fehler(ln, "MC: keine Antwort mit ✔ markiert")
+        return MultiChoice(f"<p>{inl(q)}</p>", answers, name=title or "Frage")
+    if name == "RF":
+        m = re.search(f"[{OK}{NOK}]", rest)
+        if not m:
+            k.fehler(ln, "RF: Aussage mit ✔ (wahr) oder ✘ (falsch) markieren")
+        statement, correct, tail = rest[:m.start()].strip(), rest[m.start()] in OK, rest[m.end():]
+        fb_ok = fb_nok = ""
+        for seg in tail.split("→")[1:]:
+            seg = seg.strip()
+            low = seg.lower()
+            if low.startswith("richtig:"):
+                fb_ok = inl(seg[8:].strip())
+            elif low.startswith("falsch:"):
+                fb_nok = inl(seg[7:].strip())
+            else:
+                k.fehler(ln, "RF: Rückmeldung als `→ richtig: …` und `→ falsch: …` angeben")
+        # Rückmeldung „richtig:“ gehört zur richtigen Antwort, „falsch:“ zur falschen
+        fb_true, fb_false = (fb_ok, fb_nok) if correct else (fb_nok, fb_ok)
+        return TrueFalse(f"<p>{inl(statement)}</p>", correct, fb_true, fb_false, name=title or "Richtig oder falsch?")
+    if name == "Kurzantwort":
+        if " · " in rest:
+            q, *ans = _split(rest)
+        else:
+            q, ans = rest, [t for _, _, t in b["list"]]
+        ans = [a.strip().lstrip("".join(OK)).strip() for a in ans if a.strip()]
+        if not ans:
+            k.fehler(ln, "Kurzantwort: `Frage? · Antwort · Alternative` (oder Antworten als `- `-Liste) erwartet")
+        return ShortAnswer(f"<p>{inl(q)}</p>", ans, name=title or "Kurzantwort")
+    k.fehler(ln, f"{name}: im Test nur {', '.join(sorted(TEST_FRAGEN))}")
+
+
 # ---------------------------------------------------------------- Elemente
 class Parser:
     def __init__(self, path, A, sb=None, proto=False):
         self.zl = Zeilen(path)
         self.A = A
+        self.assets_dir = os.path.join(os.path.dirname(os.path.abspath(path)), "assets")
         self.sb = sb or {}
         self.proto = proto
         self.titel = None
@@ -530,8 +609,9 @@ class Parser:
             if _directive(s.strip()) or key[0].isupper() or s[0].isupper():
                 break
             self.fehler(ln, element, f"unbekannte Angabe „{key}“ (erlaubt: {', '.join(sorted(allowed))})")
-        if "höhe" in attrs:
-            attrs["hoehe"] = attrs.pop("höhe")
+        for uml, ascii_ in (("höhe", "hoehe"), ("fällig", "faellig"), ("rückmeldung", "rueckmeldung"), ("ändern", "aendern")):
+            if uml in attrs:
+                attrs[ascii_] = attrs.pop(uml)
         return attrs, lines[i:]
 
     def _skip(self, attrs):
@@ -547,13 +627,29 @@ class Parser:
             self.fehler(ln, element, f"farbe „{f}“: #RRGGBB oder {', '.join(FARBEN)} erwartet")
         return f
 
-    def _completion(self, attrs, ln, element, default):
+    def _completion(self, attrs, ln, element, default, typ=None):
         v = attrs.get("abschluss")
         if not v:
             return default
-        if v.lower() not in ABSCHLUSS:
-            self.fehler(ln, element, f"abschluss „{v}“: erlaubt sind {', '.join(ABSCHLUSS)}")
+        allowed = ABSCHLUSS_TYP.get(typ, {"ansehen", "bestehen", "keine", "manuell"})
+        if v.lower() not in allowed:
+            self.fehler(ln, element, f"abschluss „{v}“: erlaubt sind {', '.join(sorted(allowed))}")
         return ABSCHLUSS[v.lower()]
+
+    def _file(self, name, ln, element):
+        """Beliebige Datei aus assets/ (PDF, Bilder, Office): (Pfad, Dateiname)."""
+        name = name.strip()
+        if name in self.A:
+            return self.A[name][0], name
+        path = os.path.join(self.assets_dir, name)
+        if "/" in name or "\\" in name or not os.path.isfile(path):
+            have = sorted(os.listdir(self.assets_dir)) if os.path.isdir(self.assets_dir) else []
+            self.fehler(ln, element, f"Datei „{name}“ nicht in assets/ (vorhanden: {', '.join(have) or 'keine'})")
+        return path, name
+
+    def _ja(self, attrs, key, default=False):
+        v = attrs.get(key)
+        return default if v is None else v.strip().lower() in JA
 
     def _avail(self, attrs, ln, element):
         v = attrs.get("sichtbar ab")
@@ -719,7 +815,7 @@ class Parser:
             return None
         k = Kontext(self.zl, self.A, hue, element)
         avail = self._avail(attrs, ln, element)
-        quiz = typ == "Quiz"
+        quiz = typ in ("Quiz", "Test")
         blocks = parse_body(lines, self.zl, element, quiz=quiz) if typ not in ("Geschichte",) else None
 
         if typ == "Banner":
@@ -854,10 +950,158 @@ class Parser:
             intro = f"<p>{inl(attrs['einleitung'])}</p>" if attrs.get("einleitung") else ""
             after = f"<p>{inl(attrs['danach'])}</p>" if attrs.get("danach") else "<p>Danke. Deine Antworten sind gespeichert.</p>"
             item = Feedback(title, intro, qs, after_text=after)
+        elif typ == "Test":
+            qs = []
+            for b in blocks:
+                if b["kind"] != "dir" or b["name"] not in TEST_FRAGEN:
+                    if b["kind"] == "para" and " · " in b["text"]:
+                        self.fehler(b["ln"], element, "MC ohne ✔ – richtige Antwort mit ✔ markieren")
+                    self.fehler(b["ln"], element, f"Test: jede Frage beginnt mit {', '.join(sorted(TEST_FRAGEN))}"
+                                                  " (oder `1. Frage? · ✔A · B`)")
+                qs.append(test_frage(b, k))
+            if not qs:
+                self.fehler(ln, element, "Test ohne Fragen")
+            pct = self._pct(attrs.get("bestehen"), len(qs), ln, element)
+            rm = attrs.get("rueckmeldung", "am ende").strip().lower()
+            if rm not in ("am ende", "sofort"):
+                self.fehler(ln, element, f"rückmeldung „{rm}“: `am ende` (Standard) oder `sofort`")
+            intro = f"<p>{inl(attrs['einleitung'])}</p>" if attrs.get("einleitung") else ""
+            item = Quiz(title, intro, qs, pass_pct=pct, attempts=self._int(attrs, "versuche", 0, ln, element),
+                        shuffle=self._ja(attrs, "mischen", True),
+                        per_page=self._int(attrs, "je seite", 1, ln, element),
+                        behaviour="immediatefeedback" if rm == "sofort" else "deferredfeedback",
+                        completion=self._completion(attrs, ln, element, "pass", typ))
+        elif typ == "Aufgabe":
+            arten = {"text": "onlinetext", "datei": "file"}
+            sub = set()
+            for a in re.split(r"[,|·]", attrs.get("abgabe", "text")):
+                a = a.strip().lower()
+                if a not in arten:
+                    self.fehler(ln, element, f"abgabe „{a}“: `text`, `datei` oder `text, datei`")
+                sub.add(arten[a])
+            bew = attrs.get("bewertung", "100").strip().lower()
+            grade = 0 if bew in ("keine", "0") else self._int(attrs, "bewertung", 100, ln, element)
+            pct = 0
+            if attrs.get("bestehen"):
+                m = re.match(r"^(\d+)\s*%$", attrs["bestehen"].strip())
+                if not m:
+                    self.fehler(ln, element, f"bestehen „{attrs['bestehen']}“: Prozent erwartet, z. B. `60 %`")
+                pct = int(m.group(1))
+            try:
+                due = ts_faellig(attrs.get("faellig"))
+            except ValueError:
+                self.fehler(ln, element, f"fällig „{attrs.get('faellig')}“: Datum als JJJJ-MM-TT")
+            item = Assign(title, body_html(blocks, k), submission=sub, grade=grade, pass_pct=pct, duedate=due,
+                          completion=self._completion(attrs, ln, element, "submit", typ), files=k.files)
+        elif typ == "Datei":
+            if "datei" not in attrs:
+                self.fehler(ln, element, "Datei: `datei: name.pdf` fehlt (Datei liegt in assets/)")
+            path, fname = self._file(attrs["datei"], ln, element)
+            item = Resource(title, path, fname, intro=body_html(blocks, k),
+                            completion=self._completion(attrs, ln, element, "view"), files=k.files)
+        elif typ == "Verzeichnis":
+            entries, rest_blocks = [], []
+            for b in blocks:
+                if b["kind"] == "list":
+                    for t, _ in b["items"]:
+                        entries.append(self._file(t, b["ln"], element))
+                else:
+                    rest_blocks.append(b)
+            if not entries:
+                self.fehler(ln, element, "Verzeichnis ohne Dateien (Liste `- name.pdf`, Dateien in assets/)")
+            disp = attrs.get("anzeige", "seite").strip().lower()
+            if disp not in ("seite", "eingebettet"):
+                self.fehler(ln, element, f"anzeige „{disp}“: `seite` (Standard) oder `eingebettet`")
+            item = Folder(title, entries, intro=body_html(rest_blocks, k), inline=disp == "eingebettet",
+                          completion=self._completion(attrs, ln, element, "view"), files=k.files)
+        elif typ == "Forum":
+            ft = attrs.get("typ", "allgemein").strip().lower()
+            if ft not in FORUM_TYP:
+                self.fehler(ln, element, f"typ „{ft}“: erlaubt sind {', '.join(FORUM_TYP)}")
+            item = Forum(title, body_html(blocks, k), type=FORUM_TYP[ft],
+                         completion=self._completion(attrs, ln, element, "none", typ), files=k.files)
+        elif typ == "Buch":
+            item = Book(title, self._buch(blocks, k, element), completion=self._completion(attrs, ln, element, "view"))
+        elif typ == "Abstimmung":
+            options, rest_blocks = [], []
+            for b in blocks:
+                if b["kind"] == "list":
+                    options += [inl(t) for t, _ in b["items"]]
+                else:
+                    rest_blocks.append(b)
+            if len(options) < 2:
+                self.fehler(ln, element, "Abstimmung: mindestens zwei Optionen als Liste `- Option`")
+            erg = attrs.get("ergebnisse", "nach abgabe").strip().lower()
+            if erg not in ERGEBNISSE:
+                self.fehler(ln, element, f"ergebnisse „{erg}“: erlaubt sind {', '.join(ERGEBNISSE)}")
+            item = Choice(title, body_html(rest_blocks, k), options, multiple=self._ja(attrs, "mehrfach"),
+                          showresults=ERGEBNISSE[erg], allowupdate=self._ja(attrs, "aendern"),
+                          completion=self._completion(attrs, ln, element, "submit", typ), files=k.files)
+        elif typ == "Glossar":
+            entries, rest_blocks = [], []
+            for b in blocks:
+                if b["kind"] == "table":
+                    for r in b["rows"]:
+                        if len(r) < 2:
+                            self.fehler(b["ln"], element, "Glossar-Tabelle: `| Begriff | Erklärung |` erwartet")
+                        entries.append((inl(r[0]), f"<p>{inl(r[1])}</p>", [a.strip() for a in r[2:] if a.strip()]))
+                elif b["kind"] == "list":
+                    for t, _ in b["items"]:
+                        if " → " not in t:
+                            self.fehler(b["ln"], element, "Glossar-Eintrag: `- Begriff → Erklärung` erwartet")
+                        c, d = t.split(" → ", 1)
+                        entries.append((inl(c.strip()), f"<p>{inl(d.strip())}</p>", []))
+                else:
+                    rest_blocks.append(b)
+            if not entries:
+                self.fehler(ln, element, "Glossar ohne Einträge (`| Begriff | Erklärung |` oder `- Begriff → Erklärung`)")
+            anz = attrs.get("anzeige", "wörterbuch").strip().lower()
+            if anz not in GLOSSAR_ANZEIGE:
+                self.fehler(ln, element, f"anzeige „{anz}“: erlaubt sind {', '.join(GLOSSAR_ANZEIGE)}")
+            item = Glossary(title, body_html(rest_blocks, k), entries, displayformat=GLOSSAR_ANZEIGE[anz],
+                            completion=self._completion(attrs, ln, element, "none", typ), files=k.files)
         else:
             self.fehler(ln, element, f"Typ {typ} nicht umgesetzt")
         item.available_from = avail
         return item
+
+    def _int(self, attrs, key, default, ln, element):
+        v = attrs.get(key)
+        if v is None or v.strip() == "":
+            return default
+        if not re.match(r"^\d+$", v.strip()):
+            self.fehler(ln, element, f"{key} „{v}“: ganze Zahl erwartet")
+        return int(v.strip())
+
+    def _buch(self, blocks, k: Kontext, element):
+        """Buch: `Kapitel: Titel` / `Unterkapitel: Titel`, darunter Textbausteine. Ergebnis: [(titel, html, files, sub)]."""
+        chapters = []
+        cur = None   # [titel, blocks, sub]
+        for b in blocks:
+            if b["kind"] == "dir" and b["name"] in ("Kapitel", "Unterkapitel"):
+                if b["name"] == "Unterkapitel" and not chapters and cur is None:
+                    self.fehler(b["ln"], element, "Unterkapitel vor dem ersten Kapitel")
+                if cur:
+                    chapters.append(cur)
+                cur = [inl(_strip_time(b["rest"])), [], b["name"] == "Unterkapitel"]
+                if not cur[0]:
+                    self.fehler(b["ln"], element, f"{b['name']} ohne Titel")
+                continue
+            if cur is None:
+                self.fehler(b["ln"], element, "Buch: erste Zeile muss `Kapitel: Titel` sein")
+            cur[1].append(b)
+        if cur:
+            chapters.append(cur)
+        out = []
+        for title, cblocks, sub in chapters:
+            kc = Kontext(k.zl, k.A, k.hue, k.element)
+            html = body_html(cblocks, kc)
+            if not html:
+                self.fehler(0, element, f"Kapitel „{title}“ ist leer")
+            out.append((title, html, kc.files, sub))
+        if not out:
+            self.fehler(0, element, "Buch ohne Kapitel (`Kapitel: Titel`)")
+        return out
 
     def _pct(self, v, n, ln, element):
         if not v:
