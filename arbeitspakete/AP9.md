@@ -10,3 +10,7 @@ Zusätzlich: Der Fremdtest läuft mit einem günstigen Modell (Sonnet-Klasse), n
 (Eingabe/Ausgabe) für die 45-Minuten-Einheit wird gemessen und als Richtwert in die README geschrieben. Release-Zip
 für Lehrkräfte (`scripts/package.py`: nur SKILL.md, references/ ohne export-schemata, scripts/, examples/) erzeugen;
 `arbeitspakete/` nach `docs/entwicklung/` verschieben.
+
+Richtwerte aus 0.1 (23.10.2026): eine 25-Minuten-Einheit in ca. 3 Minuten; ein kompletter Kurs (Geschichte, mehrere
+Abschnitte, Bilder vom Assistenten generiert, ChatGPT) in ca. 7 Minuten. 1.0 muss das halten: Einheit unter 5 Minuten,
+Kurs mit Bildern unter 10. Zeit wird im Fremdtest mitgemessen.
