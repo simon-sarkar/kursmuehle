@@ -105,11 +105,14 @@ Zwei Wege, beide 1.0:
 Parser, der das Drehbuch-Format direkt liest (seit 0.2: `kurs.md`, `gen/kursdatei.py`); „Vorausgesetzt:“-Zeile je Element;
 Änderungsliste zwischen Drehbuch-Versionen automatisch.
 
-## Nach 1.0
-- **Kursmühle im Browser**: Der Generator läuft als Webseite im Browser (Pyodide), ohne Server – Kursdatei einfügen,
+## 2.0 – Kursmühle im Browser
+Der Generator läuft als Webseite im Browser (Pyodide), ohne Server – Kursdatei einfügen,
   Bilder hineinziehen, `.mbz` herunterladen. Dann genügt jeder Chat, der Text schreiben kann (auch Angebote ohne
   Code-Ausführung wie ByLKI oder der AIS-Chat, oder kostenlose Konten); die Gesprächsführung wird zu einem Prompt
-  zum Kopieren. Voraussetzung ist das Kursdatei-Format aus AP1.
+  zum Kopieren. Voraussetzung ist das Kursdatei-Format aus AP1. Maßstab für 2.0: Ein einfacher, kostenloser Chatbot
+  liefert damit einen verwertbaren Kurs.
+
+## Nach 1.0
 - Weitere Module (Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool) und Kursformate (Grid, Wochen, Einzelaktivität).
 - Beispiele für eigene Spiele und Simulationen im Website-Modus.
 - Rückmeldungen anderer Schulen einarbeiten. Test-Exporte bleiben privat (Nutzungsbedingungen der Plattform: keine Weitergabe von Dateien an Dritte); veröffentlicht werden nur die daraus abgeleiteten Schemata mit Platzhaltern.
