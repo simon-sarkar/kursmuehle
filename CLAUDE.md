@@ -15,6 +15,10 @@ Regeln:
   wird nicht behauptet.
 - **Tokensparend**: Der Generator baut das Archiv, die KI schreibt Inhalte. Jede Änderung wird daran gemessen, ob sie
   den Dialog mit der Lehrkraft einfacher macht und die Tokenkosten senkt.
+  Konkret: Der Assistent liest im Einsatz nur `SKILL.md` und das Kursdatei-Format; `references/export-schemata/`,
+  `formate.md` und `spec.md` sind Entwicklerdoku und werden vom Generator abgebildet, nicht vom Assistenten gelesen.
+  Modul- und Formatlisten für den Assistenten: eine Tabelle, ein Satz je Eintrag. Der Skill muss mit einem günstigen
+  Modell (Sonnet-Klasse) laufen; was nur mit dem teuersten Modell klappt, ist nicht fertig.
 - **Tests**: `python3 scripts/build.py --content examples/netzwerk9 --no-render` muss nach jeder Änderung laufen.
   Neue Modultypen bekommen einen Eintrag in `examples/` und in der Kann/Noch-nicht-Tabelle der README.
 - **Lizenz**: PolyForm Noncommercial (Code), CC BY-NC-SA 4.0 (Texte). Nichts einbauen, was damit unvereinbar ist.
