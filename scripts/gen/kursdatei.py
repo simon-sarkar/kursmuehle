@@ -27,7 +27,7 @@ def ts_sichtbar_ab(d):
 
 
 # ---------------------------------------------------------------- Konstanten
-ELEMENTE = ["Textfeld", "Seite", "Überblick", "Link", "Video", "Lesebuch", "Quiz", "Zuordnen", "Lernkarten",
+ELEMENTE = ["Banner", "Textfeld", "Seite", "Überblick", "Link", "Video", "Lesebuch", "Quiz", "Zuordnen", "Lernkarten",
             "Geschichte", "Lückentext", "Umfrage", "Badge", "Unterabschnitt"]
 DIRECTIVES = ["Vorspann", "Merke", "Kasten", "Beispiel", "Hinweis", "Vergleich", "Bild", "Bildzeile", "Text", "Seite",
               "MC", "RF", "Einsetzen", "Markieren", "Lückentext", "Aussagen", "Schnellquiz",
@@ -43,6 +43,7 @@ ATTRS = {
     "kurs": {"farbe", "kursbild"},
     "abschnitt": {"teil", "farbe", "sichtbar ab", "prototyp"},
     "Unterabschnitt": {"teil", "sichtbar ab", "prototyp"},
+    "Banner": {"bild", "untertitel", "name", "sichtbar ab", "prototyp"},
     "Textfeld": {"sichtbar ab", "prototyp"},
     "Seite": {"abschluss", "sichtbar ab", "prototyp"},
     "Überblick": {"name", "nummer", "untertitel", "dauer", "sichtbar ab", "prototyp"},
@@ -123,7 +124,7 @@ class Zeilen:
     def __init__(self, path):
         with open(path, encoding="utf-8") as f:
             raw = f.read().splitlines()
-        self.lines = [(i + 1, "" if re.match(r"^(Zeit\b.*\d+\s*min|v\d+:)", s) else _clean(s)) for i, s in enumerate(raw)]
+        self.lines = [(i + 1, "" if re.match(r"^(Zeit\b.*\d+\s*min|v\d+:|Angenommen:|Bildwunsch:)", s) else _clean(s)) for i, s in enumerate(raw)]
         self.pos = 0
         self.name = os.path.basename(path)
 
@@ -569,6 +570,10 @@ class Parser:
             if s.strip() and not re.match(r"^(v\d+:|Zeit\b)", s.strip()):
                 print(f"Hinweis: {self.zl.name} Zeile {ln} vor dem ersten Abschnitt wird ignoriert: {s.strip()[:60]}", file=sys.stderr)
         hue = self._hue(self.kurs_attr, T.HUE, 1, "Kurs")
+        fmt = str((self.sb.get("kurs") or {}).get("format") or "").strip().lower()
+        if fmt and fmt not in ("themen", "topics"):
+            print(f"Hinweis: Kursformat „{fmt}“ im Steckbrief vorgemerkt; der Generator baut derzeit „Themen“. "
+                  f"Nach dem Import unter Kurseinstellungen → Kursformat umstellen.", file=sys.stderr)
         # Abschnitte
         while i < len(lines):
             ln, s = lines[i]
@@ -694,7 +699,13 @@ class Parser:
         quiz = typ == "Quiz"
         blocks = parse_body(lines, self.zl, element, quiz=quiz) if typ not in ("Geschichte",) else None
 
-        if typ == "Textfeld":
+        if typ == "Banner":
+            img = attrs.get("bild")
+            if img:
+                k.files.append((self._image(img, ln, element)[0], img))
+            html = T.banner(inl(title), inl(attrs.get("untertitel", "")), img, hue=hue) + body_html(blocks, k)
+            item = Label(html, files=k.files, name=attrs.get("name") or title)
+        elif typ == "Textfeld":
             item = Label(body_html(blocks, k), files=k.files, name=title)
         elif typ == "Seite":
             item = Page(title, body_html(blocks, k), files=k.files,

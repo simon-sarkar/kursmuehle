@@ -22,6 +22,7 @@ FEHLER = [
     ("## A\n### Buch: X\ntext", "Zeile 2: unbekannter Elementtyp „Buch“"),
     ("## A\n### Quiz: X\nbestehn: 80 %\n1. F? · ✔a · b", "Zeile 3 (Quiz „X“): unbekannte Angabe „bestehn“"),
     ("## A\n### Textfeld: X\nBild: fehlt.png | alt", "Zeile 3 (Textfeld „X“): Bild „fehlt.png“ nicht in assets/"),
+    ("## A\n### Banner: X\nbild: fehlt.png", "Zeile 2 (Banner „X“): Bild „fehlt.png“ nicht in assets/"),
     ("## A\n### Quiz: X\n1. F? · a · b", "Zeile 3 (Quiz „X“): MC ohne ✔"),
     ("## A\n### Textfeld: X\nKasten: Titel\nNicht eingerückt", "Zeile 3 (Textfeld „X“): Kasten ohne Inhalt"),
     ("## A\n### Zuordnen: X\nzonen: A | B\n- e → C", "Zeile 4 (Zuordnen „X“): Zone „C“ nicht in zonen"),
@@ -37,8 +38,13 @@ FEHLER = [
 
 OK = """# Drehbuch v1 · Test · 5 min
 v2: Änderung
+Angenommen: Jgst 9
+Bildwunsch: banner.png | 1600 × 420 | ruhiges Motiv
 farbe: #0F766E
 ## Allgemeines
+### Banner: Test
+bild: router.png
+untertitel: Ein Satz
 ### Textfeld: Hallo
 Vorspann: Hi [KI]
 ## Teil · 5 min
@@ -83,7 +89,8 @@ def check_fehler():
         names = [it.name for it in secs[1].items]
         assert names == ["Clip", "Q", "K"], names
         assert secs[1].items[1].hvp.gradepass == 1.98, secs[1].items[1].hvp.gradepass   # 3 Fragen, 66 %
-        assert "Hi" in secs[0].items[0].intro and "[KI]" not in secs[0].items[0].intro
+        assert secs[0].items[0].name == "Test" and "router.png" in secs[0].items[0].intro, secs[0].items[0].intro[:80]
+        assert "Hi" in secs[0].items[1].intro and "[KI]" not in secs[0].items[1].intro
     return bad
 
 

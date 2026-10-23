@@ -21,12 +21,13 @@ def cog(cx, cy, r_out, r_in, teeth, phase_deg=0.0):
 
 def mark(fg, bg, ac, hx=128, hy=98):
     """Mühle: Turm, vier Flügel, die aus den Zähnen des Zahnrads wachsen, Nabe in Akzentfarbe, Kacheln als Fenster."""
+    # Flügel setzen am Zahnkranz an (Radius 46), schmaler Hals am Rad, breiter nach außen
     sails = "".join(
-        f'<g transform="rotate({a} {hx} {hy})"><rect x="{hx-10}" y="{hy-98}" width="20" height="62" rx="7" fill="{fg}"/></g>'
+        f'<g transform="rotate({a} {hx} {hy})"><path d="M{hx-7},{hy-44} L{hx+7},{hy-44} L{hx+15},{hy-96} Q{hx},{hy-108} {hx-15},{hy-96} Z" fill="{fg}"/></g>'
         for a in (45, 135, 225, 315))
     return f'''<path d="M100,236 L156,236 L147,150 L109,150 Z" fill="{fg}"/>
   {sails}
-  <path d="{cog(hx, hy, 50, 36, 8, phase_deg=45)}" fill="{fg}" fill-rule="evenodd"/>
+  <path d="{cog(hx, hy, 50, 38, 12, phase_deg=45)}" fill="{fg}" fill-rule="evenodd"/>
   <circle cx="{hx}" cy="{hy}" r="22" fill="{bg}"/>
   <circle cx="{hx}" cy="{hy}" r="9" fill="{ac}"/>
   <rect x="115" y="170" width="12" height="12" rx="3" fill="{bg}"/>
@@ -75,7 +76,7 @@ if __name__ == "__main__":
         "logo.svg": icon(FG, BG, AC),
         "logo-light.svg": icon(FG, "#ffffff", AC),
         "wortmarke.svg": wortmarke(),
-        "banner-kursmuehle-v4.svg": banner(),
+        "banner-kursmuehle-v5.svg": banner(),
         "badge-version.svg": badge("Version", version, 62, 48),
         "badge-status.svg": badge("Status", "Tech-Demo → 1.0", 52, 110),
         "badge-lizenz.svg": badge("Lizenz", "nicht kommerziell", 52, 116, BG),

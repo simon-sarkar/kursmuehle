@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.4 – 2026-10-23 (AP3: Menüführung, Formatfrage, Selbstabfrage, Kursbanner)
+
+- Einstieg neu: erste Nachricht „Womit starten wir?“ mit fünf Wegen (nur Thema, Material, Material + Fragen, Fragen,
+  bestehenden Kurs erweitern), Steuerungsgrad mit Vorschlag aus dem Weg, Rahmen in einem Satz. Danach höchstens eine
+  Fragerunde; jede Frage hat einen Vorschlag, bei „nur Thema“ gibt es keine Rückfrage (`Angenommen:`-Zeilen im Drehbuch).
+  `references/intake.md` §0–§4 neu geschrieben, Steckbrief um `weg`, `format`, `assistent`, `bilder`, `angenommen` ergänzt.
+- Formatfrage früh und ausdrücklich, mit Empfehlung je Kurstyp (Selbstlernkurs → Kacheln, Wochenplan → Wochen,
+  Materialsammlung → Themen, einzelner Test oder Forum → Einzelaktivität); die Lehrkraft entscheidet. Bis AP6 baut der
+  Generator Themen und meldet ein vorgemerktes anderes Format als Hinweis (Umstellung in den Kurseinstellungen).
+- Selbstabfrage des Assistenten am Anfang von `SKILL.md` (Code ausführen, Dateien lesen, Bilder erzeugen) mit Folgen je Antwort.
+- Kursbanner: neues Element `### Banner:` (Bild + Titel + ein Satz, Bild optional) als erstes Element in `## Allgemeines`,
+  Baustein `banner()` in `scripts/gen/html.py`. Bilder nach `intake.md` §4: selbst erzeugt, mit `scripts/banner.py`
+  gerendert (textfrei, Akzentfarbe, Playwright; `CHROMIUM_PATH` für ein vorhandenes Chromium) oder per `Bildwunsch:`-Zeile
+  von der Lehrkraft. `examples/netzwerk9` hat ein Banner.
+- Offen: Abnahme „nur Thema → Drehbuch ohne Rückfrage“ mit einem Fremdmodell (AP9); Kachelformat und Abschnittsbilder (AP6);
+  README-Versionszeile wird mit AP2 zusammengeführt.
+
 ## 0.3 – 2026-10-23 (AP2: Prüfskript, site.json entfernt)
 
 - `scripts/check.py <datei.mbz>` prüft eine Sicherung vor dem Import: Archiv (tar.gz, `.ARCHIVE_INDEX`), Pflichtdateien,

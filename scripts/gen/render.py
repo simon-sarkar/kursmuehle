@@ -77,9 +77,9 @@ def _motif(hue, seed, w, h, kind):
 KINDS = {0: "rings", 1: "rings", 2: "dots", 3: "waves", 4: "arcs", 5: "bars", 6: "grid", 7: "tris", 8: "lines"}
 
 
-def banner_html(num, title, subtitle, chips, w=1600, h=420, hue=None, kicker=None, small=False):
+def banner_html(num, title, subtitle, chips, w=1600, h=420, hue=None, kicker=None, small=False, kind=None):
     hue = hue or HUES.get(num, HUES[0])
-    kind = KINDS.get(num, "rings")
+    kind = kind or KINDS.get(num, "rings")
     numeral = f'<div class="disp" style="font-size:{"150px" if not small else "96px"};font-weight:800;color:{hue};line-height:.9;letter-spacing:-.04em">{num:02d}</div>' if isinstance(num, int) and num > 0 else ""
     chip_html = "".join(f'<span style="display:inline-block;border:1.5px solid rgba(255,255,255,.28);color:#D7DCE6;border-radius:999px;padding:8px 16px;font-size:{"20px" if not small else "17px"};margin-right:10px;letter-spacing:.01em">{c}</span>' for c in chips)
     kick = f'<div style="color:{hue};font-weight:700;font-size:{"22px" if not small else "18px"};letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px">{kicker}</div>' if kicker else ""
@@ -184,7 +184,7 @@ def badge_html(label="Problemlösen", hue="#1D5FD1"):
 
 async def _render(jobs):
     async with async_playwright() as p:
-        browser = await p.chromium.launch()
+        browser = await p.chromium.launch(executable_path=os.environ.get("CHROMIUM_PATH") or None)
         page = await browser.new_page(device_scale_factor=1)
         for html, out, scale in jobs:
             await page.set_content(html)

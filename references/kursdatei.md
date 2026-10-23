@@ -12,6 +12,9 @@ farbe: #0F766E                                   Angaben zum Kurs (optional)
 kursbild: kurs.png
 
 ## Allgemeines                                   Abschnitt 0 (optional; fehlt er, wird ein leerer angelegt)
+### Banner: Netzwerkkomponenten                  Kursbanner: Bild + Titel + ein Satz, erstes Element des Kurses
+bild: banner.png                                 optional; ohne Bild ein Block in Akzentfarbe
+untertitel: Wie kommt das Internet aufs Handy?
 ### Textfeld: Willkommen
 …
 ## <Abschnittstitel> · 25 min                    Abschnitt; „· N min“ am Ende wird entfernt
@@ -27,7 +30,8 @@ teil: le1
 ```
 
 Ignoriert werden überall: `[Quelle: …]`, `[KI]`, `[KI: …]`, `(← S2)`, `(4 min)` und `· 4 min` am Ende von Überschriften
-und `Seite:`-Zeilen, Zeilen `Zeit … min` (Zeitcheck) und `v2: …` (Änderungsliste) im Kopf. Nichts davon landet im Kurs.
+und `Seite:`-Zeilen, Zeilen `Zeit … min` (Zeitcheck), `v2: …` (Änderungsliste), `Angenommen: …` (Annahmen ohne Rückfrage)
+und `Bildwunsch: …` (Bildprompts für die Lehrkraft) im Kopf. Nichts davon landet im Kurs.
 
 Fehler brechen den Bau ab und nennen Datei, Zeile und Element. Unbekannte Typen, Angaben, Bilder, Zonen und Sprungziele
 sind Fehler, keine Vermutungen.
@@ -43,6 +47,7 @@ sind Fehler, keine Vermutungen.
 | Abschnitt, Unterabschnitt, Element | `sichtbar ab` | `JJJJ-MM-TT`, Datumsbedingung 06:00 Uhr; überschreibt den Steckbrief |
 | Abschnitt, Unterabschnitt, Element | `prototyp: nein` | wird bei `--proto` weggelassen |
 | Unterabschnitt | `teil` | wie beim Abschnitt |
+| Banner | `bild`, `untertitel`, `name` | Bild aus `assets/` (optional), Satz unter dem Titel, Name im Kursindex (Standard = Titel) |
 | Seite, Lesebuch, Zuordnen, Lernkarten, Geschichte, Lückentext, Link, Video | `abschluss` | `ansehen` (Standard), `bestehen`, `keine`, `manuell` |
 | Quiz | `bestehen` | `80 %` oder `5 von 6`; Standard 70 % |
 | Quiz | `einleitung` | Text der Startseite |
@@ -62,6 +67,7 @@ sind Fehler, keine Vermutungen.
 
 | Typ | Moodle/H5P | Inhalt |
 |---|---|---|
+| `Banner` | Textfeld (label) | Kursbanner: Bild (`bild:`), Titel, Satz (`untertitel:`); Textbausteine darunter erlaubt. Erstes Element in `## Allgemeines` |
 | `Textfeld` | Textfeld (label) | Textbausteine (§4) |
 | `Seite` | Textseite (page) | Textbausteine |
 | `Überblick` | Textfeld mit Kopfkarte | Liste `- Schritt: Erklärung` (Lesen, Üben, Sichern) |

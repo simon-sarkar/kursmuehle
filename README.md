@@ -1,10 +1,10 @@
-![Kursmühle – Lernplattform-Kurse aus einem Prompt](docs/banner-kursmuehle-v4.svg)
+![Kursmühle – Lernplattform-Kurse aus einem Prompt](docs/banner-kursmuehle-v5.svg)
 
 # Kursmühle – Lernplattform-Kurse aus einem Prompt
 
-![Version 0.3](docs/badge-version.svg) ![Status: Tech-Demo auf dem Weg zu 1.0](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
+![Version 0.4](docs/badge-version.svg) ![Status: Tech-Demo auf dem Weg zu 1.0](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
 
-**Version 0.3** (Stand 23.10.2026) · siehe [`ROADMAP.md`](ROADMAP.md) und [`CHANGELOG.md`](CHANGELOG.md)
+**Version 0.4** (Stand 23.10.2026) · siehe [`ROADMAP.md`](ROADMAP.md) und [`CHANGELOG.md`](CHANGELOG.md)
 
 **Ein KI-Assistent baut aus einer Beschreibung oder eigenem Unterrichtsmaterial eine importierbare Kurssicherung (`.mbz`) für die ByCS-Lernplattform.**
 
@@ -29,15 +29,18 @@ fertige Kurssicherung zum Import.
 2. **Dem KI-Assistenten den Ordner geben** und sagen, welcher Kurs entstehen
    soll. Der Assistent muss Code ausführen können (Claude, ChatGPT mit
    Code-Ausführung oder ein lokaler Agent); auf deinem Rechner wird nichts
-   installiert. Du wählst, wie viel du selbst entscheidest:
+   installiert. Die erste Frage lautet „Womit starten wir?“:
    - nur ein Thema nennen – die KI macht alles, du liest das Drehbuch
-   - altes Material abgeben – die KI baut daraus
-   - Fragen beantworten – mit oder ohne Material, du steuerst Gliederung und Formate
+   - eigenes Material abgeben (Folien, Fotos, Arbeitsblätter) – die KI baut daraus
+   - Material und ein paar Fragen, oder Fragen ohne Material
+   - einen bestehenden Kurs erweitern
+   Danach höchstens eine Fragerunde, jede Frage mit Vorschlag; das Kursformat wird
+   früh gefragt und empfohlen (Kacheln, Wochen, Themen, Einzelaktivität).
 3. **Drehbuch lesen und freigeben.** Die gelieferte `.mbz` importierst du über
    Kurs → Mehr → *Kurs wiederverwenden* → *Wiederherstellen*, zuerst in einen
    Testkurs.
 
-> **Projektstatus: Version 0.3 (Tech-Demo).**
+> **Projektstatus: Version 0.4 (Tech-Demo).**
 > Der Ablauf Intake → Drehbuch → Generator → Import ist an zwei Beispielkursen
 > durchgespielt, einschließlich H5P-Inhalten, Badge und Nachlieferung in einen
 > laufenden Kurs, mit Claude Code und mit ChatGPT. Offen sind weitere
@@ -79,6 +82,7 @@ fertige Kurssicherung zum Import.
 | Textfelder und Seiten mit beliebigem HTML-Design | Moodle-Test, Aufgabe, Forum, Buch, Lektion, Glossar, Wiki, Abstimmung |
 | H5P: Interactive Book, Branching Scenario, Question Set, Drag and Drop, Fill in the Blanks, Dialog Cards, Course Presentation; Bausteine Text, Bild, Multiple Choice, True/False, Drag the Words, Mark the Words, Summary, Single Choice Set | Weitere H5P-Typen (Interactive Video, Image Hotspots, Memory …) |
 | Feedback-Umfragen, Links/Videos (eingebettet), Badges, Kursbild, Abschlussverfolgung | Gruppen, Termine, Kursabschluss-Kriterien, Audio/Video als Datei |
+| Kursbanner als erstes Element (Bild, Titel, ein Satz); Bild von der KI erzeugt, gerendert (`scripts/banner.py`) oder von der Lehrkraft nach Prompt | Abschnitts- und Kachelbilder automatisch aus dem Material |
 | Zugriffsbeschränkung „sichtbar ab Datum“; Nachlieferung per Delta-Sicherung | Andere Zugriffsbedingungen (Abschluss von X, Bewertung, Gruppe) |
 
 ## Repository-Struktur

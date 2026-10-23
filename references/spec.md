@@ -156,7 +156,7 @@ Bild siehe H. Nach Import inaktiv.
 - Bilder: PNG ≤ 1600 px Breite skalieren sauber; Text in Bildern ist auf Mobilgeräten klein → Text bevorzugt als HTML.
 - Label-Namen erscheinen im Kursindex → sprechend benennen.
 - Gestaltung (Banner, Karten, Farben, Marker, Buchfarbe) ist Präferenz der Lehrkraft: aus dem Steckbrief `design`
-  übernehmen (Intake Runde 4); ohne Angabe schlicht bauen (keine Banner-Bilder, keine Emojis, eine Akzentfarbe) und
+  übernehmen (intake.md §2); ohne Angabe schlicht bauen (Kursbanner, keine Abschnittsbilder, keine Emojis, eine Akzentfarbe) und
   bei der ersten Lieferung zwei Varianten einer Abschnittsseite zur Auswahl zeigen.
 
 ### L. Inhaltsregeln
