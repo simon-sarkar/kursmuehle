@@ -20,14 +20,15 @@ def cog(cx, cy, r_out, r_in, teeth, phase_deg=0.0):
 
 
 def mark(fg, bg, ac, hx=128, hy=98):
-    """Mühle: Turm, vier Flügel, die aus den Zähnen des Zahnrads wachsen, Nabe in Akzentfarbe, Kacheln als Fenster."""
-    # Flügel setzen am Zahnkranz an (Radius 46), schmaler Hals am Rad, breiter nach außen
+    """Mühle: Turm, vier Flügel hinter dem Zahnrad (13 Zähne, ungerade -> nie spiegelsymmetrisch zu den Flügeln),
+    dünner Rand in Hintergrundfarbe trennt Rad und Flügel, Nabe in Akzentfarbe, Kacheln als Fenster."""
     sails = "".join(
-        f'<g transform="rotate({a} {hx} {hy})"><path d="M{hx-7},{hy-44} L{hx+7},{hy-44} L{hx+15},{hy-96} Q{hx},{hy-108} {hx-15},{hy-96} Z" fill="{fg}"/></g>'
+        f'<g transform="rotate({a} {hx} {hy})"><path d="M{hx-7},{hy-40} L{hx+7},{hy-40} L{hx+15},{hy-96} Q{hx},{hy-108} {hx-15},{hy-96} Z" fill="{fg}"/></g>'
         for a in (45, 135, 225, 315))
+    gear = cog(hx, hy, 50, 38, 13, phase_deg=45)
     return f'''<path d="M100,236 L156,236 L147,150 L109,150 Z" fill="{fg}"/>
   {sails}
-  <path d="{cog(hx, hy, 50, 38, 12, phase_deg=45)}" fill="{fg}" fill-rule="evenodd"/>
+  <path d="{gear}" fill="{fg}" stroke="{bg}" stroke-width="5" stroke-linejoin="round"/>
   <circle cx="{hx}" cy="{hy}" r="22" fill="{bg}"/>
   <circle cx="{hx}" cy="{hy}" r="9" fill="{ac}"/>
   <rect x="115" y="170" width="12" height="12" rx="3" fill="{bg}"/>
@@ -53,7 +54,7 @@ def banner():
     # Wasserzeichen rechts = dieselbe Mühle wie im Logo (Flügel am Zahnkranz), ohne Turm
     motif = "".join(
         f'<g transform="rotate({a})"><path d="M-10,-66 L10,-66 L22,-144 Q0,-162 -22,-144 Z"/></g>' for a in (45, 135, 225, 315)
-    ) + f'<path d="{cog(0, 0, 75, 57, 12, phase_deg=45)}" fill-rule="evenodd"/>' 
+    ) + f'<path d="{cog(0, 0, 75, 57, 13, phase_deg=45)}" fill-rule="evenodd"/>' 
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-label="Kursmühle – Lernplattform-Kurse aus einem Prompt">
   <rect width="1200" height="300" rx="18" fill="{BG}"/>
   <g transform="translate(60,46) scale(0.8)"><rect width="256" height="256" rx="56" fill="{FG}"/>{mark(BG, FG, AC)}</g>
@@ -79,7 +80,7 @@ if __name__ == "__main__":
         "logo.svg": icon(BG, FG, AC),          # dunkles Quadrat, helle Mühle (Hauptfassung, wie im Banner)
         "logo-light.svg": icon(FG, BG, AC),    # Creme-Quadrat, dunkle Mühle (für dunkle Flächen)
         "wortmarke.svg": wortmarke(),
-        "banner-kursmuehle-v6.svg": banner(),
+        "banner-kursmuehle-v7.svg": banner(),
         "badge-version.svg": badge("Version", version, 62, 48),
         "badge-status.svg": badge("Status", "Tech-Demo → 1.0", 52, 110),
         "badge-lizenz.svg": badge("Lizenz", "nicht kommerziell", 52, 116, BG),
