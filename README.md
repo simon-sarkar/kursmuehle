@@ -1,70 +1,169 @@
-# bycs-kurs – ByCS-Lernplattform-Kurse per KI generieren
+# bycs-kurs 🎓🤖
 
-Ein Skill für KI-Assistenten mit Code-Ausführung (Claude, ChatGPT mit Code-Ausführung, lokale Agenten): aus einer
-Kursbeschreibung oder einem kurzen Fragen-Intake entsteht eine importierbare Kurssicherung (`.mbz`) für die
-ByCS-Lernplattform (Bayern, Moodle-basiert, früher mebis) – Abschnitte, Seiten, H5P-Inhalte, Umfragen, Badges.
-Version 0.1, Stand 2026-10-23. Tech-Demo, kein offizielles Produkt der Plattform.
+**Kurse für die ByCS-Lernplattform per KI generieren – aus einer Beschreibung wird eine fertige Kurssicherung.**
 
-**Lizenz:** noch offen. Ansehen und Ausprobieren willkommen; Weiterverbreitung oder Einbau in eigene Projekte bitte
-vorher anfragen. Die Bilder in `examples/netzwerk9/assets` sind Platzhalter (eigene Fotos einsetzen).
+`bycs-kurs` ist ein Skill für KI-Assistenten, die Code ausführen können (Claude,
+ChatGPT mit Code-Ausführung, lokale Agenten). Die Lehrkraft beschreibt ihren Kurs
+oder beantwortet ein paar Fragen, hängt vorhandenes Material an (Folien,
+Buchseiten als Foto, Arbeitsblätter) und liest ein kurzes Drehbuch gegen. Der
+Generator erzeugt daraus eine importierbare Kurssicherung (`.mbz`) für die
+[ByCS-Lernplattform](https://www.bycs.de/) (Bayern, Moodle-basiert, früher mebis) –
+mit Abschnitten, gestalteten Seiten, H5P-Übungen, Umfragen und Badges.
+Entstanden als Tech-Demo für eine Dienstbesprechung zum Thema *Digitales
+Netzwerk* – zur Beantwortung der Frage: *Wie viel Kurs bekommt man aus einem
+Nachmittag Prompten, ohne eine einzige Datei von Hand anzulegen?*
 
-## Schnellstart
+> **📍 Projektstatus: Version 0.1 – Tech-Demo, funktionsfähig.**
+> Der komplette Weg ist durchlaufen und verifiziert: Intake → Drehbuch →
+> Generator → Import in die Lernplattform, inklusive H5P-Inhalten, Badge und
+> Nachlieferung einzelner Abschnitte in einen laufenden Kurs. Was noch
+> aussteht, ist die **Erprobung durch andere**: weitere Kurslayouts, mehr
+> Aktivitätstypen und Rückmeldungen aus echten Kursen. Kein offizielles
+> Produkt der Plattform; wenn sich die Lernplattform ändert, wird der Skill
+> nachgezogen.
 
-1. Repo herunterladen (ZIP oder `git clone`).
-2. Dem KI-Assistenten den Ordner geben und sagen, was für ein Kurs entstehen soll – er liest `SKILL.md` und führt durch
-   Intake, Drehbuch und Bau.
-3. Die erzeugte `.mbz` in der Lernplattform einspielen: Kurs → Mehr → Kurs wiederverwenden → Wiederherstellen.
+## Systemübersicht
 
-Beispielkurs ohne KI bauen: `python3 scripts/build.py --content examples/netzwerk9 --no-render` (Python 3.11+, PyYAML, Pillow).
+```
+Lehrkraft ──▶ KI-Assistent ──▶ Drehbuch (Text, zum Gegenlesen)
+ Beschreibung   liest SKILL.md          │ Freigabe
+ + Material                             ▼
+                               content/course.py ──▶ scripts/build.py ──▶ kurs.mbz
+                               Inhalte in Python       Generator (gen/)      │
+                                                                             ▼
+                                   ByCS-Lernplattform ◀── Kurs wiederverwenden → Wiederherstellen
+```
 
-## Aufbau des Repos
+- **Die KI schreibt nur Inhalte**, der Generator baut das Archiv: eine Sicherung
+  besteht aus über hundert verknüpften XML-Dateien, Hashes und IDs – das macht
+  der Code fehlerfrei, die KI nicht.
+- **Drehbuch vor Bau:** der gesamte Kurs als kurzer Text mit Zeitcheck und
+  Markierung, was aus dem Material stammt und was die KI ergänzt hat.
+- **Keine personenbezogenen Daten im Skill:** plattformspezifische Werte kommen
+  aus einer lokalen `site.json`, Beispielfotos sind Platzhalter.
 
-| Pfad | Inhalt |
-|---|---|
-| `SKILL.md` | Einstieg für den KI-Agenten: Ablauf, harte Regeln, Grenzen |
-| `references/spec.md` | Normative Spezifikation der Sicherung (Plattformwerte, Schemata, H5P-Strukturen, Etappen) |
-| `references/h5p-vorlagen.md` | `json_content`-Vorlagen aller unterstützten H5P-Typen mit deutschen Oberflächentexten |
-| `references/skelette.md` | XML-Skelette und leere Standarddateien |
-| `references/intake.md` | Fragerunden, Drehbuch-Format, Steckbrief-Schema |
-| `scripts/` | Generator (`gen/`), `build.py`, Vorlagen, `site.json` |
-| `examples/netzwerk9/` | Minimaler Beispielkurs (eine Einheit, 25 min) – Vorbild für neue Kurse |
-| `examples/alltagskompetenz/` | Großer Beispielkurs (Unterabschnitte, Badge, Delta) |
+## Features
 
+- 📄 Textfelder und Seiten mit frei gestaltbarem HTML (Karten, Merkkästen,
+  Tabellen – angepasst an die Filter des Plattform-Themes)
+- 🧩 H5P ohne Klickerei: Interactive Book, Branching Scenario, Question Set,
+  Drag and Drop, Fill in the Blanks, Dialog Cards, Course Presentation
+- 🔁 Rhythmus *Lesen → Üben → Sichern* statt H5P-Dauerfeuer; Regel
+  „erst Input, dann Kontrolle“ steckt im Intake
+- 🏅 Badges, Kursbild, Abschlussverfolgung, Bewertungsposten für H5P,
+  Feedback-Umfragen, eingebettete Videos
+- 📅 Kurs in Etappen: „sichtbar ab Datum“ je Abschnitt oder Delta-Sicherung
+  zum Nachliefern in einen laufenden Kurs (Fortschritt bleibt erhalten)
+- 🎚️ Steuerungsgrad wählbar: selbst entscheiden, Vorschläge freigeben oder
+  „KI macht alles“
+- 🧑‍🏫 Keine Installation auf Lehrkraft-Seite: Ordner an den Assistenten geben,
+  `.mbz` zurückbekommen, importieren
 
-## Für Lehrkräfte
-
-**Was das ist.** Eine Anleitung für deinen KI-Assistenten, sofern er Code ausführen kann (Claude, ChatGPT mit
-Code-Ausführung, lokale Agenten). Du gibst ihm dieses Dokument plus das Generator-Paket und beschreibst deinen Kurs;
-er liefert eine `.mbz`-Sicherung, die du in der ByCS-Lernplattform (früher mebis) über **Kurs → Mehr → Kurs wiederverwenden → Wiederherstellen** einspielst.
-Code-Ausführung ist Pflicht: Die Sicherung ist ein gepacktes Archiv aus über hundert verknüpften Dateien, das der
-Generator fehlerfrei erzeugt; die KI schreibt nur die Inhalte. Ändert sich ByCS-Lernplattform, wird dieses Dokument aktualisiert.
-
-**Was der Generator kann – und was (noch) nicht**
+## Was der Generator kann – und was (noch) nicht
 
 | Kann | Noch nicht |
 |---|---|
 | Kursformat „Themen“, beliebig viele Abschnitte und Unterabschnitte | Andere Kursformate (Kachel, Grid, Einzelaktivität) |
 | Textfelder und Seiten mit beliebigem HTML-Design | Moodle-Test, Aufgabe, Forum, Buch, Lektion, Glossar, Wiki, Abstimmung |
-| H5P: Interactive Book, Branching Scenario, Question Set, Drag and Drop, Fill in the Blanks, Dialog Cards, Course Presentation; Bausteine Text, Bild, Multiple Choice, True/False, Drag the Words, Mark the Words, Summary, Single Choice Set | Weitere H5P-Typen (Interactive Video, Image Hotspots, Memory …) – Fallback B.3 |
-| Feedback-Umfragen, Links/Videos (eingebettet), Badges, Kursbild, Abschlussverfolgung, Bewertungsposten für H5P | Gruppen, Termine, Kursabschluss-Kriterien, Audio/Video als Datei |
-| Zugriffsbeschränkung „sichtbar ab Datum“ je Abschnitt/Aktivität; Kurs in Etappen nachliefern (Delta-Sicherung) | Andere Zugriffsbedingungen (Abschluss von X, Bewertung, Gruppe) |
+| H5P: Interactive Book, Branching Scenario, Question Set, Drag and Drop, Fill in the Blanks, Dialog Cards, Course Presentation; Bausteine Text, Bild, Multiple Choice, True/False, Drag the Words, Mark the Words, Summary, Single Choice Set | Weitere H5P-Typen (Interactive Video, Image Hotspots, Memory …) |
+| Feedback-Umfragen, Links/Videos (eingebettet), Badges, Kursbild, Abschlussverfolgung | Gruppen, Termine, Kursabschluss-Kriterien, Audio/Video als Datei |
+| Zugriffsbeschränkung „sichtbar ab Datum“; Nachlieferung per Delta-Sicherung | Andere Zugriffsbedingungen (Abschluss von X, Bewertung, Gruppe) |
 
-Jede Erweiterung passiert einmal im Generator und gilt danach für alle.
+Jede Erweiterung passiert einmal im Generator und gilt danach für alle Kurse.
 
-**Ablauf.** (1) Steuerungsgrad wählen: selbst entscheiden, Vorschläge freigeben, oder KI macht alles. (2) Kurs
-beschreiben, Material anhängen (Buchseiten als Foto, Arbeitsblätter, Links); die KI stellt wenige Fragen zu Gliederung
-und Aufgabenformaten. (3) **Drehbuch lesen**: der gesamte Inhalt als kurzer Text – Seiten, Aufgaben mit Lösungen,
-Geschichte – mit Markierung, was aus deinem Material stammt und was die KI ergänzt hat, plus Zeitcheck. Korrigieren,
-nachfragen, freigeben. (4) Import in einen Testkurs, Screenshot an die KI, Korrekturen. (5) Nach dem Import: Badge
-aktivieren (Mehr → Badges), Kursbild prüfen, Probedurchlauf als Schüler/in.
+## Repository-Struktur
 
-**Kurs in Etappen.** Zwei Wege: Entweder der Kurs ist fertig und wird wochenweise freigegeben – dann steht im Steckbrief
-je Lerneinheit ein Datum „sichtbar ab“, alles wird einmal importiert. Oder die Lerneinheiten entstehen nach und nach –
-dann liefert die KI je Etappe eine Delta-Sicherung nur mit den neuen Abschnitten, die mit **„In diesen Kurs
-zusammenführen“** eingespielt wird; Bestehendes und der Lernfortschritt bleiben erhalten. Was schon im Kurs ist, lässt
-sich per Sicherung nicht ändern: Abschnitt löschen, Delta neu einspielen (Fortschritt in diesem Abschnitt geht verloren).
+```
+SKILL.md       Einstieg für den KI-Agenten: Ablauf, harte Regeln, Grenzen
+references/    spec.md (Sicherungsformat, Plattformwerte, H5P-Strukturen),
+               h5p-vorlagen.md (json_content aller Typen, deutsche UI-Texte),
+               skelette.md (XML-Skelette), intake.md (Fragerunden, Drehbuch, Steckbrief)
+scripts/       Generator (gen/), build.py, Vorlagen, site.json
+examples/      netzwerk9/  – eine Einheit, 25 min: Vorbild für neue Kurse
+               alltagskompetenz/ – großer Kurs mit Unterabschnitten, Badge, Delta
+CHANGELOG.md   Versionen und bekannte Lücken
+```
+
+## Schnellstart
+
+0. **Noch nie eine Sicherung importiert?** Kein Problem – der Import ist ein
+   Datei-Upload: Kurs → Mehr → **Kurs wiederverwenden → Wiederherstellen**.
+1. **Repo herunterladen** (ZIP oder `git clone`) und dem KI-Assistenten den
+   Ordner geben. Er liest [`SKILL.md`](SKILL.md) und führt durch Intake,
+   Drehbuch und Bau.
+2. **Kurs beschreiben, Material anhängen, Drehbuch lesen.** Korrigieren,
+   nachfragen, freigeben – gebaut wird erst danach.
+3. **`.mbz` importieren**, am besten zuerst in einen Testkurs. Danach: Badge
+   aktivieren (Mehr → Badges), Kursbild prüfen, Probedurchlauf als Schüler/in.
+   Screenshot an die KI, falls etwas nicht passt.
+
+Beispielkurs ohne KI bauen (Python 3.11+, PyYAML, Pillow):
+
+```bash
+python3 scripts/build.py --content examples/netzwerk9 --no-render
+```
+
+⚠️ **Plattformwerte bleiben lokal:** `scripts/site.json` enthält Platzhalter.
+Eigene Werte (aus einer Test-Sicherung der eigenen Plattform) dort eintragen und
+nicht committen.
+
+## Kurs in Etappen
+
+Zwei Wege, beide verifiziert:
+
+- **Fertig bauen, wochenweise freigeben:** im Steckbrief steht je Lerneinheit
+  ein Datum „sichtbar ab“; alles wird einmal importiert.
+- **Nach und nach bauen:** je Etappe liefert die KI eine Delta-Sicherung nur
+  mit den neuen Abschnitten, eingespielt über **„In diesen Kurs
+  zusammenführen“**. Bestehendes und der Lernfortschritt bleiben erhalten.
+
+Was schon im Kurs ist, lässt sich per Sicherung nicht ändern: Abschnitt
+löschen, Delta neu einspielen (Fortschritt in diesem Abschnitt geht verloren).
+
+## Status / Roadmap
+
+- [x] Generator für Sicherungen (Moodle 5.2, mod_hvp), Import verifiziert
+- [x] H5P-Render-Test und inhaltliche Gegenprüfung durch zweiten Agenten
+- [x] Delta-Sicherung („Zusammenführen“) und „sichtbar ab Datum“
+- [x] Intake mit Steuerungsgrad, Drehbuch-Format, Zeitcheck, Änderungsliste
+- [ ] H5P direkt im Textfeld (Kern-H5P-Filter) – weniger Ladezeit pro Element
+- [ ] Drehbuch-Parser: Drehbuch → `content/` automatisch statt von Hand
+- [ ] Weitere Kursformate (Kachel) und Aktivitäten (Test, Aufgabe, Forum)
+- [ ] Rückmeldungen aus dem Einsatz an anderen Schulen
+
+## Mitmachen
+
+Ausprobieren, Fragen, Fehlerberichte und Erweiterungen des Generators sind
+willkommen – gern als Issue oder Pull Request. Besonders nützlich: Sicherungen
+aus anderen Kurslayouts (als Test-Export ohne Teilnehmerdaten), damit der
+Generator mehr Formate lernt.
+
+## Lizenz
+
+**Noch offen.** Ansehen, Ausprobieren und Rückmeldungen sind ausdrücklich
+willkommen; Weiterverbreitung oder Einbau in eigene Projekte bitte vorher
+anfragen. Eine Lizenz wird nachgereicht. Die Bilder in
+`examples/netzwerk9/assets` sind Platzhalter – eigene Fotos einsetzen.
+
+## Danksagung
+
+- [ByCS-Lernplattform](https://www.bycs.de/) und [Moodle](https://moodle.org/) –
+  das offene Sicherungsformat macht den Ansatz überhaupt erst möglich
+- [H5P](https://h5p.org/) und das Plugin [mod_hvp](https://github.com/h5p/moodle-mod_hvp) –
+  interaktive Inhalte als reines JSON
+- [h5p-standalone](https://github.com/tunapanda/h5p-standalone) – Render-Test
+  der H5P-Inhalte außerhalb der Plattform
+- [Claude Code](https://claude.com/claude-code) (Anthropic) – KI-Assistent, mit
+  dem Generator, Spezifikation, Beispielkurse und Dokumentation entwickelt wurden
+
+## Haftungsausschluss
+
+Tech-Demo ohne Verbindung zum Betreiber der Lernplattform. Sicherungen vor dem
+Einsatz immer in einem Testkurs importieren und prüfen; für Inhalte, die die
+KI ergänzt hat, gilt das Drehbuch als Kontrollinstanz – fachliche
+Verantwortung bleibt bei der Lehrkraft.
 
 ---
 
-
-**Für den KI-Agenten:** `SKILL.md` laden; Referenzen in `references/`, Generator in `scripts/`, Beispielkurs in `examples/alltagskompetenz/`.
+**Für den KI-Agenten:** [`SKILL.md`](SKILL.md) laden; Referenzen in
+`references/`, Generator in `scripts/`, Beispielkurse in `examples/`.
