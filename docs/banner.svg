@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-label="bycs-kurs">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f2a3d"/>
+      <stop offset="1" stop-color="#1b4d6b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="300" rx="18" fill="url(#bg)"/>
+
+  <!-- Wortmarke -->
+  <text x="72" y="128" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="64" font-weight="700" fill="#ffffff" letter-spacing="-1">bycs-kurs</text>
+  <text x="76" y="172" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="24" fill="#cfe3ee">Lernplattform-Kurse aus einem Prompt</text>
+  <text x="76" y="206" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="17" fill="#8fb4c8">Beschreibung oder eigenes Material rein, Kurssicherung raus</text>
+
+  <!-- Ablauf rechts: drei Stationen -->
+  <g font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" text-anchor="middle">
+    <g transform="translate(760,150)">
+      <rect x="-70" y="-46" width="140" height="92" rx="12" fill="#ffffff" fill-opacity="0.08" stroke="#8fb4c8" stroke-opacity="0.6"/>
+      <rect x="-36" y="-24" width="72" height="8" rx="4" fill="#cfe3ee"/>
+      <rect x="-36" y="-6" width="56" height="8" rx="4" fill="#cfe3ee" fill-opacity="0.7"/>
+      <rect x="-36" y="12" width="64" height="8" rx="4" fill="#cfe3ee" fill-opacity="0.5"/>
+      <text y="72" font-size="15" fill="#cfe3ee">Drehbuch</text>
+    </g>
+    <path d="M840 150 h44" stroke="#8fb4c8" stroke-width="3" fill="none"/>
+    <path d="M878 143 l10 7 -10 7" fill="#8fb4c8"/>
+    <g transform="translate(960,150)">
+      <rect x="-70" y="-46" width="140" height="92" rx="12" fill="#ffffff" fill-opacity="0.08" stroke="#8fb4c8" stroke-opacity="0.6"/>
+      <text y="10" font-size="30" font-weight="700" fill="#ffffff">.mbz</text>
+      <text y="72" font-size="15" fill="#cfe3ee">Generator</text>
+    </g>
+    <path d="M1040 150 h44" stroke="#8fb4c8" stroke-width="3" fill="none"/>
+    <path d="M1078 143 l10 7 -10 7" fill="#8fb4c8"/>
+    <g transform="translate(1130,150)">
+      <rect x="-40" y="-46" width="80" height="92" rx="12" fill="#ffffff" fill-opacity="0.08" stroke="#8fb4c8" stroke-opacity="0.6"/>
+      <rect x="-22" y="-26" width="44" height="22" rx="4" fill="#cfe3ee"/>
+      <rect x="-22" y="2" width="20" height="22" rx="4" fill="#cfe3ee" fill-opacity="0.7"/>
+      <rect x="2" y="2" width="20" height="22" rx="4" fill="#cfe3ee" fill-opacity="0.7"/>
+      <text y="72" font-size="15" fill="#cfe3ee">Kurs</text>
+    </g>
+  </g>
+</svg>

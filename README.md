@@ -1,6 +1,8 @@
-# bycs-kurs
+![bycs-kurs – Lernplattform-Kurse aus einem Prompt](docs/banner.svg)
 
-**Kurssicherungen für die ByCS-Lernplattform mit einem KI-Assistenten erzeugen: aus einer Beschreibung oder altem Unterrichtsmaterial wird eine importierbare `.mbz`.**
+# bycs-kurs – Lernplattform-Kurse aus einem Prompt
+
+**Ein KI-Assistent baut aus einer Beschreibung oder eigenem Unterrichtsmaterial eine importierbare Kurssicherung (`.mbz`) für die ByCS-Lernplattform.**
 
 ## Was bringt das?
 
