@@ -5,8 +5,8 @@ description: Baut komplette Kurse für die ByCS-Lernplattform (Bayern, Moodle-ba
 
 # ByCS-Lernplattform-Kurs generieren
 
-Ergebnis ist eine `.mbz`, die die Lehrkraft über Kurs → Mehr → Kurs wiederherstellen einspielt (Anleitung unten); ohne
-Code-Ausführung sind es Drehbuch und Steckbrief (Selbstabfrage).
+Ergebnis ist eine `.mbz`, die die Lehrkraft über Kurs → Mehr → Kurs wiederherstellen einspielt (Anleitung unten); erst
+wenn der Bauaufruf scheitert, sind es Drehbuch und Steckbrief als Dateien (Ablauf, Schritt 3).
 Für den Bau ist Code-Ausführung (Python 3.11+, PyYAML, Pillow; Playwright+Chromium nur für Bilder) Voraussetzung.
 
 **Regel vor allem anderen:** Ein Textfeld mit Übungsblock (Textfeld-Modus, `website: textfeld`) darf die Lehrkraft nie mit
@@ -22,7 +22,7 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
 
 | Kann ich … | ja | nein |
 |---|---|---|
-| Code ausführen (Python 3.11+, PyYAML, Pillow)? | Kurs bauen wie unten | Drehbuch und Steckbrief liefern; Bau in einem Assistenten mit Code-Ausführung empfehlen |
+| Code ausführen (Python 3.11+, PyYAML, Pillow)? | Kurs bauen wie unten | nur nach einem gescheiterten Aufruf: Fehlermeldung zeigen, Drehbuch und Steckbrief als Dateien liefern; Bau in einem Assistenten mit Code-Ausführung empfehlen |
 | Dateien lesen (PDF, PPTX, Bilder)? (nur bei Material) | Material der Lehrkraft lesen, Fotos übernehmen | Lehrkraft bitten, Text einzufügen und Fotos zu beschreiben |
 | Bilder erzeugen? | Banner, Kursbild, Abschnittsbilder selbst erzeugen und in `assets/` legen (intake.md §4) | `python3 scripts/banner.py` rendern (Playwright), sonst Banner ohne Bild und `Bildwunsch:`-Zeilen für die Lehrkraft |
 
@@ -39,8 +39,10 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
    Drehbuch-Format mit Quellen- und Zweckmarker und Zeitcheck → ein Prüfdurchlauf nach `references/qualitaet.md` →
    Freigabe durch die Lehrkraft (bei „KI macht alles“ keine Freigabe, der Durchlauf läuft dann vor dem Bau).
    Bei Revision nur Änderungsliste + geänderte Blöcke zeigen. Die freigegebene Datei wird unverändert gebaut.
-3. **Bau**: Kursordner mit `kurs.md`, `assets/` (PNG), `steckbrief.yaml` (Vorbild `examples/netzwerk9/` = minimal,
-   `examples/alltagskompetenz/` = alle Elementtypen). Kein Python schreiben. Erstes Element in `## Allgemeines` ist
+3. **Bau**, sobald das Drehbuch freigegeben ist; bei Steuerungsgrad c sofort nach dem Drehbuch, ohne Halt. Nie vorab
+   behaupten, Code-Ausführung oder Python fehle: den Bau mit `scripts/build.py` versuchen; erst wenn der Aufruf scheitert,
+   die Fehlermeldung zeigen und Drehbuch und Steckbrief als Dateien liefern. Kursordner mit `kurs.md`, `assets/` (PNG),
+   `steckbrief.yaml` (Vorbild `examples/netzwerk9/` = minimal, `examples/alltagskompetenz/` = alle Elementtypen). Kein Python schreiben. Erstes Element in `## Allgemeines` ist
    `### Banner:` (Bild + Titel + ein Satz); Bild nach intake.md §4: selbst erzeugt, `python3 scripts/banner.py`, oder ohne `bild:`.
    Kursformat aus dem Steckbrief (`format:` themen, kacheln, wochen, einthemen, komprimiert, einzelaktivitaet); bei Kacheln
    je Abschnitt `kachelbild:` (PNG 900 × 600, eigenes Motiv je Abschnitt; `banner.py --kachel --nummer 1-N`) oder

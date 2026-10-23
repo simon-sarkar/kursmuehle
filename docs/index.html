@@ -132,7 +132,7 @@ lädst. Heraus kommt ein Kurs mit Texten, Übungen und Tests.</p>
   <a class="knopf" href="https://github.com/simon-sarkar/kursmuehle/releases/latest/download/kursmuehle.zip">Skill-Zip herunterladen</a>
   <a class="knopf leise" href="https://github.com/simon-sarkar/kursmuehle">Repository auf GitHub</a>
 </p>
-<p class="badges"><img src="badge-version.svg" alt="Version 1.0.1" height="22"> <img src="badge-plattform.svg"
+<p class="badges"><img src="badge-version.svg" alt="Version 1.0.2" height="22"> <img src="badge-plattform.svg"
   alt="Plattform: ByCS-Lernplattform, Moodle 5.2" height="22"> <img src="badge-lizenz.svg" alt="Lizenz: nicht kommerziell" height="22"></p>
 </div></header>
 <main>
@@ -163,7 +163,10 @@ lädst. Heraus kommt ein Kurs mit Texten, Übungen und Tests.</p>
       Standardmodell. Bei Claude steht sie je nach Version in den Einstellungen unter „Dateien erstellen und
       analysieren“ und muss eingeschaltet sein; dort kannst du das Zip auch als Skill anlegen, dann genügt der
       Kurswunsch.</p>
-      <p>Durchläufe mit 1.0 in ChatGPT und claude.ai stehen aus; mit Version 0.1 lief ein Kurs in ChatGPT.</p>
+      <p>Stell bei ChatGPT den Aufwand auf „Extra High“ (gibt es auch im Gratiskonto); mit mittlerem Aufwand wurde der
+      Kurs im Test deutlich dünner, ohne Grafiken und mit falschem Halt vor dem Bau.</p>
+      <p>In ChatGPT lief am 23.10.2026 ein Kurs mit kostenlosem Konto (<a href="#richtwerte">Richtwerte</a>); Durchläufe
+      in claude.ai stehen aus.</p>
     </article>
     <article class="karte">
       <h3>ByLKI oder AIS-Chat</h3>
@@ -249,9 +252,23 @@ lädst. Heraus kommt ein Kurs mit Texten, Übungen und Tests.</p>
   </table>
   <p>Der Fremdtest lief in Claude Code, einem Agenten mit Dateizugriff, nicht über den Upload in ChatGPT oder claude.ai.
   Mit Version 0.1 lag ein kompletter Kurs mit mehreren Abschnitten und vom Assistenten erzeugten Bildern in ChatGPT bei
-  etwa sieben Minuten, eine Einzelbeobachtung ohne Protokoll. Ob ein kostenloses Konto reicht, ist offen; Durchläufe mit
-  1.0 in ChatGPT, claude.ai und ByLKI stehen aus. Das Protokoll liegt im
+  etwa sieben Minuten, eine Einzelbeobachtung ohne Protokoll. Das Protokoll liegt im
   <a href="https://github.com/simon-sarkar/kursmuehle/blob/main/docs/entwicklung/protokolle/AP9_fremdtest.md">Repository</a>.</p>
+  <p>ChatGPT mit kostenlosem Konto, 23.10.2026: Eingaben „Entpacke das und lies SKILL.md“, „Starte den Skill“, dann Weg
+  „Fragen“, Steuerungsgrad c und „Mathematik Satz des Pythagoras, 9. Klasse Mittelschule, Selbstlernkurs ca. 45 min,
+  eine Einheit“.</p>
+  <table>
+    <thead><tr><th>Größe</th><th>A: GPT-5.6 Terra, Aufwand Medium</th><th>B: GPT-6 Luna, Aufwand Extra High</th></tr></thead>
+    <tbody>
+      <tr><td>Dauer</td><td>9 min (22:05–22:14), davon 4 min Halt mit der falschen Meldung, es gebe keine lauffähige Python-Umgebung</td><td>4 min (22:21–22:25), ohne Halt</td></tr>
+      <tr><td>Bilder</td><td>keine</td><td>drei selbst gezeichnete: beschriftetes Dreieck, Banner, Badge</td></tr>
+      <tr><td>Lesetext</td><td>drei kurze Lesetexte</td><td>rund 900 Wörter mit durchgerechneten Beispielen</td></tr>
+      <tr><td>Übungen</td><td>zwei Übungsblöcke</td><td>zwei Übungsblöcke</td></tr>
+      <tr><td>Abschluss</td><td>Abschlusstest</td><td>H5P-Abschlusstest mit zehn Fragen, davon acht Fälle</td></tr>
+    </tbody>
+  </table>
+  <p>Der Import von Kurs B auf der Plattform steht aus. Durchläufe in claude.ai und ByLKI stehen aus. Das Protokoll liegt
+  im <a href="https://github.com/simon-sarkar/kursmuehle/blob/main/docs/entwicklung/protokolle/chatgpt-free.md">Repository</a>.</p>
   <table class="teststand">
     <tbody>
       <tr><th>Import getestet am 23.10.2026</th><td>Themen- und Kachelformat mit Kachelbildern, alle acht Moodle-Module,
@@ -357,7 +374,7 @@ lädst. Heraus kommt ein Kurs mit Texten, Übungen und Tests.</p>
     <li><a href="https://github.com/simon-sarkar/kursmuehle/blob/main/CHANGELOG.md">Changelog</a></li>
     <li><a href="https://github.com/simon-sarkar/kursmuehle/issues">Issues</a></li>
   </ul>
-  <p>Kursmühle, Version 1.0.1, Stand 23.10.2026. Die Seite lädt nichts nach und setzt keine Cookies.</p>
+  <p>Kursmühle, Version 1.0.2, Stand 23.10.2026. Die Seite lädt nichts nach und setzt keine Cookies.</p>
 </div></footer>
 </body>
 </html>

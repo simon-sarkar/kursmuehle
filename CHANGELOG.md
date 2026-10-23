@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.2 – 2026-10-23
+
+- `SKILL.md`, Ablauf: Der Assistent baut die `.mbz` mit `scripts/build.py`, sobald das Drehbuch freigegeben ist, bei
+  Steuerungsgrad c sofort nach dem Drehbuch ohne Halt. Er behauptet nie vorab, Code-Ausführung oder Python fehle; erst
+  wenn der Bauaufruf scheitert, zeigt er die Fehlermeldung und liefert Drehbuch und Steckbrief als Dateien. Anlass: Im
+  ChatGPT-Durchlauf vom 23.10. (GPT-5.6 Terra, Aufwand Medium) hielt das Modell mit „keine lauffähige Python-Umgebung“
+  an und baute auf Nachfrage doch.
+- README und Projektseite: bei ChatGPT den Aufwand auf „Extra High“ stellen (gibt es auch im Gratiskonto).
+- Protokoll `docs/entwicklung/protokolle/chatgpt-free.md` mit zwei Durchläufen im kostenlosen Konto (Satz des Pythagoras,
+  Jgst 9, 45 min); Richtwerte dazu in README und auf der Projektseite. Import von Kurs B steht aus.
+
 ## 1.0.1 – 2026-10-23
 
 - Beispielbilder in `examples/netzwerk9/assets/` durch einfache, selbst erzeugte Schemazeichnungen ersetzt.
