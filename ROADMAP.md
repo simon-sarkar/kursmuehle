@@ -31,13 +31,20 @@ Drei bis vier austauschbare Vorlagen (z. B. *schlicht*, *kacheln*, *magazin*, *d
 (Farben, Abstände, Kartenform) in `content/cards.py`, wählbar im Steckbrief. Standard bleibt schlicht,
 Emojis aus. Keine harten Designregeln im Skill – Vorlieben kommen aus dem Intake.
 
-### 5. Bilder sinnvoll
+### 5. HTML-Formatierung für Textinhalte
+Lesetexte in Textfeldern und Seiten kommen formatiert, nicht als Fließtext: Zwischenüberschriften, kurze
+Absätze, Listen, Hervorhebungen, Merkkasten, Beispiel-Box, Tabelle für Vergleiche, Bild mit Unterschrift.
+Die Bausteine dafür liegen in `content/common.py` und werden von der Designvorlage eingefärbt; der Agent
+wählt je Textsorte den passenden Baustein (Erklärung, Fall, Anleitung, Merksatz) statt alles in `<p>` zu setzen.
+Regel im Intake: kein Absatz länger als fünf Zeilen auf dem Handy.
+
+### 6. Bilder sinnvoll
 - **Kursbanner** als erstes Element im Abschnitt 0 (großer optischer Unterschied) plus Kursbild;
   Bildprompts liefert die KI, Generierung macht die Lehrkraft oder ein Bildmodell im Agenten.
 - Abschnittsbilder/Kachelbilder, Fotos aus dem Material (Heftbilder, Folien) automatisch übernommen.
 - Wenige, große Bilder statt Deko.
 
-### 6. One-Page-Darstellung ohne Ladezeiten
+### 7. One-Page-Darstellung ohne Ladezeiten
 Zwei Wege, beide 1.0:
 - **Kern-H5P-Filter im Textfeld** (`.h5p` im Textfeld, inline gerendert, keine eigene Aktivität) für
   Übungen zwischen Lesetexten; Bewertung/Abschluss bleiben Aktivitäten.
@@ -46,7 +53,7 @@ Zwei Wege, beide 1.0:
   filtern JS, eingebettete Dateien nicht. Damit sind Custom-Spiele, Simulationen, Lernpfade möglich;
   bewertete Teile laufen weiter über Plattform-Aktivitäten. Sky is the limit.
 
-### 7. Drehbuch → Kurs ohne Handarbeit
+### 8. Drehbuch → Kurs ohne Handarbeit
 Parser, der das Drehbuch-Format direkt in `content/` übersetzt; „Vorausgesetzt:“-Zeile je Element;
 Änderungsliste zwischen Drehbuch-Versionen automatisch.
 

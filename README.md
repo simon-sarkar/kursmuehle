@@ -137,6 +137,7 @@ verloren.
 - [ ] Menüführung: „Womit starten wir?“ – Thema, altes Material, Material + Fragen, Fragen-Intake
 - [ ] Alle Kursformate (Kacheln, Grid, Wochen …) und alle Modultypen (Test, Aufgabe, Forum …)
 - [ ] Schlanke Designvorlagen zur Auswahl; Kursbanner und Bilder sinnvoll eingebunden
+- [ ] HTML-Formatierung für Lesetexte: Überschriften, Listen, Merk- und Beispielkästen statt Fließtext
 - [ ] One-Page-Darstellung ohne Ladezeiten: H5P im Textfeld, Kurs als eigene Website mit eigenen Spielen
 - [ ] Drehbuch-Parser: Drehbuch → `content/` automatisch statt von Hand
 
