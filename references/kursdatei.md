@@ -113,7 +113,8 @@ Inline überall: `**fett**` → `<b>`, `*kursiv*` → `<i>`, `==markiert==` → 
 
 Rechenzeichen: Brüche als `3/8`, auch neben Lücken (`*3*/8`, `1/*2*`); Minus als `−` oder `-`; das Mittelpunkt-Zeichen ` · `
 trennt in Fragen-, Karten- und Zuordnen-Zeilen die Antworten, als Malzeichen deshalb `×` oder „mal“ schreiben; Potenzen
-als `2<sup>3</sup>`; keine LaTeX-Formeln (`$$`, `\(`), die Plattform filtert sie in Übungsblöcken nicht sicher.
+als `a²` oder `2<sup>3</sup>`, Wurzel als `√(a² + b²)`; keine LaTeX-Formeln (`$$`, `$`, `\(`), die Plattform filtert sie
+nicht sicher. Der Generator setzt einfache LaTeX-Formeln in Klartext um und meldet die Zeilen.
 
 ## 4. Textbausteine (Textfeld, Seite, Lesebuch-Seiten, Kästen)
 
@@ -184,7 +185,10 @@ Wörter zuordnen, Wörter markieren, Lückentext, Zusammenfassung, Schnellquiz.
 
 ```
 ### Test: Abschlusstest · 8 min (← Buch)
-bestehen: 75 %                                    versuche: 2 · rückmeldung: sofort · einleitung: <Text>
+bestehen: 75 %                                    je Angabe eine Zeile (auch in einer Zeile mit ` · ` getrennt)
+versuche: 2
+rückmeldung: sofort
+einleitung: <Text>
 1. Frage? · ✔A · B · C                            MC (Einfachauswahl); mehrere ✔ = Mehrfachauswahl (falsche Antworten zählen negativ)
 2. MC (Titel): Frage?                              oder als Liste mit Rückmeldung je Antwort
 - ✔ Antwort → Rückmeldung

@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.3 – 2026-10-23
+
+- Parser nachsichtiger bei Formfehlern, die Chats ohne Code-Ausführung machen (Protokoll
+  `docs/entwicklung/protokolle/chat-ohne-code/`, AIS-Chat mit GPT-5.5 und fobizz mit GPT-6.1 Sol, 23.10.2026). Beide
+  Drehbücher bauen jetzt unverändert:
+  - Angaben in einer Zeile mit ` · ` (`versuche: 2 · rückmeldung: sofort · einleitung: …`); das Beispiel in
+    `kursdatei.md` §5a zeigt die Angaben jetzt zeilenweise.
+  - Leerzeile zwischen `Schritte: …` und der Liste.
+  - Zeilen „Hinweis für die Lehrkraft: …“ (Liefertexte) werden ignoriert und gemeldet, statt dem letzten Element
+    zugeschlagen zu werden.
+  - LaTeX (`$$…$$`, `$…$`, `\(…\)`, `\[…\]`) wird in Klartext umgesetzt (`a^2` → a², `\sqrt{…}` → √(…), `^\circ` → °,
+    `\frac{a}{b}` → a/b, `\approx` → ≈, `{,}` → ,); nicht umgesetzte Befehle meldet der Bau mit Zeile.
+- `test_kursdatei.py`: Testfall für die vier Formfehler; baut die beiden Chat-Drehbücher, wenn sie vorliegen.
+- `docs/erfahrungen.md`: Durchläufe mit AIS-Chat und fobizz.
+
 ## 1.0.2 – 2026-10-23
 
 - Hinweis in README, Projektseite und Skill-Menü: Wie viel die Lehrkraft vorgeben muss, hängt vom Modell ab; bei kleinen

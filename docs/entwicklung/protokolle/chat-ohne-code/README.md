@@ -39,7 +39,7 @@ Korrekturen, die für den Bau nötig waren:
 Inhaltliche Schwächen: AIS-Test Frage 6 (Kurzantwort `a² + b² = c²`, Eingabe mit `^` zählt nicht), Frage 1 mit Ablenker
 „rechter Winkel“ (keine Seite), `Bildwunsch: dreieck_baum.png` nirgends verwendet und mit Baum statt Wand.
 
-## Folgen (vorgemerkt für 1.0.3)
+## Folgen (umgesetzt in 1.0.3)
 
 1. Parser nimmt Testangaben mit ` · ` in einer Zeile an (oder §5a-Beispiel eindeutig machen).
 2. Leerzeile nach `Schritte:` erlaubt.

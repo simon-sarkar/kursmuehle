@@ -299,6 +299,64 @@ def check_textfeld(path):
     return bad
 
 
+# Formfehler aus Chats ohne Code-Ausführung (Protokoll docs/entwicklung/protokolle/chat-ohne-code/): baut ohne Handarbeit
+NACHSICHT = """## Teil
+### Seite: S
+Schritte: Rechnen
+
+1. Erst
+2. Dann
+
+Ein rechter Winkel hat $90^\\circ$.
+
+$$ c=\\sqrt{a^2+b^2}\\approx 1{,}41 $$
+
+### Test: T
+versuche: 2 · rückmeldung: sofort · einleitung: Ab 70 % bestanden.
+1. Welche Rechnung? · ✔$c=\\sqrt{7^2+24^2}$ · $c=7+24$
+
+Hinweis für die Lehrkraft: Liefertext, gehört nicht in den Kurs.
+"""
+
+
+def check_nachsicht():
+    bad = 0
+    with tempfile.TemporaryDirectory() as d:
+        path = os.path.join(d, "kurs.md")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(NACHSICHT)
+        try:
+            page, test = parse(path, A, {"teile": {}})["sections"][1].items
+        except KursdateiFehler as e:
+            print(f"FALSCH Nachsicht: {e}")
+            return 1
+        for want in (">1</span>", "Dann", "90°", "c=√(a²+b²) ≈ 1,41"):
+            if want not in page.content:
+                print(f"FALSCH Nachsicht: „{want}“ fehlt in der Seite")
+                bad += 1
+        if "$" in page.content or "\\sqrt" in page.content:
+            print("FALSCH Nachsicht: LaTeX-Rest in der Seite")
+            bad += 1
+        if (test.attempts, test.behaviour) != (2, "immediatefeedback") or "Ab 70 %" not in test.intro \
+                or "Liefertext" in test.intro:
+            print(f"FALSCH Nachsicht: Testangaben {test.attempts}, {test.behaviour}, {test.intro}")
+            bad += 1
+    # die unveränderten Chat-Drehbücher (nur im Repo, nicht im Release-Zip)
+    proto = os.path.join(ROOT, "docs", "entwicklung", "protokolle", "chat-ohne-code")
+    for name in ("ais", "fobizz"):
+        if not os.path.exists(os.path.join(proto, name, "kurs.md")):
+            continue
+        out = os.path.join(tempfile.gettempdir(), f"test_chat_{name}.mbz")
+        r = subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "build.py"), "--content",
+                            os.path.join(proto, name), "--no-render", "--out", out], capture_output=True, text=True)
+        if r.returncode != 0:
+            print(f"BAU Chat-Drehbuch {name} fehlgeschlagen:\n{r.stderr}")
+            bad += 1
+        else:
+            os.remove(out)
+    return bad
+
+
 def check_beispiele():
     bad = 0
     beispiele = os.path.join(ROOT, "examples")
@@ -316,6 +374,6 @@ def check_beispiele():
 
 
 if __name__ == "__main__":
-    n = check_fehler() + check_beispiele()
+    n = check_fehler() + check_nachsicht() + check_beispiele()
     print("OK" if n == 0 else f"{n} Problem(e)")
     sys.exit(1 if n else 0)
