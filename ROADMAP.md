@@ -111,6 +111,8 @@ Der Generator läuft als Webseite im Browser (Pyodide), ohne Server – Kursdate
   Code-Ausführung wie ByLKI oder der AIS-Chat, oder kostenlose Konten); die Gesprächsführung wird zu einem Prompt
   zum Kopieren. Voraussetzung ist das Kursdatei-Format aus AP1. Maßstab für 2.0: Ein einfacher, kostenloser Chatbot
   liefert damit einen verwertbaren Kurs.
+  Offene Entscheidung des Autors: ob 2.0 quelloffen bleibt (Lizenz nicht kommerziell schützt bereits; eine
+  Browser-Version ist technisch ohnehin einsehbar) oder als geschlossene Fassung erscheint.
 
 ## Nach 1.0
 - Weitere Module (Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool) und Kursformate (Grid, Wochen, Einzelaktivität).
