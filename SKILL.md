@@ -41,8 +41,8 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
    Bei Revision nur Änderungsliste + geänderte Blöcke zeigen. Die freigegebene Datei wird unverändert gebaut.
 3. **Bau**, sobald das Drehbuch freigegeben ist; bei Steuerungsgrad c sofort nach dem Drehbuch, ohne Halt. Nie vorab
    behaupten, Code-Ausführung oder Python fehle: den Bau mit `scripts/build.py` versuchen; erst wenn der Aufruf scheitert,
-   die Fehlermeldung zeigen und Drehbuch und Steckbrief als Dateien liefern. Kursordner mit `kurs.md`, `assets/` (PNG), `steckbrief.yaml` (Vorbild `examples/netzwerk9/` = minimal,
-   `examples/alltagskompetenz/` = alle Elementtypen). Kein Python schreiben. Erstes Element in `## Allgemeines` ist
+   die Fehlermeldung zeigen und Drehbuch und Steckbrief als Dateien liefern. Kursordner mit `kurs.md`, `assets/` (PNG),
+   `steckbrief.yaml` (Vorbild `examples/netzwerk9/` = minimal, `examples/alltagskompetenz/` = alle Elementtypen). Kein Python schreiben. Erstes Element in `## Allgemeines` ist
    `### Banner:` (Bild + Titel + ein Satz); Bild nach intake.md §4: selbst erzeugt, `python3 scripts/banner.py`, oder ohne `bild:`.
    Kursformat aus dem Steckbrief (`format:` themen, kacheln, wochen, einthemen, komprimiert, einzelaktivitaet); bei Kacheln
    je Abschnitt `kachelbild:` (PNG 900 × 600, eigenes Motiv je Abschnitt; `banner.py --kachel --nummer 1-N`) oder
