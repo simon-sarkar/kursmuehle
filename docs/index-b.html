@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kursmühle</title>
+<meta name="description" content="Kursmühle: Ein KI-Assistent baut aus einer Beschreibung oder eigenem Material eine importierbare Kurssicherung für die ByCS-Lernplattform.">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<style>
+
+  :root { --creme: #f3e9d8; --anthrazit: #2a2a2a; --ocker: #d9a441; --grau: #6b6257; --weiss: #ffffff;
+          --linie: rgba(42,42,42,.22); }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--creme); color: var(--anthrazit);
+         font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; line-height: 1.55; }
+  img { max-width: 100%; height: auto; }
+  a { color: var(--anthrazit); text-decoration: underline; text-decoration-color: var(--ocker);
+      text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  a:hover, a:focus-visible { text-decoration-thickness: 3px; }
+  a:focus-visible, .knopf:focus-visible { outline: 3px solid var(--ocker); outline-offset: 2px; }
+  code { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 0.92em;
+         background: rgba(42,42,42,.08); padding: 1px 5px; border-radius: 4px; }
+  p { margin: 0 0 1em; }
+  ol, ul { padding-left: 22px; margin: 0 0 1em; }
+  li { margin-bottom: .4em; }
+  h2 { font-size: 1.5rem; line-height: 1.2; margin: 0 0 .7em; }
+  h3 { font-size: 1.08rem; line-height: 1.3; margin: 0 0 .4em; }
+  .knopf { display: inline-block; background: var(--ocker); color: var(--anthrazit); font-weight: 600;
+           text-decoration: none; padding: 12px 20px; border-radius: 8px; margin: 6px 10px 6px 0; }
+  .knopf:hover { background: #c9932f; text-decoration: none; }
+  .knopf.leise { background: transparent; border: 2px solid var(--anthrazit); padding: 10px 18px; }
+  .knopf.leise:hover { background: rgba(42,42,42,.06); }
+  .badges img { vertical-align: middle; margin-right: 6px; }
+  .karten { display: grid; gap: 16px; grid-template-columns: 1fr; margin-bottom: 1.2em; }
+  @media (min-width: 760px) { .karten { grid-template-columns: repeat(3, 1fr); } }
+  .karte p, .karte ol { font-size: .95rem; }
+  .karte p:last-child { margin-bottom: 0; }
+  .raster { display: grid; gap: 16px; grid-template-columns: 1fr; }
+  @media (min-width: 560px) { .raster { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 900px) { .raster { grid-template-columns: repeat(3, 1fr); } }
+  .kachel p { margin: 0; font-size: .95rem; }
+  table { border-collapse: collapse; width: 100%; font-size: .95rem; margin: 0 0 1.2em; }
+  td, th { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--linie); vertical-align: top; }
+  th { font-weight: 600; }
+  .teststand th { width: 32%; }
+  thead th { white-space: nowrap; }
+  .ablauf { overflow-x: auto; }
+  @media (max-width: 640px) { .ablauf img { min-width: 640px; } .ablauf figcaption { margin-top: .8em; } }
+  figure { margin: 0 0 1.2em; }
+  figcaption { font-size: .92rem; color: var(--grau); margin-top: .5em; }
+  .shot img { border: 1px solid var(--linie); border-radius: 8px; }
+  .paare { display: grid; gap: 10px; margin-bottom: 1.2em; }
+  .paar { display: grid; gap: 10px; grid-template-columns: 1fr; font-size: .95rem; }
+  @media (min-width: 640px) { .paar { grid-template-columns: 1fr 1fr; } }
+  .paar b { display: block; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--grau); margin-bottom: 2px; }
+  .mail { font-weight: 600; }
+  .fusslinks { list-style: none; padding: 0; margin: 0 0 1em; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  .fusslinks li { margin: 0; }
+  @media (max-width: 420px) { body { font-size: 16px; } h2 { font-size: 1.35rem; } }
+
+  body { font-size: 17px; }
+  .leiste { background: var(--anthrazit); color: var(--creme); }
+  @media (min-width: 760px) { .leiste { position: sticky; top: 0; z-index: 2; } }
+  .leiste .innen { max-width: 1040px; margin: 0 auto; padding: 8px 16px; display: flex; flex-wrap: wrap;
+                   align-items: center; gap: 6px 18px; }
+  .marke { display: flex; align-items: center; gap: 10px; color: var(--creme); text-decoration: none;
+           font-weight: 700; font-size: 1.05rem; margin-right: auto; }
+  .marke img { width: 30px; height: 30px; }
+  nav { display: flex; flex-wrap: wrap; gap: 2px 14px; font-size: .88rem; }
+  nav a { color: var(--creme); text-decoration: none; padding: 4px 0; border-bottom: 2px solid transparent; }
+  nav a:hover, nav a:focus-visible { border-bottom-color: var(--ocker); }
+  .hero { background: var(--anthrazit); color: var(--creme); padding: 28px 16px 44px; }
+  .hero .innen { max-width: 1040px; margin: 0 auto; }
+  .banner { width: 100%; max-width: 900px; display: block; margin: 0 0 32px; border-radius: 14px; }
+  .hero h1 { font-size: 2.6rem; line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 .5em; max-width: 18ch; }
+  .hero .einstieg { font-size: 1.15rem; max-width: 62ch; color: var(--creme); }
+  .hero a { color: var(--creme); }
+  .hero .knopf { color: var(--anthrazit); }
+  .hero .knopf.leise { color: var(--creme); border-color: var(--creme); }
+  .hero .knopf.leise:hover { background: rgba(243,233,216,.1); }
+  .hero .badges { margin-top: 14px; }
+  .hero code { background: rgba(243,233,216,.16); }
+  main { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+  .abschnitt { padding: 44px 0; }
+  .abschnitt + .abschnitt { border-top: 1px solid var(--linie); }
+  .abschnitt > h2::before { content: ""; display: block; width: 44px; height: 5px; background: var(--ocker);
+                            border-radius: 3px; margin-bottom: 14px; }
+  .abschnitt > p, .abschnitt > ol, .abschnitt > ul { max-width: 70ch; }
+  .ablauf img { width: 100%; display: block; border-radius: 14px; }
+  .ablauf figcaption { max-width: 70ch; color: var(--anthrazit); font-size: 1rem; }
+  .karte, .kachel { background: var(--weiss); border-radius: 12px; padding: 18px; border-top: 5px solid var(--ocker); }
+  .kachel h3 { color: var(--anthrazit); }
+  .hinweis { background: var(--weiss); border-left: 5px solid var(--ocker); padding: 12px 16px; border-radius: 0 10px 10px 0; }
+  table { background: var(--weiss); border-radius: 10px; overflow: hidden; }
+  thead th { background: #f6e3b8; }
+  .teststand th { background: #f6e3b8; }
+  .paar .kann, .paar .nicht { background: var(--weiss); border-radius: 10px; padding: 12px 14px; }
+  .paar .kann { border-left: 4px solid var(--ocker); }
+  .paar .nicht { border-left: 4px solid var(--linie); }
+  .shot img { background: var(--weiss); }
+  footer { background: var(--anthrazit); color: var(--creme); margin-top: 24px; padding: 32px 16px 40px; font-size: .92rem; }
+  footer .innen { max-width: 1040px; margin: 0 auto; }
+  footer a { color: var(--creme); }
+  footer .logo { width: 48px; height: 48px; display: block; margin-bottom: 14px; }
+  @media (max-width: 420px) { .hero h1 { font-size: 2rem; } }
+
+</style>
+</head>
+<body>
+<div class="leiste"><div class="innen">
+  <a class="marke" href="#top"><img src="logo-light.svg" alt="">Kursmühle</a>
+<nav aria-label="Sprungnavigation">
+  <a href="#wege">Drei Wege</a>
+  <a href="#kann">Was Kursmühle kann</a>
+  <a href="#beispiele">Beispiele</a>
+  <a href="#richtwerte">Richtwerte</a>
+  <a href="#wiederherstellen">Wiederherstellen</a>
+  <a href="#grenzen">Kann und noch nicht</a>
+  <a href="#rueckmeldung">Rückmeldung</a>
+  <a href="#lizenz">Lizenz</a>
+</nav>
+</div></div>
+<header class="hero" id="top"><div class="innen">
+  <img class="banner" src="banner-kursmuehle-v8.svg" alt="Kursmühle: Lernplattform-Kurse aus einem Prompt" width="1200" height="300">
+  <h1>Kurse wiederherstellen, die es noch nie gab.</h1>
+<p class="einstieg">Du beschreibst einem KI-Assistenten, was du brauchst, oder gibst ihm dein Material. Er schreibt
+daraus ein kurzes Drehbuch, das du liest und freigibst. Ein Skript macht aus dem Drehbuch eine Kurssicherung
+(<code>.mbz</code>), die du auf der <a href="https://www.bycs.de/">ByCS-Lernplattform</a> (früher mebis) in deinen Kurs
+lädst. Heraus kommt ein Kurs mit Texten, Übungen und Tests.</p>
+<p class="knoepfe">
+  <a class="knopf" href="https://github.com/simon-sarkar/kursmuehle/releases/latest/download/kursmuehle.zip">Skill-Zip herunterladen</a>
+  <a class="knopf leise" href="https://github.com/simon-sarkar/kursmuehle">Repository auf GitHub</a>
+</p>
+<p class="badges"><img src="badge-version.svg" alt="Version 1.0.1" height="22"> <img src="badge-plattform.svg"
+  alt="Plattform: ByCS-Lernplattform, Moodle 5.2" height="22"> <img src="badge-lizenz.svg" alt="Lizenz: nicht kommerziell" height="22"></p>
+</div></header>
+<main>
+
+<section id="ablauf" class="abschnitt">
+  <figure class="ablauf">
+    <img src="ablauf.svg" alt="Ablauf: Lehrkraft, KI-Assistent, Drehbuch, Generator, Kurssicherung, Lernplattform">
+    <figcaption>Die KI schreibt nur die Inhalte. Das Archiv aus über hundert verknüpften XML-Dateien baut der Generator
+    aus dem Drehbuch; nach deiner Freigabe wird nichts noch einmal abgetippt. Im Drehbuch steht der ganze Kurs als
+    kurzer Text mit Zeitschätzung je Element, und es ist markiert, was aus deinem Material stammt und was die KI
+    ergänzt hat.</figcaption>
+  </figure>
+</section>
+
+<section id="wege" class="abschnitt">
+  <h2>Drei Wege</h2>
+  <div class="karten">
+    <article class="karte">
+      <h3>ChatGPT oder Claude</h3>
+      <ol>
+        <li><a href="https://github.com/simon-sarkar/kursmuehle/releases/latest/download/kursmuehle.zip">Skill-Zip</a> herunterladen.</li>
+        <li>Zip hochladen und schreiben: „Entpacke das und lies SKILL.md.“ Dahinter dein Kurswunsch, zum Beispiel
+          „Mach mir eine Einheit zu Bruchrechnen für Jgst 6, 45 Minuten, Selbstlernkurs. Zeig mir zuerst das Drehbuch.“</li>
+        <li>Drehbuch lesen, „passt“ sagen, <code>.mbz</code> herunterladen und
+          <a href="#wiederherstellen">wiederherstellen</a>.</li>
+      </ol>
+      <p>Der Assistent braucht Code-Ausführung. Bei ChatGPT gehört sie je nach Version als „Datenanalyse“ zum
+      Standardmodell. Bei Claude steht sie je nach Version in den Einstellungen unter „Dateien erstellen und
+      analysieren“ und muss eingeschaltet sein; dort kannst du das Zip auch als Skill anlegen, dann genügt der
+      Kurswunsch.</p>
+      <p>Durchläufe mit 1.0 in ChatGPT und claude.ai stehen aus; mit Version 0.1 lief ein Kurs in ChatGPT.</p>
+    </article>
+    <article class="karte">
+      <h3>ByLKI oder AIS-Chat</h3>
+      <p>Diese Angebote führen keinen Code aus. Eine Fassung im Browser, die aus dem Drehbuch die Sicherung baut,
+      kommt mit Version 2.0.</p>
+      <p>Bis dahin, noch nicht getestet: <code>SKILL.md</code>, <code>references/intake.md</code> und
+      <code>references/kursdatei.md</code> aus dem Skill-Zip als Text in den Chat einfügen und das Drehbuch schreiben
+      lassen. Den Bau übernimmt dann ein Assistent mit Code-Ausführung oder ab 2.0 die Fassung im Browser.</p>
+    </article>
+    <article class="karte">
+      <h3>Claude Code, Codex, eigener Agent</h3>
+      <p>Repository klonen und dem Agenten die Seite <a href="https://github.com/simon-sarkar/kursmuehle/blob/main/docs/fortgeschrittene.md">für
+      Fortgeschrittene</a> geben. Dort steht, wie eine eigene Kurssicherung als Vorlage dient, wie eigene
+      Designvorlagen und Fachregeln entstehen und wie du das Zip neu packst.</p>
+      <p>Auf deinem Rechner nötig: Python 3.11+, PyYAML und Pillow.</p>
+    </article>
+  </div>
+  <p>Für ChatGPT und Claude wird auf deinem Rechner nichts installiert. Die erste Frage des Assistenten lautet „Womit
+  starten wir?“, danach kommt höchstens eine Fragerunde, jede Frage mit Vorschlag. Nennst du nur ein Thema, fragt er
+  nicht nach; seine Annahmen stehen oben im Drehbuch. Steht im ersten Satz schon alles wie im Beispiel, baut er sofort,
+  und mit „Zeig mir zuerst das Drehbuch.“ wartet er auf deine Freigabe. Wie viel du selbst entscheidest, legst du fest:
+  jeden Vorschlag einzeln, oder die KI macht alles.</p>
+  <p class="hinweis">Keine Schülerdaten, keine Namen oder Fotos von Personen ins Material. Ob private KI-Konten
+  dienstlich genutzt werden dürfen, regeln Schule und Sachaufwandsträger.</p>
+</section>
+
+<section id="kann" class="abschnitt">
+  <h2>Was Kursmühle kann</h2>
+  <div class="raster">
+    <div class="kachel"><h3>Übung im Textfeld</h3><p>Quiz, Zuordnen oder Lernkarten stehen als Block direkt zwischen den
+      Lesetexten auf der Kursseite, ohne Nachladen und ohne Bewertung.</p></div>
+    <div class="kachel"><h3>Einheit als Website-Datei</h3><p>Ein Abschnitt wird eine HTML-Seite mit Startseite,
+      Kapitelnavigation und Fortschritt, eingebettet oder in einem neuen Fenster.</p></div>
+    <div class="kachel"><h3>H5P- und Moodle-Aktivitäten</h3><p>Was eine Bestehensgrenze hat, für ein Badge zählt oder
+      abgegeben wird, bleibt eine Aktivität der Plattform und erscheint im Abschlussstatus oder im Bewertungsbuch.</p></div>
+    <div class="kachel"><h3>Sechs Kursformate</h3><p>Themen, Kacheln, Wochen, Ein-Themen, Komprimiert oder
+      Einzelaktivität; im Kachelformat bekommt jeder Abschnitt ein textfreies Kachelbild oder ein Icon.</p></div>
+    <div class="kachel"><h3>Modultypen</h3><p>Lesetexte als Seite, Lesebuch oder Buch, Übungen als H5P und alle acht
+      Moodle-Module von Test bis Glossar; die ganze Liste steht in der
+      <a href="https://github.com/simon-sarkar/kursmuehle#elementtypen">README</a>.</p></div>
+    <div class="kachel"><h3>Designvorlagen</h3><p>Drei Vorlagen (schlicht, kacheln, magazin) färben alle Textbausteine
+      ein; du wählst sie im Steckbrief.</p></div>
+    <div class="kachel"><h3>Glossar-Import</h3><p>Die Einträge eines Glossars liegen als XML-Datei neben der Sicherung
+      und kommen über „Einträge importieren“ in den Kurs.</p></div>
+    <div class="kachel"><h3>Delta-Sicherungen</h3><p>Neue Abschnitte kommen als eigene Sicherung per „Zusammenführen“
+      in einen laufenden Kurs; der Lernfortschritt bleibt erhalten.</p></div>
+    <div class="kachel"><h3>Prüfdurchlauf</h3><p>Bevor du das Drehbuch siehst, prüft der Assistent es gegen zehn
+      didaktische Standardannahmen und eine Markerliste gegen Slop und behebt die Treffer.</p></div>
+  </div>
+</section>
+
+<section id="beispiele" class="abschnitt">
+  <h2>Beispiele</h2>
+  <p>Drei Beispielkurse liegen im Repository und im Skill-Zip, mit eigenen Texten und selbst erzeugten Bildern.</p>
+  <ul class="beispielliste">
+    <li><a href="https://github.com/simon-sarkar/kursmuehle/tree/main/examples/netzwerk9">Netzwerk9</a>: Informatik 9, eine Einheit von 25 Minuten aus
+      Folien und Heftbildern; das Vorbild für neue Kurse.</li>
+    <li><a href="https://github.com/simon-sarkar/kursmuehle/tree/main/examples/alltagskompetenz">Alltagskompetenz</a>: Selbstlernkurs für die
+      Jahrgangsstufen 8 bis 10 im Kachelformat, mit Unterabschnitten, Badge und einer Delta-Sicherung.</li>
+    <li><a href="https://github.com/simon-sarkar/kursmuehle/tree/main/examples/module">Modulbeispiel</a>: ein Abschnitt zu sicheren Passwörtern mit allen
+      acht Moodle-Modulen, etwa 45 Minuten.</li>
+  </ul>
+  <figure class="shot">
+    <img src="website-netzwerk9.png" alt="Website-Modus: Netzwerk9 am Desktop und auf dem Handy" width="1312" height="660">
+    <figcaption>Netzwerk9 im Website-Modus am Desktop und auf dem Handy.</figcaption>
+  </figure>
+</section>
+
+<section id="richtwerte" class="abschnitt">
+  <h2>Richtwerte</h2>
+  <p>Im Fremdtest zu 1.0 bekam ein frischer Assistent der Sonnet-Klasse nur das Skill-Zip und den Satz „Mach mir eine
+  Einheit zu Bruchrechnen für Jgst 6, 45 Minuten, Selbstlernkurs.“ Sonnet ist die mittlere, günstigere Modellstufe von
+  Anthropic; der Skill soll ohne das teuerste Modell auskommen.</p>
+  <table>
+    <thead><tr><th>Größe</th><th>Durchlauf 1</th><th>Durchlauf 2</th></tr></thead>
+    <tbody>
+      <tr><td>Bis zur fertigen <code>.mbz</code> mit Protokoll</td><td>5 min 10 s</td><td>5 min 46 s (erste <code>.mbz</code> nach etwa 3 min)</td></tr>
+      <tr><td>Tokens gesamt (Agent-Schnittstelle)</td><td>138 000</td><td>154 000</td></tr>
+      <tr><td>Rückfragen, die der Assistent gestellt hätte</td><td>2</td><td>0</td></tr>
+      <tr><td>Nachrichten an dich (Schätzung, ohne deine Lesezeit)</td><td>2</td><td>1</td></tr>
+      <tr><td>Bauläufe bis <code>check.py</code> OK</td><td>1</td><td>1</td></tr>
+    </tbody>
+  </table>
+  <p>Der Fremdtest lief in Claude Code, einem Agenten mit Dateizugriff, nicht über den Upload in ChatGPT oder claude.ai.
+  Mit Version 0.1 lag ein kompletter Kurs mit mehreren Abschnitten und vom Assistenten erzeugten Bildern in ChatGPT bei
+  etwa sieben Minuten, eine Einzelbeobachtung ohne Protokoll. Ob ein kostenloses Konto reicht, ist offen; Durchläufe mit
+  1.0 in ChatGPT, claude.ai und ByLKI stehen aus. Das Protokoll liegt im
+  <a href="https://github.com/simon-sarkar/kursmuehle/blob/main/docs/entwicklung/protokolle/AP9_fremdtest.md">Repository</a>.</p>
+  <table class="teststand">
+    <tbody>
+      <tr><th>Import getestet am 23.10.2026</th><td>Themen- und Kachelformat mit Kachelbildern, alle acht Moodle-Module,
+        Glossar-XML, Website-Modus (eingebettet) und Textfeld-Modus mit mehreren Blöcken; Delta-Sicherungen seit 0.1.</td></tr>
+      <tr><th>Nicht per Import geprüft</th><td>Die Formate Wochen, Ein-Themen, Komprimiert und Einzelaktivität; beim ersten
+        Einsatz in einen Testkurs importieren.</td></tr>
+    </tbody>
+  </table>
+  <p>Kein offizielles Produkt der Plattform; wenn sich die Lernplattform ändert, passe ich den Skill an.</p>
+</section>
+
+<section id="wiederherstellen" class="abschnitt">
+  <h2>Wiederherstellen in fünf Schritten</h2>
+  <p>So sieht der Import auf der ByCS-Lernplattform aus. Beim ersten Mal in einen Testkurs.</p>
+  <ol class="schritte">
+    <li>Kurs öffnen → Mehr → Kurs wiederherstellen. Die <code>.mbz</code> in das Feld „Datei“ ziehen, dann
+      <em>Wiederherstellen</em>.</li>
+    <li>Schritt „Bestätigen“: nur <em>Weiter</em>.</li>
+    <li>Schritt „Ziel“: <em>als neuen Kurs</em> in eine Kategorie; oder <em>in diesen Kurs</em> mit „löschen und dann
+      wiederherstellen“, nur so kommt ein anderes Kursformat mit; oder <em>in diesen Kurs</em> mit „zusammenführen“ für
+      Delta-Sicherungen, die hinten anhängen.</li>
+    <li>Schritt „Einstellungen“: <em>Weiter</em>. Schritt „Schema“: bei einem Formatwechsel „Kurseinstellungen
+      überschreiben: Ja“, sonst behält der Kurs sein bisheriges Format. Dann <em>Wiederherstellen</em>.</li>
+    <li>Danach: Hat der Kurs ein Glossar mit Einträgen, Glossar → Mehr → <em>Einträge importieren</em> mit der
+      mitgelieferten Datei <code>…_glossar.xml</code>. Badge aktivieren (Mehr → Badges), Kursbild prüfen, Probedurchlauf
+      als Schüler/in.</li>
+  </ol>
+  <p class="hinweis">Eine Sicherung darf höchstens 500 MB haben. Übungs-Textfelder nach dem Import nie im Editor der
+  Plattform speichern, siehe <a href="#grenzen">Kann und noch nicht</a>.</p>
+  <p>Wenn etwas nicht passt, reicht ein Screenshot an den Assistenten; er ändert die Inhalte und baut die Sicherung neu.
+  Bereits importierte Abschnitte lassen sich per Sicherung nicht nachträglich ändern. Wer korrigieren will, löscht den
+  Abschnitt und spielt die Delta-Sicherung neu ein; der Lernfortschritt in diesem Abschnitt geht dabei verloren.</p>
+</section>
+
+<section id="grenzen" class="abschnitt">
+  <h2>Kann und noch nicht</h2>
+  <div class="paare">
+    <div class="paar"><div class="kann"><b>Kann</b> Sechs Kursformate mit beliebig vielen Abschnitten und Unterabschnitten.</div>
+      <div class="nicht"><b>Noch nicht</b> Lernlandkarte, Mimo.</div></div>
+    <div class="paar"><div class="kann"><b>Kann</b> Textfelder und Seiten mit Textbausteinen (Schritte, Tabellen, Kästen, Merke,
+      Bild mit Unterschrift) in drei Designvorlagen.</div>
+      <div class="nicht"><b>Noch nicht</b> Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool.</div></div>
+    <div class="paar"><div class="kann"><b>Kann</b> Test mit Multiple Choice, Wahr/Falsch und Kurzantwort; Aufgabe, Datei,
+      Verzeichnis, Forum, Buch, Abstimmung, Glossar.</div>
+      <div class="nicht"><b>Noch nicht</b> Weitere Fragetypen im Test (Zuordnung, Lückentext, numerisch), Zeitlimits,
+      Forum-Diskussionen.</div></div>
+    <div class="paar"><div class="kann"><b>Kann</b> H5P: Lesebuch, Geschichte mit Entscheidungen, Quiz, Zuordnen, Lückentext,
+      Lernkarten.</div>
+      <div class="nicht"><b>Noch nicht</b> Weitere H5P-Typen (Interactive Video, Image Hotspots, Memory).</div></div>
+    <div class="paar"><div class="kann"><b>Kann</b> Feedback-Umfragen, Links und Videos (eingebettet), Badges, Kursbild,
+      Abschlussverfolgung.</div>
+      <div class="nicht"><b>Noch nicht</b> Gruppen, Termine, Kursabschluss-Kriterien.</div></div>
+    <div class="paar"><div class="kann"><b>Kann</b> Kursbanner, Kursbild und Kachelbilder, von der KI erzeugt, gerendert oder von
+      dir nach Prompt.</div>
+      <div class="nicht"><b>Noch nicht</b> Abschnitts- und Kachelbilder automatisch aus dem Material.</div></div>
+    <div class="paar"><div class="kann"><b>Kann</b> Website-Modus: ein Abschnitt als eine HTML-Seite mit Übungen und
+      Rückmeldung.</div>
+      <div class="nicht"><b>Noch nicht</b> Bewertung und Abschluss je Übung in der Website, eigene Spiele und Simulationen
+      als Vorlage.</div></div>
+    <div class="paar"><div class="kann"><b>Kann</b> Textfeld-Modus: formative Übungen als Block zwischen Lesetexten, mehrere
+      Blöcke je Kursseite.</div>
+      <div class="nicht"><b>Noch nicht</b> Ausführung in der Moodle-App; die Übung zeigt dort den Hinweis, die Kursseite im
+      Browser zu öffnen.</div></div>
+    <div class="paar"><div class="kann"><b>Kann</b> Zugriffsbeschränkung „sichtbar ab Datum“, Nachlieferung per
+      Delta-Sicherung.</div>
+      <div class="nicht"><b>Noch nicht</b> Andere Zugriffsbedingungen (Abschluss von X, Bewertung, Gruppe).</div></div>
+  </div>
+  <p class="hinweis"><b>Übungs-Textfelder nicht im Editor öffnen.</b> Bearbeitest du ein Textfeld mit Übungsblock über
+  „Einstellungen bearbeiten“ und speicherst, entfernt der Editor der Plattform Skript und Stil; die Übung ist danach ein
+  totes Gerüst. Änderungen laufen über das Drehbuch und ein Delta oder einen Neuimport. Ungeprüfter Ausweg: den Texteditor
+  in den Nutzereinstellungen vorübergehend auf „Textbereich“ stellen, dann bearbeiten.</p>
+  <p>Die ausführliche Tabelle und die Roadmap stehen in der <a href="https://github.com/simon-sarkar/kursmuehle#was-der-generator-kann--und-was-noch-nicht">README</a>.</p>
+</section>
+
+<section id="rueckmeldung" class="abschnitt">
+  <h2>Rückmeldung</h2>
+  <p>Ich freue mich über Rückmeldungen: Hilft Kursmühle im Unterrichtsalltag, was fehlt, wo hat es gehakt?
+  Schreib mir an <a class="mail" href="mailto:kursmuehle@pm.me?subject=R%C3%BCckmeldung%20Kursm%C3%BChle">kursmuehle@pm.me</a>
+  (öffnet der Link kein Mailprogramm, einfach die Adresse kopieren). Ein GitHub-Konto ist nicht nötig; wer am Code
+  mitarbeitet, kann zusätzlich ein <a href="https://github.com/simon-sarkar/kursmuehle/issues">Issue anlegen</a>.
+  Am meisten hilft mir, wenn Fach, Jahrgangsstufe, Assistent und Dauer dabeistehen.
+  Gesammelte Rückmeldungen stehen in <a href="https://github.com/simon-sarkar/kursmuehle/blob/main/docs/erfahrungen.md">Erfahrungen</a>.</p>
+</section>
+
+<section id="lizenz" class="abschnitt">
+  <h2>Lizenz</h2>
+  <p>Nicht kommerziell. Du darfst den Skill in Schule und Fortbildung nutzen, verändern und weitergeben; der Einbau in
+  kommerzielle Produkte oder Dienste ist nicht erlaubt. Code unter
+  <a href="https://github.com/simon-sarkar/kursmuehle/blob/main/LICENSE">PolyForm Noncommercial 1.0.0</a>, Texte, Vorlagen und Beispielkurse unter
+  <a href="https://github.com/simon-sarkar/kursmuehle/blob/main/LICENSE-DOCS.md">CC BY-NC-SA 4.0</a>. Mit dem Skill erzeugte Kurse gehören dir.</p>
+  <p>Keine Verbindung zum Betreiber der Lernplattform. Sicherungen vor dem Einsatz in einem Testkurs prüfen; das
+  Drehbuch ist die Kontrollinstanz für Inhalte, die die KI ergänzt hat, und die fachliche Verantwortung bleibt bei dir.</p>
+</section>
+
+</main>
+<footer><div class="innen">
+  <img class="logo" src="logo-light.svg" alt="">
+  <ul class="fusslinks">
+    <li><a href="https://github.com/simon-sarkar/kursmuehle">Repository</a></li>
+    <li><a href="https://github.com/simon-sarkar/kursmuehle#readme">README</a></li>
+    <li><a href="https://github.com/simon-sarkar/kursmuehle/blob/main/docs/fortgeschrittene.md">Für Fortgeschrittene</a></li>
+    <li><a href="https://github.com/simon-sarkar/kursmuehle/blob/main/docs/erfahrungen.md">Erfahrungen</a></li>
+    <li><a href="https://github.com/simon-sarkar/kursmuehle/blob/main/CHANGELOG.md">Changelog</a></li>
+    <li><a href="https://github.com/simon-sarkar/kursmuehle/issues">Issues</a></li>
+  </ul>
+  <p>Kursmühle, Version 1.0.1, Stand 23.10.2026. Die Seite lädt nichts nach und setzt keine Cookies.</p>
+</div></footer>
+</body>
+</html>
