@@ -2,16 +2,36 @@
 
 **Kurse für die ByCS-Lernplattform per KI generieren – aus einer Beschreibung wird eine fertige Kurssicherung.**
 
-`bycs-kurs` ist ein Skill für KI-Assistenten, die Code ausführen können (Claude,
-ChatGPT mit Code-Ausführung, lokale Agenten). Die Lehrkraft beschreibt ihren Kurs
-oder beantwortet ein paar Fragen, hängt vorhandenes Material an (Folien,
-Buchseiten als Foto, Arbeitsblätter) und liest ein kurzes Drehbuch gegen. Der
-Generator erzeugt daraus eine importierbare Kurssicherung (`.mbz`) für die
-[ByCS-Lernplattform](https://www.bycs.de/) (Bayern, Moodle-basiert, früher mebis) –
-mit Abschnitten, gestalteten Seiten, H5P-Übungen, Umfragen und Badges.
-Entstanden als Tech-Demo für eine Dienstbesprechung zum Thema *Digitales
-Netzwerk* – zur Beantwortung der Frage: *Wie viel Kurs bekommt man aus einem
-Nachmittag Prompten, ohne eine einzige Datei von Hand anzulegen?*
+## Was bringt das?
+
+Einen Kurs in der [ByCS-Lernplattform](https://www.bycs.de/) (Bayern, Moodle-basiert,
+früher mebis) von Hand anzulegen heißt: jede Seite, jede H5P-Übung, jedes Quiz
+einzeln anklicken, befüllen, formatieren – pro Lerneinheit schnell ein Nachmittag.
+Mit diesem Skill beschreibst du deinen Kurs oder gibst altes Unterrichtsmaterial
+ab, und dein KI-Assistent liefert eine fertige Kurssicherung zum Import:
+
+- ⏱️ **Stunden statt Tage:** aus Folien, Buchseiten-Fotos oder einer Beschreibung
+  wird eine komplette Einheit mit Lesetexten, H5P-Übungen, Quiz und Design
+- 👀 **Du behältst die Kontrolle:** vor dem Bau bekommst du ein kurzes Drehbuch
+  zum Gegenlesen – was aus deinem Material stammt, was die KI ergänzt hat
+- 🧰 **Nichts installieren, nichts lernen:** Ordner an den Assistenten geben,
+  `.mbz` zurückbekommen, in der Plattform hochladen – fertig
+- 🔁 **Wiederverwendbar:** Kurs in Etappen nachliefern, Design wechseln, nächste
+  Einheit mit demselben Ablauf
+
+## So nutzt du es
+
+1. **Repo herunterladen** (grüner Button → *Download ZIP*) und entpacken.
+2. **Dem KI-Assistenten den Ordner geben** – Claude, ChatGPT mit Code-Ausführung
+   oder ein lokaler Agent; er muss Code ausführen können – und sagen, was für ein
+   Kurs entstehen soll. Du wählst, wie viel du selbst entscheiden willst:
+   - **nur ein Thema nennen** – die KI macht alles, du liest nur das Drehbuch
+   - **altes Material abgeben** (Folien, Fotos, Arbeitsblätter) – die KI baut daraus
+   - **Fragen beantworten** – mit oder ohne Material, du steuerst Gliederung und Formate
+3. **Drehbuch lesen, freigeben, `.mbz` importieren:** Kurs → Mehr →
+   *Kurs wiederverwenden* → *Wiederherstellen*. Zuerst in einen Testkurs.
+
+Mehr braucht es nicht. Alles Weitere auf dieser Seite ist Hintergrund.
 
 > **📍 Projektstatus: Version 0.1 – Tech-Demo, funktionsfähig.**
 > Der komplette Weg ist durchlaufen und verifiziert: Intake → Drehbuch →
@@ -84,20 +104,14 @@ examples/      netzwerk9/  – eine Einheit, 25 min: Vorbild für neue Kurse
 CHANGELOG.md   Versionen und bekannte Lücken
 ```
 
-## Schnellstart
+## Nach dem Import
 
-0. **Noch nie eine Sicherung importiert?** Kein Problem – der Import ist ein
-   Datei-Upload: Kurs → Mehr → **Kurs wiederverwenden → Wiederherstellen**.
-1. **Repo herunterladen** (ZIP oder `git clone`) und dem KI-Assistenten den
-   Ordner geben. Er liest [`SKILL.md`](SKILL.md) und führt durch Intake,
-   Drehbuch und Bau.
-2. **Kurs beschreiben, Material anhängen, Drehbuch lesen.** Korrigieren,
-   nachfragen, freigeben – gebaut wird erst danach.
-3. **`.mbz` importieren**, am besten zuerst in einen Testkurs. Danach: Badge
-   aktivieren (Mehr → Badges), Kursbild prüfen, Probedurchlauf als Schüler/in.
-   Screenshot an die KI, falls etwas nicht passt.
+Badge aktivieren (Mehr → Badges), Kursbild prüfen, Probedurchlauf als
+Schüler/in. Passt etwas nicht: Screenshot an die KI, sie korrigiert und baut neu.
 
-Beispielkurs ohne KI bauen (Python 3.11+, PyYAML, Pillow):
+## Ohne KI bauen (für Entwickler)
+
+Beispielkurs direkt aus dem Generator (Python 3.11+, PyYAML, Pillow):
 
 ```bash
 python3 scripts/build.py --content examples/netzwerk9 --no-render
