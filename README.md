@@ -1,6 +1,8 @@
-![bycs-kurs – Lernplattform-Kurse aus einem Prompt](docs/banner.svg)
+![Kursmühle – Lernplattform-Kurse aus einem Prompt](docs/banner.svg)
 
-# bycs-kurs – Lernplattform-Kurse aus einem Prompt
+# Kursmühle – Lernplattform-Kurse aus einem Prompt
+
+**Version 0.2.1** (Stand 23.10.2026) · Tech-Demo auf dem Weg zu 1.0, siehe [`ROADMAP.md`](ROADMAP.md) und [`CHANGELOG.md`](CHANGELOG.md)
 
 **Ein KI-Assistent baut aus einer Beschreibung oder eigenem Unterrichtsmaterial eine importierbare Kurssicherung (`.mbz`) für die ByCS-Lernplattform.**
 
@@ -33,7 +35,7 @@ fertige Kurssicherung zum Import.
    Kurs → Mehr → *Kurs wiederverwenden* → *Wiederherstellen*, zuerst in einen
    Testkurs.
 
-> **Projektstatus: Version 0.1 (Tech-Demo).**
+> **Projektstatus: Version 0.2 (Tech-Demo).**
 > Der Ablauf Intake → Drehbuch → Generator → Import ist an zwei Beispielkursen
 > durchgespielt, einschließlich H5P-Inhalten, Badge und Nachlieferung in einen
 > laufenden Kurs, mit Claude Code und mit ChatGPT. Offen sind weitere

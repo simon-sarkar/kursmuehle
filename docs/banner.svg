@@ -1,41 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-label="bycs-kurs">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0f2a3d"/>
-      <stop offset="1" stop-color="#1b4d6b"/>
-    </linearGradient>
-  </defs>
-  <rect width="1200" height="300" rx="18" fill="url(#bg)"/>
-
-  <!-- Wortmarke -->
-  <text x="72" y="128" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="64" font-weight="700" fill="#ffffff" letter-spacing="-1">bycs-kurs</text>
-  <text x="76" y="172" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="24" fill="#cfe3ee">Lernplattform-Kurse aus einem Prompt</text>
-  <text x="76" y="206" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="17" fill="#8fb4c8">Beschreibung oder eigenes Material rein, Kurssicherung raus</text>
-
-  <!-- Ablauf rechts: drei Stationen -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-label="Kursmühle – Lernplattform-Kurse aus einem Prompt">
+  <rect width="1200" height="300" rx="18" fill="#f3e9d8"/>
+  <g transform="translate(60,46) scale(0.8)"><rect width="256" height="256" rx="56" fill="#2a2a2a"/><path d="M100,236 L156,236 L147,150 L109,150 Z" fill="#f3e9d8"/>
+  <g transform="rotate(45 128 98)"><rect x="118" y="2" width="20" height="52" rx="7" fill="#f3e9d8"/></g><g transform="rotate(135 128 98)"><rect x="118" y="2" width="20" height="52" rx="7" fill="#f3e9d8"/></g><g transform="rotate(225 128 98)"><rect x="118" y="2" width="20" height="52" rx="7" fill="#f3e9d8"/></g><g transform="rotate(315 128 98)"><rect x="118" y="2" width="20" height="52" rx="7" fill="#f3e9d8"/></g>
+  <path d="M164.0,98.0 L163.7,102.5 L175.1,107.0 L171.4,118.4 L159.5,115.3 L157.1,119.2 L154.2,122.6 L160.9,133.0 L151.1,140.1 L143.3,130.6 L139.1,132.2 L134.7,133.4 L134.0,145.6 L122.0,145.6 L121.3,133.4 L116.9,132.2 L112.7,130.6 L104.9,140.1 L95.1,133.0 L101.8,122.6 L98.9,119.2 L96.5,115.3 L84.6,118.4 L80.9,107.0 L92.3,102.5 L92.0,98.0 L92.3,93.5 L80.9,89.0 L84.6,77.6 L96.5,80.7 L98.9,76.8 L101.8,73.4 L95.1,63.0 L104.9,55.9 L112.7,65.4 L116.9,63.8 L121.3,62.6 L122.0,50.4 L134.0,50.4 L134.7,62.6 L139.1,63.8 L143.3,65.4 L151.1,55.9 L160.9,63.0 L154.2,73.4 L157.1,76.8 L159.5,80.7 L171.4,77.6 L175.1,89.0 L163.7,93.5 Z" fill="#f3e9d8" fill-rule="evenodd"/>
+  <circle cx="128" cy="98" r="22" fill="#2a2a2a"/>
+  <circle cx="128" cy="98" r="9" fill="#d9a441"/>
+  <rect x="115" y="170" width="12" height="12" rx="3" fill="#2a2a2a"/>
+  <rect x="131" y="170" width="12" height="12" rx="3" fill="#2a2a2a"/>
+  <rect x="115" y="188" width="12" height="12" rx="3" fill="#2a2a2a"/>
+  <rect x="131" y="188" width="12" height="12" rx="3" fill="#d9a441"/></g>
+  <text x="300" y="138" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="66" font-weight="700" fill="#2a2a2a" letter-spacing="-1">Kursmühle</text>
+  <text x="304" y="182" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="25" fill="#3d3833">Lernplattform-Kurse aus einem Prompt</text>
+  <text x="304" y="214" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="17" fill="#6b6257">Eigenes Material rein, Kurssicherung raus</text>
   <g font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" text-anchor="middle">
-    <g transform="translate(760,150)">
-      <rect x="-70" y="-46" width="140" height="92" rx="12" fill="#ffffff" fill-opacity="0.08" stroke="#8fb4c8" stroke-opacity="0.6"/>
-      <rect x="-36" y="-24" width="72" height="8" rx="4" fill="#cfe3ee"/>
-      <rect x="-36" y="-6" width="56" height="8" rx="4" fill="#cfe3ee" fill-opacity="0.7"/>
-      <rect x="-36" y="12" width="64" height="8" rx="4" fill="#cfe3ee" fill-opacity="0.5"/>
-      <text y="72" font-size="15" fill="#cfe3ee">Drehbuch</text>
-    </g>
-    <path d="M840 150 h44" stroke="#8fb4c8" stroke-width="3" fill="none"/>
-    <path d="M878 143 l10 7 -10 7" fill="#8fb4c8"/>
-    <g transform="translate(960,150)">
-      <rect x="-70" y="-46" width="140" height="92" rx="12" fill="#ffffff" fill-opacity="0.08" stroke="#8fb4c8" stroke-opacity="0.6"/>
-      <text y="10" font-size="30" font-weight="700" fill="#ffffff">.mbz</text>
-      <text y="72" font-size="15" fill="#cfe3ee">Generator</text>
-    </g>
-    <path d="M1040 150 h44" stroke="#8fb4c8" stroke-width="3" fill="none"/>
-    <path d="M1078 143 l10 7 -10 7" fill="#8fb4c8"/>
-    <g transform="translate(1130,150)">
-      <rect x="-40" y="-46" width="80" height="92" rx="12" fill="#ffffff" fill-opacity="0.08" stroke="#8fb4c8" stroke-opacity="0.6"/>
-      <rect x="-22" y="-26" width="44" height="22" rx="4" fill="#cfe3ee"/>
-      <rect x="-22" y="2" width="20" height="22" rx="4" fill="#cfe3ee" fill-opacity="0.7"/>
-      <rect x="2" y="2" width="20" height="22" rx="4" fill="#cfe3ee" fill-opacity="0.7"/>
-      <text y="72" font-size="15" fill="#cfe3ee">Kurs</text>
-    </g>
+    <g transform="translate(900,150)"><rect x="-54" y="-44" width="108" height="88" rx="12" fill="#2a2a2a" fill-opacity="0.06" stroke="#2a2a2a" stroke-opacity="0.35"/><rect x="-32" y="-22" width="64" height="8" rx="4" fill="#2a2a2a"/><rect x="-32" y="-4" width="50" height="8" rx="4" fill="#2a2a2a" fill-opacity="0.65"/><rect x="-32" y="14" width="58" height="8" rx="4" fill="#2a2a2a" fill-opacity="0.4"/><text y="70" font-size="15" fill="#3d3833">Drehbuch</text></g>
+    <path d="M960 150 h30" stroke="#d9a441" stroke-width="3" fill="none"/><path d="M984 143 l10 7 -10 7" fill="#d9a441"/>
+    <g transform="translate(1056,150)"><rect x="-54" y="-44" width="108" height="88" rx="12" fill="#2a2a2a" fill-opacity="0.06" stroke="#2a2a2a" stroke-opacity="0.35"/><text y="10" font-size="30" font-weight="700" fill="#2a2a2a">.mbz</text><text y="70" font-size="15" fill="#3d3833">Generator</text></g>
+    <path d="M1116 150 h30" stroke="#d9a441" stroke-width="3" fill="none"/><path d="M1140 143 l10 7 -10 7" fill="#d9a441"/>
+    <g transform="translate(1172,150)"><rect x="-22" y="-44" width="44" height="88" rx="12" fill="#2a2a2a" fill-opacity="0.06" stroke="#2a2a2a" stroke-opacity="0.35"/><rect x="-14" y="-24" width="28" height="18" rx="4" fill="#2a2a2a"/><rect x="-14" y="0" width="12" height="18" rx="4" fill="#2a2a2a" fill-opacity="0.65"/><rect x="2" y="0" width="12" height="18" rx="4" fill="#d9a441"/><text y="70" font-size="15" fill="#3d3833">Kurs</text></g>
   </g>
 </svg>

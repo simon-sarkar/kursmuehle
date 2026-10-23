@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1 – 2026-10-23
+
+- Umbenennung in „Kursmühle“ (Repo `kursmuehle`, Skill-Name `kursmuehle`); Logo, Wortmarke und Banner in `docs/`;
+  Versionsnummer oben in der README.
+
 ## 0.1 – 2026-10-23
 
 Erste Fassung (Tech-Demo).
