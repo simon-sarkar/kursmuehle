@@ -301,7 +301,8 @@ def check_textfeld(path):
 
 def check_beispiele():
     bad = 0
-    for name in ("netzwerk9", "alltagskompetenz", "module"):
+    beispiele = os.path.join(ROOT, "examples")
+    for name in sorted(d for d in os.listdir(beispiele) if os.path.exists(os.path.join(beispiele, d, "kurs.md"))):
         out = os.path.join(tempfile.gettempdir(), f"test_{name}.mbz")
         r = subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "build.py"), "--content",
                             os.path.join(ROOT, "examples", name), "--no-render", "--out", out],

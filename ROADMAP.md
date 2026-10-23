@@ -1,6 +1,8 @@
 # Roadmap
 
-Stand 2026-10-23. Version 0.1 ist eine Tech-Demo; die Punkte hier definieren, was **1.0** heißen soll.
+Stand 2026-10-23. Version 1.0 ist erschienen (AP9); die Punkte unter „Umfang und Reihenfolge“ definieren, was **1.0**
+heißt, und bleiben als Nachweis stehen. Offen für 1.0 sind nur noch die Durchläufe des Autors auf der Plattform und mit
+fremden Konten (`docs/entwicklung/protokolle/`).
 Reihenfolge innerhalb der Blöcke ist Priorität. Jeder Punkt braucht in der Regel genau einmal einen
 Test-Export von der Plattform (leerer Kurs mit dem Element), danach gilt die Erweiterung für alle.
 
@@ -42,7 +44,8 @@ Vorgestellt wurde 0.1 bereits, Durchlauf mit ChatGPT (inklusive selbst generiert
 6. **Website-Modus als Vorlage** – eine HTML-Ressource mit Navigation, Inhalten und einem kleinen
    JS-Quiz; eigene Spiele und Simulationen als Beispiele erst nach 1.0 (Punkt 7). Seit 0.8 (AP7) gebaut; JS-Probe
    23.10. bestanden (eingebettete Datei läuft in voller Rahmenhöhe); Vollbild und Pop-up auf der Plattform offen.
-7. **Zweiter Fremdtest** mit frischem Agenten nur mit dem Repo, dann Release 1.0.
+7. **Zweiter Fremdtest** mit frischem Agenten nur mit dem Release-Zip, dann Release 1.0. Erledigt (AP9, Sonnet-Klasse,
+   Protokoll `docs/entwicklung/protokolle/AP9_fremdtest.md`); Release-Zip über `scripts/package.py`, Projektseite `docs/index.html`.
 
 Geklärt 23.10.: Import mit Platzhalter-`site.json` in einem anderen Account funktioniert – die Werte sind bedeutungslos,
 `site.json` ist seit 0.3 entfernt (AP2), die Platzhalter stehen fest in `gen/mbz.py`. Alt: `site.json` – die Lernplattform ist eine Moodle-Instanz, site_hash für alle gleich,
@@ -132,6 +135,17 @@ Der Generator läuft als Webseite im Browser (Pyodide), ohne Server – Kursdate
   nicht-kommerziell als Spezifikation und Nachweis. Beiträge Dritter zu 1.0 nur unter der Beitragsregel in der README.
 
 ## Nach 1.0
+
+### 1.1 (vorgemerkt)
+- `scripts/vorlage_aus_sicherung.py`: Steckbrief und Designvorlage halbautomatisch aus einer fremden Kurssicherung ableiten
+  (Farben, Kursformat, Abschnittsaufbau, Elementmischung); die Sicherung bleibt lokal, nur die Ableitung geht in den
+  Kursordner. Handanleitung dafür steht seit 1.0 in `docs/fortgeschrittene.md`.
+- Übungsblöcke, die ohne Skript sauber degradieren: Lernkarten als Tabelle, Quiz als Fragenliste mit Lösungen, damit die
+  Moodle-App und ein im Editor gespeichertes Textfeld noch Inhalt zeigen statt eines leeren Gerüsts.
+- Website als SCORM-Paket für Bewertung und Abschluss ohne H5P (Punktestand und Abschluss der Website-Übungen im
+  Bewertungsbuch).
+
+### Später
 - Weitere Module (Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool) und Kursformate (Grid, Wochen, Einzelaktivität).
 - Beispiele für eigene Spiele und Simulationen im Website-Modus.
 - Rückmeldungen anderer Schulen einarbeiten. Test-Exporte bleiben privat (Nutzungsbedingungen der Plattform: keine Weitergabe von Dateien an Dritte); veröffentlicht werden nur die daraus abgeleiteten Schemata mit Platzhaltern.

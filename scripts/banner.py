@@ -7,6 +7,8 @@ usage: python3 scripts/banner.py --farbe "#0F766E" --out <kursordner>/assets/ban
                                                                        Kachelbilder 900 × 600, je Abschnitt ein Motiv
        python3 scripts/banner.py --mit-text --titel "…" --untertitel "…" --out <kursordner>/assets/abschnitt2.png
                                                                        Banner mit Text, nur für `Bild:` im Abschnitt
+       python3 scripts/banner.py --badge --titel "Brüche addieren" --kicker "Mathematik 6" --farbe "#0F766E" --out <kursordner>/assets/badge.png
+                                                                       Badge-Bild 600 × 600 (Kreis, Haken, Name)
 
 Kursbild (overviewfiles) und Kachelbilder bleiben ohne Text: die Plattform legt Kursnamen und Abschnittstitel selbst
 darüber. `--motiv` wählt das Muster: rings, dots, bars, arcs, grid, waves, tris, lines; bei `--kachel` ohne `--motiv`
@@ -40,6 +42,7 @@ def main():
     ap.add_argument("--untertitel", default="")
     ap.add_argument("--mit-text", action="store_true", help="Titel, Untertitel und Kicker ins Bild rendern (nur Banner im Abschnitt)")
     ap.add_argument("--kachel", action="store_true", help="Kachelbild 900 × 600 ohne Text, Motiv mittig")
+    ap.add_argument("--badge", action="store_true", help="Badge-Bild 600 × 600: Kreis mit Haken, --titel als Name, --kicker als Zeile darunter")
     ap.add_argument("--nummer", default="1", help="Abschnittsnummer(n) für --kachel: 3, 1-6 oder 1,3,5; wählt das Motiv")
     ap.add_argument("--motiv", choices=sorted(set(R_KINDS)))
     ap.add_argument("--kicker", default="", help="kleine Zeile über dem Titel, z. B. Fach und Jahrgangsstufe")
@@ -52,10 +55,14 @@ def main():
     except ImportError:
         raise SystemExit("FEHLER Playwright fehlt (pip install playwright && python3 -m playwright install chromium). "
                          "Ohne Bild: Banner-Element ohne `bild:` lassen, Kacheln mit `kachelicon:`.")
-    if args.mit_text and (args.kachel or not args.titel):
+    if args.mit_text and (args.kachel or args.badge or not args.titel):
         raise SystemExit("FEHLER --mit-text braucht --titel und gilt nicht für --kachel (Kachelbilder bleiben textfrei)")
     farben = [f.strip() for f in args.farbe.split(",") if f.strip()]
-    if args.kachel:
+    if args.badge:
+        if not args.titel:
+            raise SystemExit("FEHLER --badge braucht --titel (Name des Badges)")
+        jobs = [(R.badge_html(args.titel, hue=farben[0], sub=args.kicker), args.out)]
+    elif args.kachel:
         nums = nummern(args.nummer)
         if len(nums) > 1 and "{n}" not in args.out:
             raise SystemExit("FEHLER mehrere Nummern brauchen {n} in --out, z. B. assets/kachel{n}.png")

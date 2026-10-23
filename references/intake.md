@@ -48,8 +48,13 @@ Wie viel entscheidest du? a ich entscheide · b Vorschläge freigeben · c KI ma
 Dazu in einem Satz: Fach, Thema, Jahrgangsstufe, Einsatz, Minuten (Vorschlag: begleitend, 45 min).
 ```
 
+**Steht in der ersten Nachricht der Lehrkraft schon alles** (Thema, Jahrgangsstufe, Einsatz, Minuten, kein Material), entfällt
+„Womit starten wir?“: es gilt Weg 1 mit Steuerungsgrad c, der Assistent baut sofort und liefert das Drehbuch mit. Fehlt davon
+nur die Schulart oder das Fach, wird angenommen (`Angenommen:`), nicht gefragt. Ist das Thema für den Umfang zu breit
+(„Bruchrechnen, 45 min“), grenzt der Assistent selbst ein und nennt die Eingrenzung als erste `Angenommen:`-Zeile.
 Bei Weg 1 folgt auf die Antwort keine weitere Frage: Format nach Empfehlung (§2), Gestaltung schlicht mit Banner, Bilder
-nach §4, Annahmen oben im Drehbuch. Bei Weg 2 liest der Assistent das Material und stellt nur Fragen, die es nicht
+nach §4, Darstellungsweg nach der Rangfolge in §3 (formative Übungen im Textfeld, Bewertetes als Aktivität), Annahmen oben
+im Drehbuch. Bei Weg 2 liest der Assistent das Material und stellt nur Fragen, die es nicht
 beantwortet; meist bleibt die Formatfrage. Bei Weg 5 braucht er das alte Drehbuch oder eine Liste der vorhandenen
 Abschnitte; die Fragerunde fragt dann, was dazukommt und ab wann es sichtbar ist (Bau mit `--delta`, Regeln spec §O).
 
@@ -78,7 +83,7 @@ ergeben sich aus dem Material.
 |---|---|---|
 | Selbstlernkurs mit mehreren Einheiten | **Kacheln** | eine Kachel je Einheit, Fortschritt sichtbar, auf dem Handy übersichtlich |
 | Wochenplan, Begleitung über mehrere Wochen | **Wochen** | Abschnitte tragen Datumsbereiche, aktuelle Woche hervorgehoben |
-| Materialsammlung, Vertretung, eine einzelne Einheit | **Themen** | alles auf einer Seite, nichts versteckt |
+| Materialsammlung, Vertretung, eine einzelne Einheit (bis 45 min, auch als Selbstlernkurs) | **Themen** | alles auf einer Seite, nichts versteckt; eine Kachel allein ist ein Umweg |
 | Nur ein Test, ein Forum, eine Abgabe | **Einzelaktivität** | der Kurs ist die Aktivität |
 
 Weitere Formate (Ein-Themen-Format, komprimierte Abschnitte) nur, wenn die Lehrkraft sie nennt; Lernlandkarte und
@@ -112,8 +117,8 @@ Formate je Lerneinheit, ein Satz je Format:
 | Zuordnen | Sortieren, Kategorien, richtig/falsch zuordnen | einmal je Einheit |
 | Quiz | Abschluss einer Einheit mit Bestehensgrenze | am Ende jeder Einheit |
 | Lückentext | Formulierungen, Fachsprache, Rechenschritte | bei Sprach- und Rechen-Einheiten |
-| Geschichte | Entscheidungen mit Folgen, mehrere Enden | einmal je Kurs |
-| Selbsteinschätzung | drei Sätze vorher und nachher | bei Selbstlernkurs |
+| Geschichte | Entscheidungen mit Folgen, mehrere Enden | einmal je Kurs ab etwa 90 min; bei einer Einheit weglassen |
+| Selbsteinschätzung | dieselben drei Sätze vorher (in Allgemeines) und nachher (letztes Element der Einheit); zählt nicht als H5P (D7) | bei Selbstlernkurs |
 | Praxisauftrag | Seite mit Auftrag außerhalb des Kurses | optional |
 
 Rhythmus: Lesen → Üben → Lesen → Üben → Sichern.
@@ -122,7 +127,7 @@ Rhythmus: Lesen → Üben → Lesen → Üben → Sichern.
 
 | Wofür | Weg | Angabe |
 |---|---|---|
-| Formative Übung zwischen Lesetexten (Quiz ohne Note, Zuordnen, Lernkarten, Lückentext, Geschichte) | Übung im Textfeld, direkt auf der Kursseite, ohne Nachladen | `website: textfeld` am Abschnitt oder im Steckbrief |
+| Formative Übung zwischen Lesetexten (Quiz ohne Note, Zuordnen, Lernkarten, Lückentext, Geschichte) | Übung im Textfeld, direkt auf der Kursseite, ohne Nachladen | `website: textfeld` am Abschnitt oder im Steckbrief; ein Übungsquiz braucht dann `abschluss: ansehen`, sonst bleibt es Aktivität |
 | Alles Bewertete und Abschlussrelevante (Bestehensgrenze, Badge, Note, Abgabe) | H5P- oder Moodle-Aktivität | Standard; im Textfeld-Modus bleibt `abschluss: bestehen` (beim Quiz Standard) Aktivität |
 | Eine ganze Einheit am Stück mit eigener Navigation | Website-Datei | `website: ja`, `vollbild` oder `neues fenster` |
 
@@ -160,6 +165,14 @@ Was der Assistent kann, hat die Selbstabfrage ergeben (`assistent.bilder` im Ste
 | ja | Bilder selbst erzeugen und als PNG nach `assets/` legen: `banner.png` (1600 × 420, Kursbanner), `kurs.png` (1600 × 520, Kursbild; fehlt es, dient das Banner als Kursbild), bei Kacheln je Abschnitt `kachelN.png` (900 × 600, Motiv mittig, eigenes Motiv je Abschnitt), bei „gestaltet“ je Abschnitt ein Bild (1600 × 420). | selbst |
 | nein, aber Code | `python3 scripts/banner.py --farbe "#RRGGBB" --out <kursordner>/assets/banner.png` rendert ein textfreies Banner in der Akzentfarbe (braucht Playwright und Chromium; `--motiv` wählt das Muster); `--hoehe 520 --out …/kurs.png` das Kursbild; `--kachel --nummer 1-6 --out …/kachel{n}.png` alle Kachelbilder in einem Aufruf. Scheitert das, Banner ohne `bild:`, Kacheln mit `kachelicon:`. | gerendert |
 | nein | Banner-Element ohne `bild:` bauen (farbiger Block mit Titel und Satz) und am Ende des Drehbuch-Kopfs je Bild eine Zeile `Bildwunsch: banner.png \| 1600 × 420 \| <Prompt>` liefern. Die Lehrkraft erzeugt die Bilder, legt sie in `assets/`, der Assistent trägt `bild:` nach und baut neu. | lehrkraft |
+
+Einfache Fachgrafiken (Bruchbalken, Kreisteile, Zahlenstrahl, Balkendiagramm) zeichnet der Assistent mit Pillow selbst, auch
+wenn er sonst keine Bilder erzeugen kann; ein kurzes Skript außerhalb des Kursordners, PNG nach `assets/`, `Bild:`-Zeile mit
+Alt-Text, der die Grafik beschreibt.
+
+Badge-Bild (Pflicht bei `### Badge:`): quadratisches PNG, etwa 600 × 600, hier darf der Name stehen. Selbst erzeugt oder
+`python3 scripts/banner.py --badge --titel "<Badge-Name>" --kicker "<Fach Jgst>" --farbe "#RRGGBB" --out <kursordner>/assets/badge.png`;
+ohne Bildweg bekommt es eine `Bildwunsch:`-Zeile wie das Banner.
 
 Regeln für erzeugte Bilder und Prompts: ruhig und flächig, eine Akzentfarbe, Motiv aus dem Thema, **kein Text im Bild**
 (Titel und Satz setzt das Banner-Element als HTML, auf dem Handy lesbar), keine Gesichter, keine Logos. Kursbild und
@@ -257,8 +270,9 @@ Regeln:
 - **Quelle und Zweck** je Element in der Überschriftzeile: `[Quelle: …]` (aus dem Material der Lehrkraft) oder `[KI]`
   (erfunden/ergänzt), dazu `[Zweck: …]` (D3; nicht bei Banner und Überblick). Nur im Drehbuch, nie im Kurs –
   der Parser entfernt sie. Eine Zweck- oder Quellenzeile als Kursinhalt ist ein Fehler.
-- **Zeitcheck**: je Aufgabe/Seite Minuten schätzen (Lesen 150 Wörter/min, MC 45 s, Karte 20 s, Quizfrage 45 s, Geschichtsknoten 40 s),
-  je LE summieren, gegen Soll ausweisen (`Zeit LE 1: …`); bei Abweichung über 20 % steht der Vorschlag (kürzen/ergänzen) in
+- **Zeitcheck**: je Aufgabe/Seite Minuten schätzen (Lesen 150 Wörter/min, bis Jgst 7 100 Wörter/min; MC 45 s, Karte 20 s,
+  Quizfrage 45 s, Rechenlücke 30 s, Geschichtsknoten 40 s),
+  je LE summieren, gegen Soll ausweisen (`Zeit LE 1: …`; Allgemeines zählt mit, höchstens 3 min); bei Abweichung über 20 % steht der Vorschlag (kürzen/ergänzen) in
   derselben Zeile, die Lehrkraft entscheidet.
 - Umfang: eine 45-Minuten-Stunde ≈ 2–3 Seiten Drehbuch. Länger nur, wenn der Inhalt es verlangt.
 - **Lesetexte formatiert, nicht als Fließtext**: je Textsorte den Baustein wählen (Erklärung: Überschriften, kurze Absätze,
@@ -280,7 +294,7 @@ kurs:
   kurzname: "…"                   # ≤ 20 Zeichen
   beschreibung: "<p>…</p>"
   fach: "…"
-  schulart: "…"
+  schulart: "…"                   # frei (Mittelschule, Realschule, Gymnasium …); nicht genannt = leer lassen
   jahrgangsstufe: "…"
   einsatz: selbstlernkurs         # selbstlernkurs | begleitend | vertretung
   ton: "…"                        # abgeleitet
@@ -320,7 +334,9 @@ Delta neu einspielen). `sichtbar_ab: YYYY-MM-DD` erzeugt eine Datums-Zugriffsbes
 3. `python3 scripts/build.py --content <kursordner> --proto` (Erstkurs) oder ohne `--proto`; Etappen:
    `--delta` (alle `pending`) oder `--delta le2,le3`. Am Ende prüft `build.py` die Sicherung (`check.py`); bei `FEHLER`
    beheben und neu bauen, nicht liefern.
-4. Import-Hinweis an die Lehrkraft: beim Wiederherstellen in einen bestehenden Kurs „Kurseinstellungen überschreiben: Ja“,
-   sonst bleibt das Kursformat des Zielkurses (Kachelbilder nur bei gleichem Format). Hat der Kurs ein Glossar mit
-   Einträgen, nach dem Import: Glossar → Mehr → Einträge importieren → `<kurs>_glossar.xml` (liegt neben der `.mbz`).
+4. Wiederherstellungsanleitung an die Lehrkraft (Text in `SKILL.md`): Variante neuer Kurs, in diesen Kurs („löschen und
+   dann wiederherstellen“) oder Delta („zusammenführen“); bei Formatwechsel „Kurseinstellungen überschreiben: Ja“, sonst
+   bleibt das Kursformat des Zielkurses (Kachelbilder nur bei gleichem Format). Hat der Kurs ein Glossar mit Einträgen,
+   nach dem Import: Glossar → Mehr → Einträge importieren → `<kurs>_glossar.xml` (liegt neben der `.mbz`). Enthält er
+   Übungsblöcke im Textfeld, steht die Editor-Regel aus `SKILL.md` dabei.
 5. Nach erfolgreichem Import die gelieferten Teile auf `delivered` setzen.

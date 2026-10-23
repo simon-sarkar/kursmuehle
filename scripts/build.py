@@ -19,9 +19,11 @@ Exit-Code 1, wenn die Prüfung der fertigen .mbz Fehler meldet (Datei bleibt zur
 """
 import argparse
 import os
+import re
 import shutil
 import sys
 import time
+import unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -33,6 +35,15 @@ from gen.kursdatei import KursdateiFehler, parse, ts_sichtbar_ab  # noqa: E402
 from gen.mbz import FORMATE, Course, Section, Writer, glossary_import_xml, moodle_format  # noqa: E402
 from gen.website import vorschau_textfeld  # noqa: E402
 from check import check_mbz, report  # noqa: E402
+
+
+def dateiname(short):
+    """Kurzname als Dateiname: ASCII, Kleinbuchstaben, Umlaute ausgeschrieben, Leerzeichen und Sonderzeichen zu „-“."""
+    s = short.lower()
+    for a, b in (("ä", "ae"), ("ö", "oe"), ("ü", "ue"), ("ß", "ss")):
+        s = s.replace(a, b)
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", "-", s).strip("-") or "kurs"
 
 
 def asset_map(assets):
@@ -164,9 +175,9 @@ def main():
             else:
                 sections.append(Section(part.name, items=part.items, available_from=part.available_from))
         course = Course(name, short, summary=summary, sections=sections, badges=[], image_path=None, **kurs)
-        fname = f"{short.lower()}_delta_{'-'.join(keys)}_{time.strftime('%Y%m%d-%H%M')}.mbz"
+        fname = f"{dateiname(short)}_delta_{'-'.join(keys)}_{time.strftime('%Y%m%d-%H%M%S')}.mbz"
     else:
-        fname = f"{short.lower()}_{'prototyp' if args.proto else 'kurs'}_{time.strftime('%Y%m%d-%H%M')}.mbz"
+        fname = f"{dateiname(short)}_{'prototyp' if args.proto else 'kurs'}_{time.strftime('%Y%m%d-%H%M%S')}.mbz"
         if args.proto:
             name, short = f"{short} – Prototyp", f"{short}-Proto"
         course = Course(name, short, summary=summary, sections=k["sections"], badges=k.get("badges", []),

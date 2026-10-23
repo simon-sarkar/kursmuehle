@@ -8,7 +8,8 @@ referenziert), inforef.xml (Dateien, Bewertungsposten, Fragenkategorien), H5P (B
 json_content, Bilder in images/), Bilder in Textfeldern/Seiten/Buchkapiteln, Datei/Verzeichnis (Dateibereich content),
 Test (Fragenverweise gegen questions.xml, Kategorie im Modulkontext, sumgrades, Bewertungsposten, Fragetypen),
 Aufgabe (Bewertungsposten), Abstimmung (Optionen), Glossar (Einträge, Nutzerdaten-Settings), Badges, Verfügbarkeits-JSON,
-Kursformat (course.xml, Formatoptionen, Kachelbilder je Abschnitt, Einzelaktivität), users/userinfo-Settings.
+Kursformat (course.xml, Formatoptionen, Kachelbilder je Abschnitt, Einzelaktivität), users/userinfo-Settings,
+Archivgröße (Warnung ab 400 MB; die Plattform nimmt höchstens 500 MB an).
 Ausgabe: `OK <datei> …` oder Zeilen `FEHLER <wo> <was>`; Exit-Code 1 bei Fehlern. Zeilen `WARNUNG <wo> <was>` (Exit 0):
 die Sicherung ist gültig, aber beim Import geht voraussichtlich etwas verloren (z. B. Glossareinträge ohne userinfo=1).
 `build.py` ruft die Prüfung nach jedem Bau selbst auf. Neue Modultypen brauchen hier einen Eintrag (Dateibereiche, inhalte()).
@@ -29,6 +30,7 @@ from gen.mbz import FORMAT_OPTIONEN, MODULE_VERSIONS, QTYPES  # noqa: E402
 
 NULL = "$@NULL@$"
 KACHEL_TITEL = 35   # Zeichen; längere Abschnittstitel brechen auf der Kachel um
+GROESSE_WARNUNG_MB = 400   # die Plattform nimmt Sicherungen bis 500 MB an; ab hier warnen
 PFLICHT_TOP = ["moodle_backup.xml", "files.xml", "moodle_backup.log", "roles.xml", "scales.xml", "outcomes.xml",
                "questions.xml", "groups.xml", "grade_history.xml", "completion.xml", "gradebook.xml", "badges.xml"]
 PFLICHT_COURSE = ["course", "inforef", "roles", "filters", "calendar", "contentbank", "completiondefaults", "enrolments"]
@@ -70,6 +72,10 @@ class Pruefung:
     # ---------------------------------------------------------------- Archiv
     def lade(self):
         try:
+            mb = os.path.getsize(self.path) / (1024 * 1024)
+            if mb >= GROESSE_WARNUNG_MB:
+                self.warn(os.path.basename(self.path), f"Sicherung {mb:.0f} MB: die Plattform nimmt höchstens 500 MB an; "
+                          "Bilder verkleinern, Dateien kürzen oder den Kurs in Delta-Sicherungen teilen")
             with tarfile.open(self.path, "r:gz") as tar:
                 members = tar.getmembers()
                 for i, m in enumerate(members):
