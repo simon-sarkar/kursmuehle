@@ -1,6 +1,6 @@
-![Kursmühle – Lernplattform-Kurse aus einem Prompt](docs/banner-kursmuehle-v8.svg)
+![Kursmühle – für die ByCS-Lernplattform](docs/banner-kursmuehle-v9.svg)
 
-# Kursmühle – Lernplattform-Kurse aus einem Prompt
+# Kursmühle – für die ByCS-Lernplattform
 
 ![Version 1.0.1](docs/badge-version.svg) ![Status: Release](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
 

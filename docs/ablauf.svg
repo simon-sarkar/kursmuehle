@@ -10,6 +10,6 @@
     <g transform="translate(600,80)"><rect x="-60" y="-40" width="120" height="80" rx="10" fill="#ffffff" stroke="#2a2a2a" stroke-opacity="0.35"/><text y="-6" font-size="15" font-weight="600">Generator</text><text y="16" font-size="12" fill="#6b6257">scripts/build.py</text><text y="32" font-size="12" fill="#6b6257">baut das Archiv</text></g>
     <path d="M662 80 h34" stroke="#d9a441" stroke-width="3"/><path d="M692 73 l10 7 -10 7" fill="#d9a441"/>
     <g transform="translate(790,80)"><rect x="-70" y="-40" width="140" height="80" rx="10" fill="#2a2a2a"/><text y="-6" font-size="15" font-weight="600" fill="#f3e9d8">Lernplattform</text><text y="16" font-size="12" fill="#f3e9d8" fill-opacity="0.75">Kurs → Mehr →</text><text y="32" font-size="12" fill="#f3e9d8" fill-opacity="0.75">Kurs wiederherstellen</text></g>
-    <text x="450" y="170" font-size="13" fill="#6b6257">Freigabe des Drehbuchs durch die Lehrkraft, erst dann wird gebaut. Die .mbz ist nicht an einen Account gebunden.</text>
+    <text x="450" y="170" font-size="13" fill="#6b6257">Gebaut wird erst, wenn du das Drehbuch freigegeben hast. Die .mbz ist nicht an einen Account gebunden.</text>
   </g>
 </svg>

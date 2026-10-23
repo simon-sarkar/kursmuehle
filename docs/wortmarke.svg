@@ -9,5 +9,5 @@
   <rect x="115" y="188" width="12" height="12" rx="3" fill="#2a2a2a"/>
   <rect x="131" y="188" width="12" height="12" rx="3" fill="#d9a441"/></g>
   <text x="172" y="86" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="64" font-weight="700" fill="#2a2a2a" letter-spacing="-1">Kursmühle</text>
-  <text x="175" y="122" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="22" fill="#6b6257">Lernplattform-Kurse aus einem Prompt</text>
+  <text x="175" y="122" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="22" fill="#6b6257">für die ByCS-Lernplattform</text>
 </svg>

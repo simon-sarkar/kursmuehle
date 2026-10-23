@@ -46,7 +46,7 @@ def wortmarke():
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="640" height="160" viewBox="0 0 640 160">
   <g transform="translate(16,16) scale(0.5)"><rect width="256" height="256" rx="56" fill="{FG}"/>{mark(BG, FG, AC)}</g>
   <text x="172" y="86" font-family="{FONT}" font-size="64" font-weight="700" fill="{FG}" letter-spacing="-1">Kursmühle</text>
-  <text x="175" y="122" font-family="{FONT}" font-size="22" fill="#6b6257">Lernplattform-Kurse aus einem Prompt</text>
+  <text x="175" y="122" font-family="{FONT}" font-size="22" fill="#6b6257">für die ByCS-Lernplattform</text>
 </svg>'''
 
 
@@ -55,11 +55,11 @@ def banner():
     motif = "".join(
         f'<g transform="rotate({a})"><path d="M-10,-66 L10,-66 L22,-144 Q0,-162 -22,-144 Z"/></g>' for a in (45, 135, 225, 315)
     ) + f'<path d="{cog(0, 0, 75, 57, 13, phase_deg=45)}" stroke="{BG}" stroke-width="8" stroke-linejoin="round"/>' 
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-label="Kursmühle – Lernplattform-Kurse aus einem Prompt">
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-label="Kursmühle – für die ByCS-Lernplattform">
   <rect width="1200" height="300" rx="18" fill="{BG}"/>
   <g transform="translate(60,46) scale(0.8)"><rect width="256" height="256" rx="56" fill="{FG}"/>{mark(BG, FG, AC)}</g>
   <text x="300" y="150" font-family="{FONT}" font-size="66" font-weight="700" fill="{FG}" letter-spacing="-1">Kursmühle</text>
-  <text x="304" y="196" font-family="{FONT}" font-size="25" fill="#3d3833">Lernplattform-Kurse aus einem Prompt</text>
+  <text x="304" y="196" font-family="{FONT}" font-size="25" fill="#3d3833">für die ByCS-Lernplattform</text>
   <g transform="translate(1040,150)" fill="{FG}" opacity="0.07">{motif}<circle r="33" fill="{BG}"/><circle r="14"/></g>
 </svg>'''
 
@@ -80,7 +80,7 @@ if __name__ == "__main__":
         "logo.svg": icon(BG, FG, AC),          # dunkles Quadrat, helle Mühle (Hauptfassung, wie im Banner)
         "logo-light.svg": icon(FG, BG, AC),    # Creme-Quadrat, dunkle Mühle (für dunkle Flächen)
         "wortmarke.svg": wortmarke(),
-        "banner-kursmuehle-v8.svg": banner(),
+        "banner-kursmuehle-v9.svg": banner(),
         "badge-version.svg": badge("Version", version, 62, 48),
         "badge-status.svg": badge("Status", "Release", 52, 64),
         "badge-lizenz.svg": badge("Lizenz", "nicht kommerziell", 52, 116, BG),
