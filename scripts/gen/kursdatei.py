@@ -302,8 +302,9 @@ def parse_body(lines, zl, element, quiz=False):
 
 # ---------------------------------------------------------------- Blöcke -> HTML (Textfeld, Seite, Buchtext)
 class Kontext:
-    def __init__(self, zl, A, hue, element):
+    def __init__(self, zl, A, hue, element, kacheln=False):
         self.zl, self.A, self.hue, self.element = zl, A, hue, element
+        self.kacheln = kacheln  # Kurs im Kachelformat: Baustein `Kacheln:` entfällt (doppelt die Kacheln)
         self.files = []     # (local_path, filename) – Bilder in Textfeld/Seite
 
     def fehler(self, ln, msg):
@@ -415,6 +416,10 @@ def block_html(b, k: Kontext):
             items.append((num, inl(parts[0]), inl(parts[1]) if len(parts) > 1 else "", icon))
         return T.fahrplan(items, k.hue, b["rest"] or "Dein Weg durch das Themenfeld")
     if name == "Kacheln":
+        if k.kacheln:
+            print(f"Hinweis: Kachelformat – Baustein „Kacheln:“ in {k.element} weggelassen (doppelt die Kacheln)",
+                  file=sys.stderr)
+            return ""
         tiles = []
         for num, (l2, _, t) in enumerate(b["list"], 1):
             icon, t = _emoji_split(t)
@@ -925,7 +930,7 @@ class Parser:
                     self.web.pos = len(container.items)
                 self._web_element(ln, typ, title, lines, attrs, hue, element, minuten)
                 return None
-        k = Kontext(self.zl, self.A, hue, element)
+        k = Kontext(self.zl, self.A, hue, element, self.kacheln)
         avail = self._avail(attrs, ln, element)
         quiz = typ in ("Quiz", "Test")
         blocks = parse_body(lines, self.zl, element, quiz=quiz) if typ not in ("Geschichte",) else None
@@ -1181,7 +1186,7 @@ class Parser:
     # ----- Website-Modus (AP7)
     def _web_element(self, ln, typ, title, lines, attrs, hue, element, minuten):
         """Element als Kapitel (oder Startseiten-Teil) der Website des Abschnitts."""
-        W, k = self.web, Kontext(self.zl, self.A, hue, element)
+        W, k = self.web, Kontext(self.zl, self.A, hue, element, self.kacheln)
         blocks = parse_body(lines, self.zl, element, quiz=typ == "Quiz") if typ != "Geschichte" else None
         self.web_titel.add(title)
         if typ == "Banner":
@@ -1379,7 +1384,7 @@ class Parser:
             chapters.append(cur)
         out = []
         for title, cblocks, sub in chapters:
-            kc = Kontext(k.zl, k.A, k.hue, k.element)
+            kc = Kontext(k.zl, k.A, k.hue, k.element, k.kacheln)
             html = body_html(cblocks, kc)
             if not html:
                 self.fehler(0, element, f"Kapitel „{title}“ ist leer")
