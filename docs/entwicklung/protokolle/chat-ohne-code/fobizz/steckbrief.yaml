@@ -1,0 +1,73 @@
+kurs:
+  titel: "Satz des Pythagoras – rechtwinklige Dreiecke berechnen"
+  kurzname: "pythagoras9"
+  beschreibung: "Selbstlernkurs zum Satz des Pythagoras: rechtwinklige Dreiecke erkennen, Hypotenuse und Katheten unterscheiden und fehlende Seitenlängen in Alltagssituationen berechnen."
+  fach: "Mathematik"
+  schulart: "Mittelschule"
+  jahrgangsstufe: "9"
+  einsatz: selbstlernkurs
+  ton: "sachlich-jugendnah, Du"
+  umfang_min: 45
+  portionierung: keine
+  format: themen
+  website: textfeld
+  start: null
+  badge: null
+  bestehensgrenze: 70
+  farbe: "#0F766E"
+  design:
+    vorlage: schlicht
+    banner: true
+    farbe_je_abschnitt: false
+    emoji_marker: false
+
+weg: thema
+steuerung: ki
+
+assistent:
+  code: nein
+  dateien: ja
+  bilder: nein
+
+bilder: lehrkraft
+material: []
+
+vorgaben:
+  - "Steuerungsgrad c: keine Rückfragen und keine zusätzliche Freigabe."
+  - "Eine Einheit mit ungefähr 45 Minuten Lernzeit."
+  - "Keinen Code ausführen; ein anderes Werkzeug übernimmt später den Bau."
+  - "Bilder zunächst ausschließlich als Bildwunsch-Zeilen ausgeben."
+  - "Vollständiges Drehbuch einschließlich Übungen und Abschlusstest liefern."
+
+angenommen:
+  - "Vorausgesetzt sind Quadrieren, Quadratwurzelziehen und das Umstellen einfacher Gleichungen."
+  - "Taschenrechner, Heft und Stift stehen bereit."
+  - "Schwerpunkt sind Seitenberechnungen; Beweis und Umkehrung werden nicht behandelt."
+  - "Eine einzelne Einheit wird im Themenformat angelegt."
+  - "Formative Übungen erscheinen direkt auf der Kursseite; der Abschlusstest bleibt eine bewertete Moodle-Aktivität."
+  - "Der Abschlusstest hat acht Fragen, zwei Versuche und eine Bestehensgrenze von 70 Prozent."
+  - "Für diese kurze Einheit wird kein Badge vergeben."
+  - "Bilder sind optional und werden erst nach ihrer Erstellung eingebunden."
+  - "Mathematische Ausdrücke stehen in LaTeX; das spätere Bauwerkzeug muss die Darstellung auch in Übungsblöcken prüfen."
+
+offen: []
+
+teile:
+  start:
+    status: pending
+    titel: "Allgemeines"
+    inhalt: "Banner und Selbsteinschätzung vor dem Lernen"
+  le1:
+    status: pending
+    titel: "Fehlende Seiten berechnen"
+    dauer_min: 45
+    ausarbeitung: voll
+    formate:
+      - textfeld
+      - seite
+      - zuordnen
+      - lueckentext
+      - test
+      - umfrage
+    inhalt: "Rechtwinklige Dreiecke erkennen, passende Rechenwege wählen und fehlende Seitenlängen in Sachaufgaben berechnen."
+    sichtbar_ab: null

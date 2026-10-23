@@ -1,0 +1,35 @@
+kurs:
+  titel: "Satz des Pythagoras"
+  kurzname: "pythagoras9"
+  beschreibung: "<p>Selbstlernkurs für Mathematik Jahrgangsstufe 9: Satz des Pythagoras verstehen, Dreiecke prüfen und fehlende Seiten berechnen.</p>"
+  fach: "Mathematik"
+  schulart: "Mittelschule"
+  jahrgangsstufe: "9"
+  einsatz: selbstlernkurs
+  ton: "klar, unterstützend, alltagsnah"
+  umfang_min: 45
+  portionierung: keine
+  format: themen
+  website: nein
+  start: null
+  badge: null
+  bestehensgrenze: 70
+  farbe: "#1D5FD1"
+  design: {vorlage: schlicht, banner: true, farbe_je_abschnitt: false, emoji_marker: false}
+  weg: thema
+  steuerung: ki
+  assistent: {code: nein, dateien: ja, bilder: nein}
+  bilder: lehrkraft
+  material: ["kursmuehle-chattest.md"]
+  vorgaben:
+    - "Steuerungsgrad c: KI macht alles"
+    - "Mathematik, Satz des Pythagoras, 9. Klasse Mittelschule, Selbstlernkurs ca. 45 min, eine Einheit"
+    - "Bilder als Bildwunsch-Zeilen"
+  angenommen:
+    - "Kursformat Themen, schlichtes Design, ohne Badge"
+    - "Abschlusstest als Moodle-Test mit 70 % Bestehensgrenze und zwei Versuchen"
+    - "Schülerinnen und Schüler kennen Quadratzahlen und Quadratwurzeln grundsätzlich aus dem Unterricht"
+  offen: []
+teile:
+  start: {status: pending, titel: "Allgemeines", inhalt: "Banner, Kursablauf, Selbsteinschätzung vorher"}
+  le1: {status: pending, titel: "Satz des Pythagoras anwenden", dauer_min: 42, formate: [textfeld, seite, lernkarten, zuordnen, quiz, test, umfrage], inhalt: "Rechtwinklige Dreiecke erkennen, Formel verstehen, fehlende Seiten berechnen und Alltagssituationen lösen.", sichtbar_ab: null}
