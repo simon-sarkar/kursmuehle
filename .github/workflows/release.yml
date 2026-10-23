@@ -1,0 +1,50 @@
+name: Release-Zip
+
+# Bei jedem Push auf main: Zip bauen und an das Release der aktuellen Version hängen.
+# Version = erste Überschrift "## X.Y.Z" in CHANGELOG.md. Gibt es das Release noch nicht, wird es angelegt
+# (Tag vX.Y.Z); gibt es das Release schon, wird kursmuehle.zip ersetzt. Die Adresse
+# releases/latest/download/kursmuehle.zip zeigt damit immer auf den aktuellen Stand von main.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Abhängigkeiten
+        run: pip install pyyaml pillow
+      - name: Version aus CHANGELOG lesen
+        id: v
+        run: |
+          V=$(grep -m1 -oE '^## [0-9]+(\.[0-9]+)+' CHANGELOG.md | sed 's/## //')
+          test -n "$V" || { echo "Keine Version im CHANGELOG gefunden"; exit 1; }
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "Version $V"
+      - name: Pflichtbau
+        run: python3 scripts/build.py --content examples/netzwerk9 --no-render --out /tmp/netzwerk9
+      - name: Zip bauen
+        run: python3 scripts/package.py --out dist/kursmuehle.zip
+      - name: Release anlegen oder Zip ersetzen
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ steps.v.outputs.version }}
+        run: |
+          TAG="v$V"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/kursmuehle.zip --clobber
+            echo "Zip an $TAG ersetzt"
+          else
+            NOTES=$(awk -v v="## $V" 'index($0,v)==1{f=1;next} /^## /{if(f)exit} f' CHANGELOG.md)
+            gh release create "$TAG" dist/kursmuehle.zip --title "Kursmühle $V" --notes "$NOTES" --latest
+            echo "Release $TAG angelegt"
+          fi
