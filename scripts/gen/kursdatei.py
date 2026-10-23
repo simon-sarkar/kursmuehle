@@ -580,6 +580,7 @@ class Parser:
         self.badges = []        # (ln, name, attrs)
         self.all_items = []
         self.banner = False     # Banner vorhanden -> Überblickskarten ohne Titel (Doppelung)
+        self.banner_bild = None  # Bild des Banners; Kursbild, wenn `kursbild:` fehlt (beide textfrei)
 
     # ----- Hilfen
     def fehler(self, ln, element, msg):
@@ -714,7 +715,7 @@ class Parser:
             self.sections.insert(0, Section(None, items=[]))
         badges = [self._badge(ln, name, attrs) for ln, name, attrs in self.badges]
         img = self.kurs_attr.get("kursbild")
-        image_path = self._image(img, 1, "Kurs")[0] if img else None
+        image_path = self._image(img, 1, "Kurs")[0] if img else self.banner_bild
         return {"sections": self.sections, "parts": self.parts, "badges": badges, "image_path": image_path,
                 "titel": self.titel, "farbe": hue}
 
@@ -829,6 +830,7 @@ class Parser:
             img = attrs.get("bild")
             if img:
                 k.files.append((self._image(img, ln, element)[0], img))
+                self.banner_bild = self.banner_bild or self._image(img, ln, element)[0]
             html = T.banner(inl(title), inl(attrs.get("untertitel", "")), img, hue=hue) + body_html(blocks, k)
             item = Label(html, files=k.files, name=attrs.get("name") or title)
             self.banner = True

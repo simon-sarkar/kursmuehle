@@ -42,10 +42,10 @@ sind Fehler, keine Vermutungen.
 | Wo | Angabe | Bedeutung |
 |---|---|---|
 | Kurs | `farbe` | Akzentfarbe `#RRGGBB` oder rot, grün, blau, orange, lila; Standard `#1D5FD1` |
-| Kurs | `kursbild` | PNG aus `assets/` als Kursbild |
+| Kurs | `kursbild` | PNG aus `assets/` als Kursbild, textfrei (die Plattform legt den Kursnamen darüber); fehlt es, dient das Bild des Banners als Kursbild |
 | Abschnitt | `teil` | Schlüssel für `--delta` und `sichtbar_ab` im Steckbrief (`teile:`) |
 | Abschnitt | `farbe` | Akzentfarbe des Abschnitts (vererbt an Unterabschnitte und Elemente) |
-| Abschnitt | `kachelbild`, `kachelicon` | Kachelformat: PNG aus `assets/` als Kachelbild, FontAwesome-4-Name (book, lightbulb-o, flask, globe, laptop, puzzle-piece, trophy …) als Icon; in anderen Formaten ohne Wirkung. Alternativ im Steckbrief unter `teile.<teil>.kachelbild` / `.kachelicon` |
+| Abschnitt | `kachelbild`, `kachelicon` | Kachelformat: PNG aus `assets/` als Kachelbild (textfrei, etwa 3:2, 900 × 600, eigenes Motiv je Abschnitt; `banner.py --kachel`), FontAwesome-4-Name (book, lightbulb-o, flask, globe, laptop, puzzle-piece, trophy …) als Icon; in anderen Formaten ohne Wirkung. Alternativ im Steckbrief unter `teile.<teil>.kachelbild` / `.kachelicon` |
 | Abschnitt, Unterabschnitt, Element | `sichtbar ab` | `JJJJ-MM-TT`, Datumsbedingung 06:00 Uhr; überschreibt den Steckbrief |
 | Abschnitt, Unterabschnitt, Element | `prototyp: nein` | wird bei `--proto` weggelassen |
 | Unterabschnitt | `teil` | wie beim Abschnitt |
@@ -138,6 +138,9 @@ Anleitung = `Schritte:`; Merksatz = `Merke:` oder `Hervorhebung:`; Gegenüberste
 Kein Absatz länger als fünf Zeilen auf dem Handy (etwa 60 Wörter). Alle Bausteine werden von der Designvorlage
 (Steckbrief `design.vorlage`, §7) eingefärbt und geformt; die Kursdatei kennt keine Gestaltungsangaben außer `farbe`.
 
+Bilder mit Text nur im Abschnitt (`Bild:`); Kursbild, Kachelbild und Banner-`bild:` sind textfrei. Im Kachelformat
+Abschnittstitel höchstens etwa 35 Zeichen (`check.py` warnt darüber).
+
 Steht ein `### Banner:` im Kurs, trägt jede Überblickskarte keinen Titel und Untertitel mehr, nur Dauer und Phasen
 (Banner und Karte zeigten sonst beides doppelt).
 
@@ -229,10 +232,11 @@ Bau: `python3 scripts/build.py --content <ordner>`; `--proto` lässt alles mit `
 den Kursnamen; `--delta` baut die Teile mit `status: pending`, `--delta le2,le3` die genannten; jeder Teil wird dabei ein
 eigener Abschnitt (Unterabschnitte werden Abschnitte). Einzelaktivität: die Kursdatei enthält genau ein Element.
 
-Glossare mit Einträgen: Moodle stellt Einträge nur mit Nutzerdaten wieder her. Die Sicherung trägt deshalb `users=1`
-(nur das Glossar und seine Abschnitte haben `userinfo=1`), und `build.py` legt je Glossar eine XML-Datei neben die `.mbz`
-(`<kurs>_glossar.xml`) für Glossar → Mehr → Einträge importieren. Sperrt die Plattform beim Wiederherstellen „Nutzer
-einbeziehen“, fehlen Einträge und Badges: dann `--ohne-nutzerdaten` bauen und die Einträge über die XML-Datei einspielen.
+Glossare mit Einträgen: Moodle stellt Einträge nur mit Nutzerdaten wieder her; „Nutzer einbeziehen“ ist für Lehrkräfte
+kein verlässlicher Weg. Die Sicherung trägt deshalb `users=0`; `build.py` legt je Glossar eine XML-Datei neben
+die `.mbz` (`<kurs>_glossar.xml`), fester Schritt nach dem Import: Glossar → Mehr → Einträge importieren → diese Datei.
+`--mit-nutzerdaten` baut `users=1` (nur das Glossar und seine Abschnitte mit `userinfo=1`) für Moodle-Instanzen, die das
+Häkchen zulassen.
 
 Python bleibt als Ausweg: Liegt keine `kurs.md`, aber `content/course.py` mit `build(A, sb, proto)` im Kursordner,
 wird sie genutzt (Bausteine in `scripts/gen/html.py`).

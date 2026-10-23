@@ -8,7 +8,8 @@ falscher Hash, kaputtes json_content, falsche Bibliotheksversion, fehlender Akti
 fehlender fileref, ungültiges Verfügbarkeits-JSON, doppelte Abschnittsnummer, nicht wohlgeformtes XML, Formatoption mit
 fremdem Format; aus dem Kachel-Build: Kachelbild ohne Datei, Kacheloption im Themenformat; aus dem module-Build:
 Fragenverweis ins Leere, Fragenkategorie in fremdem Kontext, sumgrades falsch, Kapitelbild entfernt, Datei ohne Inhalt,
-Bewertungsposten passt nicht, users.xml fehlt, Glossar-userinfo ohne Abschnitts-userinfo; Warnung bei Glossar ohne Nutzerdaten.
+Bewertungsposten passt nicht; aus dem module-Build mit Nutzerdaten: users.xml fehlt, Glossar-userinfo ohne
+Abschnitts-userinfo; Warnung bei users=1 (und nur dort) und bei langem Kacheltitel.
 """
 import io
 import os
@@ -237,7 +238,7 @@ def main():
                build("module", os.path.join(d, "module.mbz"))]
         gut += [build("netzwerk9", os.path.join(d, f"n9_{f}.mbz"), "--format", f)
                 for f in ("kacheln", "wochen", "einthemen", "komprimiert")]
-        gut.append(build("module", os.path.join(d, "module_ohne.mbz"), "--ohne-nutzerdaten"))
+        gut.append(build("module", os.path.join(d, "module_mit.mbz"), "--mit-nutzerdaten"))
         for path in gut:
             errors, info, warnings = check_mbz(path)
             if errors:
@@ -247,10 +248,15 @@ def main():
                     print(f"       {wo}: {was}")
             else:
                 print(f"ok     {os.path.basename(path)}: {info}" + (f", {len(warnings)} Warnung(en)" if warnings else ""))
-            want_warn = path.endswith("module_ohne.mbz")
-            if want_warn != any("Einträge, aber userinfo=0" in was for _, was in warnings):
+            want_warn = path.endswith("module_mit.mbz")
+            if want_warn != any(was.startswith("users=1") for _, was in warnings):
                 bad += 1
-                print(f"FALSCH {os.path.basename(path)}: Glossar-Warnung {'erwartet' if want_warn else 'nicht erwartet'}: {warnings}")
+                print(f"FALSCH {os.path.basename(path)}: users=1-Warnung {'erwartet' if want_warn else 'nicht erwartet'}: {warnings}")
+            # Kacheltitel über 35 Zeichen: netzwerk9 im Kachelformat ja, alltagskompetenz (kurze Titel) nicht
+            want_titel = path.endswith("n9_kacheln.mbz")
+            if want_titel != any(was.startswith("Kacheltitel") for _, was in warnings):
+                bad += 1
+                print(f"FALSCH {os.path.basename(path)}: Kacheltitel-Warnung {'erwartet' if want_titel else 'nicht erwartet'}")
         # Einzelaktivität: genau ein Element – netzwerk9 hat zehn, der Bau muss abbrechen
         r = subprocess.run([sys.executable, BUILD, "--content", os.path.join(ROOT, "examples", "netzwerk9"), "--out",
                             os.path.join(d, "single.mbz"), "--format", "einzelaktivitaet"], capture_output=True, text=True)
@@ -259,10 +265,10 @@ def main():
             print(f"FEHLT  Einzelaktivität mit zehn Elementen: {r.stdout} {r.stderr}")
         else:
             print("ok     Einzelaktivität mit zehn Elementen: Bau bricht ab")
-        base, modul, kachel = load(gut[0]), load(gut[4]), load(gut[5])
+        base, modul, kachel, modul_mit = load(gut[0]), load(gut[4]), load(gut[5]), load(gut[-1])
         for name, mut, want, src in ([(*f, base) for f in FAELLE] + [(*f, modul) for f in MODUL_FAELLE]
                                      + [(*f, base) for f in FORMAT_FAELLE] + [(*f, kachel) for f in KACHEL_FAELLE]
-                                     + [(*f, modul) for f in USERS_FAELLE]):
+                                     + [(*f, modul_mit) for f in USERS_FAELLE]):
             e = dict(src)
             mut(e)
             path = save(e, os.path.join(d, "kaputt.mbz"))

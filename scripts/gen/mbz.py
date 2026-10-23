@@ -4,8 +4,9 @@ Templated from test exports of 2026-10-22/23 (Moodle 5.2.4, mod_hvp 2026062501; 
 references/export-schemata/). Supported modules: label, page, url, hvp, subsection, feedback, quiz (mit Fragensammlung in
 questions.xml), assign, resource, folder, forum, book, choice, glossary. Plus badges, files.
 Kursformate: topics, tiles (Kachelbild/-icon je Abschnitt), weeks, onetopic, topcoll, singleactivity (references/formate.md).
-Glossareinträge: Moodle stellt sie nur mit Nutzerdaten wieder her; daher users=1 und userinfo=1 nur für Glossare mit
-Einträgen (users.xml leer, userid 0) und zusätzlich `glossary_import_xml()` für den Import über das Glossar selbst.
+Glossareinträge: Moodle stellt sie nur mit Nutzerdaten wieder her. Standard ist users=0 (seit 0.8, nach Import-Test 3),
+die Einträge kommen über `glossary_import_xml()` ins Glossar. Mit glossar_nutzerdaten=True
+users=1 und userinfo=1 nur für Glossare mit Einträgen (users.xml leer, userid 0).
 """
 import hashlib
 import io
@@ -369,7 +370,7 @@ class Badge:
 
 class Course:
     def __init__(self, fullname, shortname, summary="", sections=None, badges=None,
-                 image_path=None, startdate=None, format="topics", format_options=None, glossar_nutzerdaten=True):
+                 image_path=None, startdate=None, format="topics", format_options=None, glossar_nutzerdaten=False):
         self.fullname, self.shortname, self.summary = fullname, shortname, summary
         self.sections = sections or []
         self.badges = badges or []
@@ -378,7 +379,7 @@ class Course:
         self.format = moodle_format(format)
         self.format_options = dict(format_options or {})   # überschreibt FORMAT_OPTIONEN[format]
         # Glossareinträge stellt Moodle nur mit Nutzerdaten wieder her (restore_glossary_stepslib: if $userinfo).
-        # True: Sicherung mit users=1 und userinfo=1 nur für Glossare mit Einträgen; False: users=0, Einträge nur per XML-Import.
+        # False (Standard): users=0, Einträge per XML-Import; True: users=1 und userinfo=1 nur für Glossare mit Einträgen.
         self.glossar_nutzerdaten = glossar_nutzerdaten
 
     def format_option_list(self):

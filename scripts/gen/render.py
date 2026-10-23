@@ -2,12 +2,9 @@
 import asyncio
 import math
 import os
-import random
 
 from playwright.async_api import async_playwright
 
-ASSETS = os.path.join(os.path.dirname(__file__), "..", "assets")
-os.makedirs(ASSETS, exist_ok=True)
 
 INK = "#0B1220"
 INK2 = "#141C2E"
@@ -23,12 +20,13 @@ body{background:#fff;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoot
 """
 
 
-def _motif(hue, seed, w, h, kind):
-    """Abstract geometric accent, deterministic per section."""
-    rnd = random.Random(seed)
+def _motif(hue, seed, w, h, kind, xr=None, zoom=None):
+    """Abstract geometric accent, deterministic per section. xr: rechte Bezugskante des Motivs (Standard w = rechts im
+    Banner; Motivmitte liegt etwa bei xr - 270). zoom: SVG-transform für die ganze Gruppe (Kachel)."""
+    xr = w if xr is None else xr
     parts = []
     if kind == "rings":
-        cx, cy = w - 260, h / 2
+        cx, cy = xr - 260, h / 2
         for i in range(6):
             r = 40 + i * 42
             parts.append(f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="{hue}" '
@@ -37,41 +35,44 @@ def _motif(hue, seed, w, h, kind):
         for gx in range(10):
             for gy in range(6):
                 r = 4 + ((gx * 7 + gy * 3 + seed) % 9)
-                parts.append(f'<circle cx="{w-460+gx*44}" cy="{h/2-110+gy*44}" r="{r}" '
+                parts.append(f'<circle cx="{xr-460+gx*44}" cy="{h/2-110+gy*44}" r="{r}" '
                              f'fill="{hue}" fill-opacity="{0.35+((gx+gy)%4)*0.18:.2f}"/>')
     elif kind == "bars":
         for i in range(9):
             bh = 60 + (math.sin(i * 1.3 + seed) + 1) * 110
-            parts.append(f'<rect x="{w-470+i*48}" y="{h/2-bh/2}" width="30" height="{bh}" rx="15" '
+            parts.append(f'<rect x="{xr-470+i*48}" y="{h/2-bh/2}" width="30" height="{bh}" rx="15" '
                          f'fill="{hue}" fill-opacity="{0.4+ (i%3)*0.25:.2f}"/>')
     elif kind == "arcs":
         for i in range(5):
             r = 90 + i * 55
-            parts.append(f'<path d="M {w-140} {h/2+r} A {r} {r} 0 0 1 {w-140-r} {h/2}" fill="none" '
+            parts.append(f'<path d="M {xr-140} {h/2+r} A {r} {r} 0 0 1 {xr-140-r} {h/2}" fill="none" '
                          f'stroke="{hue}" stroke-opacity="{0.95-i*0.17:.2f}" stroke-width="14" stroke-linecap="round"/>')
     elif kind == "grid":
         for gx in range(7):
             for gy in range(4):
                 if (gx + gy + seed) % 3:
-                    parts.append(f'<rect x="{w-480+gx*62}" y="{h/2-110+gy*62}" width="46" height="46" rx="10" '
+                    parts.append(f'<rect x="{xr-480+gx*62}" y="{h/2-110+gy*62}" width="46" height="46" rx="10" '
                                  f'fill="{hue}" fill-opacity="{0.3+((gx*gy)%3)*0.25:.2f}"/>')
     elif kind == "waves":
         for i in range(5):
             y = h / 2 - 90 + i * 45
-            d = f"M {w-520} {y} " + " ".join(
-                f"Q {w-520+ j*70+35} {y + (-30 if (j+i)%2 else 30)} {w-520+(j+1)*70} {y}" for j in range(6))
+            d = f"M {xr-520} {y} " + " ".join(
+                f"Q {xr-520+ j*70+35} {y + (-30 if (j+i)%2 else 30)} {xr-520+(j+1)*70} {y}" for j in range(6))
             parts.append(f'<path d="{d}" fill="none" stroke="{hue}" stroke-opacity="{0.95-i*0.17:.2f}" stroke-width="10" stroke-linecap="round"/>')
     elif kind == "tris":
         for i in range(6):
             s = 70 + (i % 3) * 30
-            xx, yy = w - 480 + (i % 3) * 150, h / 2 - 100 + (i // 3) * 150
+            xx, yy = xr - 480 + (i % 3) * 150, h / 2 - 100 + (i // 3) * 150
             parts.append(f'<polygon points="{xx},{yy+s} {xx+s/2},{yy} {xx+s},{yy+s}" fill="{hue}" '
                          f'fill-opacity="{0.35+(i%4)*0.18:.2f}"/>')
     elif kind == "lines":
         for i in range(12):
-            parts.append(f'<line x1="{w-520+i*38}" y1="{h/2-130}" x2="{w-380+i*38}" y2="{h/2+130}" '
+            parts.append(f'<line x1="{xr-520+i*38}" y1="{h/2-130}" x2="{xr-380+i*38}" y2="{h/2+130}" '
                          f'stroke="{hue}" stroke-opacity="{0.25+(i%4)*0.2:.2f}" stroke-width="12" stroke-linecap="round"/>')
-    return f'<svg width="{w}" height="{h}" style="position:absolute;inset:0">{"".join(parts)}</svg>'
+    g = "".join(parts)
+    if zoom:
+        g = f'<g transform="{zoom}">{g}</g>'
+    return f'<svg width="{w}" height="{h}" style="position:absolute;inset:0">{g}</svg>'
 
 
 KINDS = {0: "rings", 1: "rings", 2: "dots", 3: "waves", 4: "arcs", 5: "bars", 6: "grid", 7: "tris", 8: "lines"}
@@ -96,6 +97,25 @@ def banner_html(num, title, subtitle, chips, w=1600, h=420, hue=None, kicker=Non
     <div style="margin-top:{"30px" if not small else "20px"}">{chip_html}</div>
   </div>
 </div>
+</div></body></html>"""
+
+
+KACHEL_ZOOM = {"rings": (1.0, 0, 0), "arcs": (1.2, 30, -160), "waves": (1.35, 40, 0), "lines": (1.15, -15, 0)}
+
+
+def kachel_html(num, hue=None, w=900, h=600, kind=None):
+    """Kachelbild ohne Text: dunkler Grund der Banner, Motiv in der Akzentfarbe mittig (format_tiles schneidet cover auf
+    die Kachel zu, der Rand darf verloren gehen). num wählt Motiv und Farbe aus der Folge, damit jeder Abschnitt ein eigenes
+    Bild bekommt."""
+    hue = hue or HUES.get(num % len(HUES) or 1, HUES[1])
+    kind = kind or KINDS.get((num - 1) % 8 + 1, "rings")
+    glow = f"radial-gradient(circle at 50% 50%,{hue}33 0%,transparent 62%)"
+    # Motiv mittig und größer (Kachel wird klein angezeigt); arcs ist ein Viertelkreis, sein Schwerpunkt liegt unten links
+    z, dx, dy = KACHEL_ZOOM.get(kind, (1.25, 0, 0))
+    zoom = f"translate({w / 2 + dx} {h / 2 + dy}) scale({z}) translate({-w / 2} {-h / 2})"
+    return f"""<html><head><style>{BASE_CSS}</style></head><body>
+<div id="shot" style="width:{w}px;height:{h}px;background:{glow},linear-gradient(135deg,{INK} 0%,{INK2} 100%);position:relative;overflow:hidden">
+{_motif(hue, num, w, h, kind, xr=w / 2 + 270, zoom=zoom)}
 </div></body></html>"""
 
 

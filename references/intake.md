@@ -83,7 +83,8 @@ ergeben sich aus dem Material.
 
 Weitere Formate (Ein-Themen-Format, komprimierte Abschnitte) nur, wenn die Lehrkraft sie nennt; Lernlandkarte und
 Mimo baut der Generator nicht. Das gewählte Format steht im Steckbrief (`format:`), der Generator baut es. Bei Kacheln
-bekommt jeder Abschnitt ein Kachelbild (`kachelbild:` in der Kursdatei, Bild nach §4) oder ein Icon (`kachelicon:`).
+bekommt jeder Abschnitt ein Kachelbild (`kachelbild:` in der Kursdatei, Bild nach §4) oder ein Icon (`kachelicon:`);
+Abschnittstitel dann höchstens etwa 35 Zeichen (länger bricht auf der Kachel um).
 Die Entwicklerliste aller Formate steht in `references/formate.md` und wird im Gespräch nicht gebraucht.
 
 ## 3. Vorschlag statt Fragen: Gliederung und Formate
@@ -122,12 +123,14 @@ Was der Assistent kann, hat die Selbstabfrage ergeben (`assistent.bilder` im Ste
 
 | Kann Bilder erzeugen | Weg | Steckbrief `bilder:` |
 |---|---|---|
-| ja | Bilder selbst erzeugen und als PNG nach `assets/` legen: `banner.png` (1600 × 420, Kursbanner), `kurs.png` (1600 × 520, Kursbild; fehlt es, dient das Banner als Kursbild), bei „gestaltet“ je Abschnitt ein Bild (1600 × 420). | selbst |
-| nein, aber Code | `python3 scripts/banner.py --farbe "#RRGGBB" --out <kursordner>/assets/banner.png` rendert ein textfreies Banner in der Akzentfarbe (braucht Playwright und Chromium; `--motiv` wählt das Muster). Scheitert das, Banner ohne `bild:`. | gerendert |
+| ja | Bilder selbst erzeugen und als PNG nach `assets/` legen: `banner.png` (1600 × 420, Kursbanner), `kurs.png` (1600 × 520, Kursbild; fehlt es, dient das Banner als Kursbild), bei Kacheln je Abschnitt `kachelN.png` (900 × 600, Motiv mittig, eigenes Motiv je Abschnitt), bei „gestaltet“ je Abschnitt ein Bild (1600 × 420). | selbst |
+| nein, aber Code | `python3 scripts/banner.py --farbe "#RRGGBB" --out <kursordner>/assets/banner.png` rendert ein textfreies Banner in der Akzentfarbe (braucht Playwright und Chromium; `--motiv` wählt das Muster); `--hoehe 520 --out …/kurs.png` das Kursbild; `--kachel --nummer 1-6 --out …/kachel{n}.png` alle Kachelbilder in einem Aufruf. Scheitert das, Banner ohne `bild:`, Kacheln mit `kachelicon:`. | gerendert |
 | nein | Banner-Element ohne `bild:` bauen (farbiger Block mit Titel und Satz) und am Ende des Drehbuch-Kopfs je Bild eine Zeile `Bildwunsch: banner.png \| 1600 × 420 \| <Prompt>` liefern. Die Lehrkraft erzeugt die Bilder, legt sie in `assets/`, der Assistent trägt `bild:` nach und baut neu. | lehrkraft |
 
 Regeln für erzeugte Bilder und Prompts: ruhig und flächig, eine Akzentfarbe, Motiv aus dem Thema, **kein Text im Bild**
-(Titel und Satz setzt das Banner-Element als HTML, auf dem Handy lesbar), keine Gesichter, keine Logos. Fotos aus dem
+(Titel und Satz setzt das Banner-Element als HTML, auf dem Handy lesbar), keine Gesichter, keine Logos. Kursbild und
+Kachelbilder sind immer textfrei: die Plattform legt Kursnamen und Abschnittstitel selbst darüber, Text im Bild stünde
+doppelt. Ein Banner mit Text (`banner.py --mit-text`) gehört nur als `Bild:` in einen Abschnitt. Fotos aus dem
 Material der Lehrkraft (Heftbilder, Folien) werden als PNG übernommen und mit sprechendem Dateinamen referenziert. Wenige,
 große Bilder: Banner immer, Abschnittsbilder nur bei „gestaltet“, keine Bilder als Dekoration zwischen Absätzen.
 
@@ -276,6 +279,5 @@ Delta neu einspielen). `sichtbar_ab: YYYY-MM-DD` erzeugt eine Datums-Zugriffsbes
    beheben und neu bauen, nicht liefern.
 4. Import-Hinweis an die Lehrkraft: beim Wiederherstellen in einen bestehenden Kurs „Kurseinstellungen überschreiben: Ja“,
    sonst bleibt das Kursformat des Zielkurses (Kachelbilder nur bei gleichem Format). Hat der Kurs ein Glossar mit
-   Einträgen, „Nutzer einbeziehen“ angehakt lassen; fehlen die Einträge danach, die XML-Datei neben der `.mbz` über
-   Glossar → Mehr → Einträge importieren einspielen.
+   Einträgen, nach dem Import: Glossar → Mehr → Einträge importieren → `<kurs>_glossar.xml` (liegt neben der `.mbz`).
 5. Nach erfolgreichem Import die gelieferten Teile auf `delivered` setzen.

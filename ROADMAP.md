@@ -72,7 +72,8 @@ Datei/Verzeichnis, Kern-H5P-Aktivität, Lektion, Wiki, Datenbank, Chat, Workshop
 1.0 enthält Test, Aufgabe, Datei/Verzeichnis, Forum, Buch; der Rest folgt. Seit 0.6 (AP5) gebaut: Test (MC, Wahr/Falsch,
 Kurzantwort), Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar; Import-Test des Beispiels `examples/module` offen.
 Import-Test 2 (0.6): Glossareinträge kommen nur mit Nutzerdaten an; seit 0.7 `users=1` nur für Glossare plus XML-Datei
-zum Einträge-Import als Ausweg.
+zum Einträge-Import als Ausweg. Nach Import-Test 3 (0.7) seit 0.8 users=0
+als Standard, XML-Import als fester Schritt, `--mit-nutzerdaten` optional.
 Je Modul: Testkurs mit einer Instanz exportieren → Schema in `references/spec.md` → Klasse in `gen/mbz.py`.
 
 ### 4. Schlanke Designvorlagen (seit 0.5: schlicht, kacheln, magazin)

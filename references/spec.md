@@ -72,7 +72,7 @@ activities/<mod>_<cmid>/{module,<mod>,grades,inforef,roles,filters,calendar,grad
   (Unterabschnitt: `parentcmid` = cmid des subsection-Moduls, `modname` = `subsection`). Reihenfolge: reguläre Abschnitte,
   dann Unterabschnitte.
 - `<settings>`: root-Liste aus Anhang B; je Abschnitt `section_<id>_included=1`, `_userinfo=0`; je Aktivität
-  `<mod>_<cmid>_included=1`, `_userinfo=0`. Ausnahme Glossar mit Einträgen (G): root `users=1`, `glossary_<cmid>_userinfo=1`
+  `<mod>_<cmid>_included=1`, `_userinfo=0`. Ausnahme nur mit `build.py --mit-nutzerdaten`, Glossar mit Einträgen (G): root `users=1`, `glossary_<cmid>_userinfo=1`
   und `userinfo=1` für seinen Abschnitt sowie bei Unterabschnitten für das subsection-Modul und dessen Abschnitt (Moodle
   sperrt das Modul-Setting sonst, `restore_activity_task`); dazu `users.xml` = `<users></users>`. Alle anderen Settings
   bleiben 0. `original_course_format` = `<format>` aus course.xml.
@@ -154,8 +154,8 @@ Abgabe (feedback) `2/$@NULL@$/0/0` + `completionsubmit 1`. (Reihenfolge: complet
   `moodle/restore:userinfo`, sperrt Moodle `users` auf 0 ohne Abbruch (`restore_check`), dann fehlen die Einträge und
   mit ihnen die Badges (Abhängigkeit `users → badges` im `restore_root_task`). (B) Je Glossar eine Moodle-Glossar-XML
   (`GLOSSARY/INFO/ENTRIES/ENTRY`, `gen/mbz.py glossary_import_xml`) neben der `.mbz`, Import Glossar → Mehr → Einträge
-  importieren (setzt `userid` auf die Lehrkraft). `build.py --ohne-nutzerdaten` baut (A) ab (users=0); `check.py` warnt
-  bei Einträgen mit `userinfo=0`.
+  importieren (setzt `userid` auf die Lehrkraft). Nach Import-Test 3 (0.7) ist seit 0.8 (B) der feste Weg
+  und Standard (users=0), (A) nur mit `build.py --mit-nutzerdaten`; `check.py` warnt bei users=1.
 
 G.2 Fragensammlung (`questions.xml`, Moodle 4.x/5.x)
 
