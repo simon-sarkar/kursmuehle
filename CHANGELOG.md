@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.6 – 2026-10-23 (AP5: Moodle-Module Test, Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar)
+
+- Acht Generator-Klassen in `scripts/gen/mbz.py` nach den Schemata in `references/export-schemata/aktivitaeten/`:
+  `Quiz` (Test, mit Fragensammlung in `questions.xml`: Kategorien `top` und „Standard für <Test>“ im Modulkontext,
+  `question_bank_entry`/`question_versions`/`question`, Fragetypen Multiple Choice, Wahr/Falsch, Kurzantwort; Verweise
+  per `question_reference` in `quiz.xml`, `question_categoryref` in `inforef.xml`, Bewertungsposten), `Assign` (Aufgabe
+  mit Text- und/oder Dateiabgabe, Bewertung, Fälligkeit), `Resource` (Datei), `Folder` (Verzeichnis), `Forum`, `Book`
+  (Buch mit Kapiteln und Unterkapiteln, Bilder je Kapitel), `Choice` (Abstimmung), `Glossary` (Glossar mit Einträgen und
+  Aliassen). Dateien beliebigen Typs (PDF, Office, Audio) mit Mimetype nach Endung; neue Abschlussarten `post` (Forum)
+  und `entry` (Glossar).
+- Kursdatei-Syntax für jeden Typ (`references/kursdatei.md` §2, §3, §5a, §6a): `Test` mit nummerierten Fragen (MC, RF,
+  `Kurzantwort: Frage? · Antwort · Alternative`), `Aufgabe` (`abgabe`, `bewertung`, `bestehen`, `fällig`), `Datei`
+  (`datei:`), `Verzeichnis` (Liste), `Forum` (`typ`), `Buch` (`Kapitel:`/`Unterkapitel:`), `Abstimmung` (Liste,
+  `mehrfach`, `ergebnisse`), `Glossar` (Tabelle oder `- Begriff → Erklärung`). Abschlussarten je Typ geprüft
+  (`beitrag`, `eintrag`, `abgabe`, `bestehen`). Hinweise Quiz vs. Test und Lesebuch vs. Buch in `kursdatei.md`.
+- `scripts/check.py` prüft die neuen Module: Dateibereiche (`mod_resource/content` genau eine Datei, `mod_folder/content`,
+  `mod_book/chapter` je Kapitel mit `@@PLUGINFILE@@`-Abgleich, `intro` für alle), Test (Fragenverweise gegen
+  `questions.xml`, Kategorie im Modulkontext des Tests und in `question_categoryref`, Slots fortlaufend, `sumgrades`,
+  Bewertungsposten passend zu `grade`, `gradepass` bei Abschluss „bestehen“, Fragetypen mit Antworten), Aufgabe
+  (Bewertungsposten), Abstimmung (mindestens zwei Optionen), Glossar (`approved`/`teacherentry`), verwaiste Kategorien.
+- Beispielkurs `examples/module/` (Sichere Passwörter, ein Abschnitt mit allen acht Modulen; PDFs und Bild selbst erzeugt
+  mit `make_assets.py`). Tests: `test_kursdatei.py` (15 neue Fehlerfälle, Parsing aller Typen), `test_check.py`
+  (Modulbeispiel plus sechs absichtliche Fehler: Fragenverweis ins Leere, Kategorie in fremdem Kontext, `sumgrades`,
+  Kapitelbild, Datei ohne Inhalt, Bewertungsposten).
+- Doku: `spec.md` §B.1, §G (acht Module), §G.2 (Fragensammlung), §H (Dateibereiche), `intake.md` §5, `SKILL.md`
+  (Modulwahl, Grenzen, Beispiele), README-Tabelle.
+- Offen: Import-Test des Modulbeispiels auf der Plattform durch den Autor. `questions.xml` ist aus dem Backup-Code von
+  Moodle 4.x/5.x abgeleitet (der exportierte Testkurs enthielt keine Fragen); Glossar-Einträge ohne Nutzerdaten
+  (`teacherentry 1`, `userid 0`) und Buchkapitel sind ebenfalls noch nicht per Import belegt. Im Test nur drei Fragetypen,
+  keine Zeitlimits; Forum ohne Diskussionen; Verzeichnis ohne Unterordner.
+
 ## 0.4 – 2026-10-23 (AP3: Menüführung, Formatfrage, Selbstabfrage, Kursbanner)
 
 - Einstieg neu: erste Nachricht „Womit starten wir?“ mit fünf Wegen (nur Thema, Material, Material + Fragen, Fragen,

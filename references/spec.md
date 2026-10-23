@@ -24,7 +24,7 @@ B.1 Kopf/Versionen
 | backup_release | 5.2 |
 | original_wwwroot | https://lernplattform.bycs.de |
 | module.xml version hvp | 2026062501 |
-| module.xml version subsection/label/page/feedback/url | 2026042000 |
+| module.xml version subsection/label/page/feedback/url/quiz/assign/resource/folder/forum/book/choice/glossary | 2026042000 |
 | course customfields | `schule` (text, Wert leer) · `participants` (checkbox, 0) |
 
 Herkunftsangaben (`original_site_identifier_hash`, `original_course_id`, `original_course_contextid`, Kategorie) sind feste
@@ -106,6 +106,62 @@ Abgabe (feedback) `2/$@NULL@$/0/0` + `completionsubmit 1`. (Reihenfolge: complet
   slug(leer), timecreated, timemodified, authors [], license U, completionpass 0|1, content_user_data(leer)`.
   Bewertung: `grades.xml` grade_item (itemtype mod, itemmodule hvp, iteminstance = Instanz-ID, categoryid = Kurs-Kategorie aus
   gradebook.xml, grademax, gradepass); ID als `grade_itemref` in inforef.xml.
+- **quiz** (Test): Felder und Standardwerte aus `export-schemata/aktivitaeten/quiz/quiz.xml`; gesetzt werden `name, intro,
+  preferredbehaviour (deferredfeedback | immediatefeedback), attempts_number (0 = unbegrenzt), questionsperpage,
+  shuffleanswers, sumgrades = grade = Summe der maxmark` (1 je Frage), `timecreated/timemodified`; `feedbacks` ein Eintrag
+  `mingrade 0, maxgrade grade+1`; `sections` ein Eintrag `firstslot 1`. Fragen: `question_instances/question_instance`
+  je Slot (`slot, page, displaynumber $@NULL@$, requireprevious 0, maxmark, quizgradeitemid $@NULL@$`) mit
+  `question_reference` (`usingcontextid` = Modulkontext, `component mod_quiz`, `questionarea slot`,
+  `questionbankentryid` = Eintrag in `questions.xml`, `version $@NULL@$`). Fragensammlung siehe G.2. Bewertung wie hvp
+  (itemmodule quiz); Abschluss „bestehen“ `2/0/1/0` + gradepass. inforef.xml zusätzlich `question_categoryref` mit
+  beiden Kategorie-IDs. **Noch nicht per Import verifiziert** (Schema der leeren Instanz exportiert, Fragen aus dem
+  Backup-Code von Moodle 4.x/5.x abgeleitet).
+- **assign** (Aufgabe): Felder aus `export-schemata/aktivitaeten/assign/assign.xml`; gesetzt `name, intro, grade (0 = keine
+  Bewertung), duedate, completionsubmit`; `plugin_configs` schalten `assignsubmission onlinetext/file enabled`, Rest
+  Plattformstandard (comments, Feedback-Kommentare und -Dateien an). grade > 0 → grade_item (itemmodule assign, grademax =
+  grade, gradepass aus `bestehen`). Abschluss „abgabe“ `2/$@NULL@$/0/0` + `completionsubmit 1`.
+- **resource** (Datei): `name, intro, introformat 1, tobemigrated 0, legacyfiles 0, legacyfileslast $@NULL@$, display 0,
+  displayoptions a:2:{s:10:"printintro";i:1;s:8:"showtype";i:1;}, filterfiles 0, revision 1, timemodified`; genau eine
+  Datei im Bereich `mod_resource/content/0`, `sortorder 1`, mimetype nach Endung.
+- **folder** (Verzeichnis): `name, intro, introformat 1, revision 1, timemodified, display (0 eigene Seite, 1 auf der
+  Kursseite), showexpanded, forcedownload 1, studentedit 0`; Dateien in `mod_folder/content/0`, filepath `/`.
+- **forum**: `type (general | qanda | eachuser | blog), name, intro, introformat 1`, Rest wie Schema (`assessed 0,
+  scale 100, maxbytes 512000, maxattachments 9, forcesubscribe 0, trackingtype 1`); Abschluss „beitrag“ `2/$@NULL@$/0/0`
+  + `completionposts 1`. Ohne Nutzerdaten keine Diskussionen.
+- **book** (Buch): `name, intro, introformat 1, numbering 1, navstyle 1, customtitles 0, timecreated, timemodified`;
+  `chapters/chapter`: `pagenum (1..n), subchapter 0|1, title, content HTML, contentformat 1, hidden 0, timecreated,
+  timemodified, importsrc (leer)`. Bilder im Kapitel: `mod_book/chapter/<Kapitel-ID>`.
+- **choice** (Abstimmung): `name, intro, introformat 1, publish 0 (anonym), showresults (0 nie, 1 nach eigener Abgabe,
+  2 nach Ende, 3 immer), display 0, allowupdate, allowmultiple, showunanswered 0, limitanswers 0, timeopen/timeclose 0,
+  timemodified, completionsubmit 1, showpreview 0, includeinactive 0, showavailable 0`; `options/option`: `text,
+  maxanswers 0, timemodified`. Abschluss „abgabe“ wie feedback.
+- **glossary** (Glossar): Felder aus dem Schema (`displayformat dictionary`, `defaultapproval 1`, `entbypage 10`,
+  `usedynalink 1`); `entries/entry`: `userid 0, concept, definition HTML, definitionformat 1, definitiontrust 0,
+  attachment (leer), timecreated, timemodified, teacherentry 1, sourceglossaryid 0, usedynalink 1, casesensitive 0,
+  fullmatch 0, approved 1`, Kinder `aliases/alias/alias_text`, `ratings` (leer). Abschluss „eintrag“ `2/$@NULL@$/0/0`
+  + `completionentries 1`. Ob Einträge der Lehrkraft ohne Nutzerdaten wiederhergestellt werden, ist noch nicht per
+  Import verifiziert.
+
+G.2 Fragensammlung (`questions.xml`, Moodle 4.x/5.x)
+
+Je Test zwei Kategorien im Modulkontext (`contextlevel 70`, `contextinstanceid` = cmid des Tests, `contextid` =
+Modulkontext): `top` (`parent 0, sortorder 0`, keine Einträge) und `Standard für <Testname>` (`parent` = top-ID,
+`sortorder 999`). Darin je Frage:
+
+```
+question_bank_entry(id): questioncategoryid, idnumber $@NULL@$, ownerid $@NULL@$
+  question_version / question_versions(id): version 1, status ready
+    questions/question(id): parent 0, name, questiontext HTML, questiontextformat 1, generalfeedback, generalfeedbackformat 1,
+      defaultmark 1.0000000, penalty 0.3333333, qtype, length 1, stamp, timecreated, timemodified, createdby/modifiedby $@NULL@$
+      plugin_qtype_<qtype>_question: answers/answer(id): answertext, answerformat, fraction (7 Dezimalen), feedback, feedbackformat 1
+        multichoice(id): layout 0, single, shuffleanswers 1, correct/partiallycorrect/incorrectfeedback (+format 1),
+                         answernumbering abc, shownumcorrect 1, showstandardinstruction 0
+        truefalse(id): trueanswer/falseanswer = Antwort-IDs („Wahr“/„Falsch“, answerformat 0), showstandardinstruction 0
+        shortanswer(id): usecase 0  (Antworten answerformat 0, `*` als Platzhalter)
+      question_hints (leer), tags (leer)
+```
+Mehrfachauswahl: richtige Antworten `1/n`, falsche `-1/n`. Fragetypen für 1.0: multichoice, truefalse, shortanswer.
+`stamp` im Format `<host>+<JJMMTTHHMMSS>+<id>`.
 
 ### H. Dateien (Bilder)
 
@@ -120,6 +176,12 @@ repositorytype/repositoryid/reference $@NULL@$`; Datei unter `files/<hash[:2]>/<
 | Bild in H5P | mod_hvp / content / hvp-Instanz-ID / `/images/` | `"file": {"path": "images/name.png", "mime": "image/png", "copyright": {"license": "U"}, "width", "height"}` |
 | Kursbild | course / overviewfiles / 0 / `/` | – (inforef in course/) |
 | Badge | badges / badgeimage / Badge-ID / `/`, filename `f1.png` | – (inforef in course/) |
+| Datei (resource) | mod_resource / content / 0 / `/`, sortorder 1 | – (genau eine Datei) |
+| Verzeichnis (folder) | mod_folder / content / 0 / `/` | – |
+| Bild im Buchkapitel | mod_book / chapter / Kapitel-ID / `/` | `@@PLUGINFILE@@/name.png` im Kapitel |
+| Bild in Beschreibung (assign, forum, choice, glossary …) | mod_<mod> / intro / 0 / `/` | `@@PLUGINFILE@@/name.png` |
+
+Mimetype nach Dateiendung (`application/pdf`, `image/png`, Office-Typen); unbekannt → `application/octet-stream`.
 
 **Jedes in `json_content` referenzierte Bild muss in files.xml stehen** (häufigster Fehler: Bilder in Büchern vergessen).
 
@@ -208,7 +270,8 @@ Bild siehe H. Nach Import inaktiv.
 `gen/mbz.py` (Writer für C–J, O; Platzhalter aus B.1), `gen/h5p.py` (Builder für I mit UI-Strings aus Anhang A),
 `gen/render.py` (Banner/Mocks HTML→PNG, Playwright), `build.py --content ordner [--proto] [--delta [teile]] [--steckbrief pfad]`,
 `check.py datei.mbz` (prüft C–J und O an der fertigen Sicherung: Archiv, Pflichtdateien, IDs und Nummern, Dateien mit
-sha1, inforef, Bibliotheksversionen, `json_content`, Bilder, Badges, Verfügbarkeits-JSON; `build.py` ruft es am Ende auf).
+sha1, inforef, Bibliotheksversionen, `json_content`, Bilder, Test-Fragenverweise gegen `questions.xml`, Bewertungsposten,
+Buchkapitel, Badges, Verfügbarkeits-JSON; `build.py` ruft es am Ende auf).
 Kursordner: `kurs.md` (Inhalt), `assets/` (PNG), `steckbrief.yaml` (Kurs-Metadaten, Teile, Status, `sichtbar_ab`);
 Python-Inhalt (`content/course.py`) nur noch als Ausweg. Benötigt Python 3.11+, Pillow, PyYAML; Playwright+Chromium nur
 zum Rendern von Bildern. Intake: `intake.md`.

@@ -2,9 +2,9 @@
 
 # Kursmühle – Lernplattform-Kurse aus einem Prompt
 
-![Version 0.4](docs/badge-version.svg) ![Status: Tech-Demo auf dem Weg zu 1.0](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
+![Version 0.6](docs/badge-version.svg) ![Status: Tech-Demo auf dem Weg zu 1.0](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
 
-**Version 0.4** (Stand 23.10.2026) · siehe [`ROADMAP.md`](ROADMAP.md) und [`CHANGELOG.md`](CHANGELOG.md)
+**Version 0.6** (Stand 23.10.2026) · siehe [`ROADMAP.md`](ROADMAP.md) und [`CHANGELOG.md`](CHANGELOG.md)
 
 **Ein KI-Assistent baut aus einer Beschreibung oder eigenem Unterrichtsmaterial eine importierbare Kurssicherung (`.mbz`) für die ByCS-Lernplattform.**
 
@@ -40,12 +40,15 @@ fertige Kurssicherung zum Import.
    Kurs → Mehr → *Kurs wiederverwenden* → *Wiederherstellen*, zuerst in einen
    Testkurs.
 
-> **Projektstatus: Version 0.4 (Tech-Demo).**
+> **Projektstatus: Version 0.6 (Tech-Demo).**
 > Der Ablauf Intake → Drehbuch → Generator → Import ist an zwei Beispielkursen
 > durchgespielt, einschließlich H5P-Inhalten, Badge und Nachlieferung in einen
-> laufenden Kurs, mit Claude Code und mit ChatGPT. Offen sind weitere
-> Kursformate und Modultypen (siehe Tabelle unten). Kein offizielles Produkt
-> der Plattform; wenn sich die Lernplattform ändert, wird der Skill angepasst.
+> laufenden Kurs, mit Claude Code und mit ChatGPT. Die Moodle-Module Test,
+> Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung und Glossar (seit 0.6)
+> sind gebaut und geprüft, der Import-Test auf der Plattform steht noch aus.
+> Offen sind weitere Kursformate und Modultypen (siehe Tabelle unten). Kein
+> offizielles Produkt der Plattform; wenn sich die Lernplattform ändert, wird
+> der Skill angepasst.
 
 ## Systemübersicht
 
@@ -79,9 +82,10 @@ fertige Kurssicherung zum Import.
 | Kann | Noch nicht |
 |---|---|
 | Kursformat „Themen“, beliebig viele Abschnitte und Unterabschnitte | Andere Kursformate (Kachel, Grid, Einzelaktivität) |
-| Textfelder und Seiten mit beliebigem HTML-Design | Moodle-Test, Aufgabe, Forum, Buch, Lektion, Glossar, Wiki, Abstimmung |
+| Textfelder und Seiten mit beliebigem HTML-Design | Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool |
+| Moodle-Module: Test (Multiple Choice, Wahr/Falsch, Kurzantwort; Fragen in der Fragensammlung), Aufgabe (Text- und Dateiabgabe), Datei, Verzeichnis, Forum, Buch mit Kapiteln, Abstimmung, Glossar | Weitere Fragetypen im Test (Zuordnung, Lückentext, numerisch), Zeitlimits, Forum-Diskussionen |
 | H5P: Interactive Book, Branching Scenario, Question Set, Drag and Drop, Fill in the Blanks, Dialog Cards, Course Presentation; Bausteine Text, Bild, Multiple Choice, True/False, Drag the Words, Mark the Words, Summary, Single Choice Set | Weitere H5P-Typen (Interactive Video, Image Hotspots, Memory …) |
-| Feedback-Umfragen, Links/Videos (eingebettet), Badges, Kursbild, Abschlussverfolgung | Gruppen, Termine, Kursabschluss-Kriterien, Audio/Video als Datei |
+| Feedback-Umfragen, Links/Videos (eingebettet), Badges, Kursbild, Abschlussverfolgung | Gruppen, Termine, Kursabschluss-Kriterien |
 | Kursbanner als erstes Element (Bild, Titel, ein Satz); Bild von der KI erzeugt, gerendert (`scripts/banner.py`) oder von der Lehrkraft nach Prompt | Abschnitts- und Kachelbilder automatisch aus dem Material |
 | Zugriffsbeschränkung „sichtbar ab Datum“; Nachlieferung per Delta-Sicherung | Andere Zugriffsbedingungen (Abschluss von X, Bewertung, Gruppe) |
 
@@ -96,6 +100,7 @@ references/    spec.md (Sicherungsformat, Plattformwerte, H5P-Strukturen),
 scripts/       Generator (gen/), build.py, check.py (Sicherung prüfen), Vorlagen, tests/
 examples/      netzwerk9/  – eine Einheit, 25 min: Vorbild für neue Kurse
                alltagskompetenz/ – großer Kurs mit Unterabschnitten, Badge, Delta
+               module/ – ein Abschnitt mit Test, Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar
                (je kurs.md, assets/, steckbrief.yaml)
 tools/h5ptest/ Render-Test der H5P-Inhalte außerhalb der Plattform (h5p-standalone + Playwright)
 CHANGELOG.md   Versionen und bekannte Lücken
@@ -145,7 +150,8 @@ verloren.
 - [x] Drehbuch-Parser: Das Drehbuch ist die Kursdatei (`kurs.md`), der Generator liest sie direkt
 - [x] Prüfskript `check.py`: jede Sicherung wird vor dem Import auf Struktur, Dateien und H5P-Versionen geprüft
 - [ ] Menüführung: „Womit starten wir?“ – Thema, altes Material, Material + Fragen, Fragen-Intake
-- [ ] Alle Kursformate (Kacheln, Grid, Wochen …) und alle Modultypen (Test, Aufgabe, Forum …)
+- [x] Modultypen für 1.0: Test, Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar (Import-Test offen)
+- [ ] Alle Kursformate (Kacheln, Grid, Wochen …); weitere Modultypen nach 1.0
 - [ ] Schlanke Designvorlagen zur Auswahl; Kursbanner und Bilder sinnvoll eingebunden, generiert vom Assistenten, wenn er es kann
 - [ ] HTML-Formatierung für Lesetexte: Überschriften, Listen, Merk- und Beispielkästen statt Fließtext
 - [ ] One-Page-Darstellung ohne Ladezeiten: H5P im Textfeld, Kurs als eigene Website mit eigenen Spielen

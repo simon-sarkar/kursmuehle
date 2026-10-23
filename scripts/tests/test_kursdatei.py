@@ -19,7 +19,21 @@ A = {"router.png": (PNG, ImageRef(PNG, 10, 10))}
 
 # (Kursdatei, erwarteter Teil der Fehlermeldung)
 FEHLER = [
-    ("## A\n### Buch: X\ntext", "Zeile 2: unbekannter Elementtyp „Buch“"),
+    ("## A\n### Wiki: X\ntext", "Zeile 2: unbekannter Elementtyp „Wiki“"),
+    ("## A\n### Buch: X\nAbsatz ohne Kapitel", "Zeile 3 (Buch „X“): Buch: erste Zeile muss `Kapitel: Titel` sein"),
+    ("## A\n### Test: X\n1. F? · ✔a · b\n2. Einsetzen: Aufgabe\n*Wort*", "Zeile 4 (Test „X“): Test: jede Frage beginnt mit"),
+    ("## A\n### Test: X\nabschluss: abgabe\n1. F? · ✔a · b", "Zeile 2 (Test „X“): abschluss „abgabe“: erlaubt sind"),
+    ("## A\n### Test: X\n3. Kurzantwort: F?", "Zeile 3 (Test „X“): Kurzantwort: `Frage? · Antwort · Alternative`"),
+    ("## A\n### Datei: X\ntext", "Zeile 2 (Datei „X“): Datei: `datei: name.pdf` fehlt"),
+    ("## A\n### Datei: X\ndatei: fehlt.pdf", "Zeile 2 (Datei „X“): Datei „fehlt.pdf“ nicht in assets/"),
+    ("## A\n### Verzeichnis: X\nnur Text", "Zeile 2 (Verzeichnis „X“): Verzeichnis ohne Dateien"),
+    ("## A\n### Aufgabe: X\nabgabe: audio\nt", "Zeile 2 (Aufgabe „X“): abgabe „audio“"),
+    ("## A\n### Aufgabe: X\nfällig: 3.11.\nt", "Zeile 2 (Aufgabe „X“): fällig „3.11.“: Datum als JJJJ-MM-TT"),
+    ("## A\n### Forum: X\ntyp: news\nt", "Zeile 2 (Forum „X“): typ „news“"),
+    ("## A\n### Abstimmung: X\n- nur eine", "Zeile 2 (Abstimmung „X“): Abstimmung: mindestens zwei Optionen"),
+    ("## A\n### Glossar: X\n- Begriff ohne Pfeil", "Zeile 3 (Glossar „X“): Glossar-Eintrag: `- Begriff → Erklärung` erwartet"),
+    ("## A\n### Textfeld: X\nKapitel: K", "Zeile 3 (Textfeld „X“): „Kapitel:“ ist nur im Buch erlaubt"),
+    ("## A\n### Quiz: X\n1. Kurzantwort: F? · a", "Zeile 3 (Quiz „X“): Quiz: jede Frage beginnt mit"),
     ("## A\n### Quiz: X\nbestehn: 80 %\n1. F? · ✔a · b", "Zeile 3 (Quiz „X“): unbekannte Angabe „bestehn“"),
     ("## A\n### Textfeld: X\nBild: fehlt.png | alt", "Zeile 3 (Textfeld „X“): Bild „fehlt.png“ nicht in assets/"),
     ("## A\n### Banner: X\nbild: fehlt.png", "Zeile 2 (Banner „X“): Bild „fehlt.png“ nicht in assets/"),
@@ -60,6 +74,41 @@ bestehen: 2 von 3
 Ein *Wort* fehlt.
 ### Lernkarten: K
 - Vorn → Hinten · Bild: router.png
+### Test: T
+bestehen: 50 %
+versuche: 3
+1. F? · ✔a · b
+2. MC: Mehrere?
+- ✔ a → gut
+- ✔ b
+- c → nein
+3. RF: Aussage ✘ → richtig: Ja. → falsch: Nein.
+4. Kurzantwort (K): Wie? · Antwort · Alternative
+### Buch: B
+Kapitel: Eins
+Text eins.
+Bild: router.png | Router
+Unterkapitel: Eins a
+Text.
+Kapitel: Zwei
+- Punkt
+### Abstimmung: A
+mehrfach: ja
+Frage?
+- x
+- y
+### Glossar: G
+| Begriff | Erklärung | Alias |
+- Zwei → Zweite Erklärung
+### Forum: F
+abschluss: beitrag
+Text.
+### Aufgabe: Auf
+abgabe: text, datei
+bewertung: 20
+bestehen: 50 %
+fällig: 2026-12-01
+Text.
 Zeit Teil: 5 min ✔ (Soll 5)
 """
 
@@ -87,16 +136,29 @@ def check_fehler():
         assert secs[0].name is None and secs[1].name == "Teil", [s.name for s in secs]
         assert list(k["parts"]) == ["t1"] and secs[1].available_from, k["parts"]
         names = [it.name for it in secs[1].items]
-        assert names == ["Clip", "Q", "K"], names
+        assert names == ["Clip", "Q", "K", "T", "B", "A", "G", "F", "Auf"], names
         assert secs[1].items[1].hvp.gradepass == 1.98, secs[1].items[1].hvp.gradepass   # 3 Fragen, 66 %
         assert secs[0].items[0].name == "Test" and "router.png" in secs[0].items[0].intro, secs[0].items[0].intro[:80]
         assert "Hi" in secs[0].items[1].intro and "[KI]" not in secs[0].items[1].intro
+        test, buch, abst, glos, forum, auf = secs[1].items[3:]
+        assert [q.qtype for q in test.questions] == ["multichoice", "multichoice", "truefalse", "shortanswer"]
+        assert test.grademax == 4 and test.gradepass == 2.0 and test.attempts == 3 and test.completion == "pass"
+        assert test.questions[0].single and not test.questions[1].single
+        assert test.questions[1].fractions()[2][1] < 0, test.questions[1].fractions()   # falsche Antwort bei Mehrfachauswahl negativ
+        assert test.questions[2].correct is False and test.questions[2].feedback_false == "Ja."
+        assert [a for a, _ in test.questions[3].answers] == ["Antwort", "Alternative"] and test.questions[3].name == "K"
+        assert [(c[0], c[3]) for c in buch.chapters] == [("Eins", False), ("Eins a", True), ("Zwei", False)]
+        assert buch.chapters[0][2] and "router.png" in buch.chapters[0][1] and not buch.chapters[1][2]
+        assert abst.options == ["x", "y"] and abst.multiple and abst.completion == "submit"
+        assert [e[0] for e in glos.entries] == ["Begriff", "Zwei"] and glos.entries[0][2] == ["Alias"]
+        assert forum.completion == "post" and forum.type == "general"
+        assert auf.submission == {"onlinetext", "file"} and auf.grade == 20 and auf.gradepass == 10 and auf.duedate
     return bad
 
 
 def check_beispiele():
     bad = 0
-    for name in ("netzwerk9", "alltagskompetenz"):
+    for name in ("netzwerk9", "alltagskompetenz", "module"):
         out = os.path.join(tempfile.gettempdir(), f"test_{name}.mbz")
         r = subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "build.py"), "--content",
                             os.path.join(ROOT, "examples", name), "--no-render", "--out", out],

@@ -4,10 +4,12 @@ usage: python3 scripts/check.py <datei.mbz> [weitere.mbz …]
 
 Prüft eine .mbz gegen references/spec.md: Archiv (tar.gz, .ARCHIVE_INDEX), Pflichtdateien, XML wohlgeformt,
 moodle_backup.xml gegen die Ordner, Abschnitts-/Modulnummern und IDs, files.xml (sha1, Größe, jede Datei
-referenziert), inforef.xml (Dateien, Bewertungsposten), H5P (Bibliotheksversionen aus gen/libs.py, json_content,
-Bilder in images/), Bilder in Textfeldern/Seiten, Badges, Verfügbarkeits-JSON.
+referenziert), inforef.xml (Dateien, Bewertungsposten, Fragenkategorien), H5P (Bibliotheksversionen aus gen/libs.py,
+json_content, Bilder in images/), Bilder in Textfeldern/Seiten/Buchkapiteln, Datei/Verzeichnis (Dateibereich content),
+Test (Fragenverweise gegen questions.xml, Kategorie im Modulkontext, sumgrades, Bewertungsposten, Fragetypen),
+Aufgabe (Bewertungsposten), Abstimmung (Optionen), Glossar (Einträge), Badges, Verfügbarkeits-JSON.
 Ausgabe: `OK <datei> …` oder Zeilen `FEHLER <wo> <was>`; Exit-Code 1 bei Fehlern.
-`build.py` ruft die Prüfung nach jedem Bau selbst auf. Neue Modultypen brauchen hier einen Eintrag (Dateibereiche).
+`build.py` ruft die Prüfung nach jedem Bau selbst auf. Neue Modultypen brauchen hier einen Eintrag (Dateibereiche, inhalte()).
 """
 import hashlib
 import json
@@ -21,7 +23,7 @@ from urllib.parse import unquote
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from gen.libs import LIBS  # noqa: E402
-from gen.mbz import MODULE_VERSIONS  # noqa: E402
+from gen.mbz import MODULE_VERSIONS, QTYPES  # noqa: E402
 
 NULL = "$@NULL@$"
 PFLICHT_TOP = ["moodle_backup.xml", "files.xml", "moodle_backup.log", "roles.xml", "scales.xml", "outcomes.xml",
@@ -49,6 +51,7 @@ class Pruefung:
         self.files = []           # dicts aus files.xml
         self.course_ctx = None
         self.grade_items = {}     # grade_item id -> activity dir (oder "gradebook.xml")
+        self.qcats_used = set()   # Fragenkategorien, die ein Test per inforef referenziert
 
     def err(self, wo, was):
         self.errors.append((wo, was))
@@ -408,16 +411,166 @@ class Pruefung:
             if inner is None:
                 continue
             wo = f"{a['dir']}/{a['modname']}.xml"
+            mod = a["modname"]
             areas = {"intro"}
             self._pluginfiles(a, "intro", _text(inner, "intro", ""), wo)
-            if a["modname"] == "page":
+            if mod == "page":
                 areas.add("content")
                 self._pluginfiles(a, "content", _text(inner, "content", ""), wo)
-            if a["modname"] == "hvp":
+            elif mod == "hvp":
                 areas.add("content")
                 self.hvp(a, inner, wo)
+            elif mod == "resource":
+                areas.add("content")
+                n = len(self._files_for(a, "content"))
+                if n != 1:
+                    self.err(wo, f"Datei braucht genau eine Datei in mod_resource/content, {n} gefunden")
+            elif mod == "folder":
+                areas.add("content")
+                if not self._files_for(a, "content"):
+                    self.err(wo, "Verzeichnis ohne Dateien (mod_folder/content)")
+            elif mod == "book":
+                areas.add("chapter")
+                self.book(a, inner, wo)
+            elif mod == "quiz":
+                self.quiz(a, inner, wo)
+            elif mod == "assign":
+                areas |= {"introattachment", "activityattachment"}
+                self.bewertung(a, wo, float(_text(inner, "grade", "0") or 0))
+            elif mod == "choice":
+                if len(inner.findall("options/option")) < 2:
+                    self.err(wo, "Abstimmung mit weniger als zwei Optionen")
+            elif mod == "glossary":
+                areas |= {"entry", "attachment"}
+                for e in inner.findall("entries/entry"):
+                    if _text(e, "approved", "1") != "1" or _text(e, "teacherentry", "1") != "1":
+                        self.err(wo, f"Eintrag „{_text(e, 'concept', '')}“: approved und teacherentry müssen 1 sein "
+                                     "(ohne Nutzerdaten nur Einträge der Lehrkraft)")
             for r in [r for r in self.files if r["contextid"] == a["contextid"] and r["filearea"] not in areas]:
                 self.err(wo, f"Datei „{r['filename']}“ in unbekanntem Dateibereich {r['component']}/{r['filearea']}")
+
+    def bewertung(self, a, wo, grademax):
+        """Bewertungsposten passt zur Maximalbewertung des Moduls (0 = kein Posten)."""
+        g = self.xml.get(f"{a['dir']}/grades.xml")
+        items = g.findall("grade_items/grade_item") if g is not None else []
+        if grademax <= 0:
+            if items:
+                self.err(f"{a['dir']}/grades.xml", "Bewertungsposten, obwohl das Modul nicht bewertet wird (grade 0)")
+            return
+        if not items:
+            self.err(f"{a['dir']}/grades.xml", f"kein Bewertungsposten (grade {grademax:g})")
+            return
+        gm = float(_text(items[0], "grademax", "0") or 0)
+        if abs(gm - grademax) > 0.001:
+            self.err(f"{a['dir']}/grades.xml", f"grademax {gm:g} ≠ Bewertung des Moduls {grademax:g}")
+        if a["module"] is not None and _text(a["module"], "completionpassgrade", "0") == "1":
+            if float(_text(items[0], "gradepass", "0") or 0) <= 0:
+                self.err(f"{a['dir']}/grades.xml", "Abschluss „bestehen“ (completionpassgrade 1), aber gradepass 0")
+
+    def book(self, a, inner, wo):
+        chapters = inner.findall("chapters/chapter")
+        if not chapters:
+            self.err(wo, "Buch ohne Kapitel")
+        nums = [_text(c, "pagenum", "") for c in chapters]
+        if nums != [str(i) for i in range(1, len(nums) + 1)]:
+            self.err(wo, f"pagenum nicht fortlaufend 1..{len(nums)}: {nums}")
+        if chapters and _text(chapters[0], "subchapter", "0") == "1":
+            self.err(wo, "erstes Kapitel darf kein Unterkapitel sein")
+        ids = {c.get("id") for c in chapters}
+        for r in self._files_for(a, "chapter"):
+            if r["itemid"] not in ids:
+                self.err(wo, f"Datei „{r['filename']}“: itemid {r['itemid']} ist kein Kapitel (mod_book/chapter, itemid = Kapitel-ID)")
+        for c in chapters:
+            refs = {unquote(m) for m in PLUGINFILE.findall(_text(c, "content", ""))}
+            have = {(r["filepath"] + r["filename"]).lstrip("/") for r in self._files_for(a, "chapter") if r["itemid"] == c.get("id")}
+            for name in sorted(refs - have):
+                self.err(wo, f"Kapitel „{_text(c, 'title', '')}“: Bild „{name}“ im HTML, aber nicht in files.xml (mod_book/chapter)")
+            for name in sorted(have - refs):
+                self.err(wo, f"Kapitel „{_text(c, 'title', '')}“: Datei „{name}“ wird im HTML nicht verwendet")
+
+    def quiz(self, a, inner, wo):
+        """Test: Fragenverweise gegen questions.xml, Kategorie im Modulkontext, Summen, Bewertungsposten."""
+        qroot = self.xml.get("questions.xml")
+        cats = {c.get("id"): c for c in qroot.findall("question_category")} if qroot is not None else {}
+        entry_cat = {}
+        for cid, c in cats.items():
+            for e in c.findall("question_bank_entries/question_bank_entry"):
+                entry_cat[e.get("id")] = cid
+        ir = self.xml.get(f"{a['dir']}/inforef.xml")
+        refcats = {_text(q, "id", "") for q in ir.findall("question_categoryref/question_category")} if ir is not None else set()
+        for cid in sorted(refcats - set(cats)):
+            self.err(f"{a['dir']}/inforef.xml", f"question_categoryref {cid} steht nicht in questions.xml")
+        for cid in sorted(refcats & set(cats)):
+            c = cats[cid]
+            if _text(c, "contextlevel", "") != "70" or _text(c, "contextinstanceid", "") != a["cmid"]:
+                self.err("questions.xml", f"Kategorie {cid}: contextlevel 70 und contextinstanceid {a['cmid']} (cmid des Tests) erwartet")
+            if _text(c, "contextid", "") != a["contextid"]:
+                self.err("questions.xml", f"Kategorie {cid}: contextid {_text(c, 'contextid', '')} ≠ Kontext des Tests {a['contextid']}")
+            parent = _text(c, "parent", "0")
+            if parent != "0" and parent not in refcats:
+                self.err(f"{a['dir']}/inforef.xml", f"Kategorie {cid}: Elternkategorie {parent} nicht in question_categoryref")
+        self.qcats_used |= refcats
+        total = 0.0
+        slots = []
+        for qi in inner.findall("question_instances/question_instance"):
+            slots.append(_text(qi, "slot", ""))
+            total += float(_text(qi, "maxmark", "0") or 0)
+            ref = qi.find("question_reference")
+            if ref is None:
+                self.err(wo, f"Slot {_text(qi, 'slot', '')}: question_reference fehlt")
+                continue
+            eid = _text(ref, "questionbankentryid", "")
+            if eid not in entry_cat:
+                self.err(wo, f"Slot {_text(qi, 'slot', '')}: questionbankentryid {eid} steht nicht in questions.xml")
+            elif entry_cat[eid] not in refcats:
+                self.err(wo, f"Slot {_text(qi, 'slot', '')}: Kategorie {entry_cat[eid]} der Frage fehlt in inforef question_categoryref")
+            if _text(ref, "usingcontextid", "") != a["contextid"] or _text(ref, "component", "") != "mod_quiz":
+                self.err(wo, f"Slot {_text(qi, 'slot', '')}: question_reference braucht usingcontextid {a['contextid']} und component mod_quiz")
+        if not slots:
+            self.err(wo, "Test ohne Fragen (question_instances leer)")
+        if slots != [str(i) for i in range(1, len(slots) + 1)]:
+            self.err(wo, f"Slots nicht fortlaufend 1..{len(slots)}: {slots}")
+        sg = float(_text(inner, "sumgrades", "0") or 0)
+        if abs(sg - total) > 0.001:
+            self.err(wo, f"sumgrades {sg:g} ≠ Summe der maxmark {total:g}")
+        self.bewertung(a, wo, float(_text(inner, "grade", "0") or 0))
+
+    def fragen(self):
+        """questions.xml: jede Kategorie gehört zu einem Test, jede Frage hat einen bekannten Typ mit Antworten."""
+        qroot = self.xml.get("questions.xml")
+        if qroot is None:
+            return
+        for c in qroot.findall("question_category"):
+            cid = c.get("id")
+            if cid not in self.qcats_used:
+                self.err("questions.xml", f"Kategorie {cid} („{_text(c, 'name', '')}“) wird von keinem Test referenziert")
+            for q in c.findall(".//question"):
+                wo = f"questions.xml Frage {q.get('id')} („{_text(q, 'name', '')}“)"
+                qt = _text(q, "qtype", "")
+                if qt not in QTYPES:
+                    self.err(wo, f"qtype „{qt}“ nicht umgesetzt (erlaubt: {', '.join(QTYPES)})")
+                    continue
+                plugin = q.find(f"plugin_qtype_{qt}_question")
+                if plugin is None:
+                    self.err(wo, f"plugin_qtype_{qt}_question fehlt")
+                    continue
+                answers = plugin.findall("answers/answer")
+                ids = {an.get("id") for an in answers}
+                fracs = [float(_text(an, "fraction", "0") or 0) for an in answers]
+                if not answers or not any(f > 0 for f in fracs):
+                    self.err(wo, "keine Antwort mit positiver Bewertung")
+                if qt == "multichoice":
+                    mc = plugin.find("multichoice")
+                    if mc is None:
+                        self.err(wo, "<multichoice> fehlt")
+                    elif _text(mc, "single", "1") == "1" and sum(1 for f in fracs if f > 0) != 1:
+                        self.err(wo, "Einfachauswahl braucht genau eine richtige Antwort")
+                if qt == "truefalse":
+                    tf = plugin.find("truefalse")
+                    if tf is None or _text(tf, "trueanswer", "") not in ids or _text(tf, "falseanswer", "") not in ids:
+                        self.err(wo, "trueanswer/falseanswer verweisen nicht auf die beiden Antworten")
+                if qt == "shortanswer" and plugin.find("shortanswer") is None:
+                    self.err(wo, "<shortanswer> fehlt")
 
     def hvp(self, a, inner, wo):
         mn, major, minor = _text(inner, "machine_name", ""), _text(inner, "major_version", ""), _text(inner, "minor_version", "")
@@ -540,6 +693,7 @@ class Pruefung:
         self.dateien()
         self.inforefs()
         self.inhalte()
+        self.fragen()
         self.badges()
         self.verfuegbarkeit()
         return self.errors

@@ -1,0 +1,15 @@
+kurs:
+  titel: "Sichere Passwörter – Modulbeispiel"
+  kurzname: "Module"
+  beschreibung: "<p>Beispielkurs für die Moodle-Module Test, Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung und Glossar. Ein Abschnitt, etwa 45 Minuten.</p>"
+  fach: "Informatik / Digitale Bildung"
+  jahrgangsstufe: "7"
+  einsatz: begleitend
+  format: themen
+  steuerung: ki
+  umfang_min: 45
+  design: {stil: schlicht, banner: true, emoji_marker: false}
+  assistent: {code: ja, dateien: ja, bilder: nein}   # Bild und PDFs mit make_assets.py erzeugt
+  material: []
+teile:
+  pw: {status: pending, titel: "Sichere Passwörter", dauer_min: 45, formate: [buch, datei, verzeichnis, glossar, forum, abstimmung, aufgabe, test]}

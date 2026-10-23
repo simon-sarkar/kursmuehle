@@ -1,6 +1,6 @@
 ---
 name: kursmuehle
-description: Baut komplette Kurse für die ByCS-Lernplattform (Bayern, Moodle-basiert, früher mebis) als importierbare .mbz-Sicherung – Abschnitte, Seiten, H5P-Inhalte (Interaktiver Inhalt), Umfragen, Badges – aus einer Kursbeschreibung oder einem Fragen-Intake. Verwenden, wenn jemand einen ByCS-/mebis-/Moodle-Kurs, eine Kurssicherung, H5P-Aktivitäten für die Lernplattform oder eine Nachlieferung (Delta) zu einem bestehenden Kurs will.
+description: Baut komplette Kurse für die ByCS-Lernplattform (Bayern, Moodle-basiert, früher mebis) als importierbare .mbz-Sicherung – Abschnitte, Seiten, H5P-Inhalte (Interaktiver Inhalt), Tests, Aufgaben, Foren, Bücher, Abstimmungen, Glossare, Dateien, Umfragen, Badges – aus einer Kursbeschreibung oder einem Fragen-Intake. Verwenden, wenn jemand einen ByCS-/mebis-/Moodle-Kurs, eine Kurssicherung, H5P-Aktivitäten für die Lernplattform oder eine Nachlieferung (Delta) zu einem bestehenden Kurs will.
 ---
 
 # ByCS-Lernplattform-Kurs generieren
@@ -52,6 +52,10 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
 - Mischung statt H5P-Kette: Input als Textfeld (kurz, direkt auf der Kursseite) oder Seite (länger, mit Bildern), Videos als
   Link (`Url`, display embed – die Plattform bettet YouTube/Vimeo ein), H5P nur für Übung und Kontrolle. Richtwert: höchstens die
   Hälfte der Elemente einer Einheit sind H5P; Rhythmus Lesen → Üben → Lesen → Üben → Sichern.
+- Moodle-Module, wenn die Lehrkraft Bewertung, Abgaben oder Austausch braucht: `Test` (benotet, Versuche, Fragensammlung; nur
+  MC, RF, Kurzantwort) für die Kontrolle mit Note, `Quiz` (H5P) für Zwischenchecks; `Aufgabe` für Abgaben, `Forum` für
+  Fragen, `Abstimmung` für Meinungsbilder, `Buch` für längere Lesetexte ohne Fragen, `Datei`/`Verzeichnis` für Material der
+  Lehrkraft, `Glossar` für Begriffe. Syntax: `references/kursdatei.md` §3, Beispiel `examples/module/`.
 - Erst Input, dann Kontrolle: bewertete Aufgaben nur zu Inhalten, die im selben Lesebuch davor stehen; Aktivierungsfragen
   unbewertet (Text), Auflösung auf der Folgeseite; im Drehbuch je Aufgabe `(← Sn)`.
 - Inhaltsregeln spec §L: Antworten mischen, plausible Distraktoren, kein Meta-Text, keine Aphorismen, keine absoluten
@@ -70,10 +74,13 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
   `tests/` (Regressionstests, `.mbz`-Vergleich). Enthält keinen Kursinhalt.
 - `examples/netzwerk9/` – minimaler Beispielkurs (eine Einheit, 25 min, aus Folien + Fotos einer Lehrkraft): Vorbild für neue Kurse.
 - `examples/alltagskompetenz/` – großer Beispielkurs (Tech-Demo, Unterabschnitte, Lesebuch, Geschichte, Badge, Delta).
+- `examples/module/` – ein Abschnitt mit den Moodle-Modulen Buch, Datei, Verzeichnis, Glossar, Forum, Abstimmung, Aufgabe, Test.
   `python3 scripts/build.py --content examples/<kurs>` baut sie.
 - `README.md` – Erklärung für Lehrkräfte, Capabilities.
 
 ## Grenzen
 
-Kursformat nur „Themen“; keine Moodle-Tests/Aufgaben/Foren (Links/Videos per `Url` ja); H5P nur die Typen aus §B.2; geänderte Teile eines Kurses
+Kursformat nur „Themen“; Moodle-Module nur Test (MC, RF, Kurzantwort), Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung,
+Glossar (keine Lektion, Wiki, Datenbank, Workshop); H5P nur die Typen aus §B.2; geänderte Teile eines Kurses
 lassen sich per Sicherung nicht aktualisieren (löschen + Delta). Delta-Zusammenführen hängt neue Abschnitte hinten an (verifiziert 2026-10-23).
+Test, Glossar-Einträge und Buch sind noch nicht per Import auf der Plattform verifiziert (Stand 0.6): beim ersten Einsatz in einen Testkurs importieren.

@@ -190,6 +190,16 @@ Frage (f1): <Frage>?
 - <Antwort> → hart
 Ende (hart): <Titel>                                    Text darunter
 ### Umfrage: Selbsteinschätzung                         - <Aussage> (Skala 1–5)
+### Test: <Titel> · 8 min (← S1–S3)                     Moodle-Test (Bewertungsbuch, Versuche); nur MC, RF, Kurzantwort
+bestehen: 75 %                                          versuche: 2 · rückmeldung: sofort
+1. <Frage>? · ✔<A> · <B>                                 Kurzantwort: <Frage>? · <Antwort> · <Alternative>
+### Aufgabe: <Titel> · 10 min (← Buch)                  abgabe: text | datei · bewertung: 10 · fällig: JJJJ-MM-TT; Text darunter
+### Buch: <Titel>                                       Kapitel: <Titel> / Unterkapitel: <Titel>, darunter Bausteine; ohne Fragen
+### Datei: <Titel>                                      datei: <name.pdf> aus assets/
+### Verzeichnis: <Titel>                                - <name.pdf>
+### Forum: <Titel>                                      typ: allgemein | frage-antwort · abschluss: beitrag; Text darunter
+### Abstimmung: <Frage>                                 mehrfach: ja · - <Option>
+### Glossar: <Titel>                                    | <Begriff> | <Erklärung> |
 ### Badge: <Name>                                       beschreibung:, bild:, voraussetzung: <Quiztitel>
 ### Unterabschnitt: <Titel>                             Elemente darin mit ####
 Zeit LE 1: 20 min ✔ (Soll 20)
