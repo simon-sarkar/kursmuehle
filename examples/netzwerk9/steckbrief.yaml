@@ -8,7 +8,7 @@ kurs:
   format: themen
   steuerung: ki
   umfang_min: 25
-  design: {stil: schlicht, banner: true, emoji_marker: false}
+  design: {vorlage: schlicht, banner: true, emoji_marker: false}
   assistent: {code: ja, dateien: ja, bilder: nein}   # Banner mit scripts/banner.py gerendert
   material: ["1. Netzwerkkomponenten.pptx", "Heftbilder Netzwerkkomponenten.pdf"]
 teile:

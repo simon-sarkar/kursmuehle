@@ -11,6 +11,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 
+from gen import html as T  # noqa: E402
 from gen.h5p import ImageRef  # noqa: E402
 from gen.kursdatei import KursdateiFehler, parse  # noqa: E402
 
@@ -34,7 +35,32 @@ FEHLER = [
     ("## A\n### Lesebuch: X\nAbsatz ohne Seite", "Lesebuch: erste Zeile muss `Seite: Titel` sein"),
     ("## A\n### Quiz: X\nbestehen: 5 von 4\n1. F? · ✔a · b", "bestehen „5 von 4“: das Quiz hat 1 Fragen"),
     ("## A\nteil: x\n## B\nteil: x\n### Textfeld: T\nt", "Zeile 3 (Abschnitt „B“): teil „x“ ist schon vergeben"),
+    ("## A\n### Textfeld: X\n| a | b | c |\n| d | e | f |", "Zeile 3 (Textfeld „X“): Tabelle: ohne Kopfzeile zwei Spalten"),
+    ("## A\n### Textfeld: X\n| a | b |\n|---|---|\n| d | e | f |", "Zeile 3 (Textfeld „X“): Tabelle: alle Zeilen brauchen gleich viele Spalten"),
+    ("## A\n### Textfeld: X\nSchritte: Titel\nkein Listenpunkt", "Zeile 3 (Textfeld „X“): Schritte: Liste"),
 ]
+
+# Textbausteine (AP4): jede Zeile ein Baustein, erwarteter Teil des HTML
+BAUSTEINE = """## A
+### Überblick: Karte
+dauer: 10 min
+- Lesen: a
+### Seite: S
+Überschrift: Zwischen
+Hervorhebung: Kern
+Ein ==markierter== Satz.
+Schritte: Anleitung
+1. Eins
+2. Zwei
+| M | R | S |
+|---|---|---|
+| a | b | c |
+| x | y | z |
+Bild: router.png | Alt | Unterschrift
+"""
+ERWARTET = ["<h3 ", ">Zwischen</h3>", "Kern</p>", "border-radius:3px\">markierter</span>", ">Anleitung</div>", ">2</span>",
+            "border-bottom:2px solid", ">M</td>", ">z</td>", "Unterschrift</span>"]
+
 
 OK = """# Drehbuch v1 · Test · 5 min
 v2: Änderung
@@ -91,6 +117,31 @@ def check_fehler():
         assert secs[1].items[1].hvp.gradepass == 1.98, secs[1].items[1].hvp.gradepass   # 3 Fragen, 66 %
         assert secs[0].items[0].name == "Test" and "router.png" in secs[0].items[0].intro, secs[0].items[0].intro[:80]
         assert "Hi" in secs[0].items[1].intro and "[KI]" not in secs[0].items[1].intro
+        # Textbausteine: ohne Banner trägt die Überblickskarte ihren Titel, mit Banner nicht
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(BAUSTEINE)
+        k = parse(path, A, {"teile": {}})
+        card, page = k["sections"][1].items
+        assert ">Karte</div>" in card.intro and "Ablauf" not in card.intro, card.intro[:200]
+        for want in ERWARTET:
+            if want not in page.content:
+                print(f"BAUSTEIN fehlt: {want}")
+                bad += 1
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("## Allgemeines\n### Banner: Karte\nuntertitel: U\n" + BAUSTEINE)
+        card = parse(path, A, {"teile": {}})["sections"][1].items[0]
+        assert ">Karte</div>" not in card.intro and "Ablauf · 10 min" in card.intro, card.intro[:200]
+        # Designvorlagen: jede baut, unbekannte Namen sind ein Fehler
+        for v in T.VORLAGEN:
+            T.set_vorlage(v)
+            parse(path, A, {"teile": {}})
+        T.set_vorlage("schlicht")
+        try:
+            T.set_vorlage("bunt")
+            print("FEHLT  Vorlage „bunt“ wurde angenommen")
+            bad += 1
+        except ValueError:
+            pass
     return bad
 
 

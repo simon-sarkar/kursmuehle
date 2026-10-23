@@ -82,8 +82,8 @@ sind Fehler, keine Vermutungen.
 | `Badge` | Badge | nur Angaben; kein Element im Kurs, steht am sinnvollsten beim Abschlusstest |
 | `Unterabschnitt` | Unterabschnitt | Elemente mit `####` |
 
-Inline überall: `**fett**` → `<b>`, `*kursiv*` → `<i>`, HTML (`<br>`, `<b>`, `<i>`) bleibt stehen. In Zeilen mit
-`*Lücken*` (Einsetzen, Markieren, Lückentext) wird nichts umgewandelt.
+Inline überall: `**fett**` → `<b>`, `*kursiv*` → `<i>`, `==markiert==` → farbig hinterlegt, HTML (`<br>`, `<b>`,
+`<i>`) bleibt stehen. In Zeilen mit `*Lücken*` (Einsetzen, Markieren, Lückentext) wird nichts umgewandelt.
 
 ## 4. Textbausteine (Textfeld, Seite, Lesebuch-Seiten, Kästen)
 
@@ -91,12 +91,16 @@ Inline überall: `**fett**` → `<b>`, `*kursiv*` → `<i>`, HTML (`<br>`, `<b>`
 |---|---|
 | Absatz (eine oder mehrere Zeilen, Leerzeile trennt) | `<p>` |
 | `Vorspann: …` | größerer Einleitungsabsatz |
-| `- Punkt` / `1. Schritt` | Aufzählung / nummerierte Schritte |
+| `Überschrift: …` | Zwischenüberschrift im Lesetext |
+| `Hervorhebung: …` | hervorgehobener Satz (Kernaussage) mit Akzentlinie, ohne Titel |
+| `- Punkt` / `1. Schritt` | Aufzählung / nummerierte Liste |
+| `Schritte: Titel` + `1. Schritt` | Schritt-für-Schritt-Anleitung mit Nummern im Kreis |
 | `\| Begriff \| Erklärung \|` | zweispaltige Tabelle (Begriff farbig) |
+| `\| Merkmal \| A \| B \|` + `\|---\|---\|---\|` + Zeilen | Vergleichstabelle mit Kopfzeile, beliebig viele Spalten (erste Spalte fett) |
 | `Kasten: Titel` + eingerückte Zeilen | Kasten in Akzentfarbe; `Beispiel:` grün, `Hinweis:` orange |
 | `Merke: …` | Merkkasten („Merk dir“) |
 | `Vergleich:` + `- Links (rot):` / `- Rechts (grün):` mit eingerückten Unterpunkten | zwei Spalten |
-| `Bild: datei.png \| Alt-Text` | Bild in voller Breite (Datei aus `assets/`) |
+| `Bild: datei.png \| Alt-Text \| Unterschrift` | Bild in voller Breite (Datei aus `assets/`), Unterschrift optional; im Lesebuch nur Alt-Text |
 | `Bildzeile: datei.png \| Alt-Text \| Text` | kleines Bild links, Text rechts |
 | `<p …>` | HTML-Zeile unverändert (Ausweg für Sonderfälle) |
 | `Text (Titel):` | nur im Lesebuch: neuer Textblock mit eigenem Titel |
@@ -106,6 +110,14 @@ Inline überall: `**fett**` → `<b>`, `*kursiv*` → `<i>`, HTML (`<br>`, `<b>`
 
 Eingerückt heißt: zwei Leerzeichen. Ein Kasten ohne eingerückten Inhalt ist ein Fehler. Emojis in Fahrplan, Kacheln und
 Überblick erscheinen nur, wenn der Steckbrief `emoji_marker: true` setzt.
+
+Wahl je Textsorte: Erklärung = Vorspann, Überschriften, kurze Absätze, Begriffstabelle; Fall = `Beispiel:`-Kasten;
+Anleitung = `Schritte:`; Merksatz = `Merke:` oder `Hervorhebung:`; Gegenüberstellung = Vergleichstabelle oder `Vergleich:`.
+Kein Absatz länger als fünf Zeilen auf dem Handy (etwa 60 Wörter). Alle Bausteine werden von der Designvorlage
+(Steckbrief `design.vorlage`, §7) eingefärbt und geformt; die Kursdatei kennt keine Gestaltungsangaben außer `farbe`.
+
+Steht ein `### Banner:` im Kurs, trägt jede Überblickskarte keinen Titel und Untertitel mehr, nur Dauer und Phasen
+(Banner und Karte zeigten sonst beides doppelt).
 
 ## 5. Fragen (Lesebuch-Seiten und Quiz)
 
@@ -155,7 +167,8 @@ in der Datei.
 
 ## 7. Steckbrief und Bau
 
-`steckbrief.yaml` liefert Titel, Kurzname, Beschreibung, `design.emoji_marker` und je `teil` den Status
+`steckbrief.yaml` liefert Titel, Kurzname, Beschreibung, `design.vorlage` (`schlicht` Standard, `kacheln`, `magazin`;
+Token-Sätze in `scripts/gen/html.py`, `build.py --vorlage` überschreibt), `design.emoji_marker` und je `teil` den Status
 (`pending`/`delivered`) und `sichtbar_ab`. Bau: `python3 scripts/build.py --content <ordner>`; `--proto` lässt alles mit
 `prototyp: nein` weg und hängt „Prototyp“ an den Kursnamen; `--delta` baut die Teile mit `status: pending`,
 `--delta le2,le3` die genannten; jeder Teil wird dabei ein eigener Abschnitt (Unterabschnitte werden Abschnitte).

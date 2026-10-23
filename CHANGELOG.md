@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.5 – 2026-10-23 (AP4: Designvorlagen, Textbausteine, Render-Test)
+
+- Drei Designvorlagen als Token-Sätze in `scripts/gen/html.py` (`VORLAGEN`: Farben, Rundung, Abstände, Kartenform,
+  Schriftgrößen): `schlicht` (Standard: weiße Karten, Haarlinien), `kacheln` (getönte Flächen in der Akzentfarbe, stärkere
+  Rundung), `magazin` (keine Rundung, Linien statt Flächen, mehr Weißraum, Merkkasten als Rahmen). Wahl im Steckbrief
+  `design.vorlage`, Entwickler: `build.py --vorlage`. Alle Bausteine lesen die Tokens beim Aufruf; die Kursdatei enthält
+  keine Gestaltungsangaben, Emojis bleiben aus.
+- Textbausteine für Lesetexte: `Überschrift:`, `Hervorhebung:`, `Schritte:` (Nummern im Kreis), Vergleichstabelle mit
+  Kopfzeile (`|---|---|`, beliebig viele Spalten), `Bild: datei | Alt | Unterschrift`, Inline `==markiert==`. Fehler bei
+  Tabellen mit ungleichen Spalten oder mehr als zwei Spalten ohne Kopfzeile. Regel in `intake.md` §5: Baustein je Textsorte,
+  kein Absatz länger als fünf Zeilen auf dem Handy.
+- Überblickskarte ohne Titel und Untertitel, wenn der Kurs ein Banner hat (Import-Test 1: Banner und Karte zeigten beides
+  doppelt); sie trägt dann nur Dauer und Phasen.
+- Render-Test `scripts/tests/render_vorlagen.py`: Kursseite von `examples/netzwerk9` und eine Bausteinseite je Vorlage bei
+  390 und 1200 px als PNG (Playwright, Theme-Rahmen um `<td>` nachgebildet); Ergebnis in `examples/netzwerk9/out/`, nicht
+  committet. Regressionstest um Bausteine, Banner-Karte und Vorlagen ergänzt.
+- Doku: `kursdatei.md` §4/§7, `intake.md` §2/§5/§6, SKILL.md (Gestaltungsregel), spec.md §K, README (Tabelle, Status).
+- Offen: Abschnitts- und Kachelbilder (AP6); Rendertest nur mit nachgebildetem Theme, Abnahme der Vorlagen auf der Plattform
+  durch den Autor; Lesebuch-Bilder weiter ohne Unterschrift (H5P.Image kennt keine).
+
 ## 0.4 – 2026-10-23 (AP3: Menüführung, Formatfrage, Selbstabfrage, Kursbanner)
 
 - Einstieg neu: erste Nachricht „Womit starten wir?“ mit fünf Wegen (nur Thema, Material, Material + Fragen, Fragen,

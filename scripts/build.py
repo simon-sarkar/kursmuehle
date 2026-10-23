@@ -1,7 +1,7 @@
 """Kurs bauen: Kursdatei (kurs.md) oder Python-Inhalt (content/course.py) lesen, Abschnitte zusammensetzen, .mbz schreiben,
 Sicherung prüfen (check.py).
 
-usage: python3 build.py --content DIR [--proto] [--delta [teile]] [--steckbrief PATH] [--out PATH] [--no-check]
+usage: python3 build.py --content DIR [--proto] [--delta [teile]] [--steckbrief PATH] [--out PATH] [--no-check] [--vorlage NAME]
 
 DIR enthält kurs.md (Format: references/kursdatei.md), assets/ (PNG) und steckbrief.yaml.
 Fallback: DIR/content/course.py mit build(A, sb, proto) -> {"sections", "parts", "badges", "image_path"}.
@@ -63,6 +63,7 @@ def main():
     ap.add_argument("--out")
     ap.add_argument("--no-render", action="store_true", help="ohne Wirkung (Bilder werden nicht mehr von build.py gerendert)")
     ap.add_argument("--no-check", action="store_true", help="fertige .mbz nicht mit check.py prüfen")
+    ap.add_argument("--vorlage", choices=sorted(T.VORLAGEN), help="Designvorlage (überschreibt design.vorlage im Steckbrief)")
     args = ap.parse_args()
 
     content_dir = os.path.abspath(args.content)
@@ -70,7 +71,12 @@ def main():
     sb_path = args.steckbrief or os.path.join(content_dir, "steckbrief.yaml")
     sb = load_steckbrief(sb_path) if os.path.exists(sb_path) else {}
     teile = sb.get("teile", {}) or {}
-    T.EMOJI = bool((sb.get("kurs", {}) or {}).get("design", {}).get("emoji_marker", False))
+    design = (sb.get("kurs", {}) or {}).get("design") or {}
+    T.EMOJI = bool(design.get("emoji_marker", False))
+    try:
+        T.set_vorlage(args.vorlage or design.get("vorlage") or "schlicht")
+    except ValueError as e:
+        raise SystemExit(f"FEHLER {sb_path}: {e}")
     A = asset_map(os.path.join(content_dir, "assets"))
 
     if os.path.exists(kursdatei):

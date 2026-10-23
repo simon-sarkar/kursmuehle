@@ -10,11 +10,10 @@ kurs:
   badge: Problemlösen
   farbe: '#1D5FD1'
   design:
-    stil: gestaltet
+    vorlage: kacheln
     banner: true
     farbe_je_abschnitt: true
     emoji_marker: false
-    varianten: false
 teile:
   start:
     status: delivered

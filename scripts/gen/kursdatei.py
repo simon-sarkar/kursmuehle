@@ -29,14 +29,15 @@ def ts_sichtbar_ab(d):
 # ---------------------------------------------------------------- Konstanten
 ELEMENTE = ["Banner", "Textfeld", "Seite", "Überblick", "Link", "Video", "Lesebuch", "Quiz", "Zuordnen", "Lernkarten",
             "Geschichte", "Lückentext", "Umfrage", "Badge", "Unterabschnitt"]
-DIRECTIVES = ["Vorspann", "Merke", "Kasten", "Beispiel", "Hinweis", "Vergleich", "Bild", "Bildzeile", "Text", "Seite",
+DIRECTIVES = ["Vorspann", "Überschrift", "Hervorhebung", "Merke", "Kasten", "Beispiel", "Hinweis", "Schritte", "Vergleich",
+              "Bild", "Bildzeile", "Text", "Seite",
               "MC", "RF", "Einsetzen", "Markieren", "Lückentext", "Aussagen", "Schnellquiz",
               "Szene", "Frage", "Ende", "Fahrplan", "Kacheln", "Themenfeld"]
 FRAGEN = {"MC", "RF", "Einsetzen", "Markieren", "Lückentext", "Aussagen", "Schnellquiz"}
 # Was eine Direktive an Folgezeilen aufnimmt: nichts, nur eingerückten Inhalt, nur eine Liste, oder Textzeilen
-NO_FOLLOW = {"Seite", "Bild", "Bildzeile", "Vorspann", "Merke", "RF"}
+NO_FOLLOW = {"Seite", "Bild", "Bildzeile", "Vorspann", "Überschrift", "Hervorhebung", "Merke", "RF"}
 BOX_DIRS = {"Kasten", "Beispiel", "Hinweis", "Text"}
-LIST_DIRS = {"MC", "Schnellquiz", "Aussagen", "Frage", "Fahrplan", "Kacheln", "Themenfeld", "Vergleich"}
+LIST_DIRS = {"MC", "Schnellquiz", "Aussagen", "Frage", "Fahrplan", "Kacheln", "Themenfeld", "Vergleich", "Schritte"}
 TEXT_DIRS = {"Einsetzen", "Markieren", "Lückentext", "Szene", "Ende"}
 QUIZ_FRAGEN = {"MC", "RF", "Einsetzen", "Markieren", "Lückentext"}
 ATTRS = {
@@ -85,10 +86,14 @@ def _strip_time(s):
     return _RE_TIME_END.sub("", s).rstrip()
 
 
+_HUE = T.HUE     # Akzentfarbe des Kurses für Inline-Markierungen, gesetzt in Parser.parse
+
+
 def inl(s):
-    """Inline-Markdown: **fett** -> <b>, *kursiv* -> <i>. HTML bleibt unverändert."""
+    """Inline-Markdown: **fett** -> <b>, *kursiv* -> <i>, ==markiert== -> Hervorhebung. HTML bleibt unverändert."""
     s = re.sub(r"\*\*(?=\S)(.+?)(?<=\S)\*\*", r"<b>\1</b>", s)
     s = re.sub(r"(?<![\w*])\*(?=[^\s*])(.+?)(?<=[^\s*])\*(?![\w*])", r"<i>\1</i>", s)
+    s = re.sub(r"==(?=\S)(.+?)(?<=\S)==", lambda m: T.mark(m.group(1), _HUE), s)
     return s
 
 
@@ -229,13 +234,15 @@ def parse_body(lines, zl, element, quiz=False):
             blocks.append({"kind": "list", "ordered": ordered, "items": items, "ln": ln})
             continue
         if s.lstrip().startswith("|"):
-            rows = []
+            rows, header = [], False
             while i < n and lines[i][1].lstrip().startswith("|"):
                 row = lines[i][1].strip().strip("|")
-                if not re.match(r"^[\s|:-]+$", row):
+                if re.match(r"^[\s|:-]+$", row):
+                    header = header or len(rows) == 1      # `|---|---|` nach der ersten Zeile = Kopfzeile
+                else:
                     rows.append([c.strip() for c in row.split("|")])
                 i += 1
-            blocks.append({"kind": "table", "rows": rows, "ln": ln})
+            blocks.append({"kind": "table", "rows": rows, "header": header, "ln": ln})
             continue
         # Absatz (mindestens die aktuelle Zeile, damit die Schleife immer voranschreitet)
         para = [s.strip()]
@@ -290,26 +297,39 @@ def block_html(b, k: Kontext):
     if kind == "list":
         return _list_html(b["items"], b["ordered"])
     if kind == "table":
-        rows = []
-        for r in b["rows"]:
-            if len(r) != 2:
-                k.fehler(b["ln"], f"Tabelle: zwei Spalten erwartet (Begriff | Erklärung), {len(r)} gefunden")
-            rows.append((inl(r[0]), inl(r[1])))
-        return T.kv(rows, k.hue)
+        rows = [[inl(c) for c in r] for r in b["rows"]]
+        widths = {len(r) for r in rows}
+        if len(widths) != 1:
+            k.fehler(b["ln"], f"Tabelle: alle Zeilen brauchen gleich viele Spalten ({', '.join(map(str, sorted(widths)))} gefunden)")
+        if b.get("header"):
+            return T.table(rows[0], rows[1:], k.hue)
+        if widths != {2}:
+            k.fehler(b["ln"], "Tabelle: ohne Kopfzeile zwei Spalten (Begriff | Erklärung); "
+                              "mehr Spalten brauchen eine Kopfzeile mit `|---|---|` darunter (Vergleichstabelle)")
+        return T.kv([tuple(r) for r in rows], k.hue)
     name, ln = b["name"], b["ln"]
     if name == "Vorspann":
         return T.lead(_para_join(b))
+    if name == "Überschrift":
+        return T.h2(_para_join(b), k.hue)
+    if name == "Hervorhebung":
+        return T.highlight(_para_join(b), k.hue)
     if name == "Merke":
         return T.merk(_para_join(b), k.hue)
+    if name == "Schritte":
+        items = [inl(t) for _, _, t in b["list"]]
+        if not items:
+            k.fehler(ln, "Schritte: Liste `1. Schritt` in den Zeilen darunter erwartet")
+        return T.schritte(items, k.hue, inl(b["rest"]))
     if name in ("Kasten", "Beispiel", "Hinweis"):
         if not b["indented"]:
             k.fehler(ln, f"{name} ohne Inhalt – Inhalt um zwei Leerzeichen einrücken")
         inner = body_html(parse_body(b["indented"], k.zl, k.element), k)
         title = inl(b["rest"])
         if name == "Beispiel":
-            return T.box(title, inner, "#0F766E", "#F0FAF7")
+            return T.box(title, inner, "#0F766E")
         if name == "Hinweis":
-            return T.box(title, inner, "#B45309", "#FDF7EE")
+            return T.box(title, inner, "#B45309")
         return T.box(title, inner, k.hue)
     if name == "Vergleich":
         items = b["list"]
@@ -332,7 +352,7 @@ def block_html(b, k: Kontext):
         parts = _split(b["rest"], "|")
         img = k.image(ln, parts[0])
         k.files.append((img[0], parts[0]))
-        return T.img(parts[0], inl(parts[1]) if len(parts) > 1 else "")
+        return T.img(parts[0], inl(parts[1]) if len(parts) > 1 else "", inl(parts[2]) if len(parts) > 2 else None)
     if name == "Bildzeile":
         parts = _split(b["rest"], "|")
         if len(parts) < 3:
@@ -480,6 +500,7 @@ class Parser:
         self.parts = {}
         self.badges = []        # (ln, name, attrs)
         self.all_items = []
+        self.banner = False     # Banner vorhanden -> Überblickskarten ohne Titel (Doppelung)
 
     # ----- Hilfen
     def fehler(self, ln, element, msg):
@@ -570,6 +591,8 @@ class Parser:
             if s.strip() and not re.match(r"^(v\d+:|Zeit\b)", s.strip()):
                 print(f"Hinweis: {self.zl.name} Zeile {ln} vor dem ersten Abschnitt wird ignoriert: {s.strip()[:60]}", file=sys.stderr)
         hue = self._hue(self.kurs_attr, T.HUE, 1, "Kurs")
+        global _HUE
+        _HUE = hue
         fmt = str((self.sb.get("kurs") or {}).get("format") or "").strip().lower()
         if fmt and fmt not in ("themen", "topics"):
             print(f"Hinweis: Kursformat „{fmt}“ im Steckbrief vorgemerkt; der Generator baut derzeit „Themen“. "
@@ -705,6 +728,7 @@ class Parser:
                 k.files.append((self._image(img, ln, element)[0], img))
             html = T.banner(inl(title), inl(attrs.get("untertitel", "")), img, hue=hue) + body_html(blocks, k)
             item = Label(html, files=k.files, name=attrs.get("name") or title)
+            self.banner = True
         elif typ == "Textfeld":
             item = Label(body_html(blocks, k), files=k.files, name=title)
         elif typ == "Seite":
@@ -720,7 +744,9 @@ class Parser:
                     lab, _, det = t.partition(":")
                     steps_.append((inl(lab.strip()), inl(det.strip()), icon))
             num = attrs.get("nummer") or (getattr(container, "nummer", None) or 1)
-            html = T.le_card(num, inl(title), inl(attrs.get("untertitel", "")), attrs.get("dauer", ""), steps_, hue)
+            # Mit Banner trägt die Karte keinen Titel mehr (Banner und Karte zeigten beide Titel und Untertitel)
+            html = T.le_card(num, None if self.banner else inl(title), inl(attrs.get("untertitel", "")),
+                             attrs.get("dauer", ""), steps_, hue)
             item = Label(html, name=attrs.get("name") or "Überblick")
         elif typ in ("Link", "Video"):
             url = next((b["text"] for b in blocks if b["kind"] == "para"), "")
