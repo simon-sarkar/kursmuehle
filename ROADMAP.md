@@ -140,8 +140,10 @@ Der Generator läuft als Webseite im Browser (Pyodide), ohne Server – Kursdate
   Code-Ausführung wie ByLKI oder der AIS-Chat); die Gesprächsführung wird zu einem Prompt
   zum Kopieren. Voraussetzung ist das Kursdatei-Format aus AP1. Maßstab für 2.0: Ein einfacher, kostenloser Chatbot
   liefert damit einen verwertbaren Kurs.
-  Plan: 2.0 erscheint als geschlossene Fassung (Webseite, Code gebündelt, Repo privat); 1.0 bleibt offen und
-  nicht-kommerziell als Spezifikation und Nachweis. Beiträge Dritter zu 1.0 nur unter der Beitragsregel in der README.
+  Lizenz (Entscheidung 24.10.2026): 2.0 ist einsehbar und nicht-kommerziell (PolyForm Noncommercial wie 1.x); der Code
+  einer Browser-Seite ist ohnehin lesbar, der Schutz ist die Lizenz, nicht das Verstecken. Das Repo kann privat geführt
+  werden. Beiträge Dritter nur unter der Beitragsregel in der README. Ausführlicher Plan und drei Gutachten:
+  `docs/entwicklung/2.0-plan.md`, `docs/entwicklung/protokolle/2.0-gutachten-*.md`.
 
 Ablauf (Stand 24.10.2026, nach den Durchläufen mit AIS-Chat und fobizz, `docs/entwicklung/protokolle/chat-ohne-code/`):
 1. **Formular statt Fragerunde.** Die Einstiegsfragen aus `intake.md` (Weg, Rahmen, Kursformat, Design, Darstellungsweg,
