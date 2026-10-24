@@ -39,6 +39,11 @@ Regeln:
   (ein Parser für CLI und Browser, kein JS-Port); Pyodide gepinnt unter `web/vendor/`; der Steckbrief wird nur über
   Python gelesen und geschrieben; vor Tests `python3 scripts/web_bundle.py`.
 - **Lizenz**: PolyForm Noncommercial (Code), CC BY-NC-SA 4.0 (Texte). Nichts einbauen, was damit unvereinbar ist.
+- **CHANGELOG**: knapp. Je Version eine Zeile Überschrift (`## X.Y.Z – Datum (APn: Stichworte)`), dann je Änderung EINE
+  Zeile aus Sicht der Lehrkraft oder des Nutzers (was sich ändert, nicht wie es gebaut wurde). Keine Sätze über den
+  Autor, seine Wünsche, Befunde, Durchläufe oder Entscheidungen („Befund des Autors“, „auf Wunsch“, „der Autor wählt“):
+  das steht in `docs/entwicklung/APn.md` und in den Protokollen, nicht im CHANGELOG. Keine Testbeschreibung, keine
+  Dateipfade außer bei Formatänderungen der Kursdatei. Richtwert: höchstens 15 Zeilen je Version.
 - **Abschluss eines Pakets**: Versionsnummer erhöhen (bis 1.0 um 0.1 je Paket, danach nach CHANGELOG), CHANGELOG.md
   mit dieser Version ergänzen, README-Tabelle aktualisieren, `docs/badge-version.svg` mit `python3 docs/make_logo.py`
   neu erzeugen, PR gegen `main` mit kurzer Beschreibung (was, wie getestet, was offen).
