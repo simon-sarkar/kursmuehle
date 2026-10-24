@@ -1,4 +1,4 @@
-![Kursmühle – für die ByCS-Lernplattform](docs/banner-kursmuehle-v10.svg)
+[![Kursmühle – für die ByCS-Lernplattform](docs/banner-kursmuehle-v10.svg)](https://kursmuehle.de/)
 
 # Kursmühle – für die ByCS-Lernplattform
 
