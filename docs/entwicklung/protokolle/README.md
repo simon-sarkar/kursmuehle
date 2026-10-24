@@ -21,3 +21,4 @@ Konten geht; die Messfelder trägt der Autor nach dem eigenen Durchlauf ein. Kei
 
 Ergebnisse, die in die README gehören: Richtwerte (Dauer, Tokens) aus `AP9_fremdtest.md` und je eine Zeile „läuft mit …“
 aus den Konto-Durchläufen.
+- `korrekturen.md` – Korrekturbitten aus echten Durchläufen mit Regel, Ursache (Parser, Text, Modell) und Maßnahme; dazu Inhaltsbefunde ohne Korrekturbitte.
