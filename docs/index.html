@@ -270,14 +270,22 @@
 // Ohne Skript schickt das Formular dieselben Felder per GET an start/ (dann als ?thema=…, die Mühle liest beides).
 (function () {
   var f = document.getElementById("start-form");
-  f.addEventListener("submit", function (e) {
-    e.preventDefault();
+  function adresse() {
     var wert = function (id) { return document.getElementById(id).value.trim(); };
     var thema = wert("f-thema"), jahrgang = wert("f-jahrgang"), minuten = wert("f-minuten");
     var q = thema ? "thema=" + encodeURIComponent(thema) : "";
     if (q && jahrgang) q += "&jahrgang=" + encodeURIComponent(jahrgang);
     if (q && minuten) q += "&minuten=" + encodeURIComponent(minuten);
-    location.href = "start/" + (q ? "#" + q : "");
+    return "start/" + (q ? "#" + q : "");
+  }
+  f.addEventListener("submit", function (e) { e.preventDefault(); location.href = adresse(); });
+  // Die Kacheln „Mahlwerk starten“ nehmen Eingaben in den Feldern mit, damit nichts verloren geht (Autor 24.10.2026).
+  [].forEach.call(document.querySelectorAll("#kachel, #mini"), function (a) {
+    a.addEventListener("click", function (e) {
+      if (e.ctrlKey || e.metaKey || e.shiftKey || e.button) return;   // neuer Tab o. ä.: Standard
+      var z = adresse();
+      if (z !== "start/") { e.preventDefault(); location.href = z; }
+    });
   });
 })();
 

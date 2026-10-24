@@ -271,6 +271,12 @@ def main():
             fp.press("#f-thema", "Enter")
         ok(fp.evaluate("location.hash") == "#thema=Bruchrechnen&minuten=45", "Eingabetaste im Thema wie „Weiter“")
         fp.goto(url)
+        fp.fill("#f-thema", "Kachel nimmt mit")
+        with fp.expect_navigation():
+            fp.click("#kachel")
+        ok(fp.evaluate("location.pathname + location.hash") == "/start/#thema=Kachel%20nimmt%20mit&minuten=45",
+           "„Mahlwerk starten“ nimmt die Eingaben mit")
+        fp.goto(url)
         ok(fp.evaluate("[...document.querySelectorAll('#start-form label')].map(l => l.firstChild.textContent.trim())")
            == ["Thema", "Jahrgangsstufe", "Minuten"], "Felder beschriftet wie Schritt 1 der Mühle")
         ok(fp.evaluate("document.getElementById('f-minuten').value") == "45", "Minuten vorbelegt mit 45")
