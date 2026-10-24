@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://kursmuehle.de/sitemap.xml
