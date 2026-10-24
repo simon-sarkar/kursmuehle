@@ -215,6 +215,11 @@ select { appearance: auto; }
 .aus-kachel > * { pointer-events: none; }        /* Klick trifft immer den Knopf (AP13.3, Firefox) */
 .aus-mini svg { display: block; width: 100%; height: auto; border-radius: 6px; box-shadow: 0 0 0 1px var(--linie); }
 .farben .aus-kachel { width: 104px; }
+.bilder-wahl .aus-kachel { width: 104px; }
+.breit .aus-kachel { width: 230px; text-align: left; }
+.aus-zeile { font-size: 0.85rem; font-weight: 400; color: var(--leise); line-height: 1.35; }
+.mach-teil { margin-top: 14px; display: grid; gap: 10px; }
+.bilder-stufe { font-weight: 600; }
 .farben .aus-mini svg { width: 40px; margin: 0 auto; box-shadow: none; }
 
 /* 4 Text für den Chat */
@@ -251,6 +256,11 @@ select { appearance: auto; }
 .stand-karte.ok { border-left-color: var(--ok); }
 .stand-karte.fehler { border-left-color: var(--fehler); }
 .einfuegen .kopieren { margin-top: 8px; }
+/* AP13.4: Diagnose einer Antwort ohne Bausteine */
+.diagnose-karte p { margin: 0 0 6px; }
+.diagnose-karte ul { margin: 0 0 8px; padding-left: 18px; }
+.diagnose-karte code { font-size: 0.88em; background: var(--creme); padding: 0 3px; border-radius: 3px; overflow-wrap: anywhere; }
+.diagnose-karte .stand { margin: 6px 0 0; }
 /* Fortschritt des gestückelten Textes und der eine Korrekturblock, beide direkt unter dem Einfügefeld */
 .teil-stand { margin-top: 14px; padding: 12px 14px; border-radius: var(--rund); background: var(--creme); }
 .teil-stand p { margin: 0 0 8px; }
@@ -438,5 +448,18 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
   .text-art label, .modus label { flex: 1 1 auto; }
   .aus-kachel { width: calc(50% - 5px); }
   .farben .aus-kachel { width: calc(33.3% - 7px); }
+  .bilder-wahl .aus-kachel { width: calc(50% - 5px); }
+  .breit .aus-kachel { width: 100%; }
   .kopf-links { margin-left: auto; }
 }
+
+/* AP13.4: Schleife – drei Wege unter der Karte; weggelassene Karte gestrichen */
+.ausweg { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--linie); border-left: 4px solid var(--warn); border-radius: 8px; background: var(--warn-flaeche); }
+.ausweg-titel { margin: 0 0 6px; font-weight: 700; }
+.ausweg-weg { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; margin: 6px 0; }
+.ausweg-weg p { margin: 0; flex: 1 1 260px; font-size: 0.93rem; }
+.ausweg-feld textarea { width: 100%; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85rem; }
+.ausweg-pruefung { margin: 6px 0; padding-left: 18px; font-size: 0.9rem; }
+.ausweg-pruefung .fehler { color: var(--fehler); }
+.ausweg-pruefung .ok { color: var(--ok); }
+.karte.status-weggelassen .k-titel { text-decoration: line-through; }

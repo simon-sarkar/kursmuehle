@@ -23,9 +23,9 @@ und einzelne Chats antworten noch in einer Form, die die Seite nicht lesen kann.
 | H5P-Inhalte: Interactive Book, Branching Scenario, Question Set, Drag and Drop, Lückentext, Lernkarten und weitere | Weitere H5P-Typen wie Interactive Video oder Image Hotspots |
 | Übungen als Website in einem Abschnitt oder als Block im Textfeld: Quiz, Zuordnen, Lückentext, Markieren, Lernkarten, Geschichte | Bewertung und Abschluss je Übung in der Website, eigene Spiele und Simulationen |
 | Feedback-Umfragen, Links und Videos, Badges, Kursbild, Abschlussverfolgung, Sichtbarkeit ab Datum | Gruppen, Termine, andere Zugriffsbedingungen |
-| Kursbanner und Kachelbilder, Bildwunsch mit Auftrag für einen Bildgenerator, eigene Bilder hochladen | Abschnitts- und Kachelbilder automatisch aus dem Material |
+| Kursbanner und Kachelbilder, Zahl der Bilder je Einheit, Bildwunsch mit Auftrag für einen Bildgenerator, eigene Bilder hochladen | Abschnitts- und Kachelbilder automatisch aus dem Material |
 | Einheit speichern und später weiterbauen, nächste Einheit anhängen, Nachlieferung zu einem bestehenden Kurs | Abbruch einer Antwort des Chats erkennen |
-| Prüfung der Antwort vor dem Bau mit Hinweisen, was im Chat zu korrigieren ist | Fachliche Prüfung des Inhalts; die bleibt bei der Lehrkraft |
+| Prüfung der Antwort vor dem Bau mit Sätzen, was im Chat zu korrigieren ist, und Auswegen, wenn der Chat dieselbe Antwort wiederholt | Fachliche Prüfung des Inhalts; die bleibt bei der Lehrkraft |
 
 Der Auftrag ist eingerichtet für ByLKI, fobizz, AIS-Chat, MUCGPT, ChatGPT, Claude und Gemini. Durchläufe gab es bisher
 mit ByLKI, fobizz und einem Claude-Modell, nicht jeder kam ohne Korrekturrunde durch; wie die anderen Chats antworten,

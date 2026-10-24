@@ -444,12 +444,63 @@
   "website": [
    {
     "wert": "textfeld",
-    "text": "Auf der Kursseite"
+    "text": "Auf der Kursseite",
+    "zeile": "Quiz, Zuordnen, Lernkarten und Lückentext stehen als Blöcke im Textfeld; nichts lädt nach."
    },
    {
     "wert": "nein",
-    "text": "Als eigene Aktivität"
+    "text": "Als eigene Aktivitäten",
+    "zeile": "Je Übung eine H5P-Aktivität mit H5P-Optik; jede lädt einzeln."
    }
+  ],
+  "bilder": [
+   {
+    "wert": "0",
+    "text": "keine",
+    "min": 0,
+    "max": 0
+   },
+   {
+    "wert": "2-3",
+    "text": "2 bis 3",
+    "min": 2,
+    "max": 3,
+    "standard": true
+   },
+   {
+    "wert": "4-7",
+    "text": "4 bis 7",
+    "min": 4,
+    "max": 7
+   },
+   {
+    "wert": "8+",
+    "text": "viele",
+    "min": 8,
+    "max": null
+   }
+  ],
+  "faecher": [
+   "Biologie",
+   "Chemie",
+   "Deutsch",
+   "Englisch",
+   "Erdkunde",
+   "Ethik",
+   "Französisch",
+   "Geschichte",
+   "Heimat- und Sachunterricht",
+   "Informatik",
+   "Kunst",
+   "Latein",
+   "Mathematik",
+   "Musik",
+   "Natur und Technik",
+   "Physik",
+   "Religion",
+   "Sozialkunde",
+   "Sport",
+   "Wirtschaft und Recht"
   ],
   "abschluss": [
    {
@@ -603,7 +654,9 @@
   "Quiz",
   "Zuordnen",
   "Lernkarten",
-  "Lückentext"
+  "Lückentext",
+  "Geschichte",
+  "Lesebuch"
  ],
- "version": "2.0.0-b4"
+ "version": "2.0.0-b5"
 }

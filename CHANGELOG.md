@@ -1,7 +1,18 @@
 # Changelog
 
-## Unveröffentlicht
+## 2.0.0-b5 – 2026-10-24 (AP13.4: nachsichtiger Parser, Korrektursätze, Schleife mit Auswegen, Bilder in Stufen, Kontext, Übungen)
 
+- Die Mühle liest Bausteine mit drei bis sechs Rauten, übergeht Trennlinien (`---`), nimmt `Beispiel: Text` in einer Zeile und einen Hinweis nach der Zuordnen-Liste an; eine Frage ohne `MC:` mit ✔-Liste gilt als Multiple Choice.
+- Findet die Mühle in einer Antwort keinen Baustein, nennt sie die ersten drei Gründe mit Zeile und Zitat und bietet denselben Inhalt als Satz für den Chat an.
+- Ohne Jahrgangsstufe schreibt der Chat wie für Jahrgangsstufe 7, und der Rand sagt das.
+- Jeder Korrektursatz nennt Baustein und `id:`, was falsch ist und wie es richtig aussieht, mit dem Beispiel aus der Antwort.
+- Schickt der Chat dieselbe Antwort noch einmal, sagt die Mühle das; nach zwei roten Runden bietet sie drei Wege: Baustein weglassen, selbst anpassen, anderer Chat.
+- Die Chat-Auswahl rät, im Chat das stärkste Modell zu wählen.
+- In Schritt 3 wählst du die Zahl der Bilder (keine, 2 bis 3, 4 bis 7, viele); der Text für den Chat gibt sie vor, zu wenige Bilder ergeben einen Korrektursatz.
+- In Schritt 3 wählst du auch, ob Übungen auf der Kursseite oder als eigene Aktivitäten erscheinen.
+- „Mach du“ hat zwei freiwillige Felder, „Worum geht es genau?“ und Fach; die Angabe steht wörtlich im Text für den Chat, nie im Kurs.
+- Der Typ „automatisch“ bietet auch Geschichte und Lesebuch in Kurzform.
+- Der Rand zählt die Übungstypen; derselbe Typ zweimal hintereinander und angekündigte Teilschritte sind gelb.
 - Das Skill-Zip für Agenten entfällt; der Agentenweg wird die lokale Verbindung zur Mühle.
 - Das öffentliche Repo enthält nur noch die Projektseite mit der Mühle, die README, den CHANGELOG und die Lizenzen.
 - Neue README: kurz, mit Kann/Noch-nicht-Tabelle, Datenschutz, Rückmeldeweg und Lizenz.

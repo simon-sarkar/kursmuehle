@@ -86,7 +86,7 @@ var PY_BRUECKE = [
   "_MAPPE = {'verschiebe', 'entferne', 'umbenennen', 'kennzahlen', 'angaben_lesen', 'angaben_schreiben', 'geplant',",
   "          'planung', 'auffuellen',",
   "          'antwort', 'modus', 'einsetzen', 'anhaengen', 'dateiname'}",
-  "_PROMPT = {'einheit', 'baustein', 'korrektur', 'fragen', 'fachcheck', 'vergleich'}",
+  "_PROMPT = {'einheit', 'baustein', 'korrektur', 'diagnose', 'fragen', 'fachcheck', 'vergleich'}",
   "",
   "def km_mappe(e):",
   "    f = e.get('funktion')",

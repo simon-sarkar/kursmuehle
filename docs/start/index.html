@@ -80,6 +80,15 @@
           <span class="zweig-name">Ich steuere</span>
           <span class="zweig-zeile">Du wählst den Aufbau, schreibst Aufträge zu einzelnen Bausteinen und stellst mehr ein.</span></button>
       </div>
+      <!-- AP13.4: Kontext im Zweig „Mach du“, beide Felder freiwillig; dieselben Angaben wie unter „Mehr einstellen“ -->
+      <div id="mach-teil" class="mach-teil" hidden>
+        <label class="feld feld-breit">Worum geht es genau? <span class="feld-zeile">freiwillig</span>
+          <textarea id="m-kontext" class="von-lehrkraft" rows="3" maxlength="600" spellcheck="true"
+            placeholder="Was sollen die Lernenden danach können? Was ist vorausgesetzt, was nicht?"></textarea>
+        </label>
+        <label class="feld">Fach <span class="feld-zeile">freiwillig</span>
+          <input id="m-fach" type="text" maxlength="60" list="faecher-liste" autocomplete="off"></label>
+      </div>
       <div id="steuer-teil" class="steuer-teil" hidden>
         <h3 class="unterkopf">Aufbau der Einheit</h3>
         <p id="vorlage-zeile" class="leise"></p>
@@ -91,13 +100,16 @@
             <label class="feld">Thema <input id="a-thema" type="text" maxlength="120"></label>
             <label class="feld feld-klein">Jahrgangsstufe <input id="a-jahrgang" type="text" maxlength="12"></label>
             <label class="feld feld-klein">Minuten <input id="a-minuten" type="number" min="10" max="300" step="5"></label>
-            <label class="feld">Fach <input id="a-fach" type="text" maxlength="60"></label>
+            <label class="feld">Fach <input id="a-fach" type="text" maxlength="60" list="faecher-liste" autocomplete="off"></label>
+            <label class="feld feld-breit">Worum geht es genau?
+              <textarea id="a-kontext" class="von-lehrkraft" rows="3" maxlength="600" spellcheck="true"
+                placeholder="Was sollen die Lernenden danach können? Was ist vorausgesetzt, was nicht?"></textarea>
+            </label>
             <label class="feld">Schulart <select id="a-schulart"></select></label>
             <label class="feld">Chat <select id="a-chat"></select></label>
             <label class="feld">Kursformat <select id="a-format"></select></label>
             <label class="feld">Designvorlage <select id="a-vorlage"></select></label>
             <label class="feld">Farbe <select id="a-farbe"></select></label>
-            <label class="feld">Wie erscheinen Übungen? <select id="a-website"></select></label>
             <label class="feld">Abschluss <select id="a-abschluss"></select></label>
             <label class="feld">Umfang <select id="a-portionierung"></select></label>
             <label class="feld feld-breit">Dein Material (Stichpunkte, Heftaufschrieb)
@@ -107,8 +119,8 @@
             </label>
           </div>
         </details>
-        <button type="button" id="weiter-2" class="knopf haupt">Weiter</button>
       </div>
+      <button type="button" id="weiter-2" class="knopf haupt" hidden>Weiter</button>
     </div>
   </section>
 
@@ -124,6 +136,11 @@
           <div id="aus-format" class="kacheln-wahl" role="radiogroup" aria-labelledby="aus-format-t"></div></div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="aus-farbe-t">Farbe</h3>
           <div id="aus-farbe" class="kacheln-wahl farben" role="radiogroup" aria-labelledby="aus-farbe-t"></div></div>
+        <!-- AP13.4: Zahl der Bilder (Steckbrief kurs.bilder) und Darstellung der Übungen (kurs.website) -->
+        <div class="aus-gruppe"><h3 class="unterkopf" id="aus-bilder-t">Bilder</h3>
+          <div id="aus-bilder" class="kacheln-wahl bilder-wahl" role="radiogroup" aria-labelledby="aus-bilder-t"></div></div>
+        <div class="aus-gruppe"><h3 class="unterkopf" id="aus-website-t">Wie erscheinen Übungen?</h3>
+          <div id="aus-website" class="kacheln-wahl breit" role="radiogroup" aria-labelledby="aus-website-t"></div></div>
       </div>
       <button type="button" id="weiter-3" class="knopf haupt">Weiter</button>
     </div>
@@ -137,6 +154,7 @@
       <div id="chat-wahl" class="chat-wahl">
         <p>Wo fügst du den Text ein?</p>
         <div id="chat-knoepfe" class="chat-knoepfe"></div>
+        <p id="chat-modell" class="leise">Wähle im Chat das stärkste Modell, das dir dort offensteht; kleine Modelle (Flash, Mini, Medium, Lite) halten das Format oft nicht ein und brauchen mehr Runden.</p>
         <p class="leise">Über private Konten entscheidet deine Schule.</p>
       </div>
       <div id="chat-text" hidden>
@@ -185,6 +203,8 @@
         <textarea id="eingabe" rows="6" spellcheck="false" placeholder="Hier einfügen (Strg+V oder lange drücken)"></textarea>
         <div class="kopieren"><button type="button" id="eingabe-uebernehmen" class="knopf">Antwort übernehmen</button></div>
         <p id="eingabe-stand" class="stand-karte" role="status" aria-live="polite" hidden></p>
+        <!-- AP13.4: die Antwort ergab keinen Baustein – die ersten drei Meldungen mit Zeile und Zitat, Satz für den Chat -->
+        <div id="eingabe-diagnose" class="stand-karte fehler diagnose-karte" role="status" hidden></div>
       </div>
       <!-- AP13.3: gestückelter Text – Fortschritt, rote Karten erst nach dem letzten Teil -->
       <div id="teil-stand" class="teil-stand" role="status" hidden>
@@ -205,6 +225,7 @@
           <textarea id="korrektur-eingabe" rows="5" spellcheck="false" placeholder="Antwort hier einfügen"></textarea>
           <div class="kopieren"><button type="button" id="korrektur-uebernehmen" class="knopf">Antwort übernehmen</button></div>
           <p id="korrektur-ergebnis" class="stand-karte" role="status" aria-live="polite" hidden></p>
+          <div id="korrektur-diagnose" class="stand-karte fehler diagnose-karte" role="status" hidden></div>
         </div>
       </div>
       <div id="karten-ort-5" class="karten-ort"></div>
@@ -221,6 +242,7 @@
         nur Bilder, an denen du die Rechte hast.</p>
       <p class="leise">Bildgeneratoren schreiben Wörter im Bild oft falsch. Hat ein Bild viele Beschriftungen, lass es mit
         nummerierten Pfeilen erzeugen und schreib die Beschriftungen in die Bildunterschrift.</p>
+      <p id="bilder-stufe" class="bilder-stufe"></p>
       <ol id="bilder-liste" class="bilder-liste"></ol>
       <textarea id="bild-feld" class="unsichtbar" readonly aria-hidden="true" tabindex="-1"></textarea>
       <button type="button" id="weiter-bilder" class="knopf haupt">Weiter</button>
@@ -305,6 +327,7 @@
       <div id="kz-zahl-z" hidden><dt>Bausteine</dt><dd id="kz-zahl">–</dd></div>
       <div><dt>Folge</dt><dd id="kz-folge">–</dd></div>
       <div><dt>Multiple Choice</dt><dd id="kz-mc">–</dd></div>
+      <div><dt>Übungstypen</dt><dd id="kz-uebung">–</dd></div>
       <div><dt>Rückmeldung</dt><dd id="kz-rueckmeldung">–</dd></div>
     </dl>
     <ul id="hinweise" class="hinweise"></ul>
@@ -336,6 +359,7 @@
  <input id="datei-oeffnen" class="unsichtbar" type="file" multiple accept=".zip,application/zip,.md,.yaml,.yml,image/png,image/jpeg">
  <input id="ordner-oeffnen" class="unsichtbar" type="file" multiple webkitdirectory>
  <datalist id="phasen"></datalist>
+ <datalist id="faecher-liste"></datalist>
 </main>
 <footer class="fuss">
   <button type="button" id="fuss-rueckmeldung" class="textlink">Rückmeldung</button>

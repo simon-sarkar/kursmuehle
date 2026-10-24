@@ -330,7 +330,10 @@ window.km = km;
     var st = Z.mappe && Z.mappe.stueckelung;
     return !!(st && st.ids && st.ids.length > 1 && (st.eingefuegt || []).length < st.ids.length);
   }
-  function sichtbareSchritte() { return SCHRITTE.filter(function (n) { return n !== 5.5 || bildwuensche().length > 0; }); }
+  // AP13.4: Bilder-Stufe aus Schritt 3 (Steckbrief kurs.bilder); bei „keine“ bleibt der Schritt Bilder aus
+  function bilderStandard() { var w = katalog && katalog.oberflaeche.bilder.filter(function (x) { return x.standard; })[0]; return w ? w.wert : "2-3"; }
+  function bilderWert() { return angaben.bilder || bilderStandard(); }
+  function sichtbareSchritte() { return SCHRITTE.filter(function (n) { return n !== 5.5 || (bildwuensche().length > 0 && bilderWert() !== "0"); }); }
   function nrVon(n) { return sichtbareSchritte().indexOf(n) + 1; }      // angezeigte Nummer (mit Bildern acht Schritte)
   function inhalt() { return !!(Z.kurs_md && Z.kurs_md.trim()); }
   function fehlerZahl() { return Z.pruefung ? Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler"; }).length : 0; }
@@ -408,7 +411,7 @@ window.km = km;
 
   function auswahlFuellen() {
     var o = katalog.oberflaeche;
-    [["a-format", o.format], ["a-vorlage", o.vorlage], ["a-farbe", o.farbe], ["a-website", o.website],
+    [["a-format", o.format], ["a-vorlage", o.vorlage], ["a-farbe", o.farbe],
      ["a-abschluss", o.abschluss], ["a-portionierung", o.portionierung], ["a-schulart", o.schulart]].forEach(function (p) {
       var s = $(p[0]); s.innerHTML = "";
       p[1].forEach(function (w) { s.appendChild(el("option", { value: w.wert, text: w.text })); });
@@ -432,6 +435,8 @@ window.km = km;
     var neu = $("neu-typ"), auswahl = typAuswahl(AUTO, "");
     neu.innerHTML = auswahl.innerHTML;
     neu.value = AUTO;
+    var fl = $("faecher-liste"); fl.innerHTML = "";
+    (o.faecher || []).forEach(function (f) { fl.appendChild(el("option", { value: f })); });
     var phasen = $("phasen"), gesehen = {};
     phasen.innerHTML = "";
     katalog.vorlagen.forEach(function (v) { v.phasen.forEach(function (p) {
@@ -448,7 +453,8 @@ window.km = km;
       var n = Z.mappe.bausteine.filter(function (k) { return !k.aus; }).length;
       return [z, e.vorlage, zweig() === "steuer" ? n + " Bausteine" : ""].filter(Boolean).join(" · ");
     }
-    if (n === 3) return [oberText("vorlage", angaben.vorlage), oberText("format", angaben.format), oberText("farbe", angaben.farbe || "")].filter(Boolean).join(" · ");
+    if (n === 3) return [oberText("vorlage", angaben.vorlage), oberText("format", angaben.format), oberText("farbe", angaben.farbe || ""),
+      "Bilder: " + oberText("bilder", bilderWert()), oberText("website", angaben.website || "textfeld")].filter(Boolean).join(" · ");
     if (n === 4) { var c = chatInfo(Z.mappe.chat); return c ? c.text + (Z.mappe.kopiert ? " · Text kopiert" : "") : ""; }
     if (n === 5) {
       var voll = Z.mappe.bausteine.filter(function (k) { return !k.geplant && (k.einheit || "") === einheitTag(); }).length, f = fehlerZahl();
@@ -505,8 +511,9 @@ window.km = km;
     // Zweig 2: Kacheln, darunter im Zweig „Ich steuere“ Vorlagen, Karten und „Mehr einstellen“
     ["mach", "steuer"].forEach(function (w) { $("zweig-" + w).setAttribute("aria-pressed", String(z === w)); });
     $("steuer-teil").hidden = z !== "steuer";
+    $("mach-teil").hidden = z !== "mach";
     $("vorlagen").hidden = inhalt();
-    $("weiter-2").hidden = s > 2;
+    $("weiter-2").hidden = s > 2 || !z;
     $("weiter-3").hidden = s > 3;
     // Karten: im Zweig „Ich steuere“ unter Schritt 2, bis die erste Antwort da ist; danach unter Schritt 5 (beide Zweige)
     var ort = inhalt() ? $("karten-ort-5") : $("karten-ort-2");
@@ -662,7 +669,7 @@ window.km = km;
   async function steckbriefAnlegen() {
     var o = katalog.oberflaeche, e = (Z.mappe && Z.mappe.einheit) || {};
     Z.steckbrief_text = await km.mappeFn("angaben_schreiben", ["", {
-      thema: e.thema || "", jahrgang: e.jahrgang || "", minuten: e.minuten || "", fach: "",
+      thema: e.thema || "", jahrgang: e.jahrgang || "", minuten: e.minuten || "", fach: "", bilder: bilderStandard(),
       format: o.format[0].wert, vorlage: o.vorlage[0].wert, farbe: o.farbe[0].wert, website: o.website[0].wert,
       abschluss: o.abschluss[0].wert, portionierung: o.portionierung[0].wert }]);
   }
@@ -712,6 +719,7 @@ window.km = km;
     $("chat-text-feld").value = ""; $("gegen-text-feld").value = ""; $("gegen-antwort").value = "";
     $("gegen-ergebnis").innerHTML = ""; $("gegen-stand").textContent = ""; $("kopiert").textContent = "";
     $("eingabe-stand").textContent = ""; $("infobox").hidden = true; $("importiert-stand").hidden = true;
+    diagnoseKarte($("eingabe-diagnose"), null); diagnoseKarte($("korrektur-diagnose"), null);
     document.querySelector("input[name=text-art][value=einheit]").checked = true;
   }
 
@@ -771,7 +779,9 @@ window.km = km;
     var b = ev.target.closest("[data-zweig]"); if (!b || !Z.mappe) return;
     Z.mappe.zweig = b.dataset.zweig;
     if (b.dataset.zweig === "mach") {
-      if (schritt() <= 2) gehe(nachZwei()); else { zeichne(); geaendert(); }
+      // AP13.4: unter der Wahl zwei freiwillige Felder (Worum geht es genau?, Fach), dann „Weiter“
+      if (schritt() <= 2) { zeichne(); geaendert(); $("m-kontext").focus({ preventScroll: true }); }
+      else { auf[2] = true; zeichne(); geaendert(); }
     } else {
       if (schritt() <= 2) { zeichne(); geaendert(); var k = $("vorlagen").querySelector("button"); if (k && !inhalt()) k.focus({ preventScroll: true }); }
       else { auf[2] = true; zeichne(); geaendert(); }
@@ -833,11 +843,12 @@ window.km = km;
     }
     return s + "</svg>";
   }
-  function kachel(gruppe, wert, text, mini, gewaehlt) {
+  function kachel(gruppe, wert, text, mini, gewaehlt, zeile) {
     var b = el("button", { type: "button", cls: "aus-kachel", role: "radio", "aria-checked": String(gewaehlt), "data-feld": gruppe, "data-wert": wert });
     var m = el("span", { cls: "aus-mini" }); m.innerHTML = mini;      // eigenes SVG, keine Eingabe
     b.appendChild(m);
     b.appendChild(el("span", { cls: "aus-name", text: text }));
+    if (zeile) b.appendChild(el("span", { cls: "aus-zeile", text: zeile }));
     return b;
   }
   // Kacheln werden einmal gebaut und danach nur umgeschaltet (aria-checked, Miniatur bei neuer Farbe): ein Neubau zwischen
@@ -846,7 +857,7 @@ window.km = km;
     var alt = box.querySelectorAll(".aus-kachel");
     if (alt.length !== werte.length || werte.some(function (w, i) { return alt[i].dataset.wert !== w.wert; })) {
       box.innerHTML = "";
-      werte.forEach(function (w) { box.appendChild(kachel(gruppe, w.wert, w.text, "", false)); });
+      werte.forEach(function (w) { box.appendChild(kachel(gruppe, w.wert, w.text, "", false, w.zeile)); });
     }
     Array.prototype.forEach.call(box.querySelectorAll(".aus-kachel"), function (b, i) {
       b.setAttribute("aria-checked", String(werte[i].wert === gewaehlt));
@@ -864,6 +875,26 @@ window.km = km;
       return '<svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><circle cx="20" cy="20" r="16" fill="'
         + (FARBEN[w] || STANDARD_FARBE) + '"/>' + (w ? "" : '<circle cx="20" cy="20" r="7" fill="#fff"/>') + "</svg>";
     }, angaben.farbe || "");
+    kachelGruppe($("aus-bilder"), "bilder", o.bilder, miniBilder, bilderWert());
+    kachelGruppe($("aus-website"), "website", o.website, function (w) { return miniWebsite(w, hue); }, angaben.website || "textfeld");
+  }
+  // AP13.4: Miniaturen für die Bilder-Stufe (Zahl der Bildflächen) und die Darstellung der Übungen
+  function miniBilder(wert) {
+    var n = { "0": 0, "2-3": 2, "4-7": 4, "8+": 8 }[wert] || 0, s = '<svg viewBox="0 0 120 76" aria-hidden="true" focusable="false"><rect width="120" height="76" fill="#fff"/>';
+    if (!n) s += '<rect x="20" y="20" width="80" height="36" rx="3" fill="none" stroke="#C3C8D2" stroke-dasharray="4 3"/>';
+    for (var i = 0; i < n; i++) {
+      var sp = n > 4 ? 4 : n, x = 8 + (i % sp) * (104 / sp), y = n > 4 ? 8 + Math.floor(i / 4) * 32 : 20;
+      s += '<rect x="' + x + '" y="' + y + '" width="' + (104 / sp - 6) + '" height="' + (n > 4 ? 28 : 36) + '" rx="3" fill="#D5DAE3"/>';
+    }
+    return s + "</svg>";
+  }
+  function miniWebsite(wert, hue) {
+    var s = '<svg viewBox="0 0 120 50" aria-hidden="true" focusable="false"><rect width="120" height="50" fill="#fff"/>'
+      + '<rect x="8" y="6" width="70" height="4" rx="1" fill="#0B1220"/>';
+    if (wert === "textfeld") s += '<rect x="8" y="16" width="104" height="28" rx="4" fill="' + mischen(hue, 0.16) + '"/>'
+      + '<rect x="14" y="23" width="40" height="3" rx="1" fill="#5B6475"/><rect x="14" y="31" width="60" height="3" rx="1" fill="#C3C8D2"/>';
+    else [16, 31].forEach(function (y) { s += '<rect x="8" y="' + y + '" width="104" height="12" rx="3" fill="#F2F4F7"/><rect x="14" y="' + (y + 4) + '" width="9" height="4" rx="1" fill="' + hue + '"/><rect x="28" y="' + (y + 4) + '" width="40" height="3" rx="1" fill="#5B6475"/>'; });
+    return s + "</svg>";
   }
   $("schritt-3").addEventListener("click", function (ev) {
     var b = ev.target.closest(".aus-kachel"); if (!b || !Z.mappe) return;
@@ -891,7 +922,7 @@ window.km = km;
       if (!Z.steckbrief_text) await steckbriefAnlegen();
       Z.steckbrief_text = await km.mappeFn("angaben_schreiben", [Z.steckbrief_text, a]);
       Object.assign(angaben, a);
-      if (mitStand) await km.stand(Z.kurs_md);
+      if (mitStand) { await km.stand(Z.kurs_md); if (inhalt()) { await auswertung(); zeichne(); } }   // AP13.4: Bilder-Stufe ändert die Prüfung
       zeichneAussehen(); zeichneSchritte();
       geaendert();
     } catch (e) { zeigeFehler(e); }
@@ -932,7 +963,7 @@ window.km = km;
       var k = await km.mappeFn("kennzahlen", [mappe, pruefung, null, Z.steckbrief_text]);
       if (mappe !== Z.mappe || pruefung !== Z.pruefung) return;     // inzwischen neu geprüft oder andere Kursdatei
       Z.kennzahlen = k;
-      zeichneDiagnosen();
+      zeichneDiagnosen(); zeichneBilder();
     }, 300);
   }
 
@@ -975,7 +1006,8 @@ window.km = km;
     var e = Z.mappe.einheit || {};
     var werte = { "a-thema": e.thema || angaben.thema || "", "a-jahrgang": e.jahrgang || angaben.jahrgang || "",
       "a-minuten": e.minuten || angaben.minuten || "", "a-fach": angaben.fach || "", "a-schulart": angaben.schulart || "",
-      "a-format": angaben.format, "a-vorlage": angaben.vorlage, "a-farbe": angaben.farbe, "a-website": angaben.website,
+      "m-fach": angaben.fach || "", "a-kontext": angaben.kontext || "", "m-kontext": angaben.kontext || "",
+      "a-format": angaben.format, "a-vorlage": angaben.vorlage, "a-farbe": angaben.farbe,
       "a-abschluss": angaben.abschluss, "a-portionierung": angaben.portionierung, "a-chat": Z.mappe.chat || "",
       "a-material": Z.mappe.material || "", "f-thema": e.thema || "", "f-jahrgang": e.jahrgang || "", "f-minuten": e.minuten || 45 };
     if (Z.mappe.anhaengen && !Z.mappe.bausteine.some(function (k) { return k.einheit === Z.mappe.anhaengen; })) {
@@ -1060,6 +1092,8 @@ window.km = km;
             el("input", { type: "file", cls: "unsichtbar bild-datei", accept: "image/png,image/jpeg", "data-datei": b.datei })])]) : null,
         el("p", { cls: "stand bild-stand", role: "status" })]));
     });
+    var bz = Z.kennzahlen && Z.kennzahlen.bilder;
+    $("bilder-stufe").textContent = bz ? bz.stufe.charAt(0).toUpperCase() + bz.stufe.slice(1) + " gewählt, " + bz.zahl + " im Text" : "";
     $("weiter-bilder").textContent = fehlen ? "Ohne Bild weiter" : "Weiter";
     $("bilder-stand").textContent = !w.length ? "" : fehlen
       ? (fehlen === 1 ? "Ein Bild fehlt" : fehlen + " Bilder fehlen") + "; im Kurs steht dort ein grauer Platzhalter, bis du es nachlieferst."
@@ -1143,10 +1177,10 @@ window.km = km;
       var abschnitt = mehrere && k.abschnitt && k.abschnitt !== letzter ? el("p", { cls: "k-abschnitt", text: "Abschnitt " + k.abschnitt }) : null;
       if (k.abschnitt) letzter = k.abschnitt;
       var b = pruefBaustein(k.id);
-      var st = k.geplant ? "leer" : (b ? b.status : "leer");
+      var st = k.weggelassen ? "weggelassen" : k.geplant ? "leer" : (b ? b.status : "leer");
       var warten = st === "fehler" && teileOffen();     // AP13.3: rot erst, wenn alle Teile eingefügt sind
       if (warten) st = "wartet";
-      var stText = { ok: "Geprüft", warnung: "Hinweis", fehler: "Fehler", leer: "Noch ohne Inhalt", wartet: "Eingefügt" }[st];
+      var stText = { ok: "Geprüft", warnung: "Hinweis", fehler: "Fehler", leer: "Noch ohne Inhalt", wartet: "Eingefügt", weggelassen: "Weggelassen" }[st];
       var minuten = mitMinuten(k.typ);
       // Typ: „Ich steuere“ native Auswahl nach Rolle, „Mach du“ eine Beschriftung (Klick wechselt den Zweig)
       var typFeld = k.geplant && steuer ? typAuswahl(k.typ, "Typ von Baustein " + (i + 1))
@@ -1158,6 +1192,9 @@ window.km = km;
           diag.appendChild(el("li", { cls: d.stufe, "data-regel": d.regel || "", text: (d.zeile_im_baustein ? "Zeile " + d.zeile_im_baustein + ": " : "") + d.text }));
         });
       }
+      // AP13.4: derselbe Text wie in der Runde davor
+      var sl = schleife()[k.id];
+      if (sl && sl.gleich && st === "fehler") diag.appendChild(el("li", { cls: "warnung k-gleich", text: "Die Antwort für „" + k.titel + "“ ist dieselbe wie vorher (Runde " + sl.rot + ")." }));
       // Ist-Minuten aus dem Inhalt (Rolle und Jahrgang); Zeitfelder und die Lücke nur mit „Zeitplanung anzeigen“
       var z = zeitInfo[k.id], ist = null;
       if (minuten && z && z.gerechnet) {
@@ -1178,7 +1215,7 @@ window.km = km;
           el("input", { type: "file", cls: "unsichtbar k-bild", accept: "image/png,image/jpeg", "data-datei": name })]);
       })) : null;
       var herkunft = titelHerkunft(k);
-      if (k.aus && !steuer) return;                  // ausgeschaltete Karte: nur in „Ich steuere“ sichtbar
+      if (k.aus && !steuer && !k.weggelassen) return;  // ausgeschaltete Karte: nur in „Ich steuere“ sichtbar
       if (steuer && k.geplant) ol.appendChild(plus(i));
       var li = el("li", { cls: "karte status-" + st + (k.neu ? " neu" : "") + (minuten ? "" : " struktur") + (k.aus ? " aus" : ""), "data-id": k.id, id: "karte-" + k.id }, [
         abschnitt,
@@ -1191,13 +1228,14 @@ window.km = km;
           el("label", { cls: "k-phase-l" }, ["Phase ", el("input", { cls: "k-phase", type: "text", list: "phasen", value: k.phase || "" })]),
           el("label", { cls: "k-soll-l" }, ["Soll ", el("input", { cls: "k-soll", type: "number", min: "0", max: "300", inputmode: "numeric",
             value: k.soll === null || k.soll === undefined ? "" : k.soll }), " min"]), ist]) : null,
-        k.geplant && steuer && (k.aus || isOptional(k)) ? el("label", { cls: "schalter k-an-l" }, [el("input", { type: "checkbox", cls: "k-an", checked: !k.aus }),
+        k.geplant && steuer && !k.weggelassen && (k.aus || isOptional(k)) ? el("label", { cls: "schalter k-an-l" }, [el("input", { type: "checkbox", cls: "k-an", checked: !k.aus }),
           k.aus ? "Freiwillig, ausgeschaltet: einschalten" : "Freiwillig: verwenden"]) : null,
         steuer && !k.aus ? el("label", { cls: "k-auftrag-l" }, [el("span", { cls: "unsichtbar", text: "Auftrag für Baustein " + (i + 1) }),
           el("textarea", { cls: "k-auftrag von-lehrkraft", rows: "1", placeholder: "Was soll hinein? Ein Satz genügt (optional)" })]) : null,
         diag,
         korrektur.length && !warten ? el("p", { cls: "k-korrektur" }, [
           el("a", { href: "#korrektur", cls: "k-zur-korrektur", "data-aktion": "zur-korrektur", text: "Zur Korrektur unter dem Feld" })]) : null,
+        st === "fehler" && ausweg(k.id) ? auswegBlock(k, b) : null,
         hochladen, inhaltEl,
         steuer ? el("div", { cls: "k-aktionen" }, [
           el("button", { type: "button", cls: "k-hoch klein", "data-aktion": "hoch", "aria-label": "Baustein " + (i + 1) + " nach oben", disabled: i === 0, text: "↑" }),
@@ -1207,6 +1245,8 @@ window.km = km;
           el("button", { type: "button", cls: "k-loeschen klein", "data-aktion": "loeschen", text: "Löschen" })]) : null]);
       var auftrag = li.querySelector(".k-auftrag");
       if (auftrag) auftrag.value = k.auftrag || "";
+      var eigenes = li.querySelector(".ausweg-text");
+      if (eigenes) eigenes.value = selbst[k.id].text;
       ol.appendChild(li);
     });
     if (steuer && liste.length && liste[liste.length - 1].geplant) ol.appendChild(plus(liste.length));
@@ -1216,12 +1256,116 @@ window.km = km;
     $("zeit-schalter").hidden = !steuer;
   }
 
+  // ---------------------------------------------------------------- Schleife und Auswege (AP13.4 §3)
+  // Je id merkt sich die Mappe den Hash des zuletzt eingefügten Texts (ohne Leerraum) und zählt die Korrekturrunden, nach
+  // denen der Baustein rot blieb (`rot`), davon mit demselben Text (`gleich`). Ab zwei roten Runden stehen unter der Karte
+  // drei Wege: weglassen, selbst anpassen, anderer Chat.
+  var selbst = {};                    // id -> {text, meldungen}: offenes Feld „Selbst anpassen“
+  function schleife() { return Z.mappe ? (Z.mappe.schleife = Z.mappe.schleife || {}) : {}; }
+  function ausweg(id) { var e = schleife()[id]; return !!e && e.rot >= 2; }
+  function textHash(t) {
+    var s = String(t || "").replace(/\s+/g, ""), h = 5381;
+    for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+    return (h >>> 0).toString(36) + "." + s.length;
+  }
+  // Nach dem Einsetzen: `runde` = Antwort auf eine Korrektur (zählt), sonst eine neue Antwort im Hauptfeld (setzt zurück,
+  // außer der Text ist derselbe wie vorher). -> Titel der Bausteine, deren Text derselbe ist wie vorher
+  function schleifeMerken(ids, runde) {
+    var sl = schleife(), gleich = [];
+    ids.forEach(function (id) {
+      var b = pruefBaustein(id); if (!b) return;
+      var h = textHash(b.text), e = sl[id];
+      if (b.status !== "fehler") { delete sl[id]; return; }
+      var same = !!e && e.hash === h;
+      // eine neue Antwort im Hauptfeld fängt neu an, außer sie bringt denselben Text wie vorher
+      if (!runde && !same) { sl[id] = { hash: h, gleich: 0, rot: 0 }; return; }
+      if (!e) { sl[id] = { hash: h, gleich: 0, rot: 1 }; return; }
+      sl[id] = { hash: h, gleich: (e.gleich || 0) + (same ? 1 : 0), rot: (e.rot || 0) + 1 };
+      if (same) gleich.push(b.titel);
+    });
+    return gleich;
+  }
+  function auswegBlock(k, b) {
+    var offen = selbst[k.id];
+    var weg = function (aktion, titel, satz) {
+      return el("div", { cls: "ausweg-weg" }, [el("p", {}, [el("strong", { text: titel + ". " }), satz]),
+        el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": aktion, text: titel })]);
+    };
+    var kinder = [el("p", { cls: "ausweg-titel", text: "So geht es weiter" }),
+      weg("weglassen", "Baustein weglassen", "Die Einheit kommt ohne ihn aus; die Minuten stehen als Hinweis am Rand."),
+      weg("selbst", "Selbst anpassen", "Du änderst den Text hier und übernimmst ihn; die Mühle prüft beim Schreiben."),
+      weg("anderer-chat", "Anderer Chat", "Der Text für diesen Baustein liegt im Korrekturblock bereit; füge ihn in einem anderen Chat ein.")];
+    if (offen) {
+      kinder.push(el("label", { cls: "feld ausweg-feld" }, ["Kursdatei-Ausschnitt dieses Bausteins",
+        el("textarea", { cls: "ausweg-text", rows: "8", spellcheck: "false" })]));
+      kinder.push(el("ul", { cls: "ausweg-pruefung" }, (offen.meldungen || []).map(function (m) { return el("li", { cls: m.stufe, text: m.text }); })));
+      kinder.push(el("button", { type: "button", cls: "knopf", "data-aktion": "selbst-uebernehmen", text: "Übernehmen" }));
+    }
+    return el("div", { cls: "ausweg", role: "group", "aria-label": "So geht es weiter" }, kinder);
+  }
+  var selbstTimer = null;
+  async function selbstPruefen(id, text) {
+    var pr = await km.mappeFn("antwort", [text]);
+    var m = pr.diagnosen.filter(function (d) { return d.stufe !== "hinweis"; }).map(function (d) {
+      return { stufe: d.stufe, text: (d.zeile_im_baustein ? "Zeile " + d.zeile_im_baustein + ": " : "") + d.text };
+    });
+    if (!pr.bausteine.length) m.unshift({ stufe: "fehler", text: "Kein Baustein: die erste Zeile ist die Überschrift `### Typ: Titel`." });
+    if (!m.length) m = [{ stufe: "ok", text: "Geprüft, keine Fehler." }];
+    if (!selbst[id]) return;
+    selbst[id].meldungen = m;
+    var ul = document.querySelector("#karte-" + CSS.escape(id) + " .ausweg-pruefung");
+    if (ul) { ul.innerHTML = ""; m.forEach(function (x) { ul.appendChild(el("li", { cls: x.stufe, text: x.text })); }); }
+  }
+  async function auswegAktion(a, k) {
+    var b = pruefBaustein(k.id);
+    if (a === "weglassen") {
+      rueckgaengig = { mappe: JSON.parse(JSON.stringify(Z.mappe)), kurs_md: Z.kurs_md, titel: k.titel };
+      var z = (Z.kennzahlen && Z.kennzahlen.zeit && Z.kennzahlen.zeit[k.id]) || {};
+      var minuten = (zeitSelbst() ? k.soll || (b && b.minuten) : (b && b.minuten) || z.gerechnet) || k.soll || 0;
+      await km.bereit();
+      Z.kurs_md = await km.mappeFn("entferne", [Z.kurs_md, k.id]);
+      k.geplant = true; k.aus = true; k.weggelassen = { minuten: minuten }; k.neu = false;
+      delete schleife()[k.id]; delete selbst[k.id];
+      await km.stand(Z.kurs_md);
+      await auswertung();
+      zeichne(); geaendert();
+      $("rueckgaengig-text").textContent = "„" + k.titel + "“ weggelassen.";
+      $("rueckgaengig").hidden = false;
+      $("rueckgaengig-knopf").focus();
+    } else if (a === "selbst") {
+      if (selbst[k.id]) { delete selbst[k.id]; zeichneKarten(); return; }
+      selbst[k.id] = { text: b ? b.text : "", meldungen: [] };
+      zeichneKarten();
+      var f = document.querySelector("#karte-" + CSS.escape(k.id) + " .ausweg-text");
+      if (f) f.focus();
+      selbstPruefen(k.id, selbst[k.id].text);
+    } else if (a === "selbst-uebernehmen") {
+      var text = (selbst[k.id] || {}).text || "";
+      if (!text.trim()) return;
+      await km.bereit();
+      var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, text, k.id, true]);
+      if (!r.ersetzt.length && !r.eingefuegt.length) { selbst[k.id].meldungen = [{ stufe: "fehler", text: r.fehler.join(" ") || "Der Text ergibt keinen Baustein." }]; zeichneKarten(); return; }
+      await km.stand(r.kurs_md);
+      delete selbst[k.id]; delete schleife()[k.id];
+      await auswertung();
+      zeichne(); geaendert();
+      status("Baustein übernommen", "ok");
+    } else if (a === "anderer-chat") {
+      k.neu = true; delete schleife()[k.id];
+      korrektur.text = ""; korrektur.offen = false;
+      korrektur.stand = "Der Text für „" + k.titel + "“ steht oben im Korrekturblock. Wähle einen anderen Chat, kopiere ihn dort hinein und füge die Antwort hier ein.";
+      korrektur.art = "";
+      zeichne(); geaendert(); korrekturSpaeter(0);
+      $("chat-aendern").click();
+    }
+  }
+
   function zeichneDiagnosen() {
     var k = Z.kennzahlen;
     zeichnePlanung();
     var setze = function (id, wert, warn) { var e = $(id); e.textContent = wert; e.parentNode.classList.toggle("warn", !!warn); };
     if (!k) {
-      ["kz-minuten", "kz-folge", "kz-mc", "kz-rueckmeldung"].forEach(function (id) { setze(id, "–"); $(id).parentNode.hidden = false; });
+      ["kz-minuten", "kz-folge", "kz-mc", "kz-rueckmeldung", "kz-uebung"].forEach(function (id) { setze(id, "–"); $(id).parentNode.hidden = false; });
       $("kz-zahl-z").hidden = true;
       $("hinweise").innerHTML = ""; $("hinweise-mehr").hidden = true;
       return;
@@ -1230,7 +1374,7 @@ window.km = km;
     // vor der ersten Antwort gibt es keine Ist-Minuten: nur „45 Minuten geplant“ und die Zahl der Bausteine
     $("kz-minuten-t").textContent = vorher ? "Geplant" : "Minuten";
     $("kz-zahl-z").hidden = !vorher;
-    ["kz-folge", "kz-mc", "kz-rueckmeldung"].forEach(function (id) { $(id).parentNode.hidden = vorher; });
+    ["kz-folge", "kz-mc", "kz-rueckmeldung", "kz-uebung"].forEach(function (id) { $(id).parentNode.hidden = vorher; });
     $("kz-zahl").textContent = String(k.bausteine);
     if (vorher) {
       var e = $("kz-minuten"); e.innerHTML = ""; e.parentNode.classList.remove("warn");
@@ -1244,6 +1388,8 @@ window.km = km;
     var f = k.fragen;
     setze("kz-mc", f.fragen ? k.mc_anteil + " % von " + f.fragen + " Fragen" : "keine Fragen", f.fragen && k.mc_anteil > 50);
     setze("kz-rueckmeldung", f.auswahl ? f.rueckmeldung + " von " + f.auswahl + " Auswahlfragen" : "–", f.auswahl && f.rueckmeldung < f.auswahl / 2);
+    var u = k.uebungstypen || { zahl: 0, von: 0 };       // AP13.4: verschiedene Übungstypen gegen die angebotenen
+    setze("kz-uebung", u.von ? u.zahl + " von " + u.von : "–", u.warn);
     var ul = $("hinweise"); ul.innerHTML = "";
     var alleH = teileOffen() ? k.hinweise.filter(function (h) { return h.stufe !== "fehler"; }) : k.hinweise;   // rot erst nach dem letzten Teil
     var liste = hinweiseAlle ? alleH : alleH.slice(0, 3);
@@ -1472,6 +1618,13 @@ window.km = km;
   $("karten").addEventListener("input", function (ev) {
     var k = karteVon(ev.target); if (!k) return;
     var c = ev.target.classList;
+    if (c.contains("ausweg-text")) {
+      if (selbst[k.id]) selbst[k.id].text = ev.target.value;
+      clearTimeout(selbstTimer);
+      var id = k.id, t = ev.target.value;
+      selbstTimer = setTimeout(function () { selbstPruefen(id, t).catch(zeigeFehler); }, 400);
+      return;
+    }
     if (c.contains("k-phase")) k.phase = ev.target.value;
     else if (c.contains("k-soll")) k.soll = ev.target.value === "" ? null : Math.max(0, parseInt(ev.target.value, 10) || 0);
     else if (c.contains("k-auftrag")) {
@@ -1533,6 +1686,7 @@ window.km = km;
     var liste = Z.mappe.bausteine, i = liste.indexOf(k), a = knopf.dataset.aktion;
     try {
       if (a === "zur-korrektur") { ev.preventDefault(); zurKorrektur(); }
+      else if (["weglassen", "selbst", "selbst-uebernehmen", "anderer-chat"].indexOf(a) >= 0) await auswegAktion(a, k);
       else if (a === "neu") {
         // „Diesen Baustein neu beauftragen“ (AP13.3): markiert die Karte; Text, Antwort und Einsetzen laufen über den
         // einen Korrekturblock, mehrere Karten zugleich
@@ -1627,8 +1781,8 @@ window.km = km;
 
   // ---------------------------------------------------------------- Kursangaben („Mehr einstellen“)
   var FELDER = { "a-thema": "thema", "a-jahrgang": "jahrgang", "a-minuten": "minuten", "a-fach": "fach", "a-schulart": "schulart",
-    "a-format": "format", "a-vorlage": "vorlage", "a-farbe": "farbe", "a-website": "website", "a-abschluss": "abschluss",
-    "a-portionierung": "portionierung" };
+    "a-format": "format", "a-vorlage": "vorlage", "a-farbe": "farbe", "a-abschluss": "abschluss",
+    "a-portionierung": "portionierung", "a-kontext": "kontext" };
   $("mehr").addEventListener("change", async function (ev) {
     if (!Z.mappe) return;
     if (ev.target.id === "a-chat") {
@@ -1649,6 +1803,16 @@ window.km = km;
     var a = {}; a[feld] = wert;
     angabenSchreiben(a, feld === "farbe" || feld === "vorlage");
   });
+  // AP13.4: Kontext in „Mach du“ (Worum geht es genau?, Fach) schreibt dieselben Angaben wie „Mehr einstellen“
+  var kontextTimer = null, kontextOffen = {};
+  function kontextSchreiben(feld, wert) {
+    if (!Z.mappe) return;
+    angaben[feld] = wert; kontextOffen[feld] = wert;
+    clearTimeout(kontextTimer);
+    kontextTimer = setTimeout(function () { var a = kontextOffen; kontextOffen = {}; angabenSchreiben(a); textSpaeter(); }, 400);
+  }
+  $("m-kontext").addEventListener("input", function () { kontextSchreiben("kontext", $("m-kontext").value); });
+  $("m-fach").addEventListener("input", function () { kontextSchreiben("fach", $("m-fach").value.trim()); });
   $("a-material").addEventListener("input", function () {
     if (!Z.mappe) return;
     Z.mappe.material = $("a-material").value;
@@ -1690,6 +1854,36 @@ window.km = km;
     e.hidden = !text; e.textContent = text || "";
     e.className = "stand-karte" + (art ? " " + art : "");
   }
+  // Antwort ohne Bausteine (AP13.4, gen/prompt.py diagnose): ohne Überschrift und Typzeile der bisherige Satz, sonst die
+  // ersten drei Meldungen des Parsers mit Zeile und Zitat und derselbe Inhalt als Satz für den Chat zum Kopieren
+  function mitCode(text) {
+    var out = [];
+    String(text || "").split("`").forEach(function (t, i) { if (t) out.push(i % 2 ? el("code", { text: t }) : t); });
+    return out;
+  }
+  function diagnoseKarte(box, d) {
+    box.innerHTML = "";
+    box.hidden = !d;
+    if (!d) return;
+    if (d.leer) {
+      box.appendChild(el("p", { text: "Im Text stehen keine Bausteine. " + (d.tipp ? d.tipp + "." : "Kopiere die ganze Antwort mit dem Kopierknopf des Chats.") }));
+      return;
+    }
+    box.appendChild(el("p", { text: "Die Mühle findet in der Antwort keinen Baustein:" }));
+    box.appendChild(el("ul", {}, d.meldungen.map(function (m) {
+      return el("li", { cls: "diagnose-zeile" }, [m.zeile ? "Zeile " + m.zeile + ": " : "", m.zitat ? el("code", { text: m.zitat }) : null,
+        m.zitat ? ", " : ""].concat(mitCode(m.text)));
+    })));
+    var feld = el("textarea", { cls: "unsichtbar", readonly: true, "aria-hidden": "true", tabindex: "-1" });
+    feld.value = d.satz;
+    var stand = el("p", { cls: "stand", role: "status" });
+    var knopf = el("button", { type: "button", cls: "knopf diagnose-kopieren", text: "Satz für den Chat kopieren" });
+    knopf.onclick = function () { kopieren(d.satz, feld, stand, "Kopiert. Füge ihn in deinen Chat ein und die Antwort hier ein."); };
+    box.appendChild(el("div", { cls: "kopieren" }, [knopf]));
+    box.appendChild(stand);
+    box.appendChild(feld);
+  }
+
   // Hat die Lehrkraft den eigenen Satz oder Text der Mühle eingefügt statt der Antwort des Chats?
   function eigenerText(text) {
     var t = String(text || "").trim();
@@ -1749,16 +1943,15 @@ window.km = km;
     var text = modusErzwungen && letzteAntwort ? letzteAntwort.text : $("eingabe").value;
     if (!text.trim()) return;
     var eigen = !modusErzwungen && eigenerText(text);
-    if (eigen) { standKarte($("eingabe-stand"), EIGEN[eigen], "fehler"); return; }
+    if (eigen) { diagnoseKarte($("eingabe-diagnose"), null); standKarte($("eingabe-stand"), EIGEN[eigen], "fehler"); return; }
     try {
       await km.bereit();
       var modus = modusErzwungen, mo = null;
       if (!modus) {
         mo = await km.mappeFn("modus", [Z.mappe, text]);
         if (mo.modus === "keine") {
-          var p = await km.anfrage("pruefe", { text: text, assets: Z.assets, steckbrief: Z.steckbrief_text });
-          var tipp = p.ergebnis.diagnosen.filter(function (d) { return d.art === "eingabe"; }).map(function (d) { return d.text; })[0];
-          standKarte($("eingabe-stand"), "Im Text stehen keine Bausteine. " + (tipp ? tipp + "." : "Kopiere die ganze Antwort mit dem Kopierknopf des Chats."), "fehler");
+          standKarte($("eingabe-stand"), "");
+          diagnoseKarte($("eingabe-diagnose"), await km.prompt("diagnose", [text]));
           return;
         }
         // nächste Einheit, die noch ohne Inhalt ist: anhängen statt in die erste Einheit einsetzen
@@ -1767,6 +1960,7 @@ window.km = km;
         setzeModus(modus);
         letzteAntwort = { text: text, vorher: { mappe: JSON.parse(JSON.stringify(Z.mappe)), kurs_md: Z.kurs_md } };
       }
+      diagnoseKarte($("eingabe-diagnose"), null);
       var e = await einsetzen(text, modus, letzteAntwort.vorher);
       if (!e.ok) {
         standKarte($("eingabe-stand"), e.text, "fehler");
@@ -1777,6 +1971,8 @@ window.km = km;
       Z.mappe.durchsicht = false;
       if (schritt() > 5 || schritt() < 5) { Z.mappe.schritt = 5; auf = {}; }      // neuer Inhalt: ab Schritt 5 neu durchsehen
       await auswertung();
+      // AP13.4: Hash je Baustein merken; einzelne Bausteine zählen als Runde, eine ganze Einheit fängt neu an
+      var gleichE = schleifeMerken(e.ids || Z.pruefung.bausteine.map(function (b) { return b.id; }), false);
       zeichne(); geaendert();
       $("eingabe").value = "";
       var st = Z.mappe.stueckelung, mehr = "";
@@ -1790,6 +1986,7 @@ window.km = km;
       var rot = Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler" && (!e.ids || e.ids.indexOf(b.id) >= 0); }).length;
       var aussen = Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler" && !d.baustein; }).length;
       if (rot || aussen) mehr = " Unter dem Feld steht die Korrektur: „Korrektur anfordern“ kopiert die Bitte für den Chat.";
+      if (gleichE.length) mehr = " Die Antwort für „" + gleichE[0] + "“ ist dieselbe wie vorher." + mehr;
       standKarte($("eingabe-stand"), "Übernommen (" + MODUS_TEXT[modus] + "): " + e.n + (e.n === 1 ? " Baustein" : " Bausteine")
         + (rot ? ", davon " + rot + " mit Fehler (rot)." : aussen ? "." : ". Sieh sie durch und geh dann weiter.") + mehr + e.text,
         rot || aussen ? "fehler" : "ok");
@@ -1896,12 +2093,15 @@ window.km = km;
     if (eigen) { korrektur.stand = EIGEN[eigen]; korrektur.art = "fehler"; standKarte($("korrektur-ergebnis"), korrektur.stand, "fehler"); return; }
     try {
       await km.bereit();
+      var saetzeVorher = korrekturen.map(function (k) { return k.satz; }).join("\n");
       var ziele = korrekturZiele(), ohne = korrekturen.some(function (k) { return !k.baustein; });
       var mo = await km.mappeFn("modus", [Z.mappe, text]);
       if (mo.modus === "keine") {
-        korrektur.stand = "In der Antwort steht kein Baustein. Kopiere die ganze Antwort mit dem Kopierknopf des Chats."; korrektur.art = "fehler";
-        standKarte($("korrektur-ergebnis"), korrektur.stand, "fehler"); return;
+        korrektur.stand = ""; korrektur.art = "";
+        standKarte($("korrektur-ergebnis"), "");
+        diagnoseKarte($("korrektur-diagnose"), await km.prompt("diagnose", [text])); return;
       }
+      diagnoseKarte($("korrektur-diagnose"), null);
       var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, text, ziele.length === 1 ? ziele[0] : null, true]);
       var ids = r.ersetzt.concat(r.eingefuegt);
       if (!ids.length && ohne && mo.modus === "ersetzen") {
@@ -1915,6 +2115,7 @@ window.km = km;
       Z.mappe.durchsicht = false;
       if (schritt() !== 5) { Z.mappe.schritt = 5; auf = {}; }
       await auswertung();
+      var gleich = schleifeMerken(ids, true);
       $("korrektur-eingabe").value = "";
       var rot = fehlerZahl(), satz = "Eingesetzt: " + ids.length + (ids.length === 1 ? " Baustein" : " Bausteine") + ".";
       if (!rot && !neuBeauftragt().length) {
@@ -1922,8 +2123,14 @@ window.km = km;
         standKarte($("eingabe-stand"), satz + " Alle Bausteine sind in Ordnung; sieh sie durch und geh dann weiter.", "ok");
         status("Korrektur eingesetzt", "ok");
       } else {
-        korrektur.stand = satz + " Noch " + (rot === 1 ? "ein Fehler" : rot + " Fehler") + "; die Bitte oben ist neu, kopiere sie noch einmal."
-          + (r.fehler.length ? " " + r.fehler.join(" ") : "");
+        // AP13.4: „neu“ nur, wenn sich die Sätze geändert haben; derselbe Text wie vorher wird beim Namen genannt
+        var neuSaetze = korrekturen.map(function (k) { return k.satz; }).join("\n") !== saetzeVorher;
+        var weg = ids.some(ausweg) ? " Unter der Karte stehen jetzt drei Wege, wie es weitergeht." : "";
+        korrektur.stand = gleich.length
+          ? "Die Antwort für „" + gleich[0] + "“ ist dieselbe wie vorher (Runde " + schleife()[ids.filter(function (id) { return schleife()[id] && schleife()[id].gleich; })[0]].rot + ")."
+            + (weg || " Kopiere die Bitte noch einmal oder nimm einen anderen Chat.")
+          : satz + " Noch " + (rot === 1 ? "ein Fehler" : rot + " Fehler") + (neuSaetze ? "; die Bitte oben ist neu, kopiere sie noch einmal." : "; die Bitte oben ist dieselbe wie vorher.") + weg;
+        korrektur.stand += r.fehler.length ? " " + r.fehler.join(" ") : "";
         korrektur.art = "fehler"; korrektur.text = "";
       }
       zeichne(); geaendert(); korrekturSpaeter(0);
