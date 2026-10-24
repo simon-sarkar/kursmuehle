@@ -2292,7 +2292,7 @@ window.km = km;
     return ["Rückmeldung zu Kursmühle " + ((katalog && katalog.version) || ""), "",
       "Chat: " + (c ? c.text : "–"), "Fach: " + (angaben.fach || "–"), "Jahrgangsstufe: " + (e.jahrgang || angaben.jahrgang || "–"),
       "Vorlage: " + (e.vorlage || "–") + (m.zweig ? " (" + ZWEIG_TEXT[m.zweig] + ")" : ""), korrekturZeile(m), "",
-      "Wo hat es gestockt?", "", "", "Was hättest du anders gewollt?", "", "", "Nutzt du es nächste Woche wieder?", "", ""].join("\n");
+      "Wo hat es gestockt?", "", "", "Was hättest du anders gewollt?", "", "", "Nimmst du es für deine nächste Einheit wieder? Wenn nicht, woran liegt es?", "", ""].join("\n");
   }
   // „Korrekturen: 2 · mindest.quiz, zeit.annahme · Chat: ByLKI“ (AP13.3, aus den Ereignissen der Kursmappe)
   function korrekturZeile(m) {
