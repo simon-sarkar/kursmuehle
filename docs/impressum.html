@@ -10,6 +10,11 @@
 <!-- AP13b §3: nur über die Fußzeile der Startseite und der Mühle verlinkt. Tatsachen, keine Rechtsberatung.
      AP13.2: Kopfzeile und Dark Mode wie die Startseite; die kleine Kachel ist hier immer sichtbar. Ein Absatz und eine
      Tabellenzeile zur Adresse, die „Weiter“ auf der Startseite baut (Gutachten AP13.2, Impressum 1). -->
+<script>
+// Hell ist Standard, unabhängig von der Systemeinstellung; „Dunkel“ schaltet der Leser selbst in der Kopfzeile um,
+// die Wahl bleibt in diesem Browser (localStorage; fehlt er, gilt wieder hell).
+(function () { try { if (localStorage.getItem("kursmuehle-schema") === "dunkel") document.documentElement.dataset.theme = "dark"; } catch (e) {} })();
+</script>
 <style>
   :root { color-scheme: light;
           --grund: #faf6ee; --band: #f3e9d8; --flaeche: #ffffff; --kachel: #ffffff;
@@ -17,13 +22,11 @@
           --fuss: #2a2a2a; --fuss-text: #f3e9d8; --schatten: rgba(42,42,42,.10);
           --logo-grund: #2a2a2a; --logo-muehle: #f3e9d8; --logo-rand: 5px; }
   /* Dunkel wie die Startseite (Farbsatz aus Entwurf B) */
-  @media (prefers-color-scheme: dark) {
-    :root { color-scheme: dark;
-            --grund: #262522; --band: #2a2a2a; --flaeche: #1b1a18; --kachel: #35332f;
-            --text: #f3e9d8; --leise: #b9ae9c; --linie: #423e37; --fokus: #d9a441;
-            --fuss: #141312; --fuss-text: #f3e9d8; --schatten: rgba(0,0,0,.35);
-            --logo-grund: #f3e9d8; --logo-muehle: #2a2a2a; --logo-rand: 4px; }
-  }
+  :root[data-theme="dark"] { color-scheme: dark;
+          --grund: #262522; --band: #2a2a2a; --flaeche: #1b1a18; --kachel: #35332f;
+          --text: #f3e9d8; --leise: #b9ae9c; --linie: #423e37; --fokus: #d9a441;
+          --fuss: #141312; --fuss-text: #f3e9d8; --schatten: rgba(0,0,0,.35);
+          --logo-grund: #f3e9d8; --logo-muehle: #2a2a2a; --logo-rand: 4px; }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
   body { margin: 0; background: var(--grund); color: var(--text);
@@ -52,6 +55,9 @@
   /* Kopfzeile: klebt oben, höchstens 56 px. Wie in index.html. */
   .kopfzeile { position: sticky; top: 0; z-index: 10; background: var(--band); border-bottom: 1px solid var(--linie); }
   .kopfzeile .innen { height: 55px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .kopfzeile .rechts { display: flex; align-items: center; gap: 16px; }
+  .schema { background: none; border: 0; padding: 4px 0; font: inherit; font-size: .9rem; color: var(--leise); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .schema:hover { color: var(--text); }
   .marke { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; text-decoration: none; }
   .marke img { width: 28px; height: 28px; border-radius: 7px; display: block; }
   .marke span { font-weight: 400; color: var(--leise); font-size: .9rem; }
@@ -81,7 +87,7 @@
 <header class="kopfzeile">
   <div class="innen">
     <a class="marke" href="./"><img src="logo.svg" alt="" width="28" height="28">Kursmühle <span>Beta</span></a>
-    <a class="mini dreh" href="start/" id="mini" aria-label="Mahlwerk starten"><!-- logo --><svg class="logo" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><rect width="256" height="256" rx="56" class="l-g"/><path d="M100,236 L156,236 L147,150 L109,150 Z" class="l-m"/>
+    <div class="rechts"><button type="button" id="schema" class="schema" aria-pressed="false">Dunkel</button><a class="mini dreh" href="start/" id="mini" aria-label="Mahlwerk starten"><!-- logo --><svg class="logo" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><rect width="256" height="256" rx="56" class="l-g"/><path d="M100,236 L156,236 L147,150 L109,150 Z" class="l-m"/>
   <rect x="115" y="170" width="12" height="12" rx="3" class="l-g"/>
   <rect x="131" y="170" width="12" height="12" rx="3" class="l-g"/>
   <rect x="115" y="188" width="12" height="12" rx="3" class="l-g"/>
@@ -89,7 +95,7 @@
   <g class="rad"><g transform="rotate(45 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(135 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(225 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(315 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g>
   <path d="M158.7,120.3 L155.7,124.0 L162.2,134.4 L152.1,141.8 L144.2,132.4 L139.7,134.1 L135.1,135.3 L134.3,147.6 L121.7,147.6 L120.9,135.3 L116.3,134.1 L111.8,132.4 L103.9,141.8 L93.8,134.4 L100.3,124.0 L97.3,120.3 L94.7,116.3 L82.8,119.3 L78.9,107.4 L90.3,102.8 L90.0,98.0 L90.3,93.2 L78.9,88.6 L82.8,76.7 L94.7,79.7 L97.3,75.7 L100.3,72.0 L93.8,61.6 L103.9,54.2 L111.8,63.6 L116.3,61.9 L120.9,60.7 L121.7,48.4 L134.3,48.4 L135.1,60.7 L139.7,61.9 L144.2,63.6 L152.1,54.2 L162.2,61.6 L155.7,72.0 L158.7,75.7 L161.3,79.7 L173.2,76.7 L177.1,88.6 L165.7,93.2 L166.0,98.0 L165.7,102.8 L177.1,107.4 L173.2,119.3 L161.3,116.3 Z" class="l-m l-k"/></g>
   <circle cx="128" cy="98" r="22" class="l-g"/>
-  <circle cx="128" cy="98" r="9" class="l-a"/></svg><!-- /logo --><span>Mahlwerk starten</span></a>
+  <circle cx="128" cy="98" r="9" class="l-a"/></svg><!-- /logo --><span>Mahlwerk starten</span></a></div>
   </div>
 </header>
 <main><div class="innen">
@@ -162,6 +168,20 @@ die du mit Kursmühle erstellst, gelten diese Lizenzen nicht.</p>
     a.addEventListener("mouseleave", ab);
     a.addEventListener("blur", ab);
   });
+})();
+
+// Schalter hell/dunkel in der Kopfzeile.
+(function () {
+  var b = document.getElementById("schema");
+  if (!b) return;
+  function zeige() { var d = document.documentElement.dataset.theme === "dark"; b.textContent = d ? "Hell" : "Dunkel"; b.setAttribute("aria-pressed", d ? "true" : "false"); }
+  b.addEventListener("click", function () {
+    var d = document.documentElement.dataset.theme !== "dark";
+    if (d) document.documentElement.dataset.theme = "dark"; else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem("kursmuehle-schema", d ? "dunkel" : "hell"); } catch (e) {}
+    zeige();
+  });
+  zeige();
 })();
 </script>
 </body>

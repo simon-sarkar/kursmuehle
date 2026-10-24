@@ -127,6 +127,8 @@ KONTRAST = """(sel) => {                      // Kontrast Schrift gegen Hintergr
     const b = lum(getComputedStyle(document.querySelector(band)).backgroundColor);
     return (Math.max(a, b) + .05) / (Math.min(a, b) + .05); }"""
 ANIM = "(sel) => document.querySelector(sel + ' .rad').getAnimations().length"
+# Farbschema wählt der Leser in der Kopfzeile (localStorage), nicht die Systemeinstellung; hell ist Standard
+SCHEMA = "(s) => { try { localStorage.setItem('kursmuehle-schema', s === 'dark' ? 'dunkel' : 'hell'); } catch (e) {} }"
 
 
 def raster(page, svg, px=256):
@@ -313,7 +315,8 @@ def main():
 
         # 6 hell und dunkel: kein horizontales Scrollen, Kontrast
         for modus, schema in MODI:
-            page.emulate_media(color_scheme=schema)
+            page.goto(url)
+            page.evaluate(SCHEMA, schema)
             for name, pfad in (("Landingpage", ""), ("Impressum", "impressum.html")):
                 for b in BREITEN:
                     page.set_viewport_size({"width": b, "height": 900})
@@ -326,14 +329,30 @@ def main():
             page.goto(url + "impressum.html")
             k = page.evaluate(KONTRAST, "h1|body")
             ok(k >= 4.5, f"Impressum {modus}: Kontrast {k:.1f}")
-        page.emulate_media(color_scheme="light")
         page.goto(url)
-        hell = page.evaluate("getComputedStyle(document.querySelector('.hero')).backgroundColor")
+        page.evaluate("() => { try { localStorage.removeItem('kursmuehle-schema'); } catch (e) {} }")
         page.emulate_media(color_scheme="dark")
         page.goto(url)
+        hell = page.evaluate("getComputedStyle(document.querySelector('.hero')).backgroundColor")
+        ok(hell == "rgb(243, 233, 216)" and page.text_content("#schema").strip() == "Dunkel",
+           f"ohne Wahl bleibt es hell, auch bei dunkler Systemeinstellung ({hell})")
+        page.click("#schema")
         dunkel = page.evaluate("getComputedStyle(document.querySelector('.hero')).backgroundColor")
-        ok(hell != dunkel and dunkel == "rgb(42, 42, 42)", f"Dark Mode: Band in Anthrazit ({hell} → {dunkel})")
+        ok(hell != dunkel and dunkel == "rgb(42, 42, 42)" and page.text_content("#schema").strip() == "Hell",
+           f"Schalter „Dunkel“: Band in Anthrazit ({hell} → {dunkel})")
+        page.goto(url + "impressum.html")
+        ok(page.evaluate("document.documentElement.dataset.theme") == "dark", "Wahl gilt nach dem Laden auch im Impressum")
+        page.click("#schema")
+        page.goto(url)
+        ok(page.evaluate("getComputedStyle(document.querySelector('.hero')).backgroundColor") == hell, "Schalter „Hell“ schaltet zurück und bleibt")
         page.emulate_media(color_scheme="light")
+        # Wasserzeichen beginnt rechts von der Kachel (überdeckt sie nie)
+        for b in (1440, 1700, 2560):
+            page.set_viewport_size({"width": b, "height": 900})
+            page.goto(url)
+            kr = page.evaluate("document.querySelector('#kachel').getBoundingClientRect().right")
+            wl = page.evaluate("parseFloat(getComputedStyle(document.querySelector('.hero'), '::after').left)")
+            ok(wl >= kr, f"{b} px: Wasserzeichen beginnt rechts von der Kachel ({wl:.0f} >= {kr:.0f})")
 
         # 7 Hover und Fokus drehen das Rad, prefers-reduced-motion nicht
         page.set_viewport_size({"width": 1280, "height": 900})
@@ -401,8 +420,10 @@ def main():
 
         if args.shots:
             for modus, schema in MODI:
-                sctx = browser.new_context(color_scheme=schema)
+                sctx = browser.new_context()
                 sp = sctx.new_page()
+                sp.goto(url)
+                sp.evaluate(SCHEMA, schema)
                 for b in BREITEN:
                     sp.set_viewport_size({"width": b, "height": 1000 if b != 390 else 844})
                     sp.goto(url)

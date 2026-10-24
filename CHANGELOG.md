@@ -6,6 +6,9 @@ Die Startseite beschreibt das Werkzeug nicht mehr, sie fängt an: Befund des Aut
 Layout an eine Verkaufsseite erinnerten. Die Mühle selbst ist in diesem Paket unverändert (AP13.1 läuft parallel als
 2.0.0-b2).
 
+- **Nachtrag (24.10., nach der Veröffentlichung):** Hell ist Standard, unabhängig von der Systemeinstellung; „Dunkel“
+  schaltet ein Textlink in der Kopfzeile um (Wahl bleibt im Browser). Das Wasserzeichen beginnt immer rechts von der
+  Kachel und überdeckt sie nicht mehr (Befund des Autors auf einem breiten Bildschirm).
 - **Startseite = Schritt 1:** Das Band oben hat die drei Felder der Mühle (Thema, Jahrgangsstufe, Minuten) mit
   „Weiter“, beschriftet und gesetzt wie Schritt 1 unter `start/`; „Weiter“ baut die Adresse
   `start/?thema=…&jahrgang=…&minuten=…` und sendet nichts (leeres Thema: `start/`; ohne Skript schickt das Formular
