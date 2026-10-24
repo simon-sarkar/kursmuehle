@@ -1,5 +1,253 @@
 # Changelog
 
+## 2.0.0-b1 – 2026-10-24 (AP13 und AP13b: Schrittfolge, minimale Vorlagen, Typ automatisch, Nach dem Bau, Landingpage, Beta-Veröffentlichung)
+
+Erste Beta der Browser-Fassung unter kursmuehle.de. Das Release-Zip für die Agenten-Nutzer bleibt 1.0.3
+(`releases/latest`); 2.0.0-b1 erscheint im öffentlichen Repo als Vorab-Release.
+
+AP13b (Landingpage, Impressum, Veröffentlichung):
+
+- **Landingpage** `docs/index.html` neu: ein Satz, was herauskommt; Kachel mit dem quadratischen Logo und „Mahlwerk
+  starten“ zur Mühle unter `/start/`; „Weiter mit deiner Einheit“ über der Kachel, wenn die Mühle eine Einheit gesichert
+  hat (liest nur, legt keine Datenbank an); Bildschirmfoto der Mühle, Ablauf in drei Zeilen, eine Zeile zu den Chats,
+  kleiner Abschnitt für Code-Agenten (Skill-Zip, Repository), Fußzeile mit Stufen, Lizenz und Links. Band oben über die
+  volle Breite, Inhalt 1040 px, lädt nichts von außen und nichts von der Mühle. Zweiter Entwurf (dunkles Band) unter
+  `docs/entwicklung/entwuerfe/landing-b.html`, nicht veröffentlicht; der Autor wählt.
+- **Impressum und Datenschutz** `docs/impressum.html`, nur über die Fußzeilen verlinkt: Anschrift, Datenschutz in
+  Sätzen und als Tabelle (Eingabe, wo sie bleibt), Hosting bei GitHub Pages, Lizenz und Nennung.
+- **Veröffentlichung:** `-b`-Versionen werden vollständig veröffentlicht (`veroeffentlichen.py --stufe`: release, beta,
+  alpha; `-a` und andere Suffixe bleiben gesperrt). `veroeffentlichen.py` legt `web/` als `docs/start/` ab (vorher
+  `web_bundle.py`); `docs/2/` ist eine Weiterleitung auf `../start/` (behält `?weiter=1`) und entfällt mit 2.0.0; der Job
+  `testadresse` läuft nur noch für Alpha-Versionen. `docs/CNAME` bleibt. `package.py` lässt `docs/start/` aus dem Zip.
+- **Mühle:** nur der Impressum-Link in der Fußzeile ist kleiner gesetzt; die Pfade waren schon relativ, `test_web.py`
+  öffnet die Seite jetzt aus `/start/`.
+- README: Absatz oben „Kursmühle läuft im Browser: kursmuehle.de (Beta)“, Zeile mit den Stufen. Testauftrag für die BdBs
+  (`docs/entwicklung/protokolle/testauftrag-beta.md`), Gutachten (`protokolle/AP13_gutachten.md`).
+- Tests: `test_landing.py` neu (Trockenlauf der Veröffentlichung, keine Anfrage nach außen, keine Datei der Mühle, keine
+  IndexedDB, Kachel zu `/start/`, Impressum-Link, kein horizontales Scrollen bei 390, 1280 und 2560 px, „Weiter mit
+  deiner Einheit“, Weiterleitung `/2/`); CI-Schritt „Veröffentlichung trocken“.
+
+AP13 (Mühle):
+
+- **Schrittfolge statt Vollformular.** Zu Beginn nur Thema, Jahrgangsstufe, Minuten und „Weiter“; jeder Schritt erscheint
+  erst, wenn der vorige getan ist, erledigte Schritte stehen als eine aufklappbare Zeile mit Fazit darüber. Sieben
+  Schritte: Worum geht es, Mach du oder Ich steuere, Aussehen, Text für den Chat, Antwort einfügen, Fragen und Lösungen,
+  Datei für die Lernplattform. Die Seite merkt sich den Schritt in der Kursdatei.
+- **Zwei Zweige auf derselben Kursdatei.** „Mach du“ setzt Vorlage und Bausteine still und zeigt die Karten erst nach der
+  Antwort als Liste mit Punkten; „Ich steuere“ zeigt Vorlagen, Karten mit Aufträgen und „Mehr einstellen“. Der Wechsel
+  ist jederzeit möglich (Klick auf den Typ einer Karte in „Mach du“ wechselt nach „Ich steuere“).
+- **Vorlagen minimal:** höchstens sechs Karten, eine je Phase; Einführung: Einstieg (Text), Lesetext mit Fragen,
+  Übung zum Zuordnen, Übung mit Eingabe, Hefteintrag (Seite), Vertiefung (ausgeschaltet, einschaltbar). Die Teilschritte
+  der Erarbeitung aus AP12a stehen als Anweisung im Text für den Chat, nicht als eigene Karten.
+- **Typ „automatisch“** als Standard: der Text für den Chat nennt vier Typen zur Wahl mit je einer Zeile, das Modell
+  wählt; nennt ein Auftrag zwei Dinge, gibt es zwei Bausteine aus (`b3` und `b3-2`). Feste Typen nur, wo die Phase sie
+  vorgibt. Die Auswahl an der Karte ist nach Rolle gruppiert (`typgruppen` im Katalog). „+“ zwischen den Karten fügt an
+  der Stelle eine Karte ein.
+- **Zeit je Phase:** Schalter „Zeit je Phase selbst einstellen“ (Standard aus) ersetzt „Zeitplanung anzeigen“. Aus: der
+  Text nennt nur die Gesamtminuten und Richtwerte je Rolle und Jahrgangsstufe, das Modell verteilt. An: Minutenfelder an
+  den Karten, vorbelegt aus der Vorlage. Vor der ersten Antwort zeigt der Rand nur „45 Minuten geplant“ und die Zahl der
+  Bausteine; gerechnete und vom Chat stammende Zahlen stehen kursiv, eingestellte aufrecht. Kursdateien vor 2.0.0-b1
+  behalten ihre Soll-Minuten.
+- **Aussehen** als Kacheln mit Miniatur: drei Designvorlagen, Kursformat Themen oder Kacheln, sechs Farben; schreibt den
+  Steckbrief (auch im Zweig „Mach du“).
+- **Herkunft je Feld:** Aufträge, Material und von der Lehrkraft umbenannte Titel in einem Ockerton, Inhalt aus dem Chat in
+  einem Grauton, Legende am Rand; im Kurs erscheint davon nichts (`herkunft` je Baustein in der Kursdatei).
+- **Nach dem Bau:** fünf Schritte zum Wiederherstellen (neuer Kurs oder Zusammenführen, Kurseinstellungen bei
+  Formatwechsel, Glossar-Einträge mit eigenem Download, Abzeichen), „Importiert?“, „Nächste Einheit anhängen“ (neue
+  Karten hinten, Text nur für die leeren, Abschnitt mit `teil: e2`, Datei als Nachlieferung mit „Zusammenführen“) und
+  Rückmeldung als kopierbarer Text an kursmuehle@pm.me (Version, Chat, Fach, Jahrgangsstufe, Vorlage; keine Inhalte).
+- **Verwerfen:** „×“ neben „Weiter mit …“ löscht die gesicherte Einheit nach einer Rückfrage, „×“ oben schließt die
+  offene Einheit. „Kursdatei speichern“ steht oben und schließt den laufenden Schritt ab, wenn er fertig ist.
+- **Muster kräftiger:** Deckung 6 statt 4 %, Rapport 260 und 170 statt 200 und 130 px.
+- **Zeile über der Seite** „Beta 2.0.0-b1“ (bei `-a` weiter „Testfassung“); die Adresse öffnet die Rückmeldung.
+- Python: `mappe.anhaengen(…, teil)`, `herkunft`, `einheit`, `aus` und neue Schlüssel der Kursdatei bleiben beim
+  Abgleich und Migrieren; `kennzahlen` und `prompt` kennen `zeit_selbst` und ausgeschaltete Karten; `einsetzen` setzt
+  einen zweiten Baustein `b3-2` hinter `b3`.
+- Prompttest Lauf 4 in `docs/entwicklung/protokolle/AP11_prompttest.md` ausgewertet (gerechnete Minuten je Lauf, Urteil
+  des Autors zu Lauf 2, neue Werte).
+- Job `testadresse` nennt in der Zusammenfassung kursmuehle.de/2/.
+- Tests: `test_ansicht.py` neu für die Schrittfolge (beide Zweige bis zur Datei, Zweigwechsel, Herkunft, Aussehen,
+  Wiederherstellen, Rückmeldungstext, Nachlieferung, Verwerfen); `test_prompt.py`, `test_api.py`, `test_katalog.py`,
+  `test_web.py`, `import_test_datei.py` angepasst.
+
+## 2.0.0-a4 – 2026-10-24 (AP12a in Teilen: Bild hochladen, Karten entschlacken, Minuten nach Rolle, keine Beispielkurse)
+
+Vorabfassung für den Autor, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3. Das Paket ist nicht vollständig;
+was fehlt, steht in `docs/entwicklung/AP12a.md` unter „Offen“.
+
+- **Testadresse ohne Domain.** Neuer Job `testadresse` in `veroeffentlichen.yml`: schreibt bei jedem Push auf `main`
+  (auch bei Suffix-Versionen) `web/` nach `docs/2/` im öffentlichen Repo, sonst nichts (`scripts/testadresse.py` bricht
+  ab, wenn sich außerhalb von `docs/2/` etwas ändert); `veroeffentlichen.py` lässt `docs/2/` stehen. Oben auf der Seite
+  die Zeile „Testfassung 2.0.0-a4 · Rückmeldung an kursmuehle@pm.me“, solange die Version ein Suffix trägt (Version aus
+  dem CHANGELOG beim Bündeln, `katalog.json`). `test_web.py` prüft die Seite zusätzlich aus `/kursmuehle/2/`.
+- **Bild hochladen** an jeder Karte, deren Inhalt ein Bild nennt (`Bild:`-Zeile oder Bildwunsch): PNG oder JPEG, die
+  Seite verkleinert auf höchstens 1600 px lange Kante und legt es in der Kursdatei unter `assets/` ab; die gelbe Warnung
+  verschwindet. Vorhandene Bilder lassen sich ersetzen.
+- **Download-Name** `<Kurstitel>_<Datum>.mbz` (`mappe.dateiname`), Blob-Link im Klick, Freigabe nach 30 s.
+- **Import-Test vorbereitet:** `scripts/tests/import_test_datei.py` erstellt im Browser aus Lauf 1 des Prompttests eine
+  `.mbz` mit selbst gezeichneter Skizze (CI-Artefakt `import-test-2.0`); Prüfpunkte in
+  `docs/entwicklung/protokolle/import-test-2.0.md`. Der Import auf der Plattform steht aus.
+- **Karten entschlackt.** Standard: Nummer, Typ, Titel, Prüfstatus, Auftrag, „Inhalt ansehen“. Phase, Soll und
+  gerechnete Minuten erst mit „Zeitplanung anzeigen“ unter „Mehr einstellen“ (in der Kursdatei gespeichert). „Diesen
+  Baustein neu beauftragen“ erst, wenn der Baustein Inhalt hat. Die Zahlen am Rand bleiben.
+- **Text für den Chat:** Wortziel je Baustein aus Soll und Phase („Lesetext für 15 Minuten, etwa 900 Wörter“, bei
+  Quiz die Zahl der Aufgaben); Erarbeitung der Vorlage Einführung in drei getrennten Bausteinen mit je einem Teilschritt
+  (Begriffe einführen, Begriffe an Beispielen benennen, Regel herleiten mit zwei durchgerechneten Beispielen);
+  Teilschritte auch für Übung, Sicherung und Vertiefung; Leitplanke gegen Vorgriffe; Skizze Pflicht bei Einstieg und
+  Erarbeitung, wenn Fach oder Thema eine braucht (`skizze_faecher`, `skizze_stichworte` im Katalog).
+- **Minuten nach Rolle gerechnet** (`zeitbedarf` im Katalog, `mappe.zeitbedarf`): Anker für Jahrgangsstufe 9 sind 60
+  Wörter je Minute in der Erarbeitung, 120 im Einstieg, 10 beim Abschreiben eines Hefteintrags, 1,5 Minuten je Aufgabe
+  und 3 Minuten mit Rechenaufwand; Faktor je Jahrgangsstufe; Rolle aus der Phase vor der Rolle des Typs. Der Hinweis an
+  der Karte und am Rand nennt die Lücke („Erarbeitung für 4 Minuten statt 15“).
+- **Hintergrundmuster** statt Wasserzeichen: Mühlenmotiv gekachelt und diagonal versetzt, Deckung 4 %, zwei Dichten
+  (`docs/muster-locker.svg` mit 200 px Rapport als Standard, `docs/muster-dicht.svg` mit 130 px); Karten und Flächen
+  liegen opak darüber.
+- **Keine Beispielkurse** (Entscheidung 24.10.2026): `examples/` entfällt aus Zip, Projektseite, README,
+  `fortgeschrittene.md` und Veröffentlichungsliste; „Beispiel ansehen“ entfällt auf der Seite. netzwerk9 und module
+  liegen als Test-Fixtures unter `scripts/tests/fixtures/`, alltagskompetenz fällt weg; seine Abdeckung übernimmt ein
+  Katalogkurs, den `scripts/tests/fixtures/katalogkurs.py` aus den Formatzeilen des Katalogs baut.
+- **Abgleich:** Ein Teilschritt bleibt nur an der Karte, solange der Chat den geplanten Typ liefert; eine angehängte
+  Einheit füllt keine geplante Karte der ersten.
+- Tests: neu `test_zeitbedarf.py`; `test_ansicht.py`, `test_prompt.py`, `test_api.py`, `test_web.py` (Unterpfad) und
+  die Fixture-Pfade in allen Tests und Workflows angepasst.
+
+## 2.0.0-a3 – 2026-10-24 (AP11: Text für den Chat, Variante B als Oberfläche)
+
+Vorabfassung für den Autor, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die Browser-Fassung (`web/`)
+liegt nur im Entwicklungsrepo.
+
+- **Variante B ist die Oberfläche.** `web/index.html` mit `ansicht.css` (vorher `index-b.html`, `ansicht-b.css`);
+  Variante A und die Auswahlseite fallen weg, `messung.html` bleibt. Rechts unter den Knöpfen steht auf Desktop und iPad
+  das Mühlenmotiv des Banners als Wasserzeichen (7 % Deckung, `docs/wasserzeichen.svg` aus `docs/make_logo.py`, das
+  Banner nutzt dieselbe Funktion und bleibt bytegleich); auf dem Handy entfällt es.
+- **Strukturbausteine ohne Minuten.** `minuten: false` im Katalog für Kursbanner, Überblick, Unterabschnitt, Abzeichen,
+  Datei, Dateiordner, Forum, Abstimmung und Glossar: die Karte zeigt weder Phase noch Soll, die Kennzahlen zählen sie
+  nicht.
+- **Ist-Minuten gerechnet** (`mappe.zeitbedarf`): Wörter je Minute nach Jahrgangsstufe, Sekunden je Frage, Lücke,
+  Zuordnung, Karte, Aussage, Szene und Bild, Abschreibtempo für Hefteinträge; Werte unter `zeitbedarf` im Katalog. Die
+  Minuten aus den Überschriften bleiben die Angabe des Chats; weicht sie um mehr als 20 % und mindestens eine Minute
+  ab, steht das als Hinweis an der Karte. Video, Link und Abgabe behalten die Angabe.
+- **Text für den Chat** (`gen/prompt.py`, für CLI und Browser derselbe Text): Chat-Auswahl vor dem ersten Text (ByLKI,
+  AIS-Chat, fobizz, MUCGPT, dann ChatGPT, Claude, Gemini, anderer Chat; änderbar unter „Mehr einstellen“, gespeichert in
+  der Kursdatei). Drei Texte: „Diese Einheit“ (Auftrag aus den Kursangaben mit neuem Feld Schulart, `Angenommen:`-Zeilen,
+  Bausteinliste mit `id:`, Phase, Soll und Auftrag, Format und ein Beispiel nur für die vorkommenden Typen, Leitplanken
+  mit Zählregel, Checkliste mit zehn Zeilen, Ausgabe als ein Codeblock); über 10 KB oder mehr Bausteine, als der Chat je
+  Antwort schafft, stückelt die Seite nach Abschnitten („Teil 1 von 2“). „Nur dieser Baustein“ für markierte Karten
+  (etwa 1 KB, bisheriger Inhalt und bei roten Karten die Meldung der Prüfung als Kontext) und „Alle leeren Bausteine“. Der Chat bestimmt Codeblock, Stückelung, den
+  Satz zum Aufwand (ChatGPT: Extra High) und ob der Text um Bild-Prompts bittet; dann zeigt die Karte bei einem
+  fehlenden Bild ein Feld zum Hochladen. Material der Lehrkraft unter „Mehr einstellen“ mit der Zeile „Nur Material, an
+  dem du die Rechte hast“ und dem Hinweis auf die Eingabegrenze des Chats.
+- **Kopieren** mit einem Knopf, der Text liegt vorher fertig im Feld (Safari kopiert nur in der Geste), dazu „Text
+  ansehen und selbst markieren“. Vor dem ersten Kopieren einmal die Infobox zu Rechten am Material und den
+  Nutzungsbedingungen des Chats („Nicht mehr anzeigen“ in IndexedDB).
+- **Antwort einfügen mit Modus**: „Einheit ersetzen“, „Nur Baustein ersetzen“ (Abgleich über `id:`, geplante Bausteine
+  an ihren Platz, ohne `id:` an die einzige markierte Karte, sonst Fehlermeldung mit Vorschlag; `mappe.einsetzen`) und
+  „Als weitere Einheit anhängen“ (neuer Abschnitt, doppelte `id:` umbenannt; `mappe.anhaengen`). Die Seite schlägt den
+  Modus aus dem Text vor (`mappe.modus`); ein anderer Modus setzt die letzte Antwort vom Stand davor neu ein. Einzelne
+  Bausteine ohne Abschnitt nimmt der Parser über `mappe.antwort` an.
+- **Korrekturbitte**: je Fehler ein kopierbarer Satz an den Chat mit Bausteintitel und `id:`, an der Karte und gesammelt
+  unter dem Eingabefeld.
+- **Fragen und Lösungen** als Reiter (`prompt.fragen`: Fragen, Optionen, Lösungen ohne Rückmeldungen). „Datei für die
+  Lernplattform erstellen“ wird erst nach dem Öffnen dieser Ansicht oder „Ohne Durchsicht freigeben“ frei.
+  **Lösungen gegenprüfen** nach dem ersten grünen Stand: Aufgaben ohne Lösungen für einen neuen Chat
+  (`prompt.fachcheck`), die Antwort vergleicht die Seite mechanisch und zeigt nur Abweichungen (`prompt.vergleich`).
+- **Tests.** Neu `scripts/tests/test_prompt.py` (Größe je Vorlage, Typen, `id:`, Leitplanken, Chat-Varianten,
+  Stückelung, Einsetzen, Anhängen, Modus, Korrekturbitte, Gegenprüfen, Ist-Minuten). `test_ansicht.py` prüft die
+  Oberfläche mit Text für den Chat, Infobox, Modi, Korrekturbitte, Durchsicht, Gegenprüfen, Strukturbausteinen und
+  Wasserzeichen bei 1280 und 390 px; `test_web.py` läuft gegen `index.html`. Prompttest mit einem Modell der
+  Sonnet-Klasse: `docs/entwicklung/protokolle/AP11_prompttest.md`.
+
+## 2.0.0-a2 – 2026-10-24 (AP10: Baustein-Ansicht mit Kursmappe)
+
+Vorabfassung für den Autor, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die Browser-Fassung (`web/`)
+liegt nur im Entwicklungsrepo.
+
+- **Baustein-Ansicht in zwei Design-Varianten.** `web/index-a.html` (eine Spalte, Zahlen als Leiste über den Karten) und
+  `web/index-b.html` (Karten links, Zahlen, Erstellen und Kursdatei rechts; auf dem Handy untereinander) mit
+  gemeinsamem `app.js` und `worker.js`, je eigener CSS-Datei (`ansicht-a.css`, `ansicht-b.css`), Palette und Logo aus
+  `docs/make_logo.py`. Ablauf: drei Felder (Thema, Jahrgangsstufe, Minuten), „Einheit anlegen“, Einheitsvorlage
+  (Einführung; Übung und Vertiefung; Wiederholung und Prüfungsvorbereitung; Einheit aus eigenem Material), dann die
+  Bausteinkarten mit Typ, Titel, Phase, Soll-Minuten, Auftrag, Inhalt zum Aufklappen (nur als Text) und Prüfstatus;
+  Karten verschieben, löschen (mit Rückgängig), hinzufügen, umbenennen, „Diesen Baustein neu beauftragen“ markieren.
+  Am Rand Zahlen statt Regeln: Minuten gegen Soll, Folge Lesen → Üben → Sichern, Anteil Multiple Choice, Rückmeldungen,
+  höchstens drei Hinweise je Baustein. „Mehr einstellen“: Fach, Kursformat, Designvorlage, Farbe, „Wie erscheinen
+  Übungen?“, Abschluss, Umfang. Antwort des Chats einfügen, Datei für die Lernplattform erstellen und herunterladen,
+  Kursdatei speichern und öffnen (auch die Dateien eines 1.x-Kursordners einzeln), Beispiel ansehen, Autosave mit
+  „Weiter mit …“ und „Zuletzt gesichert um …“. Pyodide lädt beim Öffnen im Hintergrund; Felder und Vorlage sind vorher
+  bedienbar. Der Worker bleibt nach dem Erstellen geladen. Die Testseite aus AP10a ist jetzt `web/messung.html` (Messen
+  auf dem eigenen Gerät).
+- **Baustein-ID `id:`.** Neue Angabe für alle Elementtypen (Parser, `katalog.yaml`, `kursdatei.md`), ohne Wirkung im
+  Kurs; ungültige oder doppelte IDs werden Warnung. Fehlt sie, ordnet der Abgleich nach Position zu (gleicher Platz
+  und Typ, sonst der nächste freie Eintrag gleichen Typs); ein umbenannter Baustein behält Auftrag, Phase und Soll.
+  Verschieben und Umbenennen in der Oberfläche schreiben die bisherige ID als `id:` fest. Das Beispiel netzwerk9 trägt
+  IDs und eine `mappe.json` mit Phasen, Soll-Minuten und Aufträgen.
+- **Kursmappe (`gen/mappe.py`).** Einheit (Thema, Jahrgangsstufe, Minuten, Vorlage) und geplante Bausteine ohne Inhalt;
+  Textoperationen `verschiebe`, `entferne`, `umbenennen`; `kennzahlen` für den Rand; `angaben_lesen` und
+  `angaben_schreiben` für die Kursangaben (Steckbrief weiter nur über Python). Die Akzentfarbe kommt aus
+  `kurs.farbe` im Steckbrief, wenn die Kursdatei keine nennt.
+- **Katalog.** `rolle` je Bausteintyp, Einheitsvorlagen mit Anteilen aus `phasenschemata.md` und die Auswahl der
+  Kursangaben unter `oberflaeche`; `web_bundle.py` legt daraus `web/katalog.json` an und packt den Katalog in
+  `generator.zip`. `test_katalog.py` prüft Rollen, Anteile und Phasen gegen die Schemata.
+- **Allowlist.** `<b und c>` und `x<y` gelten nicht mehr als Tag: ein Tag braucht den Namen direkt nach `<`, danach
+  `>`, Leerzeichen oder `/`, und keine Wörter ohne `=`; was nur wie ein Tag aussieht, bleibt Text (`&lt;`).
+- **Tests.** Neu `scripts/tests/test_ansicht.py` (beide Varianten bei 1280 und 390 px, in der CI in Chromium, WebKit und
+  Firefox): Vorlage, Karten, Einfügen mit kaputtem Baustein (genau dieser rot), fehlendes Bild (Platzhalter), Erstellen
+  byteidentisch zum CPython-Bau der gespeicherten Kursdatei, Autosave nach Neuladen, Kursdatei öffnen, Verschieben,
+  Löschen, Umbenennen, kein horizontales Scrollen, keine verbotenen Begriffe. `test_web.py` läuft gegen die neue
+  Oberfläche; der 1.x-Import übergibt die Dateien einzeln statt eines Ordners an ein `webkitdirectory`-Feld (in WebKit
+  lief das in einen Timeout), die Ordnerauswahl wird zusätzlich in Chromium geprüft. `test_kursdatei.py`,
+  `test_api.py` um `id:`, Abgleich, Textoperationen, Kennzahlen und Kursangaben erweitert.
+
+## 2.0.0-a1 – 2026-10-24 (AP10a: Spike der Browser-Fassung, Repo-Split)
+
+Vorabfassung für den Autor, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die Browser-Fassung (`web/`)
+liegt nur im Entwicklungsrepo.
+
+- **Repo-Split.** Entwickelt wird in `kursmuehle-dev` (privat). Die Action `.github/workflows/veroeffentlichen.yml`
+  schreibt bei jedem Push auf `main` den öffentlichen Stand nach `simon-sarkar/kursmuehle` (Liste in
+  `scripts/veroeffentlichen.py`: SKILL, README, CHANGELOG, ROADMAP ohne „2.0-Details“, Lizenzen, AGENTS, CLAUDE,
+  references/ ohne export-schemata, scripts/, examples/, docs/ ohne entwicklung/, tools/bilder) und hängt das Release-Zip
+  an; Versionen mit Suffix werden Vorab-Release, nicht „latest“. Braucht das Secret `KURSMUEHLE_DEPLOY_TOKEN`.
+  Die alte `release.yml` entfällt. Hinweis dazu oben in der README.
+- **Generator-Schnittstelle `scripts/gen/api.py`.** `pruefe(text, assets)` liest nachsichtig: ein fehlerhaftes `###`
+  fällt aus, der Rest wird gelesen; jedes Element bekommt eine stabile Baustein-ID aus Abschnitt, Typ und Titel;
+  Diagnosen (fehler, warnung, hinweis) tragen Bausteintitel und Zeile im Baustein; ein fehlendes Bild wird Warnung plus
+  Platzhalterbild. `baue(kurs_md, steckbrief, assets)` liefert die Bytes der Sicherung und die Diagnosen, setzt
+  Designvorlage, Emoji, Akzentfarbe und Zufall je Lauf zurück, arbeitet in einem eigenen Temp-Ordner und löscht ihn;
+  mit `zeit` und `seed` ist der Bau byteidentisch reproduzierbar (gzip ohne Dateiname mit festem Zeitstempel, H5P-IDs
+  aus einem Seed). `build.py` ruft dieselbe Schnittstelle (`--zeit`, `--seed` neu). Die ganze Chat-Antwort wird
+  angenommen (Vorrede, Codeblock-Zeichen, mehrere Blöcke, Erkennung gerenderten Texts).
+- **Ohne Pillow bauen.** Bildgrößen kommen aus dem PNG-, JPEG- oder GIF-Kopf (`gen/bildkopf.py`); JPEG-Bilder in
+  `assets/` sind erlaubt. Pillow braucht nur noch `render.py` und `banner.py`.
+- **Zeitzone ohne System.** `gen/tzdaten.py` bringt Europe/Berlin mit (Fallback, wenn weder System noch tzdata-Paket
+  die Zone kennen); alle Zeitstempel sind damit auf jedem Rechner gleich.
+- **Bereinigung auf Eingabeebene.** Jede Zeile der Kursdatei behält nur die Tags b, i, em, strong, br, sup, sub, mark
+  (ohne Attribute); Skript, Stil und Kommentare verschwinden samt Inhalt, andere Tags verlieren die Klammern. Adressen
+  nur mit https (Link und Video lehnen http ab), externe Bilder sind nicht erlaubt; alle Adressen werden als Liste
+  zurückgegeben. Folge: die `<p style>`-Zeile im Beispiel alltagskompetenz wird ein normaler Absatz.
+- **Kursmappe (`gen/mappe.py`).** ZIP mit `mappe.json` (Formatversion 2: je Baustein ID, Typ, Titel, Abschnitt,
+  Minuten, Auftrag, Phase, Soll), `kurs.md`, `steckbrief.yaml`, `assets/`; feste ZIP-Zeitstempel, Dateiname mit
+  Kurstitel und Datum; ein 1.x-Kursordner wird beim Öffnen zur Mappe; ältere Formatversionen werden migriert. Der
+  Steckbrief wird nur über Python gelesen und geschrieben (zweideutige Strings wie `09` oder `no` werden zitiert).
+- **Browser-Fassung `web/` (Spike).** `worker.js` lädt Pyodide 0.27.8 (Python 3.12.7, gepinnt, selbst gehostet unter
+  `web/vendor/pyodide/` mit PyYAML- und tzdata-Wheel) und den Generator aus `generator.zip`, bietet prüfen, bauen,
+  Mappe lesen und schreiben, Steckbrief als Nachrichten. `index.html` ist eine Testseite ohne Design: Pyodide laden mit
+  Statuszeile, Beispielmappe prüfen, bauen, herunterladen, Einfügefeld für die ganze Chat-Antwort mit Sofortprüfung,
+  Mappe speichern und öffnen, 1.x-Ordner importieren, Autosave in IndexedDB, Messwerte (Ladezeit, Prüfzeit, Bauzeit,
+  WASM-Heap) zum Kopieren, Knopf „Alle drei Beispiele messen“. `scripts/web_bundle.py` erzeugt `generator.zip` und die
+  Beispielmappen (nicht im Repo).
+- **Katalog `references/katalog.yaml`.** Eine Quelle je Bausteintyp (Typ, Formularname, Ziel, Angaben, Pflicht, Beispiel,
+  Regeln, Phasen); `scripts/tests/test_katalog.py` prüft den Gleichstand mit `ELEMENTE`/`ATTRS`, mit `kursdatei.md`
+  und baut jedes Beispiel; die Phasenschemata beziehen ihre Bausteinbegriffe daraus.
+- **Tests und CI.** `scripts/tests/test_api.py` (Schnittstelle, Mappe), `test_katalog.py`, `test_web.py` (Playwright:
+  Chromium, WebKit, Firefox; `--vergleich` verlangt denselben Bytes wie der CPython-Bau). `.github/workflows/tests.yml`
+  läuft bei jedem Push: Python-Tests, alle Beispiele, Release-Zip, dann die drei Browser mit Byte-Vergleich; Messwerte
+  in der Zusammenfassung und als Artefakt, `web/` als Artefakt „kursmuehle-web“ für den Test auf iPad und Schul-PC.
+- Messwerte dieser Sitzung (Chromium headless, Linux): Pyodide laden 3,6 bis 4,4 s (Pyodide 3,2 s, Pakete 0,6 s,
+  Generator 0,6 s), Prüfen netzwerk9 36 ms, Bauen netzwerk9 200 ms, module 59 ms, alltagskompetenz 776 ms (5,2 MB);
+  WASM-Heap 29 MB, nach alltagskompetenz 60 MB. Alle drei Beispiele in Pyodide byteidentisch zum CPython-Bau.
+- Entfallen: der Python-Ausweg `content/course.py` in `build.py` (Kursinhalte kommen aus `kurs.md`).
+
 ## 1.0.3 – 2026-10-23
 
 - Parser nachsichtiger bei Formfehlern, die Chats ohne Code-Ausführung machen (Protokoll

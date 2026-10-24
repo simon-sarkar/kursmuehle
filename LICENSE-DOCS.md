@@ -1,8 +1,8 @@
-# Lizenz für Texte, Vorlagen und Beispielkurse
+# Lizenz für Texte, Vorlagen und Testkurse
 
 Alle Inhalte dieses Repositories außer dem Programmcode in `scripts/` – also
 `SKILL.md`, `README.md`, `ROADMAP.md`, `references/`, die Kursinhalte und
-Bilder in `examples/` – stehen unter
+Bilder der Testkurse in `scripts/tests/fixtures/` – stehen unter
 
 **Creative Commons Namensnennung – Nicht kommerziell – Weitergabe unter
 gleichen Bedingungen 4.0 International (CC BY-NC-SA 4.0)**
@@ -16,7 +16,7 @@ die Nutzung nicht kommerziell ist und Bearbeitungen unter derselben Lizenz
 weitergegeben werden. Einsatz an Schulen und in der Lehrerfortbildung gilt
 als nicht kommerziell.
 
-Der Programmcode in `scripts/` steht unter der PolyForm Noncommercial License
+Der Programmcode in `scripts/` (ohne die Kursinhalte und Bilder der Testkurse) steht unter der PolyForm Noncommercial License
 1.0.0, siehe `LICENSE`.
 
 Mit einer `.mbz` erzeugte Kurse gehören der Lehrkraft, die sie gebaut hat;

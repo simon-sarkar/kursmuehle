@@ -1,0 +1,339 @@
+/* Kursmühle – Oberfläche (AP13): Schrittfolge in einer Spalte, ab Schritt 5 rechts der Rand mit Zahlen und Herkunft;
+ * auf dem Handy untereinander. Palette aus docs/make_logo.py; die zwei Herkunftstöne sind Ocker und Anthrazit auf Weiß
+ * gemischt (keine Wertung, kein Rot oder Grün). */
+:root {
+  --creme: #f3e9d8;
+  --grund: #faf6ee;
+  --flaeche: #ffffff;
+  --text: #2a2a2a;
+  --leise: #6b6458;
+  --linie: #e4d8c3;
+  --ocker: #d9a441;
+  --ocker-tief: #8a6416;
+  --ok: #2f7d4f;
+  --warn: #9a6200;
+  --fehler: #b42318;
+  --leer: #a39a8b;
+  --lehrkraft: #f6ead1;          /* Ocker 20 % auf Weiß: Aufträge, Material, Titel der Lehrkraft */
+  --lehrkraft-kante: #e2c17a;
+  --chat: #eeedeb;               /* Anthrazit 8 % auf Weiß: Inhalt aus dem Chat */
+  --chat-kante: #bdbab4;
+  --rund: 10px;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--grund); color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+/* Muster: Motiv des Wasserzeichens gekachelt (docs/make_logo.py, 6 % Deckung); Karten und Flächen liegen opak darüber */
+body[data-muster=locker] { background-image: url("muster-locker.svg"); background-size: 260px 260px; }
+body[data-muster=dicht] { background-image: url("muster-dicht.svg"); background-size: 170px 170px; }
+[hidden] { display: none !important; }
+.unsichtbar { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; padding: 0; margin: -1px; }
+h2, .abschnitt-titel { display: block; font-size: 1.05rem; font-weight: 650; margin: 0 0 10px; }
+p { margin: 0 0 10px; }
+.leise { color: var(--leise); font-size: 0.94rem; }
+:focus-visible { outline: 3px solid var(--ocker); outline-offset: 2px; }
+.geschaetzt { font-style: italic; }
+
+/* Kopfzeile */
+.kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 10px 16px; background: var(--text); color: var(--creme); }
+.marke { display: inline-flex; align-items: center; gap: 10px; color: var(--creme); text-decoration: none; font-weight: 700; font-size: 1.1rem; }
+.marke img { display: block; border-radius: 7px; box-shadow: 0 0 0 1px rgba(243, 233, 216, 0.25); }
+.status { margin: 0; font-size: 0.9rem; color: #d8ccb6; flex: 1 1 12rem; }
+.status::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; background: var(--leer); vertical-align: 1px; }
+.status.ok::before { background: #6fbf8e; }
+.status.lauf::before { background: var(--ocker); }
+.status.fehler { color: #ffb4a8; }
+.status.fehler::before { background: #ffb4a8; }
+.kopf-links { display: flex; align-items: center; gap: 4px 14px; flex-wrap: wrap; }
+.kopf-link { background: none; border: 0; padding: 6px 0; font: inherit; font-size: 0.92rem; color: var(--creme); cursor: pointer;
+  text-decoration: underline; text-decoration-color: rgba(243, 233, 216, 0.4); text-underline-offset: 3px; }
+.kopf-link:hover { text-decoration-color: var(--ocker); }
+.kopf-link:disabled { opacity: 0.5; cursor: default; }
+.kopf-x { background: none; border: 0; border-radius: 6px; width: 36px; height: 36px; font: inherit; font-size: 1.35rem; line-height: 1;
+  color: inherit; cursor: pointer; opacity: 0.8; }
+.kopf-x:hover { opacity: 1; background: rgba(243, 233, 216, 0.12); }
+.testfassung { margin: 0; padding: 4px 16px; background: var(--creme); color: var(--leise); font-size: 0.85rem; text-align: center; }
+.testfassung .textlink { padding: 0; font-size: inherit; }
+.verwerfen-frage { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 16px; background: var(--creme);
+  border-bottom: 1px solid var(--linie); }
+.verwerfen-frage p { margin: 0; flex: 1 1 18rem; }
+
+.seite { max-width: 760px; margin: 0 auto; padding: 24px 16px 40px; }
+.seite.mit-rand { max-width: 1180px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 0 36px; align-items: start; }
+.spalte-haupt { min-width: 0; }
+
+/* Knöpfe und Felder */
+.knopf { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 9px 16px; border-radius: 8px;
+  border: 1px solid var(--linie); background: var(--flaeche); color: var(--text); font: inherit; font-weight: 600; cursor: pointer; text-align: center; }
+.knopf:hover { border-color: var(--ocker); }
+.knopf.haupt { background: var(--ocker); border-color: var(--ocker); }
+.knopf.haupt:hover { background: #cf9632; }
+.knopf:disabled { opacity: 0.45; cursor: default; }
+.textlink { background: none; border: 0; padding: 6px 0; font: inherit; color: var(--ocker-tief); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.feld { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: var(--leise); }
+input[type=text], input[type=number], select, textarea { font: inherit; font-size: 16px; color: var(--text); background: var(--flaeche);
+  border: 1px solid var(--linie); border-radius: 8px; padding: 9px 10px; min-height: 44px; width: 100%; }
+textarea { min-height: 0; resize: vertical; }
+select { appearance: auto; }
+.feld-breit { grid-column: 1 / -1; }
+.feld-zeile { font-size: 0.85rem; color: var(--leise); }
+.schalter { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 0.95rem; cursor: pointer; }
+.schalter input { width: 20px; height: 20px; accent-color: var(--ocker-tief); margin: 0; }
+.schalter .feld-zeile { flex-basis: 100%; }
+.stand { font-size: 0.93rem; margin: 8px 0 0; min-height: 1.4em; }
+.stand.fehler { color: var(--fehler); }
+.stand.ok { color: var(--ok); }
+.unterkopf { font-size: 0.95rem; font-weight: 650; margin: 18px 0 8px; }
+
+/* Weiter mit … */
+.weiter { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 16px; padding: 12px 14px; border-radius: var(--rund);
+  background: var(--flaeche); box-shadow: 0 1px 2px rgba(42, 42, 42, 0.07); }
+.weiter .leise { flex-basis: 100%; margin: 0; }
+.weiter-weg { color: var(--leise); }
+.weiter-weg:hover { background: var(--grund); color: var(--text); }
+
+/* Schritte: aktiver Schritt offen, erledigte als eine Zeile zum Aufklappen */
+.schritt { background: var(--flaeche); border-radius: var(--rund); box-shadow: 0 1px 2px rgba(42, 42, 42, 0.08); margin: 0 0 12px; }
+.s-kopf { margin: 0; font-size: inherit; }
+.s-zeile { display: flex; align-items: baseline; gap: 4px 12px; width: 100%; text-align: left; background: none; border: 0; padding: 14px 16px;
+  font: inherit; color: var(--text); cursor: pointer; border-radius: var(--rund); flex-wrap: wrap; }
+.s-zeile:disabled { cursor: default; }
+.s-nr { flex: 0 0 auto; width: 1.7em; height: 1.7em; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--creme); font-weight: 700; font-size: 0.85rem; align-self: center; }
+.s-titel { font-weight: 650; font-size: 1.05rem; }
+.s-fazit { color: var(--leise); font-size: 0.92rem; margin-left: auto; overflow-wrap: anywhere; }
+.schritt[data-stand=aktiv] .s-titel { font-size: 1.35rem; line-height: 1.25; letter-spacing: -0.01em; }
+.schritt[data-stand=aktiv] .s-nr { background: var(--ocker); }
+.schritt[data-stand=aktiv] .s-zeile { padding-top: 18px; }
+.schritt[data-stand=erledigt]:not(.auf) { background: rgba(255, 255, 255, 0.82); box-shadow: none; }
+.schritt[data-stand=erledigt] .s-zeile:hover { background: var(--grund); }
+.schritt[data-stand=erledigt] .s-titel::after { content: "▸"; display: inline-block; margin-left: 8px; color: var(--leise); font-size: 0.8em; }
+.schritt[data-stand=erledigt].auf .s-titel::after { content: "▾"; }
+.s-inhalt { padding: 0 16px 18px; }
+.schritt:not(.auf) .s-inhalt { display: none; }
+.s-inhalt > .knopf.haupt { margin-top: 16px; }
+
+/* 1 */
+.vorsatz { font-size: 0.9rem; color: var(--leise); margin: 12px 0 0; }
+.start-form { display: grid; grid-template-columns: 1fr 9rem 7rem; gap: 12px; align-items: end; }
+.start-form .knopf { grid-column: 1 / -1; justify-self: start; min-width: 9rem; }
+
+/* 2 Zweige, Vorlagen, Mehr */
+.zweige { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.zweig { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 16px; border-radius: var(--rund); border: 1px solid var(--linie);
+  background: var(--flaeche); font: inherit; color: var(--text); cursor: pointer; }
+.zweig:hover { border-color: var(--ocker); }
+.zweig[aria-pressed=true] { border-color: var(--ocker); box-shadow: inset 0 0 0 1px var(--ocker); background: #fffaf0; }
+.zweig-name { font-weight: 700; font-size: 1.1rem; }
+.zweig-zeile { color: var(--leise); font-size: 0.93rem; }
+.steuer-teil { margin-top: 6px; }
+.vorlagen { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0 14px; }
+.vorlage { display: flex; flex-direction: column; gap: 3px; text-align: left; padding: 12px 14px; border: 1px solid var(--linie); border-radius: var(--rund);
+  background: var(--flaeche); font: inherit; color: var(--text); cursor: pointer; }
+.vorlage:hover { border-color: var(--ocker); }
+.vorlage[aria-pressed=true] { border-color: var(--ocker); box-shadow: inset 0 0 0 1px var(--ocker); }
+.vorlage-name { font-weight: 700; }
+.vorlage-zeile { color: var(--leise); font-size: 0.9rem; }
+.vorlage-phasen { font-size: 0.82rem; color: var(--leise); }
+.mehr { margin-top: 12px; }
+.mehr summary { cursor: pointer; color: var(--ocker-tief); font-weight: 600; padding: 6px 0; }
+.mehr-felder { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 12px 0 4px; }
+
+/* 3 Aussehen: Kacheln mit Miniatur */
+.aus-gruppe .unterkopf { margin-top: 6px; }
+.aus-gruppe + .aus-gruppe { margin-top: 14px; }
+.kacheln-wahl { display: flex; flex-wrap: wrap; gap: 10px; }
+.aus-kachel { display: flex; flex-direction: column; align-items: stretch; gap: 6px; width: 148px; padding: 8px; border: 1px solid var(--linie);
+  border-radius: var(--rund); background: var(--grund); font: inherit; font-size: 0.9rem; color: var(--text); cursor: pointer; text-align: center; }
+.aus-kachel:hover { border-color: var(--ocker); }
+.aus-kachel[aria-checked=true] { border-color: var(--ocker); box-shadow: inset 0 0 0 2px var(--ocker); background: var(--flaeche); font-weight: 650; }
+.aus-mini svg { display: block; width: 100%; height: auto; border-radius: 6px; box-shadow: 0 0 0 1px var(--linie); }
+.farben .aus-kachel { width: 104px; }
+.farben .aus-mini svg { width: 40px; margin: 0 auto; box-shadow: none; }
+
+/* 4 Text für den Chat */
+.chat-wahl > p:first-child { font-weight: 600; margin-bottom: 8px; }
+.chat-knoepfe { display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
+.chat-gruppe { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.chat-gruppe-name { flex: 0 0 8.5rem; font-size: 0.85rem; color: var(--leise); }
+.text-art, .modus { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 0 0 10px; }
+.text-art label, .modus label { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 6px 12px; border-radius: 8px;
+  background: var(--flaeche); border: 1px solid var(--linie); cursor: pointer; font-size: 0.95rem; }
+.text-art label:has(input:checked), .modus label:has(input:checked) { border-color: var(--ocker); box-shadow: inset 0 0 0 1px var(--ocker); }
+.text-art input, .modus input { accent-color: var(--ocker-tief); margin: 0; }
+.teil-wahl { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 8px; }
+.teil-knopf[aria-pressed=true] { color: var(--text); font-weight: 650; background: var(--creme); }
+.kopieren { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.infobox { background: var(--creme); border-radius: var(--rund); padding: 14px 16px; margin: 12px 0 0; }
+.infobox p { margin-bottom: 8px; }
+.infobox-nie { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 0.93rem; color: var(--leise); }
+.text-ansehen { margin-top: 8px; }
+.text-ansehen summary { cursor: pointer; color: var(--ocker-tief); padding: 6px 0; }
+.text-ansehen textarea { min-height: 12rem; font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace; }
+
+/* 5 Einfügen, Karten */
+.einfuegen textarea { min-height: 9rem; font: 14px/1.45 ui-monospace, Menlo, Consolas, monospace; }
+.korrektur { margin-top: 10px; }
+.korrektur-liste { margin: 0 0 10px; padding-left: 18px; font-size: 0.93rem; }
+.korrektur-liste li { margin-bottom: 4px; }
+.karten-ort:not(:empty) { margin-top: 16px; }
+.zeit-schalter { margin: 4px 0 12px; }
+.karten { list-style: none; margin: 0; padding: 0; background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--rund); }
+.karte { padding: 12px 14px 6px; border-top: 1px solid var(--linie); }
+.karten > .karte:first-child, .karten > .k-zwischen:first-child + .karte { border-top: 0; }
+.karte.neu { box-shadow: inset 4px 0 0 var(--ocker); }
+.karte.aus { opacity: 0.62; }
+.k-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 0.85rem; color: var(--leise); }
+.k-nr { min-width: 1.6em; height: 1.6em; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
+  background: var(--creme); color: var(--text); font-weight: 650; font-size: 0.8rem; }
+.k-typ { font-weight: 600; letter-spacing: 0.01em; }
+select.k-typ { width: auto; max-width: 100%; min-height: 32px; padding: 3px 6px; font-size: 0.9rem; border-color: transparent; background: var(--grund); }
+.k-typ-mach { background: none; border: 0; padding: 2px 0; font: inherit; font-weight: 600; color: var(--leise); cursor: pointer;
+  text-decoration: underline dotted; text-underline-offset: 3px; }
+.k-status { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.punkt { width: 9px; height: 9px; border-radius: 50%; background: var(--leer); }
+.status-ok .punkt { background: var(--ok); }
+.status-warnung .punkt { background: var(--warn); }
+.status-fehler .punkt { background: var(--fehler); }
+.status-fehler .k-status { color: var(--fehler); }
+.karte input.k-titel { border: 0; border-left: 3px solid transparent; border-radius: 0; padding: 3px 0 3px 8px; margin: 6px 0 2px; min-height: 34px;
+  font-size: 1.05rem; font-weight: 650; background: transparent; }
+.karte input.k-titel.von-lehrkraft { border-left-color: var(--lehrkraft-kante); }
+.karte input.k-titel.von-chat { border-left-color: var(--chat-kante); }
+.karte input.k-titel:not([readonly]):hover, .karte input.k-titel:not([readonly]):focus { background: var(--grund); }
+.k-felder { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; font-size: 0.9rem; color: var(--leise); }
+.k-felder label { display: inline-flex; align-items: center; gap: 6px; }
+.k-felder input { width: auto; min-height: 34px; padding: 4px 8px; border-color: transparent; background: var(--grund); }
+.k-phase { width: 11rem !important; }
+.k-soll { width: 4.5rem !important; }
+.k-ist { font-size: 0.85rem; }
+.k-an-l { margin: 6px 0 2px; font-size: 0.9rem; color: var(--leise); }
+.k-auftrag-l { display: block; margin-top: 6px; }
+.k-auftrag { border: 1px solid transparent; font-size: 15px; min-height: 40px; padding: 8px 10px; }
+textarea.von-lehrkraft { background: var(--lehrkraft); }
+.k-text.von-chat { background: var(--chat); }
+.k-abschnitt { margin: 0 0 6px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--leise); }
+.k-diagnosen { list-style: none; margin: 8px 0 0; padding: 0; font-size: 0.9rem; }
+.k-diagnosen:empty { display: none; }
+.k-diagnosen li.fehler { color: var(--fehler); }
+.k-diagnosen li.warnung { color: var(--warn); }
+.k-diagnosen li.hinweis { color: var(--leise); }
+.k-inhalt { margin-top: 8px; font-size: 0.9rem; }
+.k-inhalt summary { cursor: pointer; color: var(--ocker-tief); }
+.k-text { white-space: pre-wrap; overflow-wrap: anywhere; font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace;
+  border-radius: 8px; padding: 10px; margin: 6px 0 0; max-height: 22rem; overflow: auto; }
+.k-aktionen { display: flex; flex-wrap: wrap; gap: 2px 4px; margin-top: 6px; }
+.klein { background: none; border: 0; border-radius: 6px; padding: 6px 10px; min-height: 36px; min-width: 36px; font: inherit; font-size: 0.88rem;
+  color: var(--leise); cursor: pointer; }
+.klein:hover:not(:disabled) { background: var(--grund); color: var(--text); }
+.klein:disabled { opacity: 0.35; cursor: default; }
+.k-hoch, .k-runter { font-size: 1.05rem; }
+.k-neu[aria-pressed=true] { color: var(--ocker-tief); font-weight: 650; }
+.k-loeschen { margin-left: auto; }
+.k-korrektur { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 4px; }
+.k-korrektur .stand { margin: 0; min-height: 0; font-size: 0.88rem; }
+.k-bilder { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.k-bilder .knopf { max-width: 100%; overflow-wrap: anywhere; }
+.klein-knopf { min-height: 36px; padding: 5px 12px; font-size: 0.9rem; font-weight: 600; }
+/* „+“ zwischen den Karten: ein kleiner runder Knopf auf der Trennlinie */
+.k-zwischen { height: 0; position: relative; z-index: 1; display: flex; justify-content: center; }
+.k-plus { position: absolute; top: -13px; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--linie); background: var(--flaeche);
+  color: var(--ocker-tief); font: inherit; font-weight: 700; line-height: 1; cursor: pointer; padding: 0; opacity: 0.75; }
+.k-plus:hover, .k-plus:focus-visible { opacity: 1; border-color: var(--ocker); }
+.karten > .k-zwischen:first-child .k-plus { top: -13px; }
+.karten > .k-zwischen:last-child { height: 30px; }
+.karten > .k-zwischen:last-child .k-plus { top: 2px; }
+/* Zweig „Mach du“: eine Liste mit Punkten */
+.karten.kompakt .karte { padding: 9px 14px; }
+.karten.kompakt input.k-titel { margin: 2px 0 0; cursor: default; }
+.rueckgaengig { font-size: 0.93rem; }
+.hinzufuegen { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.hinzufuegen select { width: auto; min-width: 0; flex: 0 1 18rem; }
+
+/* 6 Fragen und Lösungen */
+.fragen-liste { list-style: none; margin: 0 0 12px; padding: 0; border: 1px solid var(--linie); border-radius: var(--rund); }
+.frage { padding: 12px 14px; border-top: 1px solid var(--linie); }
+.frage:first-child { border-top: 0; }
+.f-baustein { margin: 0 0 6px; font-size: 0.85rem; color: var(--leise); }
+.f-frage { margin: 0 0 4px; font-weight: 600; }
+.f-optionen { list-style: none; margin: 0; padding: 0; font-size: 0.95rem; }
+.f-optionen li { padding: 2px 0; color: var(--leise); }
+.f-optionen li.richtig { color: var(--text); font-weight: 600; }
+.f-marke { color: var(--ok); font-weight: 600; }
+.f-loesung { margin: 0; font-size: 0.95rem; }
+.durchsicht { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+.gegenpruefen { margin-top: 16px; }
+.gegenpruefen > summary { cursor: pointer; color: var(--ocker-tief); padding: 6px 0; }
+.gegenpruefen .feld { margin-top: 14px; }
+.gegen-ergebnis { list-style: none; margin: 8px 0 0; padding: 0; font-size: 0.93rem; }
+.gegen-ergebnis li { margin-bottom: 6px; }
+
+/* 7 Datei, Wiederherstellen */
+.erstellen { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.erstellen .stand { flex-basis: 100%; margin: 0; }
+.wiederherstellen { margin-top: 10px; }
+.wh-schritte { margin: 0 0 12px; padding-left: 22px; }
+.wh-schritte li { margin-bottom: 8px; }
+.importiert { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-weight: 600; }
+.danach { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--linie); }
+
+/* Rückmeldung */
+.rueckmeldung { background: var(--flaeche); border-radius: var(--rund); padding: 16px; margin: 0 0 12px; box-shadow: 0 1px 2px rgba(42, 42, 42, 0.08); }
+.rueckmeldung textarea { margin-top: 10px; font-size: 15px; }
+
+/* Rand ab Schritt 5 */
+.spalte-rand { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 12px; }
+.rand-block { background: var(--creme); border-radius: var(--rund); padding: 14px 16px; }
+.zahlen { margin: 0; }
+.zahlen > div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid #e4d5ba; }
+.zahlen > div:last-of-type { border-bottom: 0; }
+.zahlen dt { font-size: 0.85rem; color: var(--leise); }
+.zahlen dd { margin: 0; text-align: right; font-weight: 650; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.zahlen dd:not(#kz-minuten):not(#kz-zahl) { font-style: italic; }
+.zahlen .warn dd { color: var(--warn); }
+.hinweise { list-style: none; margin: 10px 0 0; padding: 0; }
+.hinweise:empty { display: none; }
+.hinweise li { position: relative; padding-left: 16px; font-size: 0.93rem; margin-top: 4px; }
+.hinweise li::before { content: ""; position: absolute; left: 0; top: 0.55em; width: 7px; height: 7px; border-radius: 50%; background: var(--leer); }
+.hinweise li.fehler::before { background: var(--fehler); }
+.hinweise li.warnung::before { background: var(--warn); }
+.hinweis-link { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; text-decoration: underline;
+  text-decoration-color: var(--linie); text-underline-offset: 3px; }
+.legende p { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 0.9rem; }
+.legende p.leise { display: block; margin: 8px 0 0; font-size: 0.85rem; }
+.farbe-lehrkraft, .farbe-chat { flex: 0 0 auto; width: 18px; height: 14px; border-radius: 3px; }
+.farbe-lehrkraft { background: var(--lehrkraft); box-shadow: inset 3px 0 0 var(--lehrkraft-kante); }
+.farbe-chat { background: var(--chat); box-shadow: inset 3px 0 0 var(--chat-kante); }
+.kursdatei { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.kursdatei .leise { flex-basis: 100%; margin: 0; }
+
+/* Fußzeile */
+.fuss { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 22px; padding: 18px 16px 28px; font-size: 0.9rem; color: var(--leise); }
+.fuss a, .fuss .textlink { color: var(--leise); font-size: inherit; padding: 4px 0; }
+.fuss a { text-underline-offset: 3px; }
+.fuss .fuss-klein { font-size: 0.8rem; }          /* Impressum: klein, Seite liegt unter ../ (kursmuehle.de/impressum.html) */
+
+@media (max-width: 900px) {
+  .seite.mit-rand { display: block; max-width: 760px; }
+  .spalte-rand { position: static; margin-top: 8px; }
+}
+@media (max-width: 640px) {
+  .seite { padding-top: 14px; }
+  .start-form { grid-template-columns: 1fr 1fr; }
+  .feld-thema { grid-column: 1 / -1; }
+  .start-form .knopf { justify-self: stretch; }
+  .zweige, .vorlagen, .mehr-felder { grid-template-columns: 1fr; }
+  .schritt[data-stand=aktiv] .s-titel { font-size: 1.2rem; }
+  .s-zeile { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; }
+  .s-fazit { margin-left: 0; grid-column: 2; }
+  .karte { padding: 10px 12px 6px; }
+  .k-phase { width: 9.5rem !important; }
+  .hinzufuegen select { flex: 1 1 auto; }
+  .k-neu { order: 3; }
+  .k-loeschen { margin-left: 0; }
+  .chat-gruppe-name { flex-basis: 100%; }
+  .text-art label, .modus label { flex: 1 1 auto; }
+  .aus-kachel { width: calc(50% - 5px); }
+  .farben .aus-kachel { width: calc(33.3% - 7px); }
+  .kopf-links { margin-left: auto; }
+}

@@ -1,18 +1,22 @@
 """Parser für die Kursdatei `kurs.md` (Drehbuch-Format) -> Generator-Objekte (gen.mbz, gen.h5p).
 
 Format: references/kursdatei.md (vollständig), references/intake.md §5 (Kurzfassung).
-Fehler nennen Zeile und Element; unbekannte Typen und Angaben brechen ab.
+Fehler nennen Zeile und Element; unbekannte Typen und Angaben brechen ab (streng, CLI) oder werden je Element als
+Diagnose gesammelt (nachsichtig, `gen.api.pruefe`): ein fehlerhaftes `###` fällt aus, der Rest wird weiter gelesen.
+Jede Zeile wird beim Einlesen bereinigt (HTML nur b, i, em, strong, br, sup, sub, mark; Adressen nur https).
+Jedes Element bekommt eine stabile Baustein-ID aus Abschnitt, Typ und Titel; Diagnosen tragen Baustein und relative Zeile.
 """
 import datetime
 import hashlib
 import os
 import re
-import sys
+import struct
 import tempfile
-import zoneinfo
+import zlib
 
 from . import h5p as H
 from . import html as T
+from . import tzdaten
 from .website import ART, BLOCK_TYPEN, WEB_TYPEN, Website
 from .mbz import (Assign, Badge, Book, Choice, Feedback, Folder, Forum, Glossary, HvpItem, Label, MultiChoice, Page,
                   Quiz, Resource, Section, ShortAnswer, SubSection, TrueFalse, Url, moodle_format)
@@ -26,16 +30,129 @@ def ts_sichtbar_ab(d):
     """'YYYY-MM-DD' -> Unix-Zeit 06:00 Europe/Berlin, sonst None."""
     if not d:
         return None
-    tz = zoneinfo.ZoneInfo("Europe/Berlin")
-    return int(datetime.datetime.strptime(str(d), "%Y-%m-%d").replace(hour=6, tzinfo=tz).timestamp())
+    return int(datetime.datetime.strptime(str(d), "%Y-%m-%d").replace(hour=6, tzinfo=tzdaten.berlin()).timestamp())
 
 
 def ts_faellig(d):
     """'YYYY-MM-DD' -> Unix-Zeit 23:59 Europe/Berlin (Abgabetermin), sonst 0."""
     if not d:
         return 0
-    tz = zoneinfo.ZoneInfo("Europe/Berlin")
-    return int(datetime.datetime.strptime(str(d), "%Y-%m-%d").replace(hour=23, minute=59, tzinfo=tz).timestamp())
+    return int(datetime.datetime.strptime(str(d), "%Y-%m-%d").replace(hour=23, minute=59,
+                                                                     tzinfo=tzdaten.berlin()).timestamp())
+
+
+# ---------------------------------------------------------------- Diagnosen
+class Diagnosen(list):
+    """Hinweise, Warnungen und Fehler des Parsers. Jede Diagnose ist ein dict: stufe (fehler, warnung, hinweis), art,
+    text, zeile (in der Datei), baustein (ID oder None), titel (Bausteintitel), zeile_im_baustein (1 = Überschrift)."""
+
+    def __init__(self, name="kurs.md"):
+        super().__init__()
+        self.name = name
+        self.aktuell = None     # (id, titel, startzeile) des Elements, das gerade gelesen wird
+
+    def add(self, stufe, art, text, zeile=None, element=None):
+        d = {"stufe": stufe, "art": art, "text": text, "zeile": zeile, "element": element,
+             "baustein": None, "titel": None, "zeile_im_baustein": None}
+        if self.aktuell:
+            bid, titel, start = self.aktuell
+            d["baustein"], d["titel"] = bid, titel
+            if zeile:
+                d["zeile_im_baustein"] = zeile - start + 1
+        self.append(d)
+        return d
+
+    def fehler(self, text, zeile=None, element=None, art="format"):
+        return self.add("fehler", art, text, zeile, element)
+
+    def warnung(self, text, zeile=None, element=None, art="bild"):
+        return self.add("warnung", art, text, zeile, element)
+
+    def hinweis(self, text, zeile=None, element=None, art="hinweis"):
+        return self.add("hinweis", art, text, zeile, element)
+
+    def hat_fehler(self):
+        return any(d["stufe"] == "fehler" for d in self)
+
+    def zuordnen(self, bausteine):
+        """Diagnosen ohne Baustein (aus dem Einlesen) nach Zeile dem Baustein zuordnen."""
+        for d in self:
+            if d["baustein"] or not d["zeile"]:
+                continue
+            for b in bausteine:
+                if b["zeile"] <= d["zeile"] < b["zeile"] + b["zeilen"]:
+                    d["baustein"], d["titel"], d["zeile_im_baustein"] = b["id"], b["titel"], d["zeile"] - b["zeile"] + 1
+                    break
+
+    def satz(self, d):
+        """Eine Diagnose als Satz wie die Meldungen der CLI: `<Datei> Zeile n (<Element>): <Text>`."""
+        wo = self.name + (f" Zeile {d['zeile']}" if d["zeile"] else "")
+        if d["element"]:
+            wo += f" ({d['element']})"
+        kopf = {"fehler": "FEHLER", "warnung": "WARNUNG", "hinweis": "Hinweis"}[d["stufe"]]
+        return f"{kopf}: {wo}: {d['text']}"
+
+    def text(self, stufen=("fehler", "warnung", "hinweis")):
+        return "\n".join(self.satz(d) for d in self if d["stufe"] in stufen)
+
+
+# ---------------------------------------------------------------- Bereinigung der Eingabe
+ERLAUBTE_TAGS = {"b", "i", "em", "strong", "br", "sup", "sub", "mark"}
+# Tag: Name direkt nach „<“ (oder „</“), danach „>“, Leerzeichen oder „/“
+_RE_TAG = re.compile(r"<(/?)([A-Za-z][A-Za-z0-9]*)(?=[\s/>])([^<>]*)>")
+_RE_KOMMENTAR = re.compile(r"<!--.*?-->")
+_RE_SKRIPT = re.compile(r"<(script|style)\b[^<>]*>.*?</\1\s*>", re.I | re.S)
+_RE_URL = re.compile(r"\bhttps?://[^\s<>\"'“”„)\]]+")
+_RE_LT = re.compile(r"<(?=[A-Za-z/!?])")
+
+
+def _ist_tag(rest):
+    """Rest nach dem Tagnamen: leer, „/“ oder Attribute mit „=“ = Tag; sonst Text wie in `a <b und c> d`."""
+    r = rest.strip()
+    return r in ("", "/") or "=" in r
+
+
+def bereinige(s):
+    """HTML einer Zeile auf die Allowlist kürzen: erlaubte Tags ohne Attribute, alle anderen Tags entfernt (ihr Text
+    bleibt), Kommentare entfernt. Was nur wie ein Tag aussieht (`<b und c>`, `x<y`), bleibt Text mit &lt;.
+    Gibt (Zeile, [entfernte Tagnamen])."""
+    if "<" not in s:
+        return s, []
+    entfernt = []
+    s = _RE_KOMMENTAR.sub("", s)
+    for m in _RE_SKRIPT.finditer(s):          # Skript und Stil samt Inhalt, nicht nur die Tags
+        entfernt.append(m.group(1).lower())
+    s = _RE_SKRIPT.sub("", s)
+    out, pos = [], 0
+    for m in _RE_TAG.finditer(s):
+        if not _ist_tag(m.group(3)):
+            continue                          # bleibt Text, „<“ wird unten maskiert
+        out.append(_RE_LT.sub("&lt;", s[pos:m.start()]))
+        name = m.group(2).lower()
+        if name in ERLAUBTE_TAGS:
+            out.append(f"<{m.group(1)}{name}>")
+        elif name not in entfernt:
+            entfernt.append(name)
+        pos = m.end()
+    out.append(_RE_LT.sub("&lt;", s[pos:]))
+    return "".join(out), entfernt
+
+
+def adressen(s):
+    """Alle Adressen einer Zeile (http und https)."""
+    return _RE_URL.findall(s)
+
+
+def platzhalter_png(w=640, h=400):
+    """Hellgraues PNG ohne Text (für fehlende Bilder im nachsichtigen Modus), ohne Pillow."""
+    zeile = b"\x00" + bytes([0xE5, 0xE7, 0xEB]) * w
+    raw = zeile * h
+
+    def chunk(typ, data):
+        c = struct.pack(">I", len(data)) + typ + data
+        return c + struct.pack(">I", zlib.crc32(typ + data) & 0xFFFFFFFF)
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0))
+            + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b""))
 
 
 # ---------------------------------------------------------------- Konstanten
@@ -84,6 +201,9 @@ ATTRS = {
 }
 for _t in WEB_TYPEN:
     ATTRS[_t] = ATTRS[_t] | {"website"}       # `website: nein` hält ein Element als Plattform-Aktivität
+for _t in ELEMENTE:
+    ATTRS[_t] = ATTRS[_t] | {"id"}            # Baustein-ID für die Kursmappe (2.0), ohne Wirkung im Kurs
+_RE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,39}$")
 ABSCHLUSS = {"ansehen": "view", "bestehen": "pass", "keine": "none", "manuell": "manual", "abgabe": "submit",
              "beitrag": "post", "eintrag": "entry"}
 # Welche Abschlussarten ein Typ kennt (sonst: ansehen, keine, manuell; H5P und Quiz zusätzlich bestehen)
@@ -217,13 +337,17 @@ def _zeilen(nums):
 
 # ---------------------------------------------------------------- Zeilen
 class Zeilen:
-    def __init__(self, path):
-        with open(path, encoding="utf-8") as f:
-            raw = f.read().splitlines()
+    def __init__(self, path=None, text=None, name=None, diag=None):
+        if text is None:
+            with open(path, encoding="utf-8") as f:
+                text = f.read()
+        raw = text.splitlines()
         # Drehbuch-Zeilen für die Lehrkraft, nie im Kurs (Zeitcheck, Änderungsliste, Annahmen, Abweichungen, offene Fragen)
         meta = re.compile(r"^(Zeit\b.*\d+\s*min|v\d+:|Angenommen:|Abweichung:|Offen:|Bildwunsch:)")
-        self.name = os.path.basename(path)
-        self.lines, liefer, latex, rest = [], [], [], []
+        self.name = name or (os.path.basename(path) if path else "kurs.md")
+        self.diag = diag if diag is not None else Diagnosen(self.name)
+        self.adressen = []      # (Zeile, Adresse) aller http(s)-Adressen der Datei
+        self.lines, liefer, latex, rest, html = [], [], [], [], {}
         for i, s in enumerate(raw):
             if meta.match(s):
                 s = ""
@@ -231,6 +355,10 @@ class Zeilen:
                 liefer.append(i + 1)
                 s = ""
             else:
+                s, entfernt = bereinige(s)
+                if entfernt:
+                    html[i + 1] = entfernt
+                self.adressen += [(i + 1, a) for a in adressen(s)]
                 s2, offen = _latex(s)
                 if s2 != s:
                     latex.append(i + 1)
@@ -238,14 +366,19 @@ class Zeilen:
                 s = _clean(s2)
             self.lines.append((i + 1, s))
         if liefer:
-            print(f"Hinweis: {self.name} Zeile {_zeilen(liefer)}: Hinweis für die Lehrkraft gehört in die Lieferung, "
-                  "nicht in die Kursdatei; ignoriert", file=sys.stderr)
+            self.diag.hinweis("Hinweis für die Lehrkraft gehört in die Lieferung, nicht in die Kursdatei; ignoriert"
+                              + (f" (Zeilen {_zeilen(liefer)})" if len(liefer) > 1 else ""), liefer[0], art="liefertext")
         if latex:
-            print(f"Hinweis: {self.name} Zeile {_zeilen(latex)}: LaTeX in Klartext umgesetzt (a² + b² = c², √, °); "
-                  "in der Kursdatei Formeln ohne LaTeX schreiben", file=sys.stderr)
+            self.diag.hinweis("LaTeX in Klartext umgesetzt (a² + b² = c², √, °); in der Kursdatei Formeln ohne LaTeX "
+                              "schreiben" + (f" (Zeilen {_zeilen(latex)})" if len(latex) > 1 else ""), latex[0], art="latex")
         for ln, b in rest:
-            print(f"Hinweis: {self.name} Zeile {ln}: LaTeX-Befehl {b} nicht umgesetzt, bitte als Text schreiben",
-                  file=sys.stderr)
+            self.diag.hinweis(f"LaTeX-Befehl {b} nicht umgesetzt, bitte als Text schreiben", ln, art="latex")
+        for ln, tags in html.items():
+            self.diag.hinweis(f"HTML bereinigt: <{'>, <'.join(sorted(set(tags)))}> entfernt (erlaubt sind "
+                              f"{', '.join(sorted(ERLAUBTE_TAGS))})", ln, art="html")
+        for ln, a in self.adressen:
+            if a.startswith("http://"):
+                self.diag.hinweis(f"Adresse ohne https: {a}", ln, art="adresse")
         self.pos = 0
 
     def fehler(self, ln, element, msg):
@@ -381,15 +514,18 @@ def parse_body(lines, zl, element, quiz=False):
 
 # ---------------------------------------------------------------- Blöcke -> HTML (Textfeld, Seite, Buchtext)
 class Kontext:
-    def __init__(self, zl, A, hue, element, kacheln=False):
+    def __init__(self, zl, A, hue, element, kacheln=False, parser=None):
         self.zl, self.A, self.hue, self.element = zl, A, hue, element
         self.kacheln = kacheln  # Kurs im Kachelformat: Baustein `Kacheln:` entfällt (doppelt die Kacheln)
+        self.parser = parser    # liefert Platzhalter für fehlende Bilder (nachsichtig)
         self.files = []     # (local_path, filename) – Bilder in Textfeld/Seite
 
     def fehler(self, ln, msg):
         self.zl.fehler(ln, self.element, msg)
 
     def image(self, ln, name):
+        if self.parser is not None:
+            return self.parser._image(name, ln, self.element)
         if name not in self.A:
             self.fehler(ln, f"Bild „{name}“ nicht in assets/ (vorhanden: {', '.join(sorted(self.A)) or 'keine'})")
         return self.A[name]
@@ -496,8 +632,8 @@ def block_html(b, k: Kontext):
         return T.fahrplan(items, k.hue, b["rest"] or "Dein Weg durch das Themenfeld")
     if name == "Kacheln":
         if k.kacheln:
-            print(f"Hinweis: Kachelformat – Baustein „Kacheln:“ in {k.element} weggelassen (doppelt die Kacheln)",
-                  file=sys.stderr)
+            k.zl.diag.hinweis(f"Kachelformat – Baustein „Kacheln:“ in {k.element} weggelassen (doppelt die Kacheln)", ln,
+                              art="kachel")
             return ""
         tiles = []
         for num, (l2, _, t) in enumerate(b["list"], 1):
@@ -684,12 +820,24 @@ def test_frage(b, k: Kontext):
 
 # ---------------------------------------------------------------- Elemente
 class Parser:
-    def __init__(self, path, A, sb=None, proto=False):
-        self.zl = Zeilen(path)
-        self.A = A
-        self.assets_dir = os.path.join(os.path.dirname(os.path.abspath(path)), "assets")
+    def __init__(self, path=None, A=None, sb=None, proto=False, text=None, nachsichtig=False, name=None, assets_dir=None,
+                 platzhalter=None):
+        self.diag = Diagnosen(name or (os.path.basename(path) if path else "kurs.md"))
+        self.zl = Zeilen(path, text, name, self.diag)
+        self.A = A if A is not None else {}
+        self.assets_dir = assets_dir or (os.path.join(os.path.dirname(os.path.abspath(path)), "assets") if path
+                                         else os.path.join(os.getcwd(), "assets"))
         self.sb = sb or {}
         self.proto = proto
+        self.nachsichtig = nachsichtig      # Fehler je Element sammeln statt abbrechen
+        self.platzhalter = nachsichtig if platzhalter is None else platzhalter   # fehlende Bilder: Warnung + Platzhalter
+        self.bausteine = []     # AST für die Oberfläche: ein dict je Element (id, typ, titel, abschnitt, zeile, status …)
+        self.abschnitte = []    # (titel, zeile, angaben, [baustein-ids])
+        self._ids = {}          # (abschnitt, typ, titel) -> Anzahl, für stabile IDs bei gleichen Titeln
+        self._explizit = set()  # vergebene `id:`-Angaben
+        self._platzhalter = None    # Ordner mit Platzhalterbildern (nachsichtig)
+        self.abschnitt = None       # Titel des aktuellen Abschnitts (für Baustein-IDs)
+        self.unterabschnitt = None  # Titel des aktuellen Unterabschnitts
         self.titel = None
         self.kurs_attr = {}
         self.sections = []
@@ -825,9 +973,63 @@ class Parser:
             self.fehler(ln, element, f"sichtbar ab „{v}“: Datum als JJJJ-MM-TT")
 
     def _image(self, name, ln, element):
-        if name not in self.A:
-            self.fehler(ln, element, f"Bild „{name}“ nicht in assets/ (vorhanden: {', '.join(sorted(self.A)) or 'keine'})")
-        return self.A[name]
+        name = (name or "").strip()
+        if name in self.A:
+            return self.A[name]
+        if "://" in name:
+            msg = f"Bild „{name}“: externe Bilder sind nicht erlaubt, Bilddatei in assets/ legen"
+        else:
+            msg = f"Bild „{name}“ nicht in assets/ (vorhanden: {', '.join(sorted(self.A)) or 'keine'})"
+        if not self.platzhalter:
+            self.fehler(ln, element, msg)
+        self.diag.warnung(msg + "; Platzhalter eingesetzt", ln, element, art="bild")
+        return self._platzhalter_bild(name)
+
+    def _platzhalter_bild(self, name):
+        """Hellgraues Bild unter dem fehlenden Namen (Pfad in einem Temp-Ordner, den gen.api aufräumt)."""
+        if self._platzhalter is None:
+            self._platzhalter = tempfile.mkdtemp(prefix="kursmuehle_platzhalter_")
+        safe = re.sub(r"[^\w.-]+", "_", name) or "bild.png"
+        if not safe.lower().endswith((".png", ".jpg", ".jpeg")):
+            safe += ".png"
+        path = os.path.join(self._platzhalter, safe)
+        if not os.path.exists(path):
+            with open(path, "wb") as f:
+                f.write(platzhalter_png())
+        ref = (path, H.ImageRef(path, 640, 400, name=safe))
+        self.A[name] = ref
+        return ref
+
+    def _baustein_id(self, abschnitt, typ, titel):
+        """Stabile ID aus Abschnitt, Typ, Titel und laufender Nummer bei gleichem Titel: bleibt beim Verschieben
+        anderer Elemente und bei Textänderungen im Element gleich (Rückfall, wenn `id:` fehlt)."""
+        key = (abschnitt or "", typ, titel)
+        self._ids[key] = self._ids.get(key, 0) + 1
+        return "b-" + hashlib.sha1(f"{abschnitt or ''}|{typ}|{titel}|{self._ids[key]}".encode()).hexdigest()[:8]
+
+    def _id_angabe(self, lines, element):
+        """`id: …` unter den Angaben direkt nach der Überschrift (lines[0] ist die Überschrift). Gibt (id, Zeile) oder
+        (None, None); ungültige oder doppelte Angaben werden Warnung, der Baustein bekommt dann die berechnete ID."""
+        for ln, s in lines[1:]:
+            if not s.strip():
+                continue
+            m = _RE_ATTR.match(s)
+            if not m or s.startswith(" ") or s[0].isupper():
+                break
+            if m.group(1).strip().lower() != "id":
+                continue
+            v = m.group(2).strip()
+            if not _RE_ID.match(v):
+                self.diag.warnung(f"id „{v}“: nur Buchstaben, Ziffern, - und _ (höchstens 40 Zeichen); "
+                                  "Baustein wird nach Position zugeordnet", ln, element, art="id")
+                return None, None
+            if v in self._explizit:
+                self.diag.warnung(f"id „{v}“ ist doppelt; dieser Baustein wird nach Position zugeordnet", ln, element,
+                                  art="id")
+                return None, None
+            self._explizit.add(v)
+            return v, ln
+        return None, None
 
     # ----- Dokument
     def parse(self):
@@ -854,8 +1056,10 @@ class Parser:
             rest += r
         for ln, s in rest:
             if s.strip() and not re.match(r"^(v\d+:|Zeit\b)", s.strip()):
-                print(f"Hinweis: {self.zl.name} Zeile {ln} vor dem ersten Abschnitt wird ignoriert: {s.strip()[:60]}", file=sys.stderr)
-        hue = self._hue(self.kurs_attr, T.HUE, 1, "Kurs")
+                self.diag.hinweis(f"vor dem ersten Abschnitt wird ignoriert: {s.strip()[:60]}", ln, art="ignoriert")
+        # Akzentfarbe: `farbe:` im Kopf der Kursdatei, sonst Steckbrief kurs.farbe (Kursangaben der Oberfläche), sonst Vorlage
+        sb_farbe = str((self.sb.get("kurs") or {}).get("farbe") or "")
+        hue = self._hue(self.kurs_attr, sb_farbe if re.match(r"^#[0-9A-Fa-f]{6}$", sb_farbe) else T.HUE, 1, "Kurs")
         global _HUE
         _HUE = hue
         # Abschnitte
@@ -864,32 +1068,72 @@ class Parser:
             h = self._heading(s)
             if not h:
                 if s.strip():
-                    self.fehler(ln, None, "Text außerhalb eines Elements")
+                    self._fehler_oder_diagnose(ln, None, "Text außerhalb eines Elements")
                 i += 1
                 continue
-            if h[0] != 2:
-                self.fehler(ln, None, "Abschnitt (`## Titel`) erwartet")
             j = i + 1
             while j < len(lines):
                 h2 = self._heading(lines[j][1])
                 if h2 and h2[0] <= 2:
                     break
                 j += 1
-            self._section(ln, h[1], lines[i + 1:j], hue)
+            if h[0] != 2:
+                self._fehler_oder_diagnose(ln, None, "Abschnitt (`## Titel`) erwartet")
+                i = j
+                continue
+            if self.nachsichtig:
+                try:
+                    self._section(ln, h[1], lines[i + 1:j], hue)
+                except KursdateiFehler as e:
+                    self.diag.fehler(str(e).split(": ", 1)[-1], ln, f"Abschnitt „{h[1]}“")
+            else:
+                self._section(ln, h[1], lines[i + 1:j], hue)
             i = j
         if not self.sections:
-            self.fehler(len(lines), None, "kein Abschnitt (`## Titel`) gefunden")
-        if self.sections[0].name is not None:
+            self._fehler_oder_diagnose(len(lines), None, "kein Abschnitt (`## Titel`) gefunden")
+        if not self.sections or self.sections[0].name is not None:
             self.sections.insert(0, Section(None, items=[]))
-        badges = [self._badge(ln, name, attrs) for ln, name, attrs in self.badges]
+        badges = []
+        for ln, name, attrs in self.badges:
+            if self.nachsichtig:
+                try:
+                    badges.append(self._badge(ln, name, attrs))
+                except KursdateiFehler as e:
+                    self._baustein_fehler(ln, f"Badge „{name}“", e)
+            else:
+                badges.append(self._badge(ln, name, attrs))
         img = self.kurs_attr.get("kursbild")
         image_path = self._image(img, 1, "Kurs")[0] if img else self.banner_bild
+        self.diag.zuordnen(self.bausteine)
+        for b in self.bausteine:
+            if b["status"] == "ok" and any(d["baustein"] == b["id"] and d["stufe"] == "warnung" for d in self.diag):
+                b["status"] = "warnung"
         return {"sections": self.sections, "parts": self.parts, "badges": badges, "image_path": image_path,
-                "titel": self.titel, "farbe": hue, "websites": self.websites, "textfelder": self.textfelder}
+                "titel": self.titel, "farbe": hue, "websites": self.websites, "textfelder": self.textfelder,
+                "bausteine": self.bausteine, "abschnitte": self.abschnitte, "diagnosen": self.diag,
+                "adressen": self.zl.adressen}
+
+    def _fehler_oder_diagnose(self, ln, element, msg):
+        if self.nachsichtig:
+            self.diag.fehler(msg, ln, element)
+        else:
+            self.fehler(ln, element, msg)
+
+    def _baustein_fehler(self, ln, element, e):
+        """Fehler eines Elements als Diagnose; der Baustein (falls angelegt) bekommt Status fehler."""
+        msg = str(e)
+        m = re.match(rf"^{re.escape(self.zl.name)} Zeile (\d+)(?: \([^)]*\))?: (.*)$", msg, re.S)
+        zeile = int(m.group(1)) if m else ln
+        self.diag.fehler(m.group(2) if m else msg, zeile, element)
+        for b in self.bausteine:
+            if b["zeile"] == ln:
+                b["status"] = "fehler"
 
     def _section(self, ln, title, lines, hue):
         element = f"Abschnitt „{title}“"
         attrs, lines = self._attrs(lines, ATTRS["abschnitt"], element)
+        self.abschnitt = title
+        self.abschnitte.append({"titel": title, "zeile": ln, "angaben": dict(attrs), "bausteine": []})
         if self._skip(attrs):
             return
         hue = self._hue(attrs, hue, ln, element)
@@ -956,57 +1200,97 @@ class Parser:
             body = lines[i + 1:j]
             m = re.match(r"^([^:]+):\s*(.*)$", h[1])
             if not m:
-                self.fehler(ln, None, f"Element ohne Typ – `{marker} Typ: Titel` (Typen: {', '.join(ELEMENTE)})")
+                self._fehler_oder_diagnose(ln, None, f"Element ohne Typ – `{marker} Typ: Titel` (Typen: {', '.join(ELEMENTE)})")
+                i = j
+                continue
             typ, title = m.group(1).strip(), m.group(2).strip()
             typ = next((t for t in ELEMENTE if t.lower() == typ.lower()), None)
             if not typ:
-                self.fehler(ln, None, f"unbekannter Elementtyp „{m.group(1).strip()}“ (erlaubt: {', '.join(ELEMENTE)})")
-            if typ == "Unterabschnitt":
-                if level != 3:
-                    self.fehler(ln, None, "Unterabschnitte nur direkt im Abschnitt (`### Unterabschnitt: Titel`)")
-                sub_count += 1
-                self._subsection(ln, title, body, hue, container, sub_count)
-            elif typ == "Badge":
-                attrs, rest = self._attrs(body, ATTRS["Badge"], f"Badge „{title}“")
-                self.badges.append((ln, title, attrs))
-            else:
-                # Elemente nach dem Unterabschnitt-Block sind wieder Elemente des Abschnitts
-                mins = re.search(r"·\s*(?:ca\.\s*)?(\d+)\s*min\.?\s*$", s)
-                item = self._element(ln, typ, title, body, hue, container, int(mins.group(1)) if mins else None)
-                if item is not None:
-                    container.items.append(item)
-                    self.all_items.append(item)
+                self._fehler_oder_diagnose(ln, None, f"unbekannter Elementtyp „{m.group(1).strip()}“ (erlaubt: {', '.join(ELEMENTE)})")
+                self._baustein(ln, m.group(1).strip(), title, level, lines[i:j], None, "fehler")
+                i = j
+                continue
+            mins = re.search(r"·\s*(?:ca\.\s*)?(\d+)\s*min\.?\s*$", s)
+            b = self._baustein(ln, typ, title, level, lines[i:j], int(mins.group(1)) if mins else None)
+            self.diag.aktuell = (b["id"], title, ln)
+            try:
+                if typ == "Unterabschnitt":
+                    if level != 3:
+                        self.fehler(ln, None, "Unterabschnitte nur direkt im Abschnitt (`### Unterabschnitt: Titel`)")
+                    sub_count += 1
+                    self.diag.aktuell = None
+                    self._subsection(ln, title, body, hue, container, sub_count)
+                elif typ == "Badge":
+                    attrs, rest = self._attrs(body, ATTRS["Badge"], f"Badge „{title}“")
+                    b["angaben"] = dict(attrs)
+                    self.badges.append((ln, title, attrs))
+                else:
+                    # Elemente nach dem Unterabschnitt-Block sind wieder Elemente des Abschnitts
+                    item = self._element(ln, typ, title, body, hue, container, b["minuten"], b)
+                    if item is not None:
+                        container.items.append(item)
+                        self.all_items.append(item)
+            except KursdateiFehler as e:
+                if not self.nachsichtig:
+                    raise
+                self._baustein_fehler(ln, f"{typ} „{title}“", e)
+            finally:
+                self.diag.aktuell = None
             i = j
+
+    def _baustein(self, ln, typ, title, level, lines, minuten, status="ok"):
+        """Baustein (AST-Eintrag) für ein Element anlegen und im Abschnitt eintragen."""
+        abschnitt = getattr(self, "abschnitt", None)
+        explizit, _ = self._id_angabe(lines, f"{typ} „{title}“")
+        b = {"id": explizit or self._baustein_id(abschnitt, typ, title), "id_explizit": bool(explizit), "typ": typ,
+             "titel": title, "abschnitt": abschnitt,
+             "unterabschnitt": getattr(self, "unterabschnitt", None) if level == 4 else None, "ebene": level,
+             "zeile": ln, "zeilen": len(lines), "minuten": minuten, "angaben": {}, "status": status,
+             "text": "\n".join(s for _, s in lines).rstrip() + "\n"}
+        self.bausteine.append(b)
+        if self.abschnitte:
+            self.abschnitte[-1]["bausteine"].append(b["id"])
+        return b
 
     def _subsection(self, ln, title, body, hue, section, num):
         element = f"Unterabschnitt „{title}“"
         attrs, lines = self._attrs(body, ATTRS["Unterabschnitt"], element)
+        self.bausteine[-1]["angaben"] = dict(attrs)
+        self.unterabschnitt = title
         if self._skip(attrs):
             return
         if self.web:
             # Website-Modus: Unterabschnitt = Kapitelgruppe; Elemente ohne Web-Form landen im Abschnitt
             self.web.gruppe = inl(title)
-            self._items(lines, section, hue, level=4, section=section)
-            self.web.gruppe = None
+            try:
+                self._items(lines, section, hue, level=4, section=section)
+            finally:
+                self.web.gruppe = None
+                self.unterabschnitt = None
             return
         sub = SubSection(title, [])
         sub.available_from = self._avail(attrs, ln, element)
         sub.nummer = num
-        self._items(lines, sub, hue, level=4, section=section)
+        try:
+            self._items(lines, sub, hue, level=4, section=section)
+        finally:
+            self.unterabschnitt = None
         section.items.append(sub)
         self.all_items.append(sub)
         if attrs.get("teil"):
             self._part(attrs["teil"], sub, ln, element)
         self._sb_avail(attrs, sub)
 
-    def _element(self, ln, typ, title, body, hue, container, minuten=None):
+    def _element(self, ln, typ, title, body, hue, container, minuten=None, baustein=None):
         element = f"{typ} „{title}“"
         attrs, lines = self._attrs(body, ATTRS[typ], element)
+        if baustein is not None:
+            baustein["angaben"] = dict(attrs)
         if self._skip(attrs):
             return None
         if typ == "Überblick" and self.allg and self.kacheln:
-            print(f"Hinweis: Kachelformat – Überblick „{title}“ in Allgemeines weggelassen (doppelt die Kacheln)",
-                  file=sys.stderr)
+            self.diag.hinweis(f"Kachelformat – Überblick „{title}“ in Allgemeines weggelassen (doppelt die Kacheln)", ln,
+                              element, art="kachel")
             return None
         web = self.web and typ in WEB_TYPEN
         # Textfeld-Modus: nur formative Übungen; was für den Abschluss zählt (bestehen, beim Quiz Standard), bleibt Aktivität
@@ -1022,7 +1306,7 @@ class Parser:
                     self.web.pos = len(container.items)
                 self._web_element(ln, typ, title, lines, attrs, hue, element, minuten)
                 return None
-        k = Kontext(self.zl, self.A, hue, element, self.kacheln)
+        k = Kontext(self.zl, self.A, hue, element, self.kacheln, self)
         avail = self._avail(attrs, ln, element)
         quiz = typ in ("Quiz", "Test")
         blocks = parse_body(lines, self.zl, element, quiz=quiz) if typ not in ("Geschichte",) else None
@@ -1056,8 +1340,9 @@ class Parser:
             item = Label(html, name=attrs.get("name") or "Überblick")
         elif typ in ("Link", "Video"):
             url = next((b["text"] for b in blocks if b["kind"] == "para"), "")
-            if not url.startswith(("http://", "https://")):
-                self.fehler(ln, element, "Adresse (https://…) in der Zeile unter der Überschrift erwartet")
+            if not url.startswith("https://"):
+                self.fehler(ln, element, "Adresse (https://…) in der Zeile unter der Überschrift erwartet"
+                            + ("; nur https, nicht http" if url.startswith("http://") else ""))
             disp = attrs.get("anzeige", "eingebettet").lower()
             if disp not in ANZEIGE:
                 self.fehler(ln, element, f"anzeige „{disp}“: erlaubt sind {', '.join(ANZEIGE)}")
@@ -1278,7 +1563,7 @@ class Parser:
     # ----- Website-Modus (AP7)
     def _web_element(self, ln, typ, title, lines, attrs, hue, element, minuten):
         """Element als Kapitel (oder Startseiten-Teil) der Website des Abschnitts."""
-        W, k = self.web, Kontext(self.zl, self.A, hue, element, self.kacheln)
+        W, k = self.web, Kontext(self.zl, self.A, hue, element, self.kacheln, self)
         blocks = parse_body(lines, self.zl, element, quiz=typ == "Quiz") if typ != "Geschichte" else None
         self.web_titel.add(title)
         if typ == "Banner":
@@ -1316,8 +1601,9 @@ class Parser:
             html = body_html(blocks, k)
         elif typ in ("Link", "Video"):
             url = next((b["text"] for b in blocks if b["kind"] == "para"), "")
-            if not url.startswith(("http://", "https://")):
-                self.fehler(ln, element, "Adresse (https://…) in der Zeile unter der Überschrift erwartet")
+            if not url.startswith("https://"):
+                self.fehler(ln, element, "Adresse (https://…) in der Zeile unter der Überschrift erwartet"
+                            + ("; nur https, nicht http" if url.startswith("http://") else ""))
             html = W.video(url) if typ == "Video" else W.link(url)
         elif typ == "Lesebuch":
             seiten = self._web_lesebuch(blocks, k, element)
@@ -1476,7 +1762,7 @@ class Parser:
             chapters.append(cur)
         out = []
         for title, cblocks, sub in chapters:
-            kc = Kontext(k.zl, k.A, k.hue, k.element, k.kacheln)
+            kc = Kontext(k.zl, k.A, k.hue, k.element, k.kacheln, k.parser)
             html = body_html(cblocks, kc)
             if not html:
                 self.fehler(0, element, f"Kapitel „{title}“ ist leer")
@@ -1630,4 +1916,12 @@ class Parser:
 
 
 def parse(path, A, sb=None, proto=False):
+    """Streng (CLI): KursdateiFehler beim ersten Fehler. Diagnosen (Hinweise) stehen im Ergebnis unter `diagnosen`."""
     return Parser(path, A, sb, proto).parse()
+
+
+def parse_text(text, A, sb=None, proto=False, nachsichtig=True, name="kurs.md", assets_dir=None, platzhalter=None):
+    """Kursdatei aus einem String; nachsichtig = Fehler je Element sammeln (gen.api.pruefe); platzhalter = fehlende
+    Bilder als Warnung mit Platzhalterbild statt Fehler (Standard wie nachsichtig)."""
+    return Parser(None, A, sb, proto, text=text, nachsichtig=nachsichtig, name=name, assets_dir=assets_dir,
+                  platzhalter=platzhalter).parse()

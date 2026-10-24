@@ -2,8 +2,8 @@
 
 usage: python3 scripts/tests/test_check.py   (Exit 0 = alles gut)
 
-Baut netzwerk9 (Vollkurs, Prototyp, je Kursformat), alltagskompetenz (Vollkurs, Delta) und module (mit und ohne
-Nutzerdaten) in ein Temp-Verzeichnis, prüft sie, und erzeugt aus dem netzwerk9-Build je eine kaputte Kopie: fehlende Datei,
+Baut die Fixtures netzwerk9 (Vollkurs, Prototyp, je Kursformat) und module (mit und ohne Nutzerdaten) und den
+Katalogkurs aus fixtures/katalogkurs.py (Vollkurs, Delta, Website, Textfeld; seit AP12a statt alltagskompetenz) in ein Temp-Verzeichnis, prüft sie, und erzeugt aus dem netzwerk9-Build je eine kaputte Kopie: fehlende Datei,
 falscher Hash, kaputtes json_content, falsche Bibliotheksversion, fehlender Aktivitätsordner, Bild aus files.xml entfernt,
 fehlender fileref, ungültiges Verfügbarkeits-JSON, doppelte Abschnittsnummer, nicht wohlgeformtes XML, Formatoption mit
 fremdem Format; aus dem Kachel-Build: Kachelbild ohne Datei, Kacheloption im Themenformat; aus dem module-Build:
@@ -28,12 +28,16 @@ sys.path.insert(0, os.path.join(ROOT, "scripts"))
 
 import check  # noqa: E402
 from check import check_mbz  # noqa: E402
+from fixtures import katalogkurs  # noqa: E402
 
 BUILD = os.path.join(ROOT, "scripts", "build.py")
+FIXTURES = os.path.join(HERE, "fixtures")
+ORDNER = {}          # Name -> Kursordner (Fixture oder Katalogkurs im Temp-Ordner)
 
 
 def build(content, out, *flags):
-    r = subprocess.run([sys.executable, BUILD, "--content", os.path.join(ROOT, "examples", content), "--out", out,
+    pfad = ORDNER.get(content) or os.path.join(FIXTURES, content)
+    r = subprocess.run([sys.executable, BUILD, "--content", pfad, "--out", out,
                         "--no-check", *flags], capture_output=True, text=True)
     if r.returncode != 0:
         raise SystemExit(f"Build {content} {flags} fehlgeschlagen:\n{r.stdout}\n{r.stderr}")
@@ -294,17 +298,18 @@ USERS_FAELLE = [
 def main():
     bad = 0
     with tempfile.TemporaryDirectory() as d:
+        ORDNER["katalogkurs"] = katalogkurs.schreibe(d)
         gut = [build("netzwerk9", os.path.join(d, "n9.mbz")),
                build("netzwerk9", os.path.join(d, "n9_proto.mbz"), "--proto"),
-               build("alltagskompetenz", os.path.join(d, "ak.mbz")),
-               build("alltagskompetenz", os.path.join(d, "ak_delta.mbz"), "--delta", "le2,le3"),
+               build("katalogkurs", os.path.join(d, "ak.mbz")),
+               build("katalogkurs", os.path.join(d, "ak_delta.mbz"), "--delta", "t2"),
                build("module", os.path.join(d, "module.mbz"))]
         gut += [build("netzwerk9", os.path.join(d, f"n9_{f}.mbz"), "--format", f)
                 for f in ("kacheln", "wochen", "einthemen", "komprimiert")]
         gut.append(build("netzwerk9", os.path.join(d, "n9_website.mbz"), "--website"))
-        gut.append(build("alltagskompetenz", os.path.join(d, "ak_website.mbz"), "--website", "popup"))
+        gut.append(build("katalogkurs", os.path.join(d, "ak_website.mbz"), "--website", "popup"))
         gut.append(build("netzwerk9", os.path.join(d, "n9_textfeld.mbz"), "--website", "textfeld"))
-        gut.append(build("alltagskompetenz", os.path.join(d, "ak_textfeld.mbz"), "--website", "textfeld"))
+        gut.append(build("katalogkurs", os.path.join(d, "ak_textfeld.mbz"), "--website", "textfeld"))
         gut.append(build("module", os.path.join(d, "module_mit.mbz"), "--mit-nutzerdaten"))
         for path in gut:
             errors, info, warnings = check_mbz(path)
@@ -319,13 +324,13 @@ def main():
             if want_warn != any(was.startswith("users=1") for _, was in warnings):
                 bad += 1
                 print(f"FALSCH {os.path.basename(path)}: users=1-Warnung {'erwartet' if want_warn else 'nicht erwartet'}: {warnings}")
-            # Kacheltitel über 35 Zeichen: netzwerk9 im Kachelformat ja, alltagskompetenz (kurze Titel) nicht
+            # Kacheltitel über 35 Zeichen: netzwerk9 im Kachelformat ja, Katalogkurs (kurze Titel) nicht
             want_titel = path.endswith("n9_kacheln.mbz")
             if want_titel != any(was.startswith("Kacheltitel") for _, was in warnings):
                 bad += 1
                 print(f"FALSCH {os.path.basename(path)}: Kacheltitel-Warnung {'erwartet' if want_titel else 'nicht erwartet'}")
         # Einzelaktivität: genau ein Element – netzwerk9 hat zehn, der Bau muss abbrechen
-        r = subprocess.run([sys.executable, BUILD, "--content", os.path.join(ROOT, "examples", "netzwerk9"), "--out",
+        r = subprocess.run([sys.executable, BUILD, "--content", os.path.join(FIXTURES, "netzwerk9"), "--out",
                             os.path.join(d, "single.mbz"), "--format", "einzelaktivitaet"], capture_output=True, text=True)
         if r.returncode == 0 or "genau ein Element" not in r.stderr:
             bad += 1

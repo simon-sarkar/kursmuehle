@@ -14,8 +14,9 @@ sys.path.insert(0, os.path.join(ROOT, "scripts"))
 from gen import html as T  # noqa: E402
 from gen.h5p import ImageRef  # noqa: E402
 from gen.kursdatei import KursdateiFehler, parse  # noqa: E402
+from fixtures import katalogkurs  # noqa: E402
 
-PNG = os.path.join(ROOT, "examples", "netzwerk9", "assets", "router.png")
+PNG = os.path.join(ROOT, "scripts", "tests", "fixtures", "netzwerk9", "assets", "router.png")
 A = {"router.png": (PNG, ImageRef(PNG, 10, 10))}
 
 # (Kursdatei, erwarteter Teil der Fehlermeldung)
@@ -357,13 +358,65 @@ def check_nachsicht():
     return bad
 
 
-def check_beispiele():
+ID_KURS = """# Drehbuch v1 · IDs · 20
+## Teil · 20 min
+### Textfeld: Eins
+id: start-1
+Hallo.
+### Quiz: Zwei · 5 min
+id: start-1
+bestehen: 80 %
+1. Frage? · ✔a · b
+### Seite: Drei
+Text ohne id.
+### Seite: Vier
+id: mit leerzeichen
+Text.
+"""
+
+
+def check_id():
+    """`id:` je Baustein: gesetzt = diese ID, fehlend = berechnete ID, doppelt oder ungültig = Warnung und berechnete ID;
+    der strenge Bau (build.py) läuft mit `id:` durch und baut dieselben Bytes wie ohne."""
     bad = 0
-    beispiele = os.path.join(ROOT, "examples")
-    for name in sorted(d for d in os.listdir(beispiele) if os.path.exists(os.path.join(beispiele, d, "kurs.md"))):
-        out = os.path.join(tempfile.gettempdir(), f"test_{name}.mbz")
+    from gen import api
+    r = api.pruefe(ID_KURS)
+    b = r["bausteine"]
+    ids = [x["id"] for x in b]
+    if ids[0] != "start-1" or not b[0]["id_explizit"]:
+        print(f"FALSCH id gesetzt: {ids[0]}")
+        bad += 1
+    if not (ids[1].startswith("b-") and ids[2].startswith("b-") and ids[3].startswith("b-")) or len(set(ids)) != 4:
+        print(f"FALSCH id doppelt/fehlend/ungültig: {ids}")
+        bad += 1
+    w = [d["text"] for d in r["diagnosen"] if d["art"] == "id"]
+    if len(w) != 2 or "doppelt" not in w[0] or "Buchstaben" not in w[1] or b[1]["status"] != "warnung":
+        print(f"FALSCH id-Warnungen: {w}")
+        bad += 1
+    if b[1]["angaben"].get("bestehen") != "80 %":
+        print(f"FALSCH id stört die übrigen Angaben: {b[1]['angaben']}")
+        bad += 1
+    ohne = "\n".join(z for z in ID_KURS.splitlines() if not z.startswith("id:")) + "\n"
+    m1, d1 = api.baue(ID_KURS, {}, {}, zeit=1700000000, seed=1)
+    m2, d2 = api.baue(ohne, {}, {}, zeit=1700000000, seed=1)
+    if not m1 or m1 != m2:
+        print(f"FALSCH id ändert den Bau: {[d['satz'] for d in d1 if d['stufe'] == 'fehler']}")
+        bad += 1
+    return bad
+
+
+def check_beispiele():
+    """Die Fixtures unter scripts/tests/fixtures/ (seit AP12a statt examples/) und den Katalogkurs bauen."""
+    bad = 0
+    fixtures = os.path.join(HERE, "fixtures")
+    tmp = tempfile.mkdtemp()
+    ordner = [os.path.join(fixtures, d) for d in sorted(os.listdir(fixtures)) if os.path.exists(os.path.join(fixtures, d, "kurs.md"))]
+    ordner.append(katalogkurs.schreibe(tmp))
+    for pfad in ordner:
+        name = os.path.basename(pfad)
+        out = os.path.join(tmp, f"test_{name}.mbz")
         r = subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "build.py"), "--content",
-                            os.path.join(ROOT, "examples", name), "--no-render", "--out", out],
+                            pfad, "--no-render", "--out", out],
                            capture_output=True, text=True)
         if r.returncode != 0:
             print(f"BAU {name} fehlgeschlagen:\n{r.stderr}")
@@ -374,6 +427,6 @@ def check_beispiele():
 
 
 if __name__ == "__main__":
-    n = check_fehler() + check_nachsicht() + check_beispiele()
+    n = check_fehler() + check_nachsicht() + check_id() + check_beispiele()
     print("OK" if n == 0 else f"{n} Problem(e)")
     sys.exit(1 if n else 0)

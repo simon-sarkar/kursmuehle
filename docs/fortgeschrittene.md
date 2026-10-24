@@ -12,7 +12,7 @@ und die Render-Tests.
 ```bash
 git clone https://github.com/simon-sarkar/kursmuehle.git
 cd kursmuehle
-python3 scripts/build.py --content examples/netzwerk9     # Probe: baut die Beispielsicherung und prüft sie
+python3 scripts/build.py --content scripts/tests/fixtures/netzwerk9     # Probe: baut den Testkurs und prüft ihn
 ```
 
 Erste Nachricht an den Agenten: „Lies docs/fortgeschrittene.md und SKILL.md.“ Danach läuft der Kursbau wie in
@@ -24,14 +24,13 @@ Arbeit am Generator selbst, nicht für den Kursbau.
 Wer schon Kurse auf der Plattform hat, kann eine davon als Vorbild nehmen: Der Agent entpackt die Sicherung auf dem eigenen Rechner und
 leitet daraus Steckbrief und Designvorlage ab. Die Datei bleibt lokal; was der Agent daraus liest, geht an den
 Modellanbieter. Deshalb nur eigene Kurse nehmen, gesichert ohne Nutzerdaten. Die Sicherung geht nie ins Repo, nie in
-einen Pull Request und nie in einen Beispielordner (Nutzungsbedingungen der Plattform: keine Weitergabe an Dritte;
+einen Pull Request und nie in einen Testordner (Nutzungsbedingungen der Plattform: keine Weitergabe an Dritte;
 außerdem enthält sie Namen und IDs).
 
 Ablauf:
 
 1. Auf der Plattform: Kurs → Mehr → Kurs sichern, ohne Nutzerdaten; die `.mbz` in einen Ordner außerhalb des Repos legen,
-   etwa `~/kursvorlagen/`. Der Ordner `examples/*/out/` und alle `.mbz` sind in `.gitignore`, trotzdem gehört sie nicht
-   unter das Repo.
+   etwa `~/kursvorlagen/`. Alle `.mbz` sind in `.gitignore`, trotzdem gehört sie nicht unter das Repo.
 2. Agent: „Entpacke `~/kursvorlagen/<datei>.mbz` (tar.gz) in ein Temp-Verzeichnis und lies `course/course.xml`,
    `sections/*/section.xml` und die `module.xml` der Aktivitäten. Leite daraus ab: Kursformat und Formatoptionen,
    Zahl und Länge der Abschnitte, Mischung der Elementtypen je Abschnitt, Farben und wiederkehrende HTML-Muster in den
@@ -56,8 +55,9 @@ die Bausteine nutzen nur filtersicheres CSS (`references/spec.md` §K).
 
 Bausteine wie `Kasten:`, `Merke:`, `Schritte:` sind Funktionen in `scripts/gen/html.py`, erkannt werden sie im Parser
 `scripts/gen/kursdatei.py` (§4 in `references/kursdatei.md`). Ein neuer Baustein braucht: eine Funktion in `html.py`,
-die Zeilenerkennung im Parser, eine Zeile in der Tabelle in `kursdatei.md` §4 und einen Einsatz in
-`examples/alltagskompetenz/kurs.md`, damit die Tests ihn bauen. Der Testlauf dazu: `python3 scripts/tests/test_kursdatei.py`.
+die Zeilenerkennung im Parser, eine Zeile in der Tabelle in `kursdatei.md` §4 und einen Einsatz im `beispiel` eines
+Typs in `references/katalog.yaml`; daraus setzt `scripts/tests/fixtures/katalogkurs.py` den Testkurs zusammen, den die
+Tests bauen. Der Testlauf dazu: `python3 scripts/tests/test_kursdatei.py`.
 
 ## 5. Eigene Fachregeln im Intake
 
@@ -66,12 +66,14 @@ gehören in `references/intake.md`: als zusätzliche Zeile in der Formattabelle 
 Probe, nach dem Muster der vorhandenen. Was sich nicht als Probe formulieren lässt, die ein Assistent am Drehbuch nachvollziehen
 kann, hilft nicht. Marker für die Sprachprüfung kommen in `references/qualitaet.md`.
 
-## 6. Eigener Beispielordner
+## 6. Eigene Kursordner
 
-Ein Kursordner besteht aus `kurs.md`, `steckbrief.yaml` und `assets/` (PNG, PDF). Ein eigener Ordner unter `examples/`
-dient als Vorbild für weitere Kurse derselben Art, etwa `examples/mathe6/`. `python3 scripts/build.py --content
-examples/mathe6` baut ihn; `scripts/tests/test_kursdatei.py` baut alle Ordner unter `examples/` mit. Inhalte nur
-selbst geschrieben oder CC0, keine Schulbuchseiten, keine Fotos von Personen, keine Namen echter Personen oder Schulen.
+Ein Kursordner besteht aus `kurs.md`, `steckbrief.yaml` und `assets/` (PNG, PDF) und liegt außerhalb des Repos, etwa
+`~/kurse/mathe6/`; `python3 scripts/build.py --content ~/kurse/mathe6` baut ihn. Beispielkurse gibt es im Repo nicht
+(seit 2.0.0-a4): Ein fremder Kurs prägt das Modell auf sein Thema, statt die allgemeinen Regeln zu zeigen. Die
+Testkurse unter `scripts/tests/fixtures/` sind für die Tests da; `scripts/tests/test_kursdatei.py` baut jeden Ordner
+dort mit. Inhalte darin nur selbst geschrieben oder CC0, keine Schulbuchseiten, keine Fotos von Personen, keine Namen
+echter Personen oder Schulen.
 
 ## 7. Skill-Zip neu packen
 

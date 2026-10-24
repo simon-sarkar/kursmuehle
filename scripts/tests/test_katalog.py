@@ -1,0 +1,125 @@
+"""Gleichstand des Katalogs (`references/katalog.yaml`) mit Parser und Referenz:
+- jeder Typ aus gen.kursdatei.ELEMENTE hat genau einen Eintrag, und umgekehrt
+- die Angaben je Typ sind genau ATTRS[typ] (Umlaut-Schreibweise im Katalog, ASCII-Aliasse im Parser zählen mit)
+- Kopf-Angaben (kurs, abschnitt) stimmen
+- jeder Typ steht in `kursdatei.md` §3 (Tabelle) und jedes Beispiel baut ohne Fehler (gen.api.pruefe)
+- Formularnamen sind eindeutig; jede Phase aus `docs/entwicklung/phasenschemata.md` ist einem Typ zugeordnet
+
+usage: python3 scripts/tests/test_katalog.py   (Exit 0 = alles gut)
+"""
+import os
+import re
+import sys
+
+import yaml
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
+sys.path.insert(0, os.path.join(ROOT, "scripts"))
+from gen import api  # noqa: E402
+from gen import kursdatei as K  # noqa: E402
+
+ALIAS = {"höhe": "hoehe", "fällig": "faellig", "rückmeldung": "rueckmeldung", "ändern": "aendern"}
+GEMEINSAM = {"sichtbar ab", "prototyp", "id"}
+PNG = os.path.join(ROOT, "scripts", "tests", "fixtures", "netzwerk9", "assets", "router.png")
+fehler = []
+
+
+def ok(cond, was):
+    print(("ok     " if cond else "FALSCH ") + was)
+    if not cond:
+        fehler.append(was)
+
+
+def main():
+    with open(os.path.join(ROOT, "references", "katalog.yaml"), encoding="utf-8") as f:
+        kat = yaml.safe_load(f)
+    typen = {e["typ"]: e for e in kat["typen"]}
+    ok(set(typen) == set(K.ELEMENTE), f"Typen: Katalog {len(typen)}, Parser {len(K.ELEMENTE)}"
+       + (f"; fehlt {set(K.ELEMENTE) - set(typen)}, zu viel {set(typen) - set(K.ELEMENTE)}" if set(typen) != set(K.ELEMENTE) else ""))
+    ok(len(kat["typen"]) == len(typen), "kein Typ doppelt")
+    namen = [e["formularname"] for e in kat["typen"]]
+    ok(len(set(namen)) == len(namen), "Formularnamen eindeutig")
+    for name, erwartet in (("kurs", K.ATTRS["kurs"]), ("abschnitt", K.ATTRS["abschnitt"])):
+        ist = set(kat["kopf"][name]["angaben"])
+        ok(ist == erwartet, f"Kopf {name}: Angaben {sorted(ist)}")
+    ok(set(kat["gemeinsam"]["angaben"]) == GEMEINSAM, "gemeinsame Angaben sichtbar ab, prototyp, id")
+
+    with open(os.path.join(ROOT, "references", "kursdatei.md"), encoding="utf-8") as f:
+        ref = f.read()
+    with open(PNG, "rb") as f:
+        png = f.read()
+    for typ, e in typen.items():
+        ist = set(e.get("angaben", []))
+        ist |= GEMEINSAM if typ != "Badge" else {"id"}
+        ist |= {ALIAS[a] for a in ist if a in ALIAS}
+        ok(ist == K.ATTRS[typ], f"{typ}: Angaben wie ATTRS" + ("" if ist == K.ATTRS[typ] else f" (Katalog {sorted(ist)}, Parser {sorted(K.ATTRS[typ])})"))
+        ok(f"| `{typ}`" in ref or f"`{typ}`" in ref, f"{typ}: in kursdatei.md genannt")
+        for p in e.get("pflicht", []):
+            ok(p in ist, f"{typ}: Pflichtangabe {p} ist eine Angabe")
+        assets = {}
+        for a in e.get("assets", []):
+            assets[a] = png if a.lower().endswith(".png") else b"%PDF-1.4\n% Platzhalter\n"
+        doc = "# Drehbuch v1 · Katalog · 45\n\n## Allgemeines\n### Textfeld: Start\nEin Satz.\n\n## Teil 1 · 20 min\n" + e["beispiel"]
+        r = api.pruefe(doc, assets)
+        probleme = [d["satz"] for d in r["diagnosen"] if d["stufe"] in ("fehler", "warnung")]
+        ok(not probleme, f"{typ}: Beispiel baut" + (f" ({'; '.join(probleme)[:200]})" if probleme else ""))
+        ok(any(b["typ"] == typ for b in r["bausteine"]), f"{typ}: Beispiel enthält den Typ")
+        ok(bool(e.get("regeln")) and bool(e.get("formularname")) and bool(e.get("moodle")), f"{typ}: Regeln, Formularname, Ziel vorhanden")
+
+    # Phasenschemata: jede Phase der vier Tabellen kommt in mindestens einem Katalogtyp vor
+    pfad = os.path.join(ROOT, "docs", "entwicklung", "phasenschemata.md")
+    if os.path.exists(pfad):
+        with open(pfad, encoding="utf-8") as f:
+            schema = f.read()
+        phasen = set()
+        for m in re.finditer(r"^\| ([^|]+?) \| [^|]+ \| [^|]+ \| \d+ % \|$", schema, re.M):
+            phasen.add(re.sub(r"\s*\(optional\)", "", m.group(1)).strip())
+        katalog_phasen = {p for e in kat["typen"] for p in e.get("phasen", [])}
+        fehlend = set()
+        for p in phasen:
+            teile = [t.strip() for t in re.split(r",| oder ", p)]
+            if not any(t in katalog_phasen for t in teile):
+                fehlend.add(p)
+        ok(not fehlend, f"Phasenschemata: {len(phasen)} Phasen, alle im Katalog zugeordnet" + (f"; fehlt {sorted(fehlend)}" if fehlend else ""))
+
+    # Rollen und Einheitsvorlagen (AP10): jede Rolle gültig, Anteile 100 %, Bausteintypen aus dem Katalog, Phasen aus den
+    # Phasenschemata mit demselben Anteil
+    rollen = {"einstieg", "lesen", "üben", "sichern", "rahmen"}
+    ok(all(e.get("rolle") in rollen for e in kat["typen"]), "jeder Typ hat eine Rolle")
+    tabelle = {}
+    if os.path.exists(pfad):
+        for m in re.finditer(r"^\| ([^|]+?) \| [^|]+ \| [^|]+ \| (\d+) % \|$", schema, re.M):
+            name = re.sub(r"\s*\(optional\)", "", m.group(1)).strip()
+            tabelle.setdefault(name.split(",")[0].split(" oder ")[0].strip(), set()).add(int(m.group(2)))
+    for v in kat["vorlagen"]:
+        summe = sum(p["anteil"] for p in v["phasen"])
+        ok(summe == 100, f"Vorlage {v['name']}: Anteile {summe} %")
+        for p in v["phasen"]:
+            typen_p = [b.split(":")[0].strip() for b in p["bausteine"]]
+            ok(all(t in typen or t == "automatisch" for t in typen_p) and p.get("rolle") in rollen,
+               f"Vorlage {v['name']}, {p['phase']}: Typen {typen_p}, Rolle {p.get('rolle')}")
+            if tabelle and p.get("zusammen"):     # eine Karte für mehrere Phasen (AP13): Anteil = Summe
+                summe_p = sum(min(tabelle.get(z, {0})) for z in p["zusammen"])
+                ok(p["anteil"] == summe_p, f"Vorlage {v['name']}, {p['phase']}: {p['anteil']} % = {' + '.join(p['zusammen'])} in phasenschemata.md")
+            elif tabelle:
+                ok(p["anteil"] in tabelle.get(p["phase"], set()), f"Vorlage {v['name']}, {p['phase']}: {p['anteil']} % wie in phasenschemata.md")
+        karten = sum(len(p["bausteine"]) for p in v["phasen"])
+        ok(karten <= 6, f"Vorlage {v['name']}: {karten} Karten (höchstens sechs, AP13)")
+    # Typ „automatisch“ und Gruppen der Typ-Auswahl (AP13): nur Typen aus dem Katalog, keiner doppelt
+    alle_t = {e["typ"] for e in kat["typen"]}
+    ok(set(kat["automatisch"]["typen"]) <= alle_t and all(kat["automatisch"]["typen"].values()), "automatisch: Typen mit je einer Zeile")
+    gruppiert = [t for g in kat["typgruppen"] for t in g["typen"]]
+    ok(set(gruppiert) <= alle_t and len(gruppiert) == len(set(gruppiert)), f"Typgruppen: {len(gruppiert)} Typen, keiner doppelt")
+    for feld, werte in kat["oberflaeche"].items():
+        ok(len(werte) >= 2 and all("wert" in w and w.get("text") for w in werte), f"Oberfläche {feld}: {len(werte)} Werte")
+    ok({w["wert"] for w in kat["oberflaeche"]["farbe"] if w["wert"]} <= set(K.FARBEN), "Oberfläche Farben aus FARBEN")
+    if fehler:
+        print(f"\n{len(fehler)} Fehler")
+        return 1
+    print("\nalles gut")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

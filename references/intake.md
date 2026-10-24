@@ -187,7 +187,7 @@ Zweck: Die Lehrkraft liest den gesamten Inhalt als Text, korrigiert, promptet na
 Lesen und Nachprompten ist die Reibung – **so kurz wie möglich, so lang wie nötig**. Kein Prosa-Rahmen, keine
 Erklärungen an die Lehrkraft, keine Wiederholung des Steckbriefs. Das Drehbuch ist zugleich die Kursdatei `kurs.md`:
 `scripts/build.py` liest sie direkt; Quellen-, Zweck-, Zeit- und Bezugsmarker ignoriert der Parser. Vollständige Referenz
-(alle Angaben, Bausteine, Grenzen): `references/kursdatei.md`. Vorbild: `examples/netzwerk9/kurs.md`.
+(alle Angaben, Bausteine, Grenzen): `references/kursdatei.md`.
 
 Format (Markdown, Überschriften tragen die Struktur, Angaben stehen klein geschrieben direkt darunter):
 

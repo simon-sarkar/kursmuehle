@@ -1,4 +1,5 @@
-"""Test des Website-Modus (AP7) und des Textfeld-Modus (AP7b): netzwerk9 und alltagskompetenz mit --website bauen, die
+"""Test des Website-Modus (AP7) und des Textfeld-Modus (AP7b): das Fixture netzwerk9 und den Katalogkurs
+(fixtures/katalogkurs.py, seit AP12a statt alltagskompetenz) mit --website bauen, die
 Vorschau-HTML in Chromium öffnen, Navigation und Übungen durchklicken, Screenshots bei 390 px (Handy) und 1280 px (Desktop).
 
 usage: python3 scripts/tests/test_website.py [--out DIR]   (Exit 0 = alles gut)
@@ -25,8 +26,12 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 BUILD = os.path.join(ROOT, "scripts", "build.py")
+sys.path.insert(0, HERE)
+from fixtures import katalogkurs  # noqa: E402
+ORDNER = {"netzwerk9": os.path.join(HERE, "fixtures", "netzwerk9")}
 
 fehler = []
+BLOECKE_KATALOGKURS = 6     # Quiz, Zuordnen, Lernkarten, Lückentext, Geschichte, zweites Quiz
 
 
 def ok(cond, was):
@@ -36,7 +41,7 @@ def ok(cond, was):
 
 
 def build(content, out, anzeige="ja"):
-    r = subprocess.run([sys.executable, BUILD, "--content", os.path.join(ROOT, "examples", content), "--out", out,
+    r = subprocess.run([sys.executable, BUILD, "--content", ORDNER[content], "--out", out,
                         "--website", anzeige], capture_output=True, text=True)
     if r.returncode != 0:
         raise SystemExit(f"Build {content} --website {anzeige} fehlgeschlagen:\n{r.stdout}\n{r.stderr}")
@@ -141,7 +146,7 @@ def netzwerk9(page, path, out, breite):
         ok(warte(page, an=["#start"], aus=["#km-nav"]), f"[{breite}] Menü schließt nach Auswahl")
 
 
-def alltagskompetenz(page, paths):
+def katalogkurs_website(page, paths):
     page.goto("file://" + paths[0])
     for sel, name in ((".km-word", "Markieren"), ("input.km-gap", "Lückentext")):
         kid = kapitel_mit(page, sel)
@@ -297,10 +302,11 @@ def main():
         os.makedirs(out, exist_ok=True)
         n9 = build("netzwerk9", os.path.join(d, "n9", "n9.mbz"))
         ok(len(n9) == 1, f"netzwerk9: eine Website ({len(n9)})")
-        ak = build("alltagskompetenz", os.path.join(d, "ak", "ak.mbz"))
-        ok(len(ak) == 8, f"alltagskompetenz: acht Websites, eine je Themenfeld ({len(ak)})")
+        ORDNER["katalogkurs"] = katalogkurs.schreibe(d)
+        ak = build("katalogkurs", os.path.join(d, "ak", "ak.mbz"))
+        ok(len(ak) == 2, f"Katalogkurs: zwei Websites, eine je Teil ({len(ak)})")
         n9t = build("netzwerk9", os.path.join(d, "n9t", "n9.mbz"), "textfeld")
-        akt = build("alltagskompetenz", os.path.join(d, "akt", "ak.mbz"), "textfeld")
+        akt = build("katalogkurs", os.path.join(d, "akt", "ak.mbz"), "textfeld")
         ok(len(n9t) == 1 and len(akt) == 1, "Textfeld-Modus: je eine Vorschau")
         with sync_playwright() as p:
             browser = p.chromium.launch(executable_path=os.environ.get("CHROMIUM_PATH") or None)
@@ -309,15 +315,15 @@ def main():
                 netzwerk9(page, n9[0], out, breite)
                 page.close()
             page = browser.new_page(viewport={"width": 1280, "height": 860})
-            alltagskompetenz(page, ak)
+            katalogkurs_website(page, ak)
             page.close()
             for breite, hoehe in ((390, 844), (1280, 860)):
                 page = browser.new_page(viewport={"width": breite, "height": hoehe})
                 textfeld(page, n9t[0], out, breite, 3, "netzwerk9")
                 page.close()
             page = browser.new_page(viewport={"width": 1280, "height": 860})
-            mc = textfeld(page, akt[0], out, 1280, 8, "alltagskompetenz")
-            ok(mc >= 2, f"[textfeld] alltagskompetenz: mindestens zwei Blöcke mit Auswahl ({mc})")
+            mc = textfeld(page, akt[0], out, 1280, BLOECKE_KATALOGKURS, "katalogkurs")
+            ok(mc >= 2, f"[textfeld] Katalogkurs: mindestens zwei Blöcke mit Auswahl ({mc})")
             page.close()
             page = browser.new_page(viewport={"width": 1280, "height": 860})
             textfeld_ak(page, akt[0])

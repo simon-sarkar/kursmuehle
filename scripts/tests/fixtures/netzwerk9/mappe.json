@@ -1,0 +1,134 @@
+{
+ "bausteine": [
+  {
+   "abschnitt": "Allgemeines",
+   "auftrag": "",
+   "geplant": false,
+   "id": "banner",
+   "minuten": null,
+   "neu": false,
+   "phase": "",
+   "soll": null,
+   "titel": "Netzwerkkomponenten",
+   "typ": "Banner"
+  },
+  {
+   "abschnitt": "Netzwerkkomponenten – von der Wand aufs Handy",
+   "auftrag": "",
+   "geplant": false,
+   "id": "ueberblick",
+   "minuten": null,
+   "neu": false,
+   "phase": "",
+   "soll": null,
+   "titel": "Netzwerkkomponenten",
+   "typ": "Überblick"
+  },
+  {
+   "abschnitt": "Netzwerkkomponenten – von der Wand aufs Handy",
+   "auftrag": "Ein Fall aus dem Alltag: das Video lädt nicht. Wo schaust du zuerst nach?",
+   "geplant": false,
+   "id": "einstieg",
+   "minuten": 2,
+   "neu": false,
+   "phase": "Einstieg",
+   "soll": 2,
+   "titel": "Einstieg: Keine Verbindung",
+   "typ": "Textfeld"
+  },
+  {
+   "abschnitt": "Netzwerkkomponenten – von der Wand aufs Handy",
+   "auftrag": "Die sechs Stationen aus den Folien 5 bis 11, mit den Heftbildern.",
+   "geplant": false,
+   "id": "weg",
+   "minuten": 3,
+   "neu": false,
+   "phase": "Lesen",
+   "soll": 5,
+   "titel": "Der Weg von der Wand aufs Handy",
+   "typ": "Seite"
+  },
+  {
+   "abschnitt": "Netzwerkkomponenten – von der Wand aufs Handy",
+   "auftrag": "",
+   "geplant": false,
+   "id": "wer-bin-ich",
+   "minuten": 2,
+   "neu": false,
+   "phase": "Üben",
+   "soll": 2,
+   "titel": "Wer bin ich?",
+   "typ": "Lernkarten"
+  },
+  {
+   "abschnitt": "Netzwerkkomponenten – von der Wand aufs Handy",
+   "auftrag": "Reihenfolge der Stationen und welche Geräte man mindestens braucht.",
+   "geplant": false,
+   "id": "check-weg",
+   "minuten": 2,
+   "neu": false,
+   "phase": "Üben",
+   "soll": 2,
+   "titel": "Check: Der Weg",
+   "typ": "Quiz"
+  },
+  {
+   "abschnitt": "Netzwerkkomponenten – von der Wand aufs Handy",
+   "auftrag": "",
+   "geplant": false,
+   "id": "fall-huber",
+   "minuten": 2,
+   "neu": false,
+   "phase": "Üben",
+   "soll": 2,
+   "titel": "Fall: Familie Huber zieht ein",
+   "typ": "Textfeld"
+  },
+  {
+   "abschnitt": "Netzwerkkomponenten – von der Wand aufs Handy",
+   "auftrag": "Die Wohnung von Familie Huber, Lösung wie auf Folie 15.",
+   "geplant": false,
+   "id": "raeume",
+   "minuten": 4,
+   "neu": false,
+   "phase": "Üben",
+   "soll": 4,
+   "titel": "Was kommt in welchen Raum?",
+   "typ": "Zuordnen"
+  },
+  {
+   "abschnitt": "Netzwerkkomponenten – von der Wand aufs Handy",
+   "auftrag": "Hefteintrag wie im Unterricht.",
+   "geplant": false,
+   "id": "hefteintrag",
+   "minuten": 10,
+   "neu": false,
+   "phase": "Sichern",
+   "soll": 5,
+   "titel": "Hefteintrag: Netzwerkkomponenten",
+   "typ": "Seite"
+  },
+  {
+   "abschnitt": "Netzwerkkomponenten – von der Wand aufs Handy",
+   "auftrag": "Neue Fälle, keine Wiederholung der Übungsfragen.",
+   "geplant": false,
+   "id": "quiz",
+   "minuten": 5,
+   "neu": false,
+   "phase": "Sichern",
+   "soll": 3,
+   "titel": "Quiz Netzwerkkomponenten",
+   "typ": "Quiz"
+  }
+ ],
+ "einheit": {
+  "jahrgang": "9",
+  "minuten": 25,
+  "thema": "Netzwerkkomponenten",
+  "vorlage": "Einheit aus eigenem Material"
+ },
+ "erzeugt": "2026-10-24",
+ "format": 2,
+ "kursmuehle": "2.0.0-a2",
+ "titel": "Informatik 9 – Netzwerkkomponenten"
+}

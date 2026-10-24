@@ -1,4 +1,4 @@
-"""Schemazeichnungen für examples/netzwerk9/assets – selbst erzeugt, keine Fremdfotos.
+"""Schemazeichnungen für scripts/tests/fixtures/netzwerk9/assets – selbst erzeugt, keine Fremdfotos.
 Flache Darstellung, Palette aus dem Kurs (#0F766E), 900x600, weißer Grund."""
 import sys
 from PIL import Image, ImageDraw

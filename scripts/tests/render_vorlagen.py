@@ -1,7 +1,7 @@
 """Render-Test der Designvorlagen: Kursseiten-HTML eines Kursordners je Vorlage bei 390 px (Handy) und 1200 px
 (Desktop) als PNG rendern. Dazu eine Bausteinseite mit allen Textbausteinen aus `references/kursdatei.md` §4.
 
-usage: python3 scripts/tests/render_vorlagen.py [--content examples/netzwerk9] [--vorlagen schlicht,kacheln,magazin]
+usage: python3 scripts/tests/render_vorlagen.py [--content scripts/tests/fixtures/netzwerk9] [--vorlagen schlicht,kacheln,magazin]
                                                 [--breiten 390,1200] [--out <content>/out]
 
 Ergebnis: <out>/render_<vorlage>_<breite>.png (Kurs) und <out>/bausteine_<vorlage>_<breite>.png. Nicht committen.
@@ -158,7 +158,7 @@ def render(jobs, out_dir):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--content", default=os.path.join(ROOT, "examples", "netzwerk9"))
+    ap.add_argument("--content", default=os.path.join(ROOT, "scripts", "tests", "fixtures", "netzwerk9"))
     ap.add_argument("--vorlagen", default=",".join(T.VORLAGEN))
     ap.add_argument("--breiten", default="390,1200")
     ap.add_argument("--out")

@@ -3,9 +3,10 @@
 usage: python3 scripts/package.py [--out dist/kursmuehle.zip]
 
 Enthalten: SKILL.md, README.md, CHANGELOG.md, ROADMAP.md, LICENSE, LICENSE-DOCS.md, references/ (ohne export-schemata/),
-scripts/ (Generator, check.py, Vorlagen, Tests), examples/ (ohne out/), docs/ (Logo, Projektseite, fortgeschrittene.md,
-erfahrungen.md; ohne entwicklung/). Nicht enthalten: docs/entwicklung/ (Arbeitspakete, Protokolle),
-references/export-schemata/, tools/, AGENTS.md und CLAUDE.md (Arbeitsregeln für das Repo), __pycache__, .mbz, .git.
+scripts/ (Generator, check.py, Vorlagen, Tests), docs/ (Logo, Projektseite, fortgeschrittene.md, erfahrungen.md; ohne
+entwicklung/). Nicht enthalten: docs/entwicklung/ (Arbeitspakete, Protokolle), docs/2/ (Weiterleitung auf die
+Browser-Fassung), docs/start/ (Browser-Fassung, nur im öffentlichen Repo, AP13b), references/export-schemata/,
+scripts/tests/fixtures/ (Testkurse, seit AP12a keine Beispielkurse mehr), tools/, AGENTS.md und CLAUDE.md (Arbeitsregeln für das Repo), __pycache__, .mbz, .git.
 Im Zip liegt alles unter dem Ordner kursmuehle/; der Dateiname bleibt bei jedem Release gleich, damit
 releases/latest/download/kursmuehle.zip stabil bleibt. Die Version steht in CHANGELOG.md und wird beim Packen genannt.
 """
@@ -18,8 +19,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, ".."))
 TOP = "kursmuehle"
 DATEIEN = ["SKILL.md", "README.md", "CHANGELOG.md", "ROADMAP.md", "LICENSE", "LICENSE-DOCS.md"]
-ORDNER = ["references", "scripts", "examples", "docs"]
-AUSSCHLUSS_ORDNER = {"references/export-schemata", "docs/entwicklung", "tools"}
+ORDNER = ["references", "scripts", "docs"]
+AUSSCHLUSS_ORDNER = {"references/export-schemata", "docs/entwicklung", "docs/2", "docs/start", "scripts/tests/fixtures",
+                     "tools"}
 AUSSCHLUSS_NAMEN = {"__pycache__", "out", ".git", ".DS_Store", "work", "node_modules", "dist"}
 AUSSCHLUSS_ENDUNGEN = (".pyc", ".mbz")
 

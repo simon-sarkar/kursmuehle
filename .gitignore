@@ -5,3 +5,9 @@ examples/*/out/
 .DS_Store
 tools/*/out/
 dist/
+web/generator.zip
+web/messungen/
+web/katalog.json
+web/logo.svg
+web/muster-locker.svg
+web/muster-dicht.svg

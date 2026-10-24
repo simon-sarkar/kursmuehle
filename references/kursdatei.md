@@ -2,7 +2,6 @@
 
 Die Kursdatei ist das Drehbuch: eine Markdown-Datei, die `scripts/build.py` direkt liest. Kurzfassung auf einer Seite in
 `intake.md` §5; dort steht auch, was der Assistent im Gespräch schreibt. Hier stehen alle Typen, Angaben und Regeln.
-Beispiele: `examples/netzwerk9/kurs.md` (klein), `examples/alltagskompetenz/kurs.md` (alles).
 
 ## 1. Aufbau
 
@@ -52,6 +51,7 @@ sind Fehler, keine Vermutungen.
 | Element | `website: nein` | im Website- oder Textfeld-Modus als Plattform-Aktivität behalten |
 | Abschnitt, Unterabschnitt, Element | `sichtbar ab` | `JJJJ-MM-TT`, Datumsbedingung 06:00 Uhr; überschreibt den Steckbrief |
 | Abschnitt, Unterabschnitt, Element | `prototyp: nein` | wird bei `--proto` weggelassen |
+| Element (alle Typen) | `id` | Baustein-ID der Kursmappe (Browser-Fassung): Buchstaben, Ziffern, `-`, `_`, im Kurs eindeutig; ohne Wirkung im Kurs. Steht im Auftrag eine `id:`, bleibt sie unverändert in der Antwort |
 | Unterabschnitt | `teil` | wie beim Abschnitt |
 | Banner | `bild`, `untertitel`, `name` | Bild aus `assets/` (optional), Satz unter dem Titel, Name im Kursindex (Standard = Titel) |
 | Seite, Lesebuch, Zuordnen, Lernkarten, Geschichte, Lückentext, Link, Video | `abschluss` | `ansehen` (Standard), `bestehen`, `keine`, `manuell` |
@@ -233,7 +233,7 @@ Unterkapitel: Passphrasen                     eingerückt in der Navigation; nic
 
 Lesebuch oder Buch? `Lesebuch` (H5P Interactive Book) erlaubt Fragen zwischen den Seiten und wird in einem Fenster
 geblättert. `Buch` ist das Moodle-Modul: schlichte Kapitelseiten mit Navigation, druckbar, ohne Fragen; gut für
-Nachschlagetexte und längere Lesetexte. Beispiel mit allen Moodle-Modulen: `examples/module/kurs.md`.
+Nachschlagetexte und längere Lesetexte.
 
 ## 7. Steckbrief und Bau
 

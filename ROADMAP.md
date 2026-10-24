@@ -1,6 +1,6 @@
 # Roadmap
 
-Stand 2026-10-23. Version 1.0 ist erschienen (AP9); die Punkte unter „Umfang und Reihenfolge“ definieren, was **1.0**
+Stand 2026-10-24. Version 1.0 ist erschienen (AP9); die Punkte unter „Umfang und Reihenfolge“ definieren, was **1.0**
 heißt, und bleiben als Nachweis stehen. Import getestet 23.10.2026, siehe
 [Protokoll](docs/entwicklung/protokolle/import-tests-2-5.md) (Import-Tests 2–5). Offen sind der Import-Test 1.0 (Wochen, Ein-Themen, Komprimiert, Einzelaktivität, Fremdtest-Kurs) und die Durchläufe
 mit ChatGPT, claude.ai, kostenlosen Konten und ByLKI (`docs/entwicklung/protokolle/`).
@@ -141,26 +141,19 @@ Der Generator läuft als Webseite im Browser (Pyodide), ohne Server – Kursdate
   zum Kopieren. Voraussetzung ist das Kursdatei-Format aus AP1. Maßstab für 2.0: Ein einfacher, kostenloser Chatbot
   liefert damit einen verwertbaren Kurs.
   Lizenz (Entscheidung 24.10.2026): 2.0 ist einsehbar und nicht-kommerziell (PolyForm Noncommercial wie 1.x); der Code
-  einer Browser-Seite ist ohnehin lesbar, der Schutz ist die Lizenz, nicht das Verstecken. Das Repo kann privat geführt
-  werden. Beiträge Dritter nur unter der Beitragsregel in der README. Ausführlicher Plan und drei Gutachten:
-  `docs/entwicklung/2.0-plan.md`, `docs/entwicklung/protokolle/2.0-gutachten-*.md`.
-
-Ablauf (Stand 24.10.2026, nach den Durchläufen mit AIS-Chat und fobizz, `docs/entwicklung/protokolle/chat-ohne-code/`):
-1. **Formular statt Fragerunde.** Die Einstiegsfragen aus `intake.md` (Weg, Rahmen, Kursformat, Design, Darstellungsweg,
-   Abschluss, Umfang, bei kleinen Modellen Phasen und Übungstypen) werden angeklickt, Material als Text eingefügt. Die
-   Seite schreibt daraus den Steckbrief selbst und baut den Prompt: Auftrag, Vorgaben als `Angenommen:`-Zeilen, dazu
-   nur `kursdatei.md` (auf die gewählten Elementtypen gekürzt) und `qualitaet.md`. `SKILL.md` und `intake.md` liest kein
-   Modell mehr; das spart etwa die Hälfte der Eingabe und die ganze Gesprächsführung.
-2. **Prompt in die Zwischenablage**, einfügen in fobizz, AIS-Chat, ByLKI, ChatGPT oder Claude. Das Modell schreibt nur
-   die Kursdatei.
-3. **Drehbuch lesen, kopieren, in die Seite einfügen.** Der Parser (Pyodide) prüft es; Hinweise und Fehler mit Zeile
-   lassen sich als Text kopieren und in den Chat zurückgeben. Banner, Kursbild, Kachelbilder und Badge zeichnet die
-   Seite selbst (Canvas), Bildwünsche bleiben Zeilen für die Lehrkraft.
-4. `.mbz` herunterladen, wiederherstellen wie bisher.
-Vorarbeit, die schon in 1.x nützt: der nachsichtige Parser (1.0.3), ein Prompt-Baukasten als statische Seite ohne Pyodide
-(Schritt 1 und 2 zum Testen mit dem Bau in Claude Code oder lokal), die Bildrender ohne Playwright.
-Offen: Eingabe- und Ausgabegrenzen der Chats (68 KB Eingabe liefen am 23.10. in AIS-Chat und fobizz), ob die Kursdatei
-abschnittsweise ausgegeben und in der Seite zusammengesetzt werden muss.
+  einer Browser-Seite ist ohnehin lesbar, der Schutz ist die Lizenz, nicht das Verstecken. Entwickelt wird in einem
+  privaten Entwicklungsrepo; das öffentliche Repo erhält bei jedem Stand automatisch Skill, Generator, Beispiele und
+  Doku. Beiträge Dritter nur unter der Beitragsregel in der README.
+  Stand 24.10.2026: AP13 in Teilen gebaut (Schrittfolge mit „Mach du“ und „Ich steuere“, minimale Vorlagen, Typ
+  „automatisch“, Aussehen-Kacheln, Herkunftsfarben, Wiederherstellen-Schritte, Nachlieferung, Rückmeldung) und AP13b
+  (Landingpage in zwei Entwürfen, Impressum-Seite, Beta-Veröffentlichung mit der Mühle unter kursmuehle.de/start/,
+  siehe `AP13.md`), Version 2.0.0-b1; davor AP12a in Teilen gebaut (Bild hochladen, Karten entschlacken, Minuten nach Rolle, Testkurse als
+  Fixtures statt Beispielkurse; Offenes in `AP12a.md`), Version 2.0.0-a4; davor AP11 (Text für den Chat mit
+  Chat-Auswahl, Einfügen mit Modus, Korrekturbitte, Fragen und Lösungen,
+  Gegenprüfen; Variante B als Oberfläche) gebaut, Version 2.0.0-a3; davor AP10 (Baustein-Ansicht mit Kursmappe, zwei
+  Design-Varianten, 2.0.0-a2) und AP10a
+  (Spike, 2.0.0-a1): Generator-Schnittstelle `gen/api.py`, Pyodide-Worker, Kursmappe,
+  Bereinigung der Eingabe, Katalog der Bausteintypen, Messung in drei Browsern.
 
 ## Nach 1.0
 

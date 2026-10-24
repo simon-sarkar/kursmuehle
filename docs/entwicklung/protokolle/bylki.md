@@ -36,3 +36,24 @@ die Anleitung diesen Weg trägt (Selbstabfrage in `SKILL.md`: „Code ausführen
 ## Ergebnis
 
 Zeile für die README („läuft mit …“ oder „liefert mit … das Drehbuch, Bau anderswo“): ____
+
+## Durchlauf 24.10.2026 mit dem Text der Browser-Fassung (2.0.0-a4, Autor)
+
+Nicht der Weg oben (Skill-Zip), sondern der Text, den die Mühle unter kursmuehle.de/2/ erzeugt, in ByLKI eingefügt.
+
+- Einheit „Das Auge“, Jahrgangsstufe 5, 45 Minuten, Vorlage Einführung, absichtlich minimale Aufträge; die Karten
+  Erarbeitung und Übung vorher gelöscht (Test, ob der Chat Lücken selbst füllt).
+- Format: korrekt. ByLKI hielt die Formatzeilen ein (ids, „Angenommen:“, Bildwünsche); die Mühle hat die Antwort ohne
+  Korrekturbitte eingelesen und die Datei gebaut.
+- Inhalt: nicht brauchbar. Einstieg vier Absätze Geschichte (~250 Wörter), die Hinführung enthielt die eigentliche
+  Erarbeitung, Hefteintrag zwei Sätze (~30 Wörter), Quiz eine Frage. Die fehlende Zeit hat das Modell weggeschrieben
+  („Angenommen: 30 Minuten entfallen auf angeleitete Unterrichtsgespräche außerhalb der Kursbausteine“) statt Bausteine
+  zu ergänzen.
+- Folgen für den Text (AP13.1): Zeit nie wegerklären, fehlende Karten ergänzt der Chat (Typ automatisch), die Seite warnt
+  vor dem Kopieren bei zu wenig Karten; Mindestmaße je Rolle (Hefteintrag mindestens 80 Wörter mit Merksätzen, Quiz
+  mindestens 3 Fragen, Zuordnen 4 Paare, Lückentext 5 Lücken); Vorlage minimal, aber Einstieg, Erarbeitung, Übung und
+  Sicherung bleiben je einmal (Warnung statt Sperre); Einstieg höchstens 100 Wörter; Denkaufgaben-Kästen zählen nicht
+  als Übung.
+- Import: siehe `import-test-2.0.md`, Ergebnis 24.10.2026.
+
+Zeile für die README: „erprobt bisher mit ByLKI und einem Claude-Modell“.

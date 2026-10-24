@@ -8,6 +8,7 @@ Glossareinträge: Moodle stellt sie nur mit Nutzerdaten wieder her. Standard ist
 die Einträge kommen über `glossary_import_xml()` ins Glossar. Mit glossar_nutzerdaten=True
 users=1 und userinfo=1 nur für Glossare mit Einträgen (users.xml leer, userid 0).
 """
+import gzip
 import hashlib
 import io
 import json
@@ -458,9 +459,13 @@ def glossary_import_xml(g: Glossary):
 
 # ---------------------------------------------------------------- writer
 class Writer:
-    def __init__(self, course: Course, out_path, now=None):
+    """Schreibt die Sicherung. out_path=None: build() gibt die Bytes zurück statt eine Datei zu schreiben (gen.api);
+    dateiname nennt dann den Namen, der in moodle_backup.xml steht. now: fester Zeitstempel für reproduzierbare Bauten."""
+
+    def __init__(self, course: Course, out_path, now=None, dateiname=None):
         self.c = course
         self.out = out_path
+        self.dateiname = dateiname or (os.path.basename(out_path) if out_path else "kurs.mbz")
         self.now = now or int(time.time())
         self.entries = {}       # archive path -> bytes
         self.files = []         # File objects
@@ -1850,7 +1855,7 @@ class Writer:
 
     # ----- main
     def build(self):
-        filename = os.path.basename(self.out)
+        filename = self.dateiname
         if self.c.format == "singleactivity":
             items = [it for s in self.c.sections for it in s.items]
             if len(items) != 1 or isinstance(items[0], SubSection):
@@ -1892,14 +1897,21 @@ class Writer:
             size = len(data if isinstance(data, bytes) else data.encode("utf-8"))
             index.append(f"{p}\tf\t{size}\t{self.now}")
         self.entries[".ARCHIVE_INDEX"] = "\n".join(index) + "\n"
-        with tarfile.open(self.out, "w:gz") as tar:
-            for p in [".ARCHIVE_INDEX"] + paths:
-                data = self.entries[p]
-                if isinstance(data, str):
-                    data = data.encode("utf-8")
-                ti = tarfile.TarInfo(p)
-                ti.size = len(data)
-                ti.mtime = self.now
-                ti.mode = 0o644
-                tar.addfile(ti, io.BytesIO(data))
+        # gzip ohne Dateinamen und mit festem Zeitstempel: derselbe Inhalt gibt dieselben Bytes (CI-Vergleich Pyodide/CPython)
+        buf = io.BytesIO()
+        with gzip.GzipFile(filename="", mode="wb", fileobj=buf, mtime=self.now) as gz:
+            with tarfile.open(fileobj=gz, mode="w") as tar:
+                for p in [".ARCHIVE_INDEX"] + paths:
+                    data = self.entries[p]
+                    if isinstance(data, str):
+                        data = data.encode("utf-8")
+                    ti = tarfile.TarInfo(p)
+                    ti.size = len(data)
+                    ti.mtime = self.now
+                    ti.mode = 0o644
+                    tar.addfile(ti, io.BytesIO(data))
+        self.bytes = buf.getvalue()
+        if self.out:
+            with open(self.out, "wb") as f:
+                f.write(self.bytes)
         return self.out

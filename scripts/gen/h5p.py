@@ -7,9 +7,11 @@ Every builder returns a plain dict. Top-level activities are wrapped in
 import copy
 import json
 import os
+import random
 import uuid
 
 from . import libs
+from .bildkopf import mimetyp
 
 TPL_DIR = os.path.join(os.path.dirname(__file__), "..", "templates")
 
@@ -19,8 +21,19 @@ def _tpl(machine):
         return copy.deepcopy(json.load(f)["params"])
 
 
+_RNG = None     # None: echte Zufalls-UUIDs; sonst random.Random(seed) für reproduzierbare Sicherungen (gen.api, CI)
+
+
+def setze_zufall(seed=None):
+    """subContentIds reproduzierbar machen (seed) oder zufällig (None). gen.api ruft das je Lauf auf."""
+    global _RNG
+    _RNG = None if seed is None else random.Random(seed)
+
+
 def _sid():
-    return str(uuid.uuid4())
+    if _RNG is None:
+        return str(uuid.uuid4())
+    return str(uuid.UUID(int=_RNG.getrandbits(128), version=4))
 
 
 def _meta(content_type, title):
@@ -66,7 +79,7 @@ class ImageRef:
         return f"images/{self.name}"
 
     def file_param(self):
-        return {"path": self.h5p_path, "mime": "image/png",
+        return {"path": self.h5p_path, "mime": mimetyp(self.name),
                 "copyright": {"license": "U"},
                 "width": self.width, "height": self.height}
 

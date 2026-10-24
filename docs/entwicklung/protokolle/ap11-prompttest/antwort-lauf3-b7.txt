@@ -1,0 +1,23 @@
+```
+### Seite: Hefteintrag zum Satz des Pythagoras · 3 min
+id: b7
+Überschrift: Satz des Pythagoras
+Merke: In einem rechtwinkligen Dreieck ist die Summe der Quadrate über den Katheten gleich dem Quadrat über der Hypotenuse, also a² + b² = c².
+| Katheten a und b | die beiden Seiten, die am rechten Winkel anliegen |
+| Hypotenuse c | die Seite gegenüber dem rechten Winkel, immer die längste |
+Schritte: So rechnest du
+1. Zeichne eine Skizze, markiere den rechten Winkel und nenne die Seite gegenüber c.
+2. Ist die Hypotenuse gesucht, rechne c = √(a² + b²). Ist eine Kathete gesucht, rechne a = √(c² − b²).
+3. Runde erst am Ende, wenn die Wurzel nicht aufgeht, und schreibe die Einheit dazu.
+Beispiel: Hypotenuse berechnen
+  Katheten 9 cm und 12 cm, gesucht ist c.
+  c² = 9² + 12² = 81 + 144 = 225
+  c = √225 = 15 cm
+Beispiel: Kathete berechnen
+  Hypotenuse 17 cm, Kathete 15 cm, gesucht ist a.
+  a² = 17² − 15² = 289 − 225 = 64
+  a = √64 = 8 cm
+Hinweis: Die Umkehrung gilt auch
+  Stimmt a² + b² = c² für die drei Seiten eines Dreiecks, liegt gegenüber von c ein rechter Winkel.
+  Probe mit 5 cm, 12 cm und 13 cm: 25 + 144 = 169. Das Dreieck ist rechtwinklig.
+```

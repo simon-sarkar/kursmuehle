@@ -21,10 +21,23 @@ Regeln:
   Modul- und Formatlisten für den Assistenten: eine Tabelle, ein Satz je Eintrag. Der Skill muss mit einem günstigen
   Modell (Sonnet-Klasse) laufen, im Ziel auch mit der kostenlosen Stufe eines Assistenten innerhalb ihres Tageslimits;
   was nur mit dem teuersten Modell klappt, ist nicht fertig.
-- **Tests**: `python3 scripts/build.py --content examples/netzwerk9 --no-render` muss nach jeder Änderung laufen.
-  Vor einem PR zusätzlich `scripts/tests/test_kursdatei.py`, `test_check.py`, `test_website.py` (Playwright, Chromium
-  über `CHROMIUM_PATH`), alle drei Beispiele bauen, Release-Zip (`scripts/package.py`) entpacken und daraus netzwerk9 bauen.
-  Neue Modultypen bekommen einen Eintrag in `examples/` und in der Kann/Noch-nicht-Tabelle der README.
+- **Tests**: `python3 scripts/build.py --content scripts/tests/fixtures/netzwerk9 --no-render` muss nach jeder Änderung laufen.
+  Vor einem PR zusätzlich `scripts/tests/test_kursdatei.py`, `test_check.py`, `test_katalog.py`, `test_api.py`, `test_prompt.py`, `test_zeitbedarf.py`,
+  `test_website.py` (Playwright, Chromium über `CHROMIUM_PATH`) und `test_web.py --vergleich` (Browser-Fassung; in der CI
+  Chromium, WebKit, Firefox), die Testkurse bauen (Fixtures netzwerk9 und module, Katalogkurs aus
+  `scripts/tests/fixtures/katalogkurs.py`), Release-Zip (`scripts/package.py`) entpacken und mit dessen `build.py` das
+  Fixture netzwerk9 bauen. Neue Modultypen bekommen einen Eintrag in `references/katalog.yaml` (mit `beispiel`, daraus
+  entsteht der Katalogkurs) und in der Kann/Noch-nicht-Tabelle der README.
+- **Keine Beispielkurse** (Entscheidung 24.10.2026): weder handgebaut noch aus einem Chat, nicht in Zip, Seite oder
+  Doku. Der Text für den Chat hat je Bausteintyp eine Formatzeile (Grammatik, kein Inhalt). Testkurse liegen nur unter
+  `scripts/tests/fixtures/` und gehen nicht ins Zip.
+- **Zwei Repos**: Entwickelt wird in `simon-sarkar/kursmuehle-dev` (privat, mit `web/`, `docs/entwicklung/`,
+  `references/export-schemata/`, `tools/`). Das öffentliche `simon-sarkar/kursmuehle` wird nur von der Action
+  `veroeffentlichen.yml` beschrieben (Liste in `scripts/veroeffentlichen.py`); dort nichts von Hand ändern. PRs gehen
+  gegen `main` im Entwicklungsrepo.
+- **Browser-Fassung (2.0)**: reines HTML, CSS, JavaScript ohne Framework und Bundler; Python nur über `gen/api.py`
+  (ein Parser für CLI und Browser, kein JS-Port); Pyodide gepinnt unter `web/vendor/`; der Steckbrief wird nur über
+  Python gelesen und geschrieben; vor Tests `python3 scripts/web_bundle.py`.
 - **Lizenz**: PolyForm Noncommercial (Code), CC BY-NC-SA 4.0 (Texte). Nichts einbauen, was damit unvereinbar ist.
 - **Abschluss eines Pakets**: Versionsnummer erhöhen (bis 1.0 um 0.1 je Paket, danach nach CHANGELOG), CHANGELOG.md
   mit dieser Version ergänzen, README-Tabelle aktualisieren, `docs/badge-version.svg` mit `python3 docs/make_logo.py`

@@ -55,18 +55,44 @@ def wortmarke():
 </svg>'''
 
 
-def banner():
-    # Wasserzeichen rechts = dieselbe Mühle wie im Logo ohne Turm, exakt 1,5-fach (Flügelfuß 40 -> 60, Rad 50 -> 75);
-    # Trennrand 5 statt proportional 8, sonst wirken die Flügel bei 7 % Deckung zu weit vom Rad getrennt (Simon 24.10.2026)
-    motif = "".join(
+def motiv():
+    """Wasserzeichen-Motiv: dieselbe Mühle wie im Logo ohne Turm, exakt 1,5-fach (Flügelfuß 40 -> 60, Rad 50 -> 75), um
+    den Nullpunkt; Trennrand 5 statt proportional 8, sonst wirken die Flügel bei 7 % Deckung zu weit vom Rad getrennt
+    (Simon 24.10.2026). Banner und Oberfläche (wasserzeichen.svg) nutzen es."""
+    return "".join(
         f'<g transform="rotate({a})"><path d="M-10.5,-60 L10.5,-60 L22.5,-144 Q0,-162 -22.5,-144 Z"/></g>' for a in (45, 135, 225, 315)
-    ) + f'<path d="{cog(0, 0, 75, 57, TEETH, phase_deg=PHASE)}" stroke="{BG}" stroke-width="5" stroke-linejoin="round"/>' 
+    ) + f'<path d="{cog(0, 0, 75, 57, TEETH, phase_deg=PHASE)}" stroke="{BG}" stroke-width="5" stroke-linejoin="round"/>' \
+      + f'<circle r="33" fill="{BG}"/><circle r="14"/>'
+
+
+def banner():
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-label="Kursmühle – für die ByCS-Lernplattform">
   <rect width="1200" height="300" rx="18" fill="{BG}"/>
   <g transform="translate(60,46) scale(0.8)"><rect width="256" height="256" rx="56" fill="{FG}"/>{mark(BG, FG, AC)}</g>
   <text x="300" y="150" font-family="{FONT}" font-size="66" font-weight="700" fill="{FG}" letter-spacing="-1">Kursmühle</text>
   <text x="304" y="196" font-family="{FONT}" font-size="25" fill="#3d3833">für die ByCS-Lernplattform</text>
-  <g transform="translate(1040,150)" fill="{FG}" opacity="0.07">{motif}<circle r="33" fill="{BG}"/><circle r="14"/></g>
+  <g transform="translate(1040,150)" fill="{FG}" opacity="0.07">{motiv()}</g>
+</svg>'''
+
+
+def wasserzeichen():
+    """Motiv des Banners allein, Anthrazit mit 7 % Deckung auf Creme; die Oberfläche (web/) legt es rechts unter die
+    Knöpfe (Desktop und iPad)."""
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="330" height="330" viewBox="-165 -165 330 330" aria-hidden="true">
+  <g fill="{FG}" opacity="0.07">{motiv()}</g>
+</svg>'''
+
+
+def muster(rapport, deckung=0.06):
+    """Seitenhintergrund der Oberfläche (AP12a): das Motiv des Wasserzeichens gekachelt, zwei Motive je Kachel diagonal
+    versetzt, Anthrazit mit `deckung`. `rapport` = Kantenlänge der Kachel in px; die Oberfläche legt Karten und Flächen
+    opak darüber, das Muster bleibt in den Zwischenräumen. AP13 (Befund des Autors 24.10.: „locker“ zu blass und zu
+    klein): Deckung 6 statt 4 %, Rapport 260 und 170 statt 200 und 130."""
+    m = rapport * 0.32 / 330            # Motiv (330 Einheiten breit) auf etwa ein Drittel der Kachel
+    a, b = rapport / 4, rapport * 3 / 4
+    teil = lambda x, y: f'<g transform="translate({x:.1f},{y:.1f}) scale({m:.4f})">{motiv()}</g>'
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{rapport}" height="{rapport}" viewBox="0 0 {rapport} {rapport}" aria-hidden="true">
+  <g fill="{FG}" opacity="{deckung}">{teil(a, a)}{teil(b, b)}</g>
 </svg>'''
 
 
@@ -87,8 +113,11 @@ if __name__ == "__main__":
         "logo-light.svg": icon(FG, BG, AC, gap=4),  # Creme-Quadrat, dunkle Mühle (für dunkle Flächen), schmalerer Rand
         "wortmarke.svg": wortmarke(),
         "banner-kursmuehle-v10.svg": banner(),
+        "wasserzeichen.svg": wasserzeichen(),
+        "muster-locker.svg": muster(260),        # Standard der Oberfläche (AP12a, kräftiger seit AP13)
+        "muster-dicht.svg": muster(170),
         "badge-version.svg": badge("Version", version, 62, 48),
-        "badge-status.svg": badge("Status", "Release", 52, 64),
+        "badge-status.svg": badge("Status", "Beta", 52, 48),          # Stufe der neuesten Version (2.x Beta)
         "badge-lizenz.svg": badge("Lizenz", "nicht kommerziell", 52, 116, BG),
         "badge-plattform.svg": badge("Plattform", "ByCS-Lernplattform · Moodle 5.2", 68, 196, BG),
     }

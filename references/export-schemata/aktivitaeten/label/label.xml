@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<activity id="20958776" moduleid="103627844" modulename="label" contextid="138144122">
-  <label id="20958776">
-    <name>Test label</name>
-    <intro>&lt;p&gt;Test&lt;/p&gt;</intro>
-    <introformat>1</introformat>
-    <timemodified>1792766150</timemodified>
-  </label>
-</activity>

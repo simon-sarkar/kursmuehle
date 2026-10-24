@@ -43,7 +43,7 @@ Nicht raten: wer unsicher ist, probiert es (`python3 --version`, ein kleines Tes
 3. **Bau**, sobald das Drehbuch freigegeben ist; bei Steuerungsgrad c sofort nach dem Drehbuch, ohne Halt. Nie vorab
    behaupten, Code-Ausführung oder Python fehle: den Bau mit `scripts/build.py` versuchen; erst wenn der Aufruf scheitert,
    die Fehlermeldung zeigen und Drehbuch und Steckbrief als Dateien liefern. Kursordner mit `kurs.md`, `assets/` (PNG),
-   `steckbrief.yaml` (Vorbild `examples/netzwerk9/` = minimal, `examples/alltagskompetenz/` = alle Elementtypen). Kein Python schreiben. Erstes Element in `## Allgemeines` ist
+   `steckbrief.yaml` (Format: `references/kursdatei.md`, Steckbrief: `references/intake.md` §6). Kein Python schreiben. Erstes Element in `## Allgemeines` ist
    `### Banner:` (Bild + Titel + ein Satz); Bild nach intake.md §4: selbst erzeugt, `python3 scripts/banner.py`, oder ohne `bild:`.
    Kursformat aus dem Steckbrief (`format:` themen, kacheln, wochen, einthemen, komprimiert, einzelaktivitaet); bei Kacheln
    je Abschnitt `kachelbild:` (PNG 900 × 600, eigenes Motiv je Abschnitt; `banner.py --kachel --nummer 1-N`) oder
@@ -98,7 +98,7 @@ Eine Sicherung darf höchstens 500 MB haben; `check.py` warnt ab 400 MB (Bilder 
 - Moodle-Module, wenn die Lehrkraft Bewertung, Abgaben oder Austausch braucht: `Test` (benotet, Versuche, Fragensammlung; nur
   MC, RF, Kurzantwort) für die Kontrolle mit Note, `Quiz` (H5P) für Zwischenchecks; `Aufgabe` für Abgaben, `Forum` für
   Fragen, `Abstimmung` für Meinungsbilder, `Buch` für längere Lesetexte ohne Fragen, `Datei`/`Verzeichnis` für Material der
-  Lehrkraft, `Glossar` für Begriffe. Syntax: `references/kursdatei.md` §3, Beispiel `examples/module/`.
+  Lehrkraft, `Glossar` für Begriffe. Syntax: `references/kursdatei.md` §3.
 - Didaktik nach `references/intake.md` §3: Standardannahmen D1–D10, Rangfolge Lehrkraft vor Material vor Standard;
   Abweichungen bauen und als `Abweichung: …` im Drehbuch-Kopf vermerken. Inhaltsregeln (Distraktoren, Meta-Text, absolute
   Aussagen, Genderzeichen, Fachprüfung) als Markerliste in `references/qualitaet.md`.
@@ -111,11 +111,6 @@ Eine Sicherung darf höchstens 500 MB haben; `check.py` warnt ab 400 MB (Bilder 
 - `references/kursdatei.md` – vollständige Referenz der Kursdatei (alle Typen, Angaben, Bausteine, Grenzen).
 - `scripts/` – Generator (`build.py`, `check.py`, `banner.py`); die übrigen Dateien dort und in `references/` sind
   Entwicklerdoku und Code, im Einsatz nicht zu lesen.
-- `examples/netzwerk9/` – minimaler Beispielkurs (eine Einheit, 25 min; die Bilder sind einfache, selbst erzeugte
-  Schemazeichnungen): Vorbild für neue Kurse.
-- `examples/alltagskompetenz/` – großer Beispielkurs (Tech-Demo, Unterabschnitte, Lesebuch, Geschichte, Badge, Delta).
-- `examples/module/` – ein Abschnitt mit den Moodle-Modulen Buch, Datei, Verzeichnis, Glossar, Forum, Abstimmung, Aufgabe, Test.
-  `python3 scripts/build.py --content examples/<kurs>` baut sie.
 - `README.md` – Erklärung für Lehrkräfte, Capabilities.
 
 ## Grenzen
