@@ -17,6 +17,8 @@ Fehler, der keine ausgelöst hat) aus einem echten Durchlauf. Die Spalte „Rege
 | 24.10. | 2.0.0-b3 | dito | dito | b8 Zuordnen | zone.unbekannt (Element enthielt selbst „→“: „16 cm → 4 cm → Zone“) | 1 | Text | „kein → im Element“ in die Formatzeile; Parser: letztes „→“ trennt die Zone. AP13.3: beides gebaut |
 | 24.10. | 2.0.0-b3 | dito | dito | b10 Seite | hinweis.leer (Inhalt nach `Hinweis:` nicht eingerückt; seit AP13.3 hinweis.einrueckung, gelb) | 1 | Modell | Parser könnte die folgende Zeile als Inhalt nehmen, wenn sie nicht selbst ein Baustein ist. AP13.3: Zeilen bis zur Leerzeile als Inhalt, gelber Hinweis |
 | 24.10. | 2.0.0-b3 | dito | dito | Stückelung | Teil 1 von 2 wurde zu Teil 2 von 3 und Teil 3 von 3; Teil 2 listete die zwei noch leeren Bausteine der ERSTEN Einheit (Ohr) und die vier schon geschriebenen der zweiten; das Modell schrieb sie alle neu, jeder Teil für sich mit 45 Minuten (Hefteintrag 28 min, Lückentext 8 min) | – (keine Prüfregel) | Bug Mühle + Text | Teil-Liste aus der ursprünglichen Kartenliste der laufenden Einheit, nie aus der Mappe; fremde Einheiten nie in den Text; Teilzahl beim Kopieren einfrieren; Text: „die Minuten aller Teile zusammen ergeben 45“, je Teil den Anteil nennen. AP13.3: gebaut, rote Karten erst nach dem letzten Teil |
+| 24.10. | 2.0.0-b4 | fobizz KI, GPT-6.1 Sol | Erdkunde (Jahrgangsstufe nicht angegeben), „Wetter und Klima“, Einführung, Mach du | b3 Zuordnen | zuordnen.liste („nur eine Liste - Element → Zone“: das Modell hängte nach der Liste einen `Hinweis:`-Block mit Rückmeldung je Zone an) | 1 (beide Sätze in einem Prompt, ein Einsetzen) | Parser | Einen `Hinweis:`-Block nach der Liste als Rückmeldung dulden oder still verwerfen; der Text sagt nicht, dass Zuordnen nur die Liste erlaubt |
+| 24.10. | 2.0.0-b4 | dito | dito | b5 Seite | beispiel.einrueckung („Beispiel ohne Inhalt“: `Beispiel: <ein Satz>` in einer Zeile statt Titel plus eingerückter Inhalt) | 1 | Parser | Einzeiliges `Beispiel: Text` als Beispiel ohne Titel annehmen (wie bei `Merke:`) |
 
 ## Befunde ohne Korrekturbitte (Inhalt), 24.10., „Das Ohr“
 
@@ -47,3 +49,14 @@ Fehler, der keine ausgelöst hat) aus einem echten Durchlauf. Die Spalte „Rege
   ein Maßstab 4 : 1 mit Messen und Teilen; das gehört nicht in eine Einführung zum Eichhörnchen in Jahrgangsstufe 2.
 - Das Modell hielt das Format sonst gut ein (Rückmeldungen mit Grund, Du-Form, keine Floskeln); bei sauberem Parser
   wären von neun Korrekturbitten zwei geblieben.
+
+## Befunde ohne Korrekturbitte, 24.10., „Wetter und Klima“ (b4, fobizz, GPT-6.1 Sol, Zweig „Mach du“)
+
+- Erste Einheit auf b4: zwei Korrekturbitten in einem Prompt, eine Antwort, beide Bausteine eingesetzt; der eine
+  Korrekturweg funktioniert. Inhalt gut (Fälle mit erfundenen Namen, Rückmeldungen mit Grund, keine Rechnung).
+- **Keine Bilder, ohne dass die Lehrkraft gefragt wurde.** Die Regel „ein Bild nur, wenn der Inhalt eine Grafik
+  braucht“ ließ das Modell gar keines planen; der Schritt „Bilder“ erschien deshalb nicht. Der Autor will eine Abfrage
+  „mit Bildern / ohne Bilder“ in der Mühle, und bei „mit“ den Hinweis, dass die Bilder im Schritt Bilder hochgeladen
+  werden oder Platzhalter bleiben.
+- Jahrgangsstufe war leer; der Text sagte trotzdem „Richtwerte für diese Jahrgangsstufe“. Die Mühle sollte die
+  Jahrgangsstufe verlangen oder dem Text „Jahrgangsstufe nicht angegeben, Sprache für Jahrgangsstufe 7“ mitgeben.
