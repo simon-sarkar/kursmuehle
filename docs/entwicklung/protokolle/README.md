@@ -17,6 +17,7 @@ Konten geht; die Messfelder trägt der Autor nach dem eigenen Durchlauf ein. Kei
 | `bylki.md` | Durchlauf mit ByLKI (ohne Code-Ausführung: Drehbuch dort, Bau anderswo) | Vorlage, Autor |
 | `testauftrag-beta.md` | Testauftrag für die BdBs zur Beta 2.0.0-b1 (Text zum Versenden, Tabelle für Rückmeldungen) | Vorlage, Autor |
 | `AP13_gutachten.md` | Unabhängiges Gutachten zu Landingpage, Impressum, Testauftrag und README vor der Beta | ausgefüllt (Agent) |
+| `AP13.2_gutachten.md` | Unabhängiges Gutachten zur Landingpage als Schritt 1 (Texte, Gestaltungsregeln, Frage „noch eine Verkaufsseite?“), Kopfzeile und Dark Mode | ausgefüllt (Agent) |
 
 Ergebnisse, die in die README gehören: Richtwerte (Dauer, Tokens) aus `AP9_fremdtest.md` und je eine Zeile „läuft mit …“
 aus den Konto-Durchläufen.

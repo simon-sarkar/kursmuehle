@@ -1,0 +1,1 @@
+Im Baustein „Hefteintrag zum Satz des Pythagoras“ (id: b5) meldet die Prüfung in Zeile 1: Nur 78 Wörter, nötig sind mindestens 80. Gib nur diesen Baustein im selben Format noch einmal aus, mit der Zeile `id: b5`.

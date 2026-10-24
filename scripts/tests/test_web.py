@@ -191,7 +191,7 @@ def main():
                     print(d.stdout[-3000:])
             messung["schritte"].append(schritt)
 
-        # Knöpfe wie die Lehrkraft: Kursdatei öffnen, Datei erstellen, herunterladen
+        # Knöpfe wie die Lehrkraft: Einheit öffnen, Datei herunterladen (ein Knopf)
         ok(not page.query_selector("#beispiel-laden"), "kein Knopf „Beispiel ansehen“ mehr")
         page.click("#neue-einheit") if page.is_visible("#neue-einheit") else None
         page.wait_for_selector("#start[data-stand=aktiv]")
@@ -200,13 +200,11 @@ def main():
                                "&& km.zustand.mappe.bausteine.length === 10 && km.zustand.kennzahlen", timeout=60000)
         ok(page.evaluate("km.zustand.pruefung.ok") and page.is_visible("#ohne-durchsicht"), "Kursdatei öffnen: geprüft, Durchsicht angeboten")
         page.click("#ohne-durchsicht")
-        ok(not page.is_disabled("#erstellen"), "ohne Durchsicht freigegeben: erstellbar")
-        page.click("#erstellen")
-        page.wait_for_selector("#herunterladen:not([hidden])", timeout=60000)
-        ok(page.text_content("#erstellen-stand").startswith("Die Datei ist fertig"), f"Knopf erstellen: {page.text_content('#erstellen-stand')}")
-        with page.expect_download() as dl:
-            page.click("#herunterladen")
+        ok(page.is_visible("#herunterladen") and page.is_enabled("#herunterladen"), "ohne Durchsicht freigegeben: Ergebnis-Knopf da")
+        with page.expect_download(timeout=90000) as dl:
+            page.click("#herunterladen")              # AP13.1: ein Knopf baut und lädt herunter
         d = dl.value
+        ok(page.text_content("#erstellen-stand").startswith("Die Datei ist heruntergeladen"), f"Ergebnis-Knopf: {page.text_content('#erstellen-stand')}")
         pfad = os.path.join(tempfile.gettempdir(), d.suggested_filename)
         d.save_as(pfad)
         groesse = os.path.getsize(pfad)
@@ -231,7 +229,7 @@ def main():
         ok(stufen.get("fehler") == 2 and stufen.get("warnung") == 1, f"Einfügen: Diagnosen {stufen} (2 Fehler, 1 Warnung erwartet)")
         ok(all(dg["titel"] for dg in pr["diagnosen"] if dg["stufe"] == "fehler"), "Einfügen: Fehler tragen Bausteintitel")
         ok(pr["kursdatei"].startswith("# Drehbuch") and "Soll ich" not in pr["kursdatei"], "Einfügen: Vorrede und Nachsatz entfernt")
-        ok(page.is_disabled("#erstellen"), "Einfügen: Erstellen bleibt bei Fehlern gesperrt")
+        ok(page.is_hidden("#herunterladen") or page.is_hidden("#schritt-7"), "Einfügen: bei Fehlern kein Ergebnis-Knopf")
         ids1 = [b["id"] for b in pr["bausteine"]]
         leere(page, "eingabe-stand")
         page.fill("#eingabe", chat.replace("Hallo <script>x</script> Welt", "Hallo Welt, geändert"))

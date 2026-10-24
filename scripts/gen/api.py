@@ -1,7 +1,8 @@
 """Schnittstelle des Generators für CLI (build.py) und Browser (web/worker.js, Pyodide): aus Text und Bytes prüfen
 und bauen, ohne Annahmen über Dateisystem, Prozess oder Konsole.
 
-    pruefe(text, assets)                      -> dict mit bausteine, diagnosen, adressen (nachsichtig, je ### erholt)
+    pruefe(text, assets, steckbrief, mappe)   -> dict mit bausteine, diagnosen, adressen, bildwuensche (nachsichtig, je
+                                                 ### erholt); mit `mappe` dazu die Prüfregeln der Mühle (einheit_pruefen)
     baue(kurs_md, steckbrief, assets)         -> (mbz_bytes | None, diagnosen)
     baue_voll(kurs_md, steckbrief, assets)    -> Ergebnis (Bytes, Dateiname, Glossar-XML, Vorschauen, Prüfbericht)
     steckbrief_lesen(text) / steckbrief_schreiben(dict)   YAML nur hier (JavaScript liest kein YAML)
@@ -31,7 +32,7 @@ from .kursdatei import Diagnosen, KursdateiFehler
 from .mbz import Course, Section, Writer, glossary_import_xml, moodle_format
 from .website import vorschau_textfeld
 
-VERSION = "2.0.0-b1"
+VERSION = "2.0.0-b3"
 
 
 class Ergebnis:
@@ -218,11 +219,154 @@ def _diagnose_dicts(diag):
     return [dict(d, satz=diag.satz(d)) for d in diag]
 
 
+# ---------------------------------------------------------------- Bildwünsche (AP13.1)
+_RE_BILDZEILE = re.compile(r"^(Bildwunsch|Bildprompt):\s*(.*)$")
+_RE_DATEI = re.compile(r"^([^\s|]+\.(?:png|jpe?g))\s*(?:\|\s*(.*))?$", re.I)
+_RE_BILD_GENANNT = re.compile(r"(?:^|[·|]\s*|\s)(?:Bild|Bildzeile|bild|kachelbild):\s*([^\s|·]+\.(?:png|jpe?g))", re.I | re.M)
+
+
+def bildwuensche(kursdatei, bausteine=()):
+    """Zeilen `Bildwunsch:` (ein Satz, was zu sehen ist) und `Bildprompt:` (Auftrag für einen Bildgenerator) der
+    Kursdatei, je Bild mit dem Baustein, dessen `Bild:` die Datei nennt. Ein `Bildprompt:` ohne Dateinamen gehört zum
+    `Bildwunsch:` davor; ein Wunsch ohne Dateinamen bekommt die erste genannte Bilddatei ohne Wunsch.
+    -> [{datei, wunsch, prompt, baustein, titel, zeile}]"""
+    out = []
+    for i, z in enumerate((kursdatei or "").splitlines(), 1):
+        m = _RE_BILDZEILE.match(z)
+        if not m:
+            continue
+        d = _RE_DATEI.match(m.group(2).strip())
+        datei, text = (d.group(1), (d.group(2) or "").strip()) if d else (None, m.group(2).strip())
+        if m.group(1) == "Bildwunsch":
+            out.append({"datei": datei, "wunsch": text, "prompt": "", "zeile": i})
+            continue
+        ziel = next((w for w in reversed(out) if datei and w["datei"] == datei), None) \
+            or (out[-1] if out and not out[-1]["prompt"] and (not datei or not out[-1]["datei"]) else None)
+        if ziel is None:
+            out.append({"datei": datei, "wunsch": "", "prompt": text, "zeile": i})
+        else:
+            ziel["prompt"] = text
+            ziel["datei"] = ziel["datei"] or datei
+    genannt = []
+    for b in bausteine:
+        for name in _RE_BILD_GENANNT.findall(b.get("text") or ""):
+            if all(n != name for n, _ in genannt):
+                genannt.append((name, b))
+    frei = [n for n, _ in genannt if n not in {w["datei"] for w in out}]
+    for w in out:
+        if not w["datei"] and frei:
+            w["datei"] = frei.pop(0)
+        b = next((b for n, b in genannt if n == w["datei"]), None)
+        w["baustein"], w["titel"] = (b["id"], b["titel"]) if b else (None, None)
+    return out
+
+
+# ---------------------------------------------------------------- Prüfregeln der Mühle (AP13.1)
+_RE_MINUTEN = re.compile(r"\b\d+\s*(?:Minuten|Min\.|min)\b")
+_RE_ID_IM_TEXT = re.compile(r"\bb\d+(?:-\d+)*\b")
+_RE_ANGABE = re.compile(r"^[a-zäöüß ]+:\s")
+_EINZAHL = {"Fragen": "Frage", "Paare": "Paar", "Lücken": "Lücke", "Karten": "Karte", "Wörter": "Wort"}
+
+
+def woerter(b):
+    """Wörter eines Bausteins ohne Überschrift, Angaben (`schlüssel: wert`) und Bildzeilen; Präfixe wie `Vorspann:` und
+    HTML zählen nicht."""
+    from . import mappe as M
+    n = 0
+    for z in (b.get("text") or "").splitlines()[1:]:
+        t = z.strip()
+        if not t or _RE_ANGABE.match(t) or t.startswith(("Bild:", "Bildzeile:")):
+            continue
+        t = M._RE_PRAEFIX.sub("", M._RE_HTML.sub(" ", t.split(" → ")[0]))
+        n += len(M._RE_WORT.findall(t.replace("✔", " ").replace("✘", " ")))
+    return n
+
+
+def _zaehle(b, einheit):
+    from . import mappe as M
+    text = b.get("text") or ""
+    zeilen = [z.strip() for z in text.splitlines()[1:]]
+    if einheit == "Fragen":
+        return M.fragen(b)[0]
+    if einheit == "Paare":
+        return sum(1 for z in zeilen if z.startswith("- ") and " → " in z)
+    if einheit == "Karten":
+        return sum(1 for z in zeilen if z.startswith("- "))
+    if einheit == "Lücken":
+        return len(M._RE_LUECKE.findall(re.sub(r"\*\*[^*]+\*\*", " ", text)))
+    return woerter(b)
+
+
+def einheit_pruefen(ergebnis, mappe):
+    """Prüfregeln der Mühle für eine Einheit, deren Text für den Chat kopiert wurde (`mappe.kopiert`; Kursdateien aus
+    1.x und Testkurse bleiben unberührt): eine Zeile `Angenommen:`, die Minuten nennt, ist ein Fehler mit eigenem
+    Korrektursatz (`bitte`); Mindestmaße je Typ (`mindest` im Katalog) als roter Baustein; ein Einstieg über
+    `pruefregeln.einstieg_woerter` Wörtern als gelber Hinweis (Stufe warnung). Eine Annahme mit Minuten, die Bausteine
+    der Antwort nennt (ergänzte Bausteine), zählt nicht als Zeit-Annahme. Ändert `ergebnis` und gibt es zurück."""
+    from . import mappe as M
+    if not mappe or not mappe.get("kopiert"):
+        return ergebnis
+    kat = M.katalog()
+    regeln, prompt = kat["pruefregeln"], kat["prompt"]
+    typen = {t["typ"]: t for t in kat["typen"]}
+    plan = {e["id"]: e for e in mappe.get("bausteine", [])}
+    minuten = (mappe.get("einheit") or {}).get("minuten")
+    diag = Diagnosen()
+    ids = {b["id"] for b in ergebnis.get("bausteine", [])}
+    for i, z in enumerate((ergebnis.get("kursdatei") or "").splitlines(), 1):
+        # Minuten in einer Annahme sind Zeit außerhalb des Kurses; nennt die Zeile Bausteine der Antwort (ergänzte
+        # Bausteine „zur Füllung der 45 Minuten“), ist es keine
+        if z.startswith("Angenommen:") and _RE_MINUTEN.search(z) and not (set(_RE_ID_IM_TEXT.findall(z)) & ids):
+            d = diag.fehler("Der Chat nimmt Zeit außerhalb des Kurses an (Zeile „Angenommen:“); die Minuten gehören "
+                            "in die Bausteine", i, art="zeit")
+            d["bitte"] = prompt["korrektur_zeit"].format(minuten=minuten or "geplanten")
+
+    def melde(stufe, b, text, art):
+        d = diag.add(stufe, art, text, b["zeile"], f"{b['typ']} „{b['titel']}“")
+        d["baustein"], d["titel"], d["zeile_im_baustein"] = b["id"], b["titel"], 1
+
+    for b in ergebnis.get("bausteine", []):
+        if b.get("status") == "fehler":
+            continue
+        e = plan.get(b["id"]) or b
+        mind = typen.get(b["typ"], {}).get("mindest")
+        heft = "Hefteintrag" in " ".join(str(x or "") for x in (e.get("titel"), e.get("schritt"), b["titel"]))
+        if mind and (not mind.get("nur") or heft):
+            n, soll, ein = _zaehle(b, mind["einheit"]), mind["zahl"], mind["einheit"]
+            if n < soll:
+                melde("fehler", b, f"Nur {n} {_EINZAHL.get(ein, ein) if n == 1 else ein}, nötig sind mindestens {soll}",
+                      "mindest")
+            if mind.get("nur") == "Hefteintrag":
+                if not re.search(r"^\s*Merke:", b.get("text") or "", re.M):
+                    melde("fehler", b, "Der Hefteintrag hat keinen Merksatz (Zeile „Merke:“)", "mindest")
+                if not re.search(r"\*\*[^*]+\*\*|<(?:b|strong)>", b.get("text") or ""):
+                    melde("fehler", b, "Der Hefteintrag hat keine fett gesetzten Fachbegriffe", "mindest")
+        if M.rolle_von(e) == "einstieg" and b["typ"] in ("Textfeld", "Seite"):
+            n, grenze = woerter(b), regeln["einstieg_woerter"]
+            if n > grenze:
+                melde("warnung", b, f"Der Einstieg hat {n} Wörter, vorgesehen sind höchstens {grenze}; das Neue gehört in "
+                                    "die Erarbeitung",
+                      "einstieg")
+    if not diag:
+        return ergebnis
+    status = {b["id"]: b for b in ergebnis.get("bausteine", [])}
+    for d in diag:
+        b = status.get(d["baustein"])
+        if b is not None and d["stufe"] == "fehler":
+            b["status"] = "fehler"
+        elif b is not None and d["stufe"] == "warnung" and b["status"] == "ok":
+            b["status"] = "warnung"
+    ergebnis["diagnosen"] = ergebnis.get("diagnosen", []) + _diagnose_dicts(diag)
+    ergebnis["ok"] = not any(d["stufe"] == "fehler" for d in ergebnis["diagnosen"])
+    return ergebnis
+
+
 # ---------------------------------------------------------------- prüfen
-def pruefe(text, assets=None, steckbrief=None):
+def pruefe(text, assets=None, steckbrief=None, mappe=None):
     """Kursdatei (oder ganze Chat-Antwort) nachsichtig lesen. Ergebnis: ok, titel, farbe, bausteine (id, typ, titel,
     abschnitt, zeile, zeilen, minuten, angaben, status, text), abschnitte, diagnosen (mit Bausteintitel und
-    zeile_im_baustein), adressen (alle externen Adressen), kursdatei (der übernommene Text)."""
+    zeile_im_baustein), adressen (alle externen Adressen), bildwuensche, kursdatei (der übernommene Text). Mit `mappe`
+    (Kursmappe der Mühle) zusätzlich die Prüfregeln aus `einheit_pruefen`."""
     t0 = time.time()
     kurs, hinweise = extrahiere_kursdatei(text or "")
     sb = _steckbrief(steckbrief)
@@ -245,9 +389,11 @@ def pruefe(text, assets=None, steckbrief=None):
     adressen = [{"zeile": ln, "adresse": a, "https": a.startswith("https://"),
                  "baustein": next((b["id"] for b in k["bausteine"] if b["zeile"] <= ln < b["zeile"] + b["zeilen"]), None)}
                 for ln, a in k["adressen"]]
-    return {"ok": not d.hat_fehler(), "titel": k["titel"], "farbe": k["farbe"], "bausteine": k["bausteine"],
-            "abschnitte": k["abschnitte"], "diagnosen": _diagnose_dicts(d), "adressen": adressen, "kursdatei": kurs,
-            "dauer_s": round(time.time() - t0, 3), "version": VERSION}
+    ergebnis = {"ok": not d.hat_fehler(), "titel": k["titel"], "farbe": k["farbe"], "bausteine": k["bausteine"],
+                "abschnitte": k["abschnitte"], "diagnosen": _diagnose_dicts(d), "adressen": adressen,
+                "bildwuensche": bildwuensche(kurs, k["bausteine"]), "kursdatei": kurs,
+                "dauer_s": round(time.time() - t0, 3), "version": VERSION}
+    return einheit_pruefen(ergebnis, mappe) if mappe else ergebnis
 
 
 # ---------------------------------------------------------------- bauen

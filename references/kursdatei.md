@@ -32,7 +32,8 @@ teil: le1
 Ignoriert werden überall: `[Quelle: …]`, `[KI]`, `[KI: …]`, `[Zweck: …]`, `(← S2)`, `(← Elementtitel)`, `(4 min)` und
 `· 4 min` am Ende von Überschriften und `Seite:`-Zeilen, Zeilen `Zeit … min` (Zeitcheck), `v2: …` (Änderungsliste),
 `Angenommen: …` (Annahmen ohne Rückfrage), `Abweichung: …` (Abweichung von D1–D10, `intake.md` §3), `Offen: …` (Fachzweifel für
-die Lehrkraft) und `Bildwunsch: …` (Bildprompts für die Lehrkraft); die vier Zeilenarten gehören in den Kopf. Nichts davon
+die Lehrkraft), `Bildwunsch: datei.png | …` (ein Satz, was das Bild zeigt, zum Suchen oder Zeichnen) und darunter
+`Bildprompt: datei.png | …` (ausführlicher Auftrag für einen Bildgenerator); diese Zeilen gehören in den Kopf. Nichts davon
 landet im Kurs. Andere Zeilen im Kopf meldet der Parser als ignoriert; `farbe:` und `kursbild:` gelten trotzdem.
 
 Fehler brechen den Bau ab und nennen Datei, Zeile und Element. Unbekannte Typen, Angaben, Bilder, Zonen und Sprungziele

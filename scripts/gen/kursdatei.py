@@ -342,8 +342,9 @@ class Zeilen:
             with open(path, encoding="utf-8") as f:
                 text = f.read()
         raw = text.splitlines()
-        # Drehbuch-Zeilen für die Lehrkraft, nie im Kurs (Zeitcheck, Änderungsliste, Annahmen, Abweichungen, offene Fragen)
-        meta = re.compile(r"^(Zeit\b.*\d+\s*min|v\d+:|Angenommen:|Abweichung:|Offen:|Bildwunsch:)")
+        # Drehbuch-Zeilen für die Lehrkraft, nie im Kurs (Zeitcheck, Änderungsliste, Annahmen, Abweichungen, offene Fragen,
+        # Bildwunsch und Bildprompt)
+        meta = re.compile(r"^(Zeit\b.*\d+\s*min|v\d+:|Angenommen:|Abweichung:|Offen:|Bildwunsch:|Bildprompt:)")
         self.name = name or (os.path.basename(path) if path else "kurs.md")
         self.diag = diag if diag is not None else Diagnosen(self.name)
         self.adressen = []      # (Zeile, Adresse) aller http(s)-Adressen der Datei

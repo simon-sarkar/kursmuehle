@@ -114,6 +114,20 @@ def main():
     for feld, werte in kat["oberflaeche"].items():
         ok(len(werte) >= 2 and all("wert" in w and w.get("text") for w in werte), f"Oberfläche {feld}: {len(werte)} Werte")
     ok({w["wert"] for w in kat["oberflaeche"]["farbe"] if w["wert"]} <= set(K.FARBEN), "Oberfläche Farben aus FARBEN")
+    # Mindestmaße je Typ (AP13.1): vorhanden für die Übungstypen und den Hefteintrag, Zahlen plausibel
+    mind = {e["typ"]: e["mindest"] for e in kat["typen"] if e.get("mindest")}
+    erwartet = {"Quiz": (3, "Fragen"), "Zuordnen": (4, "Paare"), "Lückentext": (5, "Lücken"), "Lernkarten": (4, "Karten"),
+                "Seite": (80, "Wörter"), "Textfeld": (80, "Wörter")}
+    ok({t: (m["zahl"], m["einheit"]) for t, m in mind.items()} == erwartet, f"mindest je Typ ({sorted(mind)})")
+    ok(all(isinstance(m["zahl"], int) and (1 < m["zahl"] <= 12 if m["einheit"] != "Wörter" else 40 <= m["zahl"] <= 200)
+           and m.get("nur", "Hefteintrag") == "Hefteintrag" for m in mind.values()), "mindest: Zahlen plausibel, nur Hefteintrag als Bedingung")
+    ok(all(mind[t]["nur"] == "Hefteintrag" for t in ("Seite", "Textfeld")), "mindest für Text und Seite nur im Hefteintrag")
+    pr = kat["pruefregeln"]
+    ok(set(pr["uebung"]) <= alle_t and 50 <= pr["einstieg_woerter"] <= 150 and set(pr["fehlt"]) == {"einstieg", "lesen", "üben", "sichern"},
+       "Prüfregeln: Übungstypen aus dem Katalog, Einstiegsgrenze, vier Phasen")
+    km = kat["zeitbedarf"]["karte_minuten"]
+    ok(set(km) == {"einstieg", "lesen", "üben", "sichern", "rahmen"} and all(0 < x <= 45 for x in km.values()),
+       "Richtwert je Karte nach Rolle (Schwelle der Warnung vor dem Kopieren)")
     if fehler:
         print(f"\n{len(fehler)} Fehler")
         return 1

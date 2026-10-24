@@ -1,5 +1,77 @@
 # Changelog
 
+## 2.0.0-b3 – 2026-10-24 (AP13.2: Landingpage als Schritt 1, Dark Mode, Kopfzeile, drehende Mühle)
+
+Die Startseite beschreibt das Werkzeug nicht mehr, sie fängt an: Befund des Autors zur b1 war, dass Gliederung und
+Layout an eine Verkaufsseite erinnerten. Die Mühle selbst ist in diesem Paket unverändert (AP13.1 läuft parallel als
+2.0.0-b2).
+
+- **Startseite = Schritt 1:** Das Band oben hat die drei Felder der Mühle (Thema, Jahrgangsstufe, Minuten) mit
+  „Weiter“, beschriftet und gesetzt wie Schritt 1 unter `start/`; „Weiter“ baut die Adresse
+  `start/?thema=…&jahrgang=…&minuten=…` und sendet nichts (leeres Thema: `start/`; ohne Skript schickt das Formular
+  dieselben Felder per GET). Über den Feldern steht die Frage aus Schritt 1 statt einer Überschrift; die Erklärung ist
+  eine Zeile darunter. Das Impressum nennt dazu, dass die Angaben dann in der Adresse der Mühle stehen und damit in den
+  Zugriffsprotokollen von GitHub. Die Kachel „Mahlwerk starten“ ist kleiner und steht rechts daneben, auf dem Handy als flache
+  Zeile. Ablauf kürzer (eine Zeile je Schritt), Chat-Zeile, Agenten-Abschnitt und Fußzeile wie bisher; kein Name auf
+  der Startseite.
+- **Dark Mode** nach Systemeinstellung (kein Schalter): Farbsatz aus Entwurf B (Anthrazit-Band, Wasserzeichen in Creme
+  per Maske, helle Schrift), Logo der Kacheln in der hellen Fassung; Landingpage und Impressum. Entwurf B ist gelöscht.
+- **Kopfzeile** auf Landingpage und Impressum, klebt beim Scrollen oben (56 px): links Logo und „Kursmühle · Beta“ zur
+  Startseite, rechts die kleine Kachel „Mahlwerk starten“ zu `start/`; auf der Landingpage erscheint sie erst, wenn die
+  große Kachel aus dem Bild ist (ohne Skript immer), auf 390 px ohne Untertitel. Kein schwebender Knopf.
+- **Drehende Mühle:** Bei Hover und Tastaturfokus dreht sich das Rad der Kachel (Flügel und Zahnrad) langsam gegen den
+  Uhrzeigersinn um die Nabe, sanft anlaufend, beim Verlassen läuft es bis zur nächsten halben Umdrehung aus;
+  `prefers-reduced-motion` schaltet es ab. `docs/make_logo.py`: Flügel und Zahnrad als Gruppe `rad`, Fenster unter
+  den Flügeln, Flügel mit Kontur in Hintergrundfarbe hinter der Füllung (ruhend bildgleich, gedreht trennt sie Flügel
+  und Turm); schreibt das Logo auch inline in `index.html` und `impressum.html`. Alle SVGs neu erzeugt.
+- Tests: `test_landing.py` erweitert (Adresse aus dem Formular mit Umlauten, Leerzeichen und `&`, leeres Thema, ohne
+  Skript; Kopfzeile sticky und kleine Kachel nach dem Scrollen; hell und dunkel ohne horizontales Scrollen bei 390,
+  1280 und 2560 px, Kontrast; Drehung bei Hover und Fokus, keine bei `prefers-reduced-motion`; Logo-Dateien und
+  eingebettete Fassung gleich `make_logo.py`, Bildvergleich mit und ohne Flügelkontur). Gutachten
+  `protokolle/AP13.2_gutachten.md`.
+## 2.0.0-b2 – 2026-10-24 (AP13.1: Mühle mit Führung, Korrekturschleife, Bildern und Zählregeln)
+
+Zweite Beta der Browser-Fassung; betrifft nur die Mühle unter `/start/`. Grundlage sind die Befunde aus dem ersten
+Durchlauf des Autors und der erste Chat-Lauf mit ByLKI („Das Auge“, 24.10.2026).
+
+- **Kopfzeile:** „Einheit öffnen“, „Einheit speichern“, „Neue Einheit“ und der Stand der Sicherung stehen als kleine
+  Textlinks oben; der Block am Rand entfällt, das Wort „Kursdatei“ verschwindet aus der Oberfläche (der Dateiname der
+  `.kursmappe.zip` bleibt). Logo und Zurück-Knopf führen zur Landingpage, die Einheit bleibt gesichert.
+- **Vorbelegung von der Landingpage:** `start/?thema=…&jahrgang=…&minuten=…` füllt Schritt 1 und legt die Einheit an;
+  liegt schon eine Einheit im Browser, fragt die Seite vorher. `?weiter=1` hat Vorrang. Die Parameter verschwinden
+  danach aus der Adresse, ohne den Zurück-Knopf zu brechen.
+- **Ein Ergebnis-Knopf:** „Datei für die Lernplattform herunterladen“ baut und lädt in einem Schritt; Schritt 7 erscheint
+  erst, wenn er etwas kann. Ocker trägt nur noch dieser Knopf; die übrigen Hauptknöpfe sind Anthrazit.
+- **„Anderer Chat“** führt zurück zu den Chat-Kacheln; der kopierte Text bleibt, bis ein anderer Chat gewählt ist.
+- **Korrekturschleife an der Karte:** „Korrektur anfordern“ öffnet unter der roten Karte Satz, Kopierknopf und
+  Einfügefeld; die Antwort ersetzt nur diesen Baustein, der Block bleibt offen, bis die Karte nicht mehr rot ist.
+  „Diesen Baustein neu beauftragen“ läuft genauso. Der Sammelblock für mehrere rote Karten steht unter der Kartenliste;
+  die Seite setzt jeden Baustein anhand seiner id ein.
+- **Hinweise beim ersten Durchlauf:** je Schritt zwei Sätze unter der Überschrift (Texte in `web/hinweise.json`),
+  abschaltbar in Schritt 1 oder am Hinweis; der Zustand liegt in der IndexedDB (Datenbank Version 2, Speicher
+  `einstellungen`).
+- **Schritt „Bilder“** zwischen Antwort und Fragen, nur wenn die Antwort Bildwünsche hat: je Bild Datei, Baustein,
+  Status, der Satz aus `Bildwunsch:` und der Auftrag für einen Bildgenerator aus der neuen Zeile `Bildprompt:`, je mit
+  Kopierknopf, dazu Hochladen und Ablagefläche; „Ohne Bild weiter“ lässt den Platzhalter stehen. Die Nummern der
+  Schritte zählt die Seite.
+- **Zählregeln im Text für den Chat und in der Prüfung:** Zeit nie wegerklären (`Angenommen:` nur für die Form; eine
+  Zeit-Annahme ist ein Fehler mit eigenem Korrektursatz), fehlende Bausteine ergänzt der Chat in der Phasenfolge,
+  Mindestmaße je Typ aus `katalog.yaml` (`mindest`: Quiz 3 Fragen, Zuordnen 4 Paare, Lückentext 5 Lücken, Lernkarten 4,
+  Hefteintrag 80 Wörter mit Merksatz und fetten Fachbegriffen) als roter Baustein, Einstieg über 100 Wörtern als gelber
+  Hinweis, Denkaufgaben-Kästen sind keine Übung. Die Prüfregeln gelten für Einheiten, deren Text kopiert wurde.
+- **Warnung vor dem Kopieren:** zu wenig Karten für die Minuten („2 Karten für 45 Minuten, Bausteine ergänzen?“, Schwelle
+  `zeitbedarf.karte_minuten`) oder eine Phase ohne Karte („Keine Übung mehr“, auch an der Kartenliste und am Rand);
+  „Vorlage auffüllen“ setzt die fehlenden Phasen mit Typ automatisch ein. Keine Sperre.
+- „Automatisch“ bietet sechs Typen an (dazu Lernkarten und Lückentext); die Grenze für den Text liegt bei 12 KB.
+- Nächste Einheit: Aussehen und Chat sind vorbelegt, nach Schritt 2 geht es direkt zum Text für den Chat.
+- Parser und `references/kursdatei.md` kennen `Bildprompt:` (Kopfzeile, nicht im Kurs).
+- Tests: `test_ansicht.py` (Mühle unter `/start/`, Zurück zur Landingpage, Vorbelegung, Ergebnis-Knopf, „Anderer Chat“,
+  Korrekturschleife, Hinweise, Bilder, Warnungen, „Kursdatei“ als verbotener Begriff), `test_api.py` (Prüfregeln, Plan,
+  Bildwünsche), `test_prompt.py` (Zählregeln, Bildprompt), `test_katalog.py` (`mindest`), Prompttest mit vier Läufen
+  der Sonnet-Klasse (`protokolle/AP11_prompttest.md`; danach: ergänzte Bausteine sind keine Zeit-Annahme, Typen zum
+  Ergänzen in jedem Text, ausgeschaltete Karten bleiben leer, Wortziel des Hefteintrags nie unter dem Mindestmaß),
+  Gutachten (`protokolle/AP13.1_gutachten.md`, 19 Funde, 16 eingearbeitet).
+
 ## 2.0.0-b1 – 2026-10-24 (AP13 und AP13b: Schrittfolge, minimale Vorlagen, Typ automatisch, Nach dem Bau, Landingpage, Beta-Veröffentlichung)
 
 Erste Beta der Browser-Fassung unter kursmuehle.de. Das Release-Zip für die Agenten-Nutzer bleibt 1.0.3

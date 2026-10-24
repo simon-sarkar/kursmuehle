@@ -104,6 +104,7 @@ def abgleich(mappe, bausteine):
         # eine geplante Karte füllt nur ein Baustein aus demselben Abschnitt (angehängte Einheit nimmt sie nicht)
         frei = [i for i in range(letzter + 1, len(alt)) if i not in genutzt
                 and (alt[i].get("typ") == b["typ"] or (alt[i].get("geplant") and alt[i].get("typ") == AUTO))
+                and not (alt[i].get("geplant") and alt[i].get("aus"))   # ausgeschaltete Karte bleibt leer (AP13.1)
                 and not (alt[i].get("geplant") and abschnitt is not None and b.get("abschnitt") != abschnitt)]
         kandidat = j if j in frei else (frei[0] if frei else None)
         if kandidat is not None:
@@ -499,6 +500,110 @@ def _luecke(e, genau, ziel):
     return f"{name} für {n} Minute{'' if n == 1 else 'n'} statt {ziel}"
 
 
+# ---------------------------------------------------------------- Plan der Einheit: reichen die Karten? (AP13.1)
+def _einheit_karten(mappe):
+    """Eingeschaltete Karten der laufenden Einheit ohne Strukturbausteine: beim Anhängen nur die neue Einheit, sonst
+    die Karten ohne `einheit`."""
+    teil = mappe.get("anhaengen")
+    return [e for e in mappe.get("bausteine", []) if not e.get("aus") and e.get("typ") not in struktur()
+            and (e.get("einheit") == teil if teil else not e.get("einheit"))]
+
+
+def _rolle_im_plan(e, uebung):
+    """Rolle einer Karte für den Plan: Phase vor Typ; eine Karte mit Inhalt zählt nur als Übung, wenn ihr Typ eine Übung
+    ist (ein Kasten mit Fragen im Lesetext ist keine Übung)."""
+    r = rolle_von(e)
+    if r == "üben" and not e.get("geplant") and e.get("typ") not in uebung:
+        return _rollen()[0].get(e.get("typ"), "rahmen")
+    return r
+
+
+def _vorlage(mappe):
+    name = (mappe.get("einheit") or {}).get("vorlage")
+    return next((v for v in katalog().get("vorlagen", []) if v["name"] == name), None)
+
+
+def planung(mappe):
+    """Reicht der Plan für die Minuten? Summe der Richtwerte je Karte nach Rolle (`zeitbedarf.karte_minuten`) gegen die
+    Minuten der Einheit, dazu die Rollen der Vorlage, die keine eingeschaltete Karte mehr trägt. Nur für Einheiten aus
+    einer Vorlage. -> {karten, minuten, traegt, zu_wenig, fehlen: [Warnung], text}"""
+    kat = katalog()
+    v = _vorlage(mappe)
+    karten = _einheit_karten(mappe)
+    minuten = (mappe.get("einheit") or {}).get("minuten")
+    richt = kat["zeitbedarf"]["karte_minuten"]
+    regeln = kat["pruefregeln"]
+    rollen = [_rolle_im_plan(e, regeln["uebung"]) for e in karten]
+    traegt = sum(richt.get(r, richt["rahmen"]) for r in rollen)
+    soll = [] if v is None else list(dict.fromkeys(p.get("rolle") for p in v["phasen"] if not p.get("optional")))
+    fehlen = [regeln["fehlt"][r] for r in soll if r in regeln["fehlt"] and r not in rollen]
+    zu_wenig = bool(v is not None and minuten and traegt < int(minuten))
+    n = len(karten)
+    text = f"{n} {'Karte' if n == 1 else 'Karten'} für {minuten} Minuten" if zu_wenig else ""
+    return {"karten": n, "minuten": minuten, "traegt": traegt, "zu_wenig": zu_wenig, "fehlen": fehlen, "text": text}
+
+
+def _vorlage_karte(b, phase, soll, id):
+    """Karte aus einem Eintrag der Vorlage („Typ: Titel | Teilschritt“) mit Typ automatisch."""
+    kopf, _, schritt = b.partition(" | ")
+    titel = kopf.split(":", 1)[1].strip() if ":" in kopf else phase["phase"]
+    return geplant(id, AUTO, titel, phase["phase"], soll, schritt=schritt.strip())
+
+
+def auffuellen(mappe):
+    """„Vorlage auffüllen“: fehlende Rollen der Vorlage als Karten mit Typ automatisch an ihren Platz in der Phasenfolge
+    (nach der letzten Karte einer früheren oder gleichen Rolle); tragen die Karten die Minuten dann noch nicht, je eine
+    weitere Karte in den dehnbaren Phasen, bis sie reichen (höchstens sechs neue Karten). Nur die laufende Einheit."""
+    v = _vorlage(mappe)
+    if v is None:
+        return mappe
+    liste = mappe.setdefault("bausteine", [])
+    minuten = int((mappe.get("einheit") or {}).get("minuten") or 45)
+    uebung = katalog()["pruefregeln"]["uebung"]
+    reihe = {r: i for i, r in enumerate(ROLLEN)}
+    teil = mappe.get("anhaengen")
+    ids = {e["id"] for e in liste}
+
+    def neue_id():
+        n = 1
+        while f"b{n}" in ids:
+            n += 1
+        ids.add(f"b{n}")
+        return f"b{n}"
+
+    def einsetzen_nach_rolle(karte, rolle):
+        eigene = _einheit_karten(mappe)
+        frueher = [e for e in eigene if reihe.get(_rolle_im_plan(e, uebung), -1) <= reihe.get(rolle, -1)]
+        if frueher:
+            pos = liste.index(frueher[-1]) + 1
+        else:
+            pos = liste.index(eigene[0]) if eigene else len(liste)
+        if teil:
+            karte["einheit"] = teil
+        liste.insert(pos, karte)
+
+    neu = 0
+    vorhanden = {_rolle_im_plan(e, uebung) for e in _einheit_karten(mappe)}
+    for p in v["phasen"]:
+        if p.get("optional") or p.get("rolle") in vorhanden:
+            continue
+        vorhanden.add(p.get("rolle"))
+        soll = max(1, round(p["anteil"] / 100 * minuten / len(p["bausteine"])))
+        for b in p["bausteine"]:
+            einsetzen_nach_rolle(_vorlage_karte(b, p, soll, neue_id()), p.get("rolle"))
+            neu += 1
+    dehnbar = [p for p in v["phasen"] if p.get("dehnbar") and not p.get("optional")]
+    k = 0
+    while dehnbar and planung(mappe)["zu_wenig"] and neu < 6:
+        p = dehnbar[k % len(dehnbar)]
+        k += 1
+        karte = _vorlage_karte(p["bausteine"][0], p, max(1, round(p["anteil"] / 100 * minuten / 2)), neue_id())
+        karte["titel"] = f"{karte['titel']} {k // len(dehnbar) + 2}"
+        einsetzen_nach_rolle(karte, p.get("rolle"))
+        neu += 1
+    return mappe
+
+
 def kennzahlen(mappe, pruefung=None, minuten=None, steckbrief=None):
     """Zahlen für den Rand: Minuten (gerechnet) gegen Soll, Folge Lesen → Üben → Sichern, Anteil Multiple Choice,
     Rückmeldungen, und Hinweise je Baustein (Fehler, Bild fehlt, Rückmeldung fehlt, ohne Inhalt). `zeit` je Baustein:
@@ -561,6 +666,9 @@ def kennzahlen(mappe, pruefung=None, minuten=None, steckbrief=None):
         elif d.get("art") == "bild" and n:
             hinweise.append({"art": "bild", "stufe": "warnung", "baustein": d["baustein"], "nummer": n,
                              "text": f"Bild fehlt in Baustein {n}"})
+    plan = planung(mappe)
+    for text in plan["fehlen"]:
+        hinweise.append({"art": "phase", "stufe": "warnung", "baustein": None, "nummer": None, "text": text})
     leer = [e for e in mappe.get("bausteine", []) if e.get("geplant") and not e.get("aus")]
     if leer:
         hinweise.append({"art": "leer", "stufe": "hinweis", "baustein": leer[0]["id"], "nummer": nummer[leer[0]["id"]],
@@ -575,7 +683,7 @@ def kennzahlen(mappe, pruefung=None, minuten=None, steckbrief=None):
             "folge_brueche": rueck + vor_lesen, "fragen": zaehl,
             "mc_anteil": round(100 * zaehl["mc"] / zaehl["fragen"]) if zaehl["fragen"] else None,
             "bausteine": len(eintraege), "geplant": len(leer), "hinweise": hinweise, "zeit": zeit,
-            "inhalt": any(not e.get("geplant") for e in eintraege), "zeit_selbst": selbst}
+            "inhalt": any(not e.get("geplant") for e in eintraege), "zeit_selbst": selbst, "planung": plan}
 
 
 # ---------------------------------------------------------------- Antwort des Chats einsetzen
@@ -612,12 +720,12 @@ def _bloecke(kursdatei, bausteine):
 
 
 def _kopfzeilen(kursdatei):
-    """Zeilen `Bildwunsch:`, `Angenommen:`, `Offen:`, `Abweichung:` vor dem ersten Abschnitt."""
+    """Zeilen `Bildwunsch:`, `Bildprompt:`, `Angenommen:`, `Offen:`, `Abweichung:` vor dem ersten Abschnitt."""
     out = []
     for z in kursdatei.splitlines():
         if z.startswith("## "):
             break
-        if re.match(r"^(Bildwunsch|Angenommen|Offen|Abweichung):", z):
+        if re.match(r"^(Bildwunsch|Bildprompt|Angenommen|Offen|Abweichung):", z):
             out.append(z)
     return out
 
@@ -662,12 +770,13 @@ def modus(mappe, text):
     return {"modus": art, "bausteine": n, "treffer": len(treffer), "ids": [b["id"] for b, _ in bl]}
 
 
-def einsetzen(mappe, kurs_md, text):
+def einsetzen(mappe, kurs_md, text, nur=None):
     """Nur die Bausteine der Antwort in die Kursdatei setzen, Abgleich über `id:`: steht die ID in der Kursdatei, ersetzt
     der Block den alten (Ebene wie dort); ist sie ein geplanter Baustein der Mappe, kommt der Block an seinen Platz in der
     Reihenfolge der Mappe. Ein einzelner Baustein ohne `id:` geht an die markierte Karte (`neu`), wenn genau eine
     markiert ist. Sonst eine Fehlermeldung mit Vorschlag; die Kursdatei bleibt dann für diesen Baustein unverändert.
-    -> {kurs_md, ersetzt, eingefuegt, fehler}"""
+    `nur` (AP13.1, Korrekturschleife an der Karte): ein einzelner Baustein der Antwort geht an diese Karte, mit oder
+    ohne `id:`. -> {kurs_md, ersetzt, eingefuegt, fehler}"""
     pa = antwort(text)
     antwort_md = pa["kursdatei"]
     bl = _bloecke(antwort_md, pa["bausteine"])
@@ -678,7 +787,9 @@ def einsetzen(mappe, kurs_md, text):
     ersetzt, eingefuegt, fehler_ = [], [], []
     for b, block in bl:
         id = b["id"] if b.get("id_explizit") else None
-        if id is None and len(bl) == 1 and len(markiert) == 1:
+        if nur and len(bl) == 1:
+            id = nur
+        elif id is None and len(bl) == 1 and len(markiert) == 1:
             id = markiert[0]["id"]
         basis = re.match(r"^(.+)-\d+$", id or "")
         zweiter = id is not None and id not in nach_id and basis is not None and basis.group(1) in nach_id

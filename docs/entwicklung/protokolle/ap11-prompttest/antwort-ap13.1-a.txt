@@ -1,0 +1,141 @@
+```markdown
+# Drehbuch v1 · Das Auge · 45 min
+Angenommen: Kursformat Themen untereinander
+Angenommen: Designvorlage Schlicht
+Angenommen: Übungen erscheinen auf der Kursseite (formative Übungen als Block im Textfeld, Kursdatei-Angabe `website: textfeld` am Abschnitt)
+Angenommen: Kein Abschlusstest
+Angenommen: Alles sofort sichtbar
+Angenommen: Portionierung als eine Seite für den Lesetext, die Fragen dazu als Quiz danach
+Angenommen: Die Quizze haben den Abschluss ansehen, es gibt keine Bestehensgrenze
+Bildwunsch: auge-querschnitt.png | Querschnitt durch ein menschliches Auge mit beschrifteten Teilen.
+Bildprompt: auge-querschnitt.png | Schematische Querschnittszeichnung eines menschlichen Auges von der Seite. Vorn die gewölbte Hornhaut, dahinter die Iris mit der Pupille in der Mitte, dann die Linse, der runde Glaskörper, hinten die Netzhaut als dünne Schicht an der Rückwand, unten hinten der Sehnerv. Dünne Beschriftungslinien mit Druckschrift: Hornhaut, Iris, Pupille, Linse, Glaskörper, Netzhaut, Sehnerv. Flacher Lehrbuchstil, klare Linien, helle Farben auf weißem Hintergrund, Seitenverhältnis 4:3, sonst kein Text im Bild.
+Offen: Kurzsichtigkeit ist hier auf eine Ursache verkürzt (zu langes Auge); sie kann auch an der Brechkraft von Hornhaut und Linse liegen.
+Offen: Die Sehschärfe wird als Quotient aus eigenem Abstand und Normabstand eingeführt; ob die Division einer kleineren durch eine größere Zahl in der Klasse schon geübt ist, bitte prüfen.
+
+## Das Auge · 45 min
+website: textfeld
+
+### Textfeld: Luca sieht in der Ferne unscharf · 2 min
+id: b1
+Vorspann: Luca sitzt in der letzten Reihe und kann die Tafel nicht mehr scharf sehen. Auf seinem Handy liest er Nachrichten ohne Mühe.
+
+Beim Augenarzt liest er Buchstaben von einer Tafel an der Wand. Danach sagt die Ärztin zu ihm: „Deine Sehschärfe beträgt 0,5.“
+
+Kasten: Vermute
+  Schreibe zwei Vermutungen in dein Heft.
+  - Warum sieht Luca nah scharf und weit weg unscharf?
+  - Was könnte die Zahl 0,5 aussagen?
+
+Am Ende der Stunde kannst du die Teile des Auges benennen und aus einem Sehtest die Sehschärfe berechnen.
+
+### Seite: Aufbau des Auges und Sehschärfe · 12 min
+id: b2
+Überschrift: Der Weg des Lichts durch das Auge
+Wenn Luca zur Tafel schaut, trifft Licht von den Buchstaben auf sein Auge. Es durchquert mehrere durchsichtige Teile und erreicht hinten eine Schicht aus Sinneszellen.
+
+Bild: auge-querschnitt.png | Querschnitt durch ein Auge mit Hornhaut, Iris, Pupille, Linse, Glaskörper, Netzhaut und Sehnerv | Das Auge im Querschnitt
+
+Überschrift: Hornhaut, Iris und Pupille
+Ganz vorn liegt die **Hornhaut**. Sie ist durchsichtig und gewölbt wie ein Uhrglas. Sie schützt das Auge und lenkt das Licht ab.
+
+Dahinter liegt die **Iris**, der farbige Ring des Auges. In ihrer Mitte befindet sich ein Loch, die **Pupille**. Die Iris macht die Pupille weiter oder enger. Im dunklen Kino ist die Pupille weit und lässt viel Licht ein, im grellen Sonnenlicht ist sie eng.
+
+Kasten: Benenne den Teil
+  - Du kommst aus dem Sonnenlicht in einen dunklen Keller. Welcher Teil des Auges verändert sich?
+  - Beim Radfahren fliegt dir ein Sandkorn entgegen. Welcher Teil des Auges trifft es zuerst?
+
+Im Keller macht die Iris die Pupille weiter. Das Sandkorn trifft zuerst die Hornhaut.
+
+Überschrift: Linse, Glaskörper und Netzhaut
+Hinter der Pupille sitzt die **Linse**. Sie ist biegsam und bündelt das Licht, damit auf der Netzhaut ein scharfes Bild entsteht. Beim Blick auf das Handy wird sie dicker, beim Blick zur Tafel flacher.
+
+Den Raum hinter der Linse füllt der **Glaskörper**. Er ist durchsichtig wie Gelee und hält das Auge rund.
+
+An der Rückwand liegt die **Netzhaut**. Ihre Sinneszellen wandeln Licht in Signale um. Die Signale laufen über den **Sehnerv** zum Gehirn, und dort entsteht der Seheindruck.
+
+Kasten: Benenne den Teil
+  Eine Kamera hat einen Sensor, der das Licht aufnimmt. Welchem Teil des Auges entspricht er?
+
+Der Sensor entspricht der Netzhaut.
+
+Überschrift: Warum Luca in der Ferne unscharf sieht
+Lucas Auge ist etwas zu lang. Licht von fernen Buchstaben wird deshalb schon vor der Netzhaut gebündelt und ist auf ihr unscharf. Licht von nahen Dingen wird weiter hinten gebündelt, darum sieht Luca sein Handy scharf. Diesen Sehfehler nennt man **Kurzsichtigkeit**. Eine Brille lenkt das Licht schon vor dem Auge ab.
+
+Überschrift: Was die Zahl 0,5 bedeutet
+Die Augenärztin misst die Sehschärfe mit einer Tafel, auf der die Buchstaben von Zeile zu Zeile kleiner werden. Neben den Zeilen steht ein Abstand in Metern, zum Beispiel 10 m. Diesen Abstand nennt man **Normabstand**. Menschen mit normaler Sehkraft erkennen die Zeile aus dieser Entfernung gerade noch.
+
+Luca erkennt die 10-m-Zeile erst, wenn er auf 5 m herangeht. Er sieht aus 5 m, was ein Mensch mit normaler Sehkraft schon aus 10 m erkennt. Sein Auge leistet nur die Hälfte, das ergibt 5 : 10 = 0,5.
+
+Überschrift: Die Regel für die Sehschärfe
+Für andere Fälle teilt man ebenso den eigenen Abstand durch den Normabstand.
+- Erkennt jemand die Zeile aus dem Normabstand, ist der Wert 1.
+- Muss jemand näher heran, ist der Wert kleiner als 1.
+- Erkennt jemand die Zeile aus größerem Abstand, ist der Wert größer als 1.
+
+Merke: Sehschärfe = eigener Abstand : Normabstand, beide in Metern.
+
+Beispiel: Lucas Sehtest
+  1. Die Zeile hat den Normabstand 10 m.
+  2. Luca erkennt sie erst aus 5 m.
+  3. Luca rechnet 5 : 10 = 0,5.
+  4. Lucas Sehschärfe ist 0,5 und damit kleiner als 1.
+
+Beispiel: Majas Sehtest
+  1. Die Zeile hat den Normabstand 10 m.
+  2. Maja erkennt sie noch aus 12 m.
+  3. Maja rechnet 12 : 10 = 1,2.
+  4. Majas Sehschärfe ist 1,2 und damit größer als 1.
+
+### Quiz: Fragen zum Aufbau des Auges · 8 min
+id: b2-2
+abschluss: ansehen
+1. MC: Luca schaut von der Tafel auf sein Handy, das er nah vor sich hält. Was geschieht dabei im Auge?
+- ✔ Die Linse wird dicker und bündelt das Licht stärker. → Die biegsame Linse wird für Nahes dicker, so entsteht das scharfe Bild auf der Netzhaut.
+- Die Hornhaut wird dicker und bündelt das Licht stärker. → Die Hornhaut ist fest gewölbt und ändert sich nicht, das Scharfstellen übernimmt die biegsame Linse.
+- Die Pupille wird größer und macht das Bild dadurch schärfer. → Die Pupille regelt die Lichtmenge, wie scharf das Bild wird, hängt von der Linse ab.
+2. RF: Maja kommt aus einem hellen Flur in einen dunklen Raum. Ihre Pupille wird kleiner, damit weniger Licht ins Auge fällt. ✘ → richtig: Im Dunkeln macht die Iris die Pupille weiter, damit mehr Licht auf die Netzhaut fällt. → falsch: Im Dunkeln wird die Pupille weiter, nicht enger, denn nur so gelangt genug Licht auf die Netzhaut.
+3. Einsetzen: Ergänze den Weg des Lichts durch das Auge.
+Das Licht trifft zuerst auf die *Hornhaut* und geht durch die Pupille. Dann durchquert es die *Linse* und den *Glaskörper*. Auf der *Netzhaut* entstehen Signale, die der *Sehnerv* zum Gehirn leitet.
+4. MC: Emre sieht Schilder an der Straße nur verschwommen, seine Handynachrichten aber scharf. Was passt dazu?
+- ✔ Das Licht von fernen Schildern wird schon vor der Netzhaut gebündelt. → Bei einem zu langen Auge liegt das scharfe Bild von Fernem vor der Netzhaut, auf ihr ist es unscharf.
+- Sein Sehnerv leitet die Signale von fernen Dingen nicht richtig weiter. → Der Sehnerv leitet Signale von Nahem und Fernem gleich weiter, die Unschärfe entsteht schon vorher.
+- Seine Iris ist zu dunkel, deshalb fällt zu wenig Licht in die Ferne. → Die Farbe der Iris ändert nichts an der Schärfe, entscheidend ist, wo das Licht gebündelt wird.
+5. RF: Jonas erreicht beim Sehtest den Wert 1,3. Das heißt, dass er schlechter sieht als ein Mensch mit normaler Sehkraft. ✘ → richtig: Ein Wert über 1 bedeutet, dass er die Zeile noch aus größerem Abstand erkennt als ein Normalsehender. → falsch: Jonas erkennt die Zeile aus einem größeren Abstand als dem Normabstand, sein Wert liegt über 1 und er sieht besser.
+
+### Zuordnen: Sehschärfe ohne Rechnung einordnen · 3 min
+id: b3
+zonen: Wert unter 1 | Wert 1 | Wert über 1
+titel: Ordne die Fälle zu, ohne zu rechnen.
+- Anna erkennt die Zeile mit dem Normabstand 10 m aus 10 m. → Wert 1
+- Ben muss für die 10-m-Zeile bis auf 4 m heran. → Wert unter 1
+- Chen erkennt die 6-m-Zeile noch aus 9 m. → Wert über 1
+- Dana erkennt die 20-m-Zeile aus 20 m. → Wert 1
+- Eli erkennt die 5-m-Zeile erst aus 2 m. → Wert unter 1
+- Fiona erkennt die 8-m-Zeile noch aus 10 m. → Wert über 1
+
+### Quiz: Sehschärfe berechnen · 9 min
+id: b4
+abschluss: ansehen
+1. Einsetzen: Tom liest die Zeile mit dem Normabstand 8 m erst aus 6 m. Berechne seine Sehschärfe.
+6 : 8 = *0,75*
+2. Einsetzen: Nora erkennt die Zeile mit dem Normabstand 7 m erst aus 4 m. Die Rechnung geht nicht auf, runde auf eine Stelle nach dem Komma.
+4 : 7 = *0,6*
+3. MC: Ida erkennt die 10-m-Zeile erst aus 6 m, Kemal erkennt die 20-m-Zeile erst aus 14 m. Wer sieht schärfer?
+- ✔ Kemal → Er erreicht 14 : 20 = 0,7, Ida nur 6 : 10 = 0,6, und der größere Wert bedeutet schärferes Sehen.
+- Ida, weil ihr Abstand zur Tafel kleiner ist → Ein Abstand allein sagt nichts, er muss durch den Normabstand der Zeile geteilt werden, hier 6 : 10 = 0,6.
+- Ida, weil ihr nur 4 m zum Normabstand fehlen, Kemal aber 6 m → Der Unterschied in Metern sagt nichts, weil die Zeilen verschiedene Normabstände haben, es zählt der Quotient.
+
+### Seite: Hefteintrag Auge und Sehschärfe · 11 min
+id: b5
+Überschrift: Aufbau des Auges und Sehschärfe
+| **Hornhaut** | schützt das Auge und lenkt das Licht ab |
+| **Iris** | regelt die Größe der **Pupille** und damit die Lichtmenge |
+| **Linse** | bündelt das Licht, wird für Nahes dicker |
+| **Glaskörper** | füllt das Auge aus |
+| **Netzhaut** | Sinneszellen wandeln Licht in Signale um |
+| **Sehnerv** | leitet die Signale zum Gehirn |
+Merke: **Sehschärfe** = eigener Abstand : **Normabstand**
+Merke: Unter 1 sieht man schlechter als normal, über 1 besser.
+Beispiel: Luca mit Brille
+  Mit Brille erkennt Luca die 10-m-Zeile aus 10 m. Er rechnet 10 : 10 = 1. Seine Sehschärfe ist normal.
+```

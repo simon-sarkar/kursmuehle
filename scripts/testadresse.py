@@ -23,7 +23,7 @@ ROOT = os.path.abspath(os.path.join(HERE, ".."))
 WEB = os.path.join(ROOT, "web")
 PFAD = "docs/2"
 AUSSCHLUSS = {"messungen", "__pycache__", ".DS_Store"}
-PFLICHT = ["index.html", "app.js", "worker.js", "ansicht.css", "generator.zip", "katalog.json", "logo.svg",
+PFLICHT = ["index.html", "app.js", "worker.js", "ansicht.css", "hinweise.json", "generator.zip", "katalog.json", "logo.svg",
            "vendor/pyodide/pyodide.js"]
 
 

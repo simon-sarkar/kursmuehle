@@ -208,3 +208,46 @@ Offen nach Lauf 4: Mit dem Wortziel „1 Aufgabe für 3 Minuten“ hat das Absch
 für Zuordnen und die Zählung eines Kastens ohne Fragezeichen passen nicht zur Rechnung (oben). Die Vorgabe „zwei
 Beispiele je Verfahren“ ist nur knapp erfüllt. Ein Urteil des Autors zu Lauf 4 liegt nicht vor, und es ist ein
 einzelner Lauf.
+
+## AP13.1: Zählregeln (24.10.2026)
+
+Wiederholung des Prompttests mit dem Text aus AP13.1 (Zeit nie wegerklären, Mindestmaße je Typ, Einstieg kurz,
+Denkaufgaben keine Übung, Bildwunsch und Bildprompt). Je Lauf ein frischer Subagent der Sonnet-Klasse, der nur den
+Text bekam und die Antwort wie im Chat schrieb. Vorlage Einführung, Typ automatisch, Zeit durch das Modell (Schalter
+aus), 45 Minuten, Text aus `gen/prompt.py` wie in der Mühle. Ausgewertet mit derselben Prüfung wie die Seite
+(`api.pruefe` mit Kursmappe, `kopiert`), `mappe.kennzahlen` für die gerechneten Minuten. Texte und Antworten in
+`ap11-prompttest/` (`text-ap13.1-*.txt`, `antwort-ap13.1-*.txt`).
+
+| Lauf | Einheit | Text | Bausteine der Antwort | Minuten (Überschriften / gerechnet) | Zeit-Annahme | rote Karten |
+|---|---|---|---|---|---|---|
+| A | Das Auge, Jgst. 5, Biologie, ByLKI | 11 643 Bytes | 6 (b2-2 als Quiz zum Lesetext) | 45 / 50 | nein | 0 |
+| B | Satz des Pythagoras, Jgst. 9, Mathematik, Claude | 11 871 Bytes | 6 (b2-2) | 45 / 53 | nein | 1 (Hefteintrag 78 von 80 Wörtern) |
+| C | Das Auge wie im ByLKI-Lauf: Erarbeitung und Übung gelöscht | 8 258 Bytes | 4 (b1-2, b1-2-2 ergänzt) | 45 / 25 | als Fehler gemeldet, war keine | 1 (Quiz im eigenen Format) |
+| C2 | wie C, Text nach den Korrekturen unten | 11 226 Bytes | 8 (b1-2 bis b1-7 ergänzt) | 45 / 37 | nein | 0 |
+
+Mindestmaße (A, B, C2): Quiz 3 bis 6 Fragen, Zuordnen 6 Paare, Lückentext 7 Lücken, Lernkarten 6, Hefteintrag 87, 78
+und 108 Wörter mit Merksatz und fetten Begriffen; Einstieg 85, 75 und 89 Wörter. Jede Einheit hat Bildwunsch und
+Bildprompt je Bild, zugeordnet zum Baustein mit der `Bild:`-Zeile. Keine Antwort hat Zeit außerhalb des Kurses
+angenommen; die Minuten in den Überschriften ergeben in allen Läufen genau 45. MC-Anteil 38, 33 und 50 %.
+
+Was die Läufe gezeigt haben und was daraufhin geändert ist:
+
+- B: Der Text nannte für den Hefteintrag „etwa 60 Wörter“ (Wortziel aus 6 Minuten Abschreiben), das Mindestmaß 80; die
+  Antwort lag mit 78 dazwischen. Das Wortziel des Hefteintrags liegt jetzt nie unter dem Mindestmaß (Gutachten Fund 3).
+  Die Korrekturschleife mit dem Satz der Prüfung („Nur 78 Wörter, nötig sind mindestens 80. Gib nur diesen Baustein …
+  noch einmal aus“) brauchte einen Durchgang: Antwort 723 Bytes, Baustein b5 ersetzt, 94 Wörter, grün
+  (`antwort-ap13.1-b-korrektur.txt`).
+- C: Der Chat ergänzte Bausteine wie verlangt und vermerkte das als „Angenommen: Zur Füllung der 45 Minuten sind eine
+  Seite … (b1-2) und ein Quiz … (b1-2-2) ergänzt“; die Prüfung meldete das als Zeit-Annahme. Jetzt zählt eine Annahme,
+  die Bausteine der Antwort nennt, nicht als Zeit-Annahme, und der Text sagt „Für ergänzte Bausteine schreibst du keine
+  Zeile `Angenommen:`“. Der zweite ergänzte Baustein hieß b1-2-2; der Text nennt jetzt „-3 (aus b1 wird b1-2, dann
+  b1-3)“. Ohne Karte „automatisch“ fehlten Typen und Formate zum Ergänzen, das Quiz kam im eigenen Format; die Typen zur
+  Wahl stehen jetzt in jedem Text mit Minuten. Der ergänzte Lesetext füllte per Position die ausgeschaltete Karte
+  „Vertiefung“; `mappe.abgleich` lässt ausgeschaltete Karten jetzt leer.
+- C2 mit diesen Korrekturen: sechs ergänzte Bausteine in Phasenfolge (zwei Seiten, Lernkarten, Zuordnen, Lückentext,
+  Quiz), keine Annahme zur Zeit, keine Fehler, gerechnet 37 von 45 Minuten (die Lesetexte sind kürzer, als die
+  Überschriften angeben).
+
+Nicht geprüft: die Läufe A und B nach den Korrekturen (die Unterschiede betreffen den Hefteintrag, die Zeitregel und die
+Bildsätze); ein dienstlicher Chat (ByLKI, fobizz, AIS-Chat, MUCGPT) mit dem neuen Text; ein Urteil des Autors zum
+Inhalt. Die Läufe sind vier Einzelläufe eines Modells.

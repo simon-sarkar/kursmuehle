@@ -11,9 +11,12 @@
 <header class="kopf">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
   <p id="kopf-status" class="status" role="status" aria-live="polite"></p>
+  <!-- AP13.1: Entwurfsverwaltung als kleine Textlinks neben dem Stand der Sicherung -->
   <div class="kopf-links">
-    <label for="datei-oeffnen" class="kopf-link">Kursdatei öffnen</label>
-    <button type="button" id="speichern" class="kopf-link" disabled hidden>Kursdatei speichern</button>
+    <span id="autosave-stand" class="kopf-stand"></span>
+    <label for="datei-oeffnen" class="kopf-link">Einheit öffnen</label>
+    <button type="button" id="speichern" class="kopf-link" disabled hidden>Einheit speichern</button>
+    <button type="button" id="neue-einheit" class="kopf-link" hidden>Neue Einheit</button>
     <button type="button" id="schliessen" class="kopf-x" aria-label="Einheit schließen" title="Einheit schließen" hidden>×</button>
   </div>
 </header>
@@ -25,7 +28,9 @@
 <p id="testfassung" class="testfassung" hidden></p>
 
 <!-- AP13: Schrittfolge. Jeder Schritt erscheint erst, wenn der vorige getan ist; erledigte Schritte stehen als eine
-     aufklappbare Zeile darüber. Die Kursdatei ist in beiden Zweigen („Mach du“, „Ich steuere“) dieselbe. -->
+     aufklappbare Zeile darüber. Die Kursdatei ist in beiden Zweigen („Mach du“, „Ich steuere“) dieselbe. AP13.1: Schritt
+     „Bilder“ (data-nr 5.5) nur, wenn die Antwort Bildwünsche hat; die Nummern zählt app.js; je Schritt beim ersten
+     Erreichen ein Hinweis aus hinweise.json. -->
 <main class="seite">
  <h1 class="unsichtbar">Kursmühle: Einheit für die ByCS-Lernplattform</h1>
  <div class="spalte-haupt">
@@ -53,6 +58,7 @@
         <button type="submit" id="einheit-anlegen" class="knopf haupt">Weiter</button>
       </form>
       <p class="vorsatz">Alles bleibt in diesem Browser, nichts wird hochgeladen.</p>
+      <label class="schalter hinweis-schalter"><input id="hinweise-an" type="checkbox" checked> Hinweise anzeigen</label>
     </div>
   </section>
 
@@ -137,6 +143,10 @@
         <div id="teil-wahl" class="teil-wahl" role="group" aria-label="Teil" hidden></div>
         <p id="chat-zeile" class="leise"></p>
         <p id="chat-aufwand" class="chat-aufwand" hidden></p>
+        <div id="kopier-warnung" class="warnung-box" role="status" hidden>
+          <p id="kopier-warnung-text"></p>
+          <button type="button" id="auffuellen" class="knopf">Vorlage auffüllen</button>
+        </div>
         <div class="kopieren">
           <button type="button" id="text-kopieren" class="knopf haupt" disabled>Text kopieren</button>
           <button type="button" id="chat-aendern" class="textlink">Anderer Chat</button>
@@ -170,15 +180,30 @@
         <label for="eingabe" class="unsichtbar">Antwort des Chats</label>
         <textarea id="eingabe" rows="6" spellcheck="false" placeholder="Hier einfügen (Strg+V oder lange drücken)"></textarea>
         <p id="eingabe-stand" class="stand" role="status" aria-live="polite"></p>
-        <div id="korrektur" class="korrektur" hidden>
-          <p class="leise">Sätze an den Chat, einer je Fehler:</p>
-          <ul id="korrektur-liste" class="korrektur-liste"></ul>
-          <button type="button" id="korrektur-kopieren" class="knopf">Bitte um Korrektur kopieren</button>
-          <p id="korrektur-stand" class="stand" role="status" aria-live="polite"></p>
-        </div>
       </div>
       <div id="karten-ort-5" class="karten-ort"></div>
+      <!-- Sammelblock für mehrere rote Karten (AP13.1: unter der Kartenliste; die Seite erkennt die Bausteine an der id) -->
+      <div id="korrektur" class="korrektur" hidden>
+        <p id="korrektur-zeile" class="leise"></p>
+        <ul id="korrektur-liste" class="korrektur-liste"></ul>
+        <button type="button" id="korrektur-kopieren" class="knopf">Alle Sätze kopieren</button>
+        <p id="korrektur-stand" class="stand" role="status" aria-live="polite"></p>
+      </div>
       <button type="button" id="weiter-5" class="knopf haupt" hidden>Weiter</button>
+    </div>
+  </section>
+
+  <!-- Bilder (AP13.1): nur, wenn die Antwort mindestens eine Zeile „Bildwunsch:“ hat -->
+  <section id="schritt-bilder" class="schritt" data-nr="5.5" aria-labelledby="sb-titel" hidden>
+    <h2 class="s-kopf"><button type="button" class="s-zeile" data-nr="5.5"><span class="s-nr">6</span>
+      <span class="s-titel" id="sb-titel">Bilder einfügen</span><span class="s-fazit"></span></button></h2>
+    <div class="s-inhalt">
+      <p class="leise">Such zu jedem Bild ein freies Foto, zeichne es oder lass es von einem Bildgenerator erzeugen. Nimm
+        nur Bilder, an denen du die Rechte hast.</p>
+      <ol id="bilder-liste" class="bilder-liste"></ol>
+      <textarea id="bild-feld" class="unsichtbar" readonly aria-hidden="true" tabindex="-1"></textarea>
+      <button type="button" id="weiter-bilder" class="knopf haupt">Weiter</button>
+      <p id="bilder-stand" class="stand" role="status" aria-live="polite"></p>
     </div>
   </section>
 
@@ -218,8 +243,7 @@
       <span class="s-titel" id="s7-titel">Datei für die Lernplattform</span><span class="s-fazit"></span></button></h2>
     <div class="s-inhalt">
       <div class="erstellen">
-        <button type="button" id="erstellen" class="knopf haupt" disabled>Datei erstellen</button>
-        <button type="button" id="herunterladen" class="knopf haupt" hidden>Herunterladen</button>
+        <button type="button" id="herunterladen" class="knopf ergebnis">Datei für die Lernplattform herunterladen</button>
         <button type="button" id="glossar-laden" class="knopf" hidden>Glossar-Einträge herunterladen</button>
         <p id="erstellen-stand" class="stand" role="status" aria-live="polite"></p>
       </div>
@@ -253,7 +277,7 @@
   </section>
  </div>
 
- <aside class="spalte-rand" aria-label="Stand und Kursdatei" hidden>
+ <aside class="spalte-rand" aria-label="Stand der Einheit" hidden>
   <div id="diagnosen" class="diagnosen rand-block" aria-label="Stand der Einheit">
     <dl class="zahlen">
       <div><dt id="kz-minuten-t">Minuten</dt><dd id="kz-minuten">–</dd></div>
@@ -270,16 +294,13 @@
     <p><span class="farbe-chat" aria-hidden="true"></span>vom Chat: Inhalte der Bausteine</p>
     <p class="leise">Schräg gesetzte Zahlen sind geschätzt (vom Chat oder von der Seite gerechnet). Im fertigen Kurs erscheint davon nichts.</p>
   </div>
-  <div class="kursdatei rand-block">
-    <button type="button" id="neue-einheit" class="textlink">Neue Einheit</button>
-    <p id="autosave-stand" class="leise"></p>
-  </div>
  </aside>
 
  <!-- Bausteine: eine Liste, je nach Zweig und Schritt unter Schritt 2 oder Schritt 5 -->
  <div id="tafel-bausteine" class="tafel-bausteine">
   <label id="zeit-schalter" class="schalter zeit-schalter"><input id="zeit-selbst" type="checkbox"> Zeit je Phase selbst einstellen
     <span class="feld-zeile">Aus: der Chat verteilt die Minuten. An: du gibst sie je Baustein vor.</span></label>
+  <p id="karten-warnung" class="karten-warnung" role="status" hidden></p>
   <p id="rueckgaengig" class="rueckgaengig" hidden><span id="rueckgaengig-text"></span>
     <button type="button" id="rueckgaengig-knopf" class="textlink">Rückgängig</button></p>
   <ol id="karten" class="karten"></ol>

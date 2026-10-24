@@ -1,0 +1,115 @@
+```markdown
+# Drehbuch v1 · Das Auge · 45 min
+Angenommen: Kursformat Themen untereinander
+Angenommen: Designvorlage Schlicht
+Angenommen: Übungen erscheinen auf der Kursseite (formative Übungen als Block im Textfeld, Kursdatei-Angabe `website: textfeld` am Abschnitt)
+Angenommen: Kein Abschlusstest
+Angenommen: Alles sofort sichtbar
+Bildwunsch: auge-schnitt.png | Ein Längsschnitt durch das menschliche Auge mit beschrifteten Teilen.
+Bildprompt: auge-schnitt.png | Vereinfachte, klare Lehrbuchzeichnung eines Längsschnitts durch das menschliche Auge in Seitenansicht, Hornhaut links. Flache Farben, dunkle Konturen, weißer Hintergrund, Seitenverhältnis 4:3. Beschriftungen wörtlich: "Hornhaut", "Iris", "Pupille", "Linse", "Glaskörper", "Netzhaut", "Sehnerv", jeweils mit dünner Linie zum Teil. Kein weiterer Text im Bild.
+Offen: Stäbchen und Zapfen gehen für Jahrgangsstufe 5 möglicherweise über den Lehrplan hinaus; bei Bedarf Tabelle und Zuordnen kürzen.
+Offen: Die Anpassung der Sinneszellen an Dunkelheit ist stark vereinfacht dargestellt (sie dauert deutlich länger als wenige Minuten).
+
+## Das Auge · 45 min
+website: textfeld
+
+### Textfeld: Warum du nach dem Kino kurz nichts siehst · 1 min
+id: b1
+Vorspann: Du kommst aus einem dunklen Kinosaal in den sonnigen Nachmittag und siehst zuerst fast nur Weiß. Nach einigen Sekunden erkennst du wieder die Straße und die Menschen.
+
+Beim Hineingehen in den Saal war es umgekehrt. Erst war alles schwarz, nach einer Weile fandest du deinen Platz.
+Kasten: Deine Vermutung
+  Was könnte sich im Auge verändern, damit du nach kurzer Zeit wieder sehen kannst? Schreibe deine Vermutung in einem Satz auf.
+
+In dieser Stunde findest du heraus, wie das Auge gebaut ist und wie es sich auf Hell und Dunkel einstellt.
+
+### Seite: Bau des Auges und Weg des Lichts · 8 min
+id: b1-2
+Überschrift: Geschützt in der Augenhöhle
+Dein Augapfel ist etwa 2,5 Zentimeter groß und liegt geschützt in der Augenhöhle des Schädels. Lider und Wimpern halten Staub fern, die Tränenflüssigkeit hält die Oberfläche feucht. Nähert sich ein Gegenstand schnell, schließt sich das Lid von selbst. Mit jedem Lidschlag verteilt sich die Tränenflüssigkeit neu und spült kleine Staubkörner weg. Die weiße, feste **Lederhaut** umhüllt den Augapfel und gibt ihm seine Form.
+Bild: auge-schnitt.png | Schnitt durch ein Auge von der Seite mit den beschrifteten Teilen Hornhaut, Iris, Pupille, Linse, Glaskörper, Netzhaut und Sehnerv | Das Auge im Längsschnitt
+Überschrift: Der Weg des Lichts durch das Auge
+Das Licht tritt durch die durchsichtige **Hornhaut** ein. Dahinter liegt die **Iris**, die Regenbogenhaut, der farbige Teil des Auges. Ihre Farbe ist bei jedem Menschen anders, zum Beispiel blau oder braun, und hat auf das Sehen keinen Einfluss. In ihrer Mitte befindet sich ein rundes Loch, die **Pupille**. Sie sieht schwarz aus, weil das Licht im Auge bleibt und kaum etwas zurückkommt.
+
+Hinter der Pupille liegt die **Linse**, durchsichtig und elastisch. Hornhaut und Linse bündeln das Licht, sodass auf der Rückseite des Auges ein scharfes Bild entsteht. Hinter der Linse füllt der gallertartige **Glaskörper** den Augapfel aus und hält ihn rund.
+Überschrift: Von der Netzhaut zum Gehirn
+Auf der Innenseite der Rückwand liegt die **Netzhaut**. Sie trägt Millionen Sinneszellen, die Licht aufnehmen und in elektrische Signale umwandeln. Es gibt zwei Sorten dieser Zellen.
+| Begriff | Erklärung |
+| Stäbchen | Sinneszellen für Hell und Dunkel, sie arbeiten schon bei wenig Licht und erkennen keine Farben |
+| Zapfen | Sinneszellen für Farben, sie brauchen helles Licht |
+
+Die Signale laufen über den **Sehnerv** zum Gehirn. Erst dort entsteht der Seheindruck. In der Mitte der Netzhaut sitzen besonders viele Zapfen, dort siehst du am schärfsten. Wo der Sehnerv das Auge verlässt, sitzen keine Sinneszellen; diese Stelle heißt blinder Fleck. Du bemerkst ihn im Alltag nicht, weil das Gehirn die Lücke ausgleicht.
+Kasten: Auf einen Blick
+  Hornhaut und Linse bündeln das Licht. Iris und Pupille lassen es durch. Die Netzhaut nimmt es auf, der Sehnerv leitet die Signale weiter.
+
+### Seite: Wie sich das Auge anpasst · 7 min
+id: b1-3
+Überschrift: Die Pupille regelt das Licht
+Die Iris wirkt wie eine Blende. In ihr liegen kleine Muskeln, die die Pupille verändern. Bei hellem Licht ziehen sie die Pupille zusammen, sie wird **eng**. So fällt weniger Licht auf die Netzhaut, und die empfindlichen Sinneszellen werden geschützt. Bei wenig Licht wird die Pupille **weit**, und mehr Licht gelangt ins Auge. Die Pupille ist also keine eigene Scheibe, sondern eine Öffnung in der Iris, deren Größe sich ändert. Das läuft von selbst ab, du musst nicht darüber nachdenken. Auch in der Dämmerung ist die Pupille weit.
+Überschrift: Was nach dem Kino geschieht
+Im dunklen Kinosaal ist deine Pupille weit. Trittst du nach draußen, fällt sehr viel Licht auf die Netzhaut, und du wirst geblendet. Die Pupille zieht sich schnell zusammen, und nach kurzer Zeit siehst du wieder klar.
+
+Gehst du dagegen aus der Sonne in einen dunklen Raum, weitet sich die Pupille langsamer. Außerdem werden die Sinneszellen erst nach einigen Minuten empfindlicher für schwaches Licht. Deshalb erkennst du im Dunkeln nach und nach mehr.
+Überschrift: Scharfstellen auf nah und fern
+Damit das Bild auf der Netzhaut scharf ist, muss die Linse ihre Form ändern. Ein Ringmuskel um die Linse verändert dazu ihre Wölbung. Schaust du auf einen nahen Gegenstand, zum Beispiel in dein Heft, wird die Linse **dicker** und stärker gewölbt. Schaust du in die Ferne, zum Beispiel zu einem Baum, wird sie **flacher**. Das Nahsehen kostet den Muskel Kraft, deshalb werden die Augen nach langem Lesen müde.
+Überschrift: Das Bild steht auf dem Kopf
+Die Linse bündelt das Licht so, dass das Bild auf der Netzhaut auf dem Kopf steht. Das Gehirn verarbeitet die Signale des Sehnervs trotzdem zu einem aufrechten Seheindruck.
+Hinweis: Augen entspannen
+  Schau bei längerer Arbeit am Bildschirm oder mit einem Buch regelmäßig aus dem Fenster in die Ferne, damit sich der Muskel der Linse erholen kann.
+
+### Lernkarten: Teile des Auges · 3 min
+id: b1-4
+- Hornhaut → Durchsichtiger Teil vorn, durch den das Licht in das Auge eintritt. · Tipp: Sie liegt vor der Iris.
+- Iris → Farbiger Ring, der die Größe der Pupille einstellt. · Tipp: Regenbogenhaut
+- Pupille → Rundes Loch in der Iris, durch das Licht ins Auge fällt. · Tipp: Sie sieht schwarz aus.
+- Linse → Durchsichtiger, elastischer Körper, der das Licht bündelt und scharfstellt. · Tipp: Sie ändert ihre Wölbung.
+- Netzhaut → Rückwand des Auges mit Sinneszellen, die Licht aufnehmen. · Tipp: Hier entsteht das Bild.
+- Sehnerv → Leitet die Signale der Netzhaut zum Gehirn. · Tipp: Hier liegt der blinde Fleck.
+
+### Zuordnen: Aufgaben der Teile des Auges · 3 min
+id: b1-5
+zonen: Licht regeln | Licht bündeln | Licht aufnehmen
+titel: Ein Teil passt zu keiner Zone.
+- Pupille → Licht regeln
+- Iris → Licht regeln
+- Linse → Licht bündeln
+- Hornhaut → Licht bündeln
+- Netzhaut → Licht aufnehmen
+- Zapfen → Licht aufnehmen
+- Lederhaut
+
+### Lückentext: Der Weg des Lichts im Auge · 3 min
+id: b1-6
+aufgabe: Setze die Fachbegriffe in den Text ein.
+Das Licht tritt durch die *Hornhaut:durchsichtig, vorn im Auge* in das Auge ein und fällt durch die *Pupille:rundes Loch in der Iris*. Die *Linse:durchsichtig und elastisch* bündelt es, bevor es den *Glaskörper:gallertartig* durchquert. Auf der *Netzhaut:Rückwand des Auges* wandeln *Sinneszellen:Stäbchen und Zapfen* das Licht in Signale um. Der *Sehnerv:führt zum Gehirn* leitet diese Signale zum Gehirn.
+
+### Quiz: Das Auge in Alltagsfällen · 9 min
+id: b1-7
+bestehen: 4 von 6
+abschluss: ansehen
+1. RF: Mia tritt aus dem Haus in die pralle Mittagssonne. Ihre Pupille wird weit, damit mehr Licht ins Auge kommt. ✘ → richtig: Bei Helligkeit wird die Pupille eng. So fällt weniger Licht auf die Netzhaut, und die Sinneszellen werden geschützt. → falsch: Bei Helligkeit zieht die Iris die Pupille zusammen. Eine weite Pupille ließe zu viel Licht auf die Netzhaut.
+2. MC: Leon geht an einem Sommertag in einen dunklen Keller. Zuerst sieht er fast nichts, nach einer Minute erkennt er Umrisse. Was hat sich in seinem Auge verändert?
+- ✔ Die Pupille hat sich geweitet und lässt mehr Licht auf die Netzhaut. → Die weite Pupille lässt im Dunkeln mehr Licht ins Auge, deshalb erkennt Leon Umrisse.
+- Die Pupille hat sich verengt, damit das schwache Licht gebündelt wird. → Eine enge Pupille lässt noch weniger Licht durch. Gebündelt wird das Licht von der Linse, nicht von der Pupille.
+- Die Linse ist dicker geworden und macht das Licht dadurch heller. → Die Linse stellt scharf, sie macht das Licht nicht heller. Die Lichtmenge regeln Iris und Pupille.
+3. MC: Tom schaut von seinem Handy auf und blickt auf einen Baum am Ende des Hofs. Zuerst ist der Baum unscharf, dann wird er scharf. Was ist in Toms Auge geschehen?
+- ✔ Die Linse ist flacher geworden und stellt auf die Ferne scharf. → Beim Blick in die Ferne wird die Linse flacher, dann liegt das Bild des Baums scharf auf der Netzhaut.
+- Die Linse ist dicker geworden, weil der Baum weit weg ist. → Dicker und stärker gewölbt wird die Linse beim Blick auf nahe Gegenstände wie das Handy, nicht in die Ferne.
+- Die Netzhaut ist nach vorn gerückt und fängt das Bild früher auf. → Die Netzhaut bleibt an ihrem Platz. Scharf gestellt wird durch die Wölbung der Linse.
+4. RF: Jonas sieht die Welt aufrecht, obwohl das Bild auf seiner Netzhaut auf dem Kopf steht. ✔ → richtig: Das Gehirn verarbeitet die Signale des Sehnervs zu einem aufrechten Seheindruck. → falsch: Doch, das Bild auf der Netzhaut steht auf dem Kopf. Erst das Gehirn macht daraus einen aufrechten Seheindruck.
+5. RF: Ben tritt aus der prallen Sonne in einen dunklen Raum. Schon nach einer Sekunde erkennt er die Einzelheiten im Raum. ✘ → richtig: Die Pupille weitet sich nur langsam, und die Sinneszellen werden erst nach einigen Minuten empfindlicher. Deshalb sieht Ben zuerst wenig. → falsch: Die Anpassung an Dunkelheit braucht Zeit, weil sich die Pupille nur langsam weitet und die Sinneszellen erst empfindlicher werden müssen.
+6. MC: Eva hat nach einem Unfall eine milchig getrübte Hornhaut. Netzhaut und Sehnerv sind gesund. Warum sieht sie trotzdem kaum etwas?
+- ✔ Das Licht gelangt nicht klar durch die Hornhaut auf die Netzhaut. → Nur Licht, das klar durch die Hornhaut fällt, erreicht die Sinneszellen. Ohne Licht entsteht kein Signal.
+- Der Sehnerv bekommt vom Gehirn keine Signale mehr. → Der Sehnerv leitet Signale von der Netzhaut zum Gehirn, nicht umgekehrt. Außerdem ist er gesund.
+- Die Sinneszellen liegen in der Hornhaut und sind beschädigt. → Die Sinneszellen liegen auf der Netzhaut. Die Hornhaut lässt nur das Licht hindurch.
+
+### Seite: Das Auge im Überblick · 11 min
+id: b5
+Überschrift: Bau und Aufgaben des Auges
+Merke: Das Licht tritt durch die **Hornhaut** und die **Pupille** ins Auge, die **Linse** bündelt es, auf der **Netzhaut** entsteht das Bild.
+Merke: Die **Iris** stellt die Größe der Pupille ein. Bei Helligkeit wird sie eng, bei Dunkelheit weit.
+Merke: Beim Blick auf nahe Gegenstände wird die Linse dicker, beim Blick in die Ferne flacher.
+Merke: **Stäbchen** erkennen Hell und Dunkel, **Zapfen** erkennen Farben.
+Beispiel: Aus dem Tunnel in die Sonne
+  Eine Radfahrerin fährt aus einem dunklen Tunnel ins Freie. Ihre Pupille wird eng, bis sie klar sieht.
+```

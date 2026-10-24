@@ -3,113 +3,216 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>Kursmühle</title>
 <meta name="description" content="Kursmühle macht aus deinem Thema eine Unterrichtseinheit für die ByCS-Lernplattform. Den Inhalt schreibt dein Chat, die Datei entsteht in deinem Browser.">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
-<!-- AP13b, Entwurf A (ruhig): helles Band oben, Kachel rechts, Bänder über die volle Breite, Inhalt 1040 px.
-     Lädt nichts von außen und nichts von der Mühle; liest nur, ob die Mühle eine Einheit gesichert hat (IndexedDB
-     „kursmuehle“, Speicher „mappe“, Schlüssel „aktuell“) und legt selbst keine Datenbank an. Ocker an drei Stellen:
-     Strich unter „Mahlwerk starten“, Ziffern im Ablauf, Punkt vor „Weiter mit deiner Einheit“; dazu der Fokusrahmen
-     aller Links (nur bei Tastaturbedienung). -->
+<!-- AP13.2: Die Startseite ist Schritt 1 der Mühle (drei Felder, „Weiter“ baut die Adresse start/#thema=…), daneben die
+     Kachel für den Einstieg ohne Thema. Kopfzeile klebt oben; ihre kleine Kachel erscheint erst, wenn die große aus dem
+     Bild ist. Hell als Standard, dunkel nach Systemeinstellung (Farbsatz aus Entwurf B). Lädt nichts von außen und
+     nichts von der Mühle; liest nur, ob die Mühle eine Einheit gesichert hat (IndexedDB „kursmuehle“, Speicher „mappe“,
+     Schlüssel „aktuell“), und legt selbst keine Datenbank an. Ocker an drei Stellen: Knopf „Weiter“, Ziffern im Ablauf
+     (hell im dunkleren Ton wegen des Kontrasts), Punkt vor „Weiter mit deiner Einheit“; dazu der Fokusrahmen (nur bei
+     Tastaturbedienung) und das Logo selbst.
+     Das Logo der Kacheln schreibt docs/make_logo.py (einbetten) zwischen die beiden Logo-Marken. -->
 <style>
-  :root { --creme: #f3e9d8; --grund: #faf6ee; --weiss: #ffffff; --text: #2a2a2a; --leise: #6b6458;
-          --linie: #e4d8c3; --ocker: #d9a441; --breite: 1040px; }
+  :root { color-scheme: light;
+          --grund: #faf6ee; --band: #f3e9d8; --flaeche: #ffffff; --feld: #ffffff; --kachel: #ffffff;
+          --text: #2a2a2a; --text2: #3d3833; --leise: #6b6458; --linie: #e4d8c3; --ocker: #d9a441; --ocker-text: #8a6416; --fokus: #8a6416;
+          --fuss: #2a2a2a; --fuss-text: #f3e9d8; --fuss-leise: #cfc4b2;
+          --wz: #2a2a2a; --wz-deckung: 1; --schatten: rgba(42,42,42,.10);
+          --logo-grund: #2a2a2a; --logo-muehle: #f3e9d8; --logo-rand: 5px; --breite: 1040px; }
+  /* Dunkel: Anthrazit-Band, Wasserzeichen in Creme, helle Schrift (Entwurf B); Logo wie logo-light.svg */
+  @media (prefers-color-scheme: dark) {
+    :root { color-scheme: dark;
+            --grund: #262522; --band: #2a2a2a; --flaeche: #1b1a18; --feld: #1b1a18; --kachel: #35332f;
+            --text: #f3e9d8; --text2: #e6dccb; --leise: #b9ae9c; --linie: #423e37;
+            --ocker-text: #d9a441; --fokus: #d9a441;
+            --fuss: #141312; --fuss-text: #f3e9d8; --fuss-leise: #b9ae9c;
+            --wz: #f3e9d8; --wz-deckung: .9; --schatten: rgba(0,0,0,.35);
+            --logo-grund: #f3e9d8; --logo-muehle: #2a2a2a; --logo-rand: 4px; }
+  }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
   body { margin: 0; background: var(--grund); color: var(--text);
          font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   [hidden] { display: none !important; }
-  .nb { white-space: nowrap; }
   a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
   a:hover { text-decoration-thickness: 2px; }
-  :focus-visible { outline: 3px solid var(--ocker); outline-offset: 3px; }
+  :focus-visible { outline: 3px solid var(--fokus); outline-offset: 3px; }
   p { margin: 0 0 .8em; }
   .innen { max-width: var(--breite); margin: 0 auto; padding: 0 16px; }
-  .band { width: 100%; }
 
-  /* Band oben: hell, hoch, Wasserzeichen groß am rechten Rand angeschnitten */
-  .hero { position: relative; overflow: hidden; background: var(--creme); padding: 72px 0 88px;
+  /* Logo inline (make_logo.py icon_inline); das Rad dreht sich bei Hover und Fokus gegen den Uhrzeigersinn um die Nabe.
+     Gleich in impressum.html. */
+  .logo { display: block; }
+  .logo .l-g { fill: var(--logo-grund); }
+  .logo .l-m { fill: var(--logo-muehle); }
+  .logo .l-a { fill: var(--ocker); }
+  .logo .l-k { stroke: var(--logo-grund); stroke-width: var(--logo-rand); stroke-linejoin: round; }
+  .logo .l-kf { stroke: var(--logo-grund); stroke-width: calc(2 * var(--logo-rand)); stroke-linejoin: round;
+                paint-order: stroke; }
+  .logo .rad { transform-box: view-box; transform-origin: 128px 98px; }
+  @keyframes anlauf { from { transform: rotate(0deg); } to { transform: rotate(-36deg); } }
+  @keyframes drehen { from { transform: rotate(-36deg); } to { transform: rotate(-396deg); } }
+  .dreh:hover .rad, .dreh:focus-visible .rad, .dreh.dreht .rad {
+    animation: anlauf 2s cubic-bezier(.333, 0, .667, .333) forwards, drehen 10s linear 2s infinite; }
+  @media (prefers-reduced-motion: reduce) { .logo .rad { animation: none !important; } }
+
+  /* Kopfzeile: klebt oben, höchstens 56 px. Gleich in impressum.html. */
+  .kopfzeile { position: sticky; top: 0; z-index: 10; background: var(--band); border-bottom: 1px solid var(--linie); }
+  .kopfzeile .innen { height: 55px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .marke { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; text-decoration: none; }
+  .marke img { width: 28px; height: 28px; border-radius: 7px; display: block; }
+  .marke span { font-weight: 400; color: var(--leise); font-size: .9rem; }
+  .mini { display: inline-flex; align-items: center; gap: 10px; padding: 4px 14px 4px 4px; border-radius: 12px;
+          background: var(--kachel); text-decoration: none; font-weight: 650; font-size: .95rem;
+          box-shadow: 0 1px 2px var(--schatten), 0 4px 12px var(--schatten); transition: opacity .2s, visibility .2s; }
+  .mini .logo { width: 34px; height: 34px; }
+  .io .mini:not(.zeigen) { opacity: 0; visibility: hidden; }
+  @media (max-width: 520px) { .mini { padding: 4px; } .mini span { display: none; } }
+
+  /* Band oben = Schritt 1: Felder links, Kachel rechts; Wasserzeichen groß am rechten Rand angeschnitten */
+  .hero { position: relative; overflow: hidden; background: var(--band); padding: 64px 0 76px;
           display: flex; align-items: center; }
-  @media (min-width: 820px) { .hero { min-height: min(64vh, 680px); } }
+  @media (min-width: 820px) { .hero { min-height: min(56vh, 600px); } }
   .hero > .innen { width: 100%; }
   .hero::after { content: ""; position: absolute; right: -230px; top: 50%; width: 760px; height: 760px;
-                 transform: translateY(-50%); background: url("wasserzeichen.svg") center / contain no-repeat;
-                 pointer-events: none; }
-  .hero .innen { position: relative; z-index: 1; display: grid; gap: 40px 56px; grid-template-columns: 1fr;
-                 align-items: end; }
-  @media (min-width: 820px) { .hero .innen { grid-template-columns: minmax(0, 1fr) 240px; } }
-  .name { font-size: .95rem; font-weight: 650; letter-spacing: .02em; margin: 0 0 28px; }
-  .name span { font-weight: 400; color: var(--leise); }
-  h1 { font-size: clamp(2rem, 4.2vw, 3.2rem); line-height: 1.08; letter-spacing: -.02em; font-weight: 750;
-       margin: 0 0 22px; max-width: 17ch; text-wrap: balance; }
-  .unter { font-size: 1.12rem; max-width: 48ch; color: #3d3833; margin: 0; }
+                 transform: translateY(-50%); background: var(--wz); opacity: var(--wz-deckung);
+                 -webkit-mask: url("wasserzeichen.svg") center / contain no-repeat;
+                 mask: url("wasserzeichen.svg") center / contain no-repeat; pointer-events: none; }
+  .hero .innen { position: relative; z-index: 1; display: grid; gap: 36px 64px; grid-template-columns: 1fr;
+                 align-items: center; }
+  @media (min-width: 820px) { .hero .innen { grid-template-columns: minmax(0, 740px) 184px; justify-content: space-between; } }
+  h1 { font-size: clamp(1.6rem, 2.6vw, 2.1rem); line-height: 1.15; letter-spacing: -.015em; font-weight: 750;
+       margin: 0 0 22px; }
+
+  /* Felder, Knopf und Vorsatz wie Schritt 1 der Mühle (aus web/ansicht.css übernommen: .feld, input, .knopf.haupt,
+     .start-form, .vorsatz, Handy-Regeln) */
+  .start-form { display: grid; grid-template-columns: 1fr 9rem 7rem; gap: 12px; align-items: end; }
+  .feld { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: var(--leise); }
+  input[type=text], input[type=number] { font: inherit; font-size: 16px; color: var(--text); background: var(--feld);
+    border: 1px solid var(--linie); border-radius: 8px; padding: 9px 10px; min-height: 44px; width: 100%; }
+  input::placeholder { color: var(--leise); opacity: 1; }
+  .knopf { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 9px 16px;
+    border-radius: 8px; border: 1px solid var(--linie); font: inherit; font-weight: 600; cursor: pointer; text-align: center; }
+  .knopf.haupt { background: var(--ocker); border-color: var(--ocker); color: #2a2a2a; }
+  .knopf.haupt:hover { background: #cf9632; }
+  .start-form .knopf { grid-column: 1 / -1; justify-self: start; min-width: 9rem; }
+  .vorsatz { font-size: 0.9rem; color: var(--leise); margin: 14px 0 0; }
+  @media (max-width: 640px) {
+    .start-form { grid-template-columns: 1fr 1fr; }
+    .feld-thema { grid-column: 1 / -1; }
+    .start-form .knopf { justify-self: stretch; }
+  }
 
   /* Kachel wie ein App-Symbol, ganze Fläche klickbar */
-  .start { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .start { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
   @media (min-width: 820px) { .start { align-items: stretch; } }
-  .kachel { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 28px 24px 22px;
-            background: var(--weiss); border-radius: 28px; text-decoration: none; color: var(--text);
-            box-shadow: 0 1px 2px rgba(42,42,42,.08), 0 12px 32px rgba(42,42,42,.10);
-            transition: transform .12s ease, box-shadow .12s ease; width: 240px; }
-  .kachel:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(42,42,42,.10), 0 18px 40px rgba(42,42,42,.14); }
-  .kachel img { width: 136px; height: 136px; display: block; border-radius: 30px; }
-  .kachel span { font-size: 1.15rem; font-weight: 700; padding-bottom: 4px; border-bottom: 3px solid var(--ocker); }
-  .weiter { width: 240px; text-align: center; font-size: .98rem; }
-  .weiter a { display: block; padding: 8px 12px; text-decoration: none; font-weight: 650; }
+  .kachel { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 22px 18px 18px;
+            background: var(--kachel); border-radius: 24px; text-decoration: none; color: var(--text); width: 184px;
+            box-shadow: 0 1px 2px var(--schatten), 0 10px 28px var(--schatten); }
+  .kachel .logo { width: 104px; height: 104px; }
+  .kachel span { font-size: 1.02rem; font-weight: 700; }
+  .weiter { width: 184px; text-align: center; font-size: .95rem; margin: 0; }
+  .weiter a { display: block; padding: 6px 8px; text-decoration: none; font-weight: 650; }
   .weiter a::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%;
                       background: var(--ocker); margin-right: 8px; vertical-align: 1px; }
   .weiter small { display: block; font-weight: 400; color: var(--leise); margin-top: 2px; overflow-wrap: anywhere; }
+  @media (max-width: 819px) {                       /* Handy und schmale Fenster: Kachel als flache Zeile */
+    .kachel { flex-direction: row; width: auto; gap: 14px; padding: 10px 20px 10px 10px; border-radius: 18px; }
+    .kachel .logo { width: 56px; height: 56px; }
+    .weiter { width: auto; text-align: left; }
+    .weiter a { padding: 4px 0; }
+  }
 
-  /* Band 2: Bildschirmfoto und Ablauf, asymmetrisch */
-  .ergebnis { background: var(--weiss); padding: 72px 0; }
+  /* Band 2: Ergebnis als Bild, daneben der Ablauf */
+  .ergebnis { background: var(--flaeche); padding: 72px 0; }
   .ergebnis .innen { display: grid; gap: 40px 64px; grid-template-columns: 1fr; align-items: start; }
   @media (min-width: 820px) { .ergebnis .innen { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); } }
   @media (max-width: 819px) { .ergebnis figure { order: 2; } }   /* Handy: erst der Ablauf, dann das Bild */
   figure { margin: 0; }
   figure img { display: block; width: 100%; height: auto; border-radius: 10px;
-               box-shadow: 0 0 0 1px var(--linie), 0 10px 30px rgba(42,42,42,.08); }
+               box-shadow: 0 0 0 1px var(--linie); }
   figcaption { font-size: .92rem; color: var(--leise); margin-top: 12px; max-width: 60ch; }
   h2 { font-size: 1.45rem; line-height: 1.2; margin: 0 0 22px; letter-spacing: -.01em; }
   ol.ablauf { list-style: none; counter-reset: s; padding: 0; margin: 0 0 32px; }
-  ol.ablauf li { counter-increment: s; position: relative; padding-left: 44px; margin-bottom: 18px; }
+  ol.ablauf li { counter-increment: s; position: relative; padding-left: 40px; margin-bottom: 14px; }
   ol.ablauf li::before { content: counter(s); position: absolute; left: 0; top: -4px; font-size: 1.6rem;
-                         font-weight: 750; line-height: 1.2; color: var(--ocker); }
-  .chats { font-size: .98rem; color: #3d3833; border-top: 1px solid var(--linie); padding-top: 18px; }
+                         font-weight: 750; line-height: 1.2; color: var(--ocker-text); }
+  .chats { font-size: .98rem; color: var(--text2); padding-top: 4px; }
 
   /* Band 3: Agenten, deutlich kleiner */
   .agenten { background: var(--grund); padding: 44px 0 52px; font-size: .95rem; }
   .agenten .innen > div { max-width: 560px; }
   .agenten h2 { font-size: 1.05rem; margin: 0 0 6px; }
-  .agenten p { color: #3d3833; margin: 0 0 6px; }
+  .agenten p { color: var(--text2); margin: 0 0 6px; }
 
   /* Fußzeile */
-  footer { background: var(--text); color: var(--creme); padding: 36px 0 44px; font-size: .9rem; }
+  footer { background: var(--fuss); color: var(--fuss-text); padding: 36px 0 44px; font-size: .9rem; }
   footer p { margin: 0 0 10px; max-width: 72ch; }
   footer .links { display: flex; flex-wrap: wrap; gap: 4px 20px; list-style: none; padding: 0; margin: 0 0 18px; }
-  footer .leise { color: #cfc4b2; }
-  @media (max-width: 420px) { .hero { padding: 48px 0 60px; } .ergebnis { padding: 52px 0; } }
+  footer .leise { color: var(--fuss-leise); }
+  @media (max-width: 420px) { .hero { padding: 36px 0 48px; } .ergebnis { padding: 52px 0; } }
 </style>
 </head>
 <body>
 
-<header class="band hero">
+<header class="kopfzeile">
   <div class="innen">
-    <div>
-      <p class="name">Kursmühle <span>· Beta</span></p>
-      <h1>Aus deinem Thema wird eine Einheit für die <span class="nb">ByCS-Lernplattform.</span></h1>
-      <p class="unter">Den Inhalt schreibt der Chat, den du schon nutzt. Die Datei zum Wiederherstellen entsteht in deinem
-      Browser; die Seite lädt nichts von dem hoch, was du eingibst.</p>
-    </div>
-    <div class="start">
-      <p class="weiter" id="weiter" hidden><a href="start/?weiter=1">Weiter mit deiner Einheit<small id="weiter-titel"></small></a></p>
-      <a class="kachel" href="start/" id="kachel"><img src="logo.svg" alt="" width="136" height="136"><span>Mahlwerk starten</span></a>
-    </div>
+    <a class="marke" href="./"><img src="logo.svg" alt="" width="28" height="28">Kursmühle <span>Beta</span></a>
+    <a class="mini dreh" href="start/" id="mini" aria-label="Mahlwerk starten"><!-- logo --><svg class="logo" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><rect width="256" height="256" rx="56" class="l-g"/><path d="M100,236 L156,236 L147,150 L109,150 Z" class="l-m"/>
+  <rect x="115" y="170" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="131" y="170" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="115" y="188" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="131" y="188" width="12" height="12" rx="3" class="l-a"/>
+  <g class="rad"><g transform="rotate(45 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(135 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(225 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(315 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g>
+  <path d="M158.7,120.3 L155.7,124.0 L162.2,134.4 L152.1,141.8 L144.2,132.4 L139.7,134.1 L135.1,135.3 L134.3,147.6 L121.7,147.6 L120.9,135.3 L116.3,134.1 L111.8,132.4 L103.9,141.8 L93.8,134.4 L100.3,124.0 L97.3,120.3 L94.7,116.3 L82.8,119.3 L78.9,107.4 L90.3,102.8 L90.0,98.0 L90.3,93.2 L78.9,88.6 L82.8,76.7 L94.7,79.7 L97.3,75.7 L100.3,72.0 L93.8,61.6 L103.9,54.2 L111.8,63.6 L116.3,61.9 L120.9,60.7 L121.7,48.4 L134.3,48.4 L135.1,60.7 L139.7,61.9 L144.2,63.6 L152.1,54.2 L162.2,61.6 L155.7,72.0 L158.7,75.7 L161.3,79.7 L173.2,76.7 L177.1,88.6 L165.7,93.2 L166.0,98.0 L165.7,102.8 L177.1,107.4 L173.2,119.3 L161.3,116.3 Z" class="l-m l-k"/></g>
+  <circle cx="128" cy="98" r="22" class="l-g"/>
+  <circle cx="128" cy="98" r="9" class="l-a"/></svg><!-- /logo --><span>Mahlwerk starten</span></a>
   </div>
 </header>
 
 <main>
-<section class="band ergebnis" aria-labelledby="ablauf-titel">
+<section class="hero" aria-labelledby="s1-titel">
   <div class="innen">
+    <div>
+      <h1 id="s1-titel">Worum geht es?</h1>
+      <form id="start-form" class="start-form" action="start/" method="get" autocomplete="off">
+        <label class="feld feld-thema">Thema
+          <input id="f-thema" name="thema" type="text" placeholder="zum Beispiel Bruchrechnen" maxlength="120">
+        </label>
+        <label class="feld feld-klein">Jahrgangsstufe
+          <input id="f-jahrgang" name="jahrgang" type="text" inputmode="numeric" maxlength="12" placeholder="7">
+        </label>
+        <label class="feld feld-klein">Minuten
+          <input id="f-minuten" name="minuten" type="number" min="10" max="300" step="5" value="45" inputmode="numeric">
+        </label>
+        <button type="submit" class="knopf haupt">Weiter</button>
+      </form>
+      <p class="vorsatz">Aus deinem Thema wird eine Einheit für die ByCS-Lernplattform. Die Datei entsteht in deinem Browser.</p>
+    </div>
+    <div class="start">
+      <p class="weiter" id="weiter" hidden><a href="start/?weiter=1">Weiter mit deiner Einheit<small id="weiter-titel"></small></a></p>
+      <a class="kachel dreh" href="start/" id="kachel"><!-- logo --><svg class="logo" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><rect width="256" height="256" rx="56" class="l-g"/><path d="M100,236 L156,236 L147,150 L109,150 Z" class="l-m"/>
+  <rect x="115" y="170" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="131" y="170" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="115" y="188" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="131" y="188" width="12" height="12" rx="3" class="l-a"/>
+  <g class="rad"><g transform="rotate(45 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(135 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(225 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(315 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g>
+  <path d="M158.7,120.3 L155.7,124.0 L162.2,134.4 L152.1,141.8 L144.2,132.4 L139.7,134.1 L135.1,135.3 L134.3,147.6 L121.7,147.6 L120.9,135.3 L116.3,134.1 L111.8,132.4 L103.9,141.8 L93.8,134.4 L100.3,124.0 L97.3,120.3 L94.7,116.3 L82.8,119.3 L78.9,107.4 L90.3,102.8 L90.0,98.0 L90.3,93.2 L78.9,88.6 L82.8,76.7 L94.7,79.7 L97.3,75.7 L100.3,72.0 L93.8,61.6 L103.9,54.2 L111.8,63.6 L116.3,61.9 L120.9,60.7 L121.7,48.4 L134.3,48.4 L135.1,60.7 L139.7,61.9 L144.2,63.6 L152.1,54.2 L162.2,61.6 L155.7,72.0 L158.7,75.7 L161.3,79.7 L173.2,76.7 L177.1,88.6 L165.7,93.2 L166.0,98.0 L165.7,102.8 L177.1,107.4 L173.2,119.3 L161.3,116.3 Z" class="l-m l-k"/></g>
+  <circle cx="128" cy="98" r="22" class="l-g"/>
+  <circle cx="128" cy="98" r="9" class="l-a"/></svg><!-- /logo --><span>Mahlwerk starten</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="ergebnis" aria-labelledby="ablauf-titel">
+  <div class="innen">
+    <!-- Bild tauschen, sobald docs/landing-kurs.png vorliegt (test_landing.py meldet es):
+         src="landing-kurs.png", width/height der Datei,
+         alt="Kursseite auf der ByCS-Lernplattform nach dem Wiederherstellen: (was zu sehen ist)",
+         figcaption „So sieht die Einheit im Kurs aus.“ -->
     <figure>
       <img src="landing-muehle.png" alt="Die Mühle nach dem letzten Schritt: sechs erledigte Schritte als Zeilen, darunter der Knopf Herunterladen und fünf Schritte zum Wiederherstellen." width="814" height="1054" loading="lazy">
       <figcaption>Nach dem letzten Schritt: die Datei für die Lernplattform und darunter, wie sie in deinen Kurs kommt.</figcaption>
@@ -117,9 +220,9 @@
     <div>
       <h2 id="ablauf-titel">So läuft es</h2>
       <ol class="ablauf">
-        <li>Du gibst Thema, Jahrgangsstufe und Minuten ein und kopierst den Text, den die Seite daraus macht.</li>
-        <li>Du fügst ihn in deinen Chat ein und die Antwort zurück in die Seite. Die Seite prüft jeden Baustein.</li>
-        <li>Du lädst die Datei herunter und stellst sie in deinem Kurs wieder her.</li>
+        <li>Du gibst Thema, Jahrgangsstufe und Minuten ein.</li>
+        <li>Du kopierst den Text in deinen Chat und die Antwort zurück.</li>
+        <li>Du lädst die Datei herunter und stellst sie im Kurs wieder her.</li>
       </ol>
       <p class="chats">Eingerichtet für ByLKI, fobizz, AIS-Chat, MUCGPT, ChatGPT, Claude und Gemini. Erprobt ist der
       Text bisher mit ByLKI und einem Claude-Modell; wie die anderen Chats antworten, soll die Beta zeigen.</p>
@@ -127,7 +230,7 @@
   </div>
 </section>
 
-<section class="band agenten" aria-labelledby="agenten-titel">
+<section class="agenten" aria-labelledby="agenten-titel">
   <div class="innen"><div>
     <h2 id="agenten-titel">Mit Code-Agenten</h2>
     <p>Arbeitest du mit Claude Code, Codex oder einem Assistenten mit Code-Ausführung, kannst du auch den Skill aus
@@ -138,7 +241,7 @@
 </section>
 </main>
 
-<footer class="band">
+<footer>
   <div class="innen">
     <ul class="links">
       <li><a href="impressum.html">Impressum und Datenschutz</a></li>
@@ -146,7 +249,7 @@
       <li><a href="https://github.com/simon-sarkar/kursmuehle/blob/main/docs/erfahrungen.md">Erfahrungen</a></li>
       <li><a href="https://github.com/simon-sarkar/kursmuehle/blob/main/CHANGELOG.md">Changelog</a></li>
     </ul>
-    <p>Stufen: 1.x Alpha (Skill für Assistenten mit Code-Ausführung), 2.x Beta (diese Seite), 3.0 vollständig.</p>
+    <p>Stufen: 1.x Alpha (Skill für Assistenten mit Code-Ausführung), 2.x Beta (Browser-Fassung), 3.0 vollständig.</p>
     <p>Kursmühle ist ein privates, nicht kommerzielles Projekt und kein Angebot der ByCS-Lernplattform.
     Rückmeldungen an kursmuehle@pm.me.</p>
     <p class="leise">Code unter PolyForm Noncommercial 1.0.0, Texte unter CC BY-NC-SA 4.0. Diese Seite setzt keine
@@ -155,6 +258,59 @@
 </footer>
 
 <script>
+// Schritt 1: „Weiter“ baut nur die Adresse der Mühle (start/#thema=…&jahrgang=…&minuten=…) und sendet nichts; das
+// Fragment nach „#“ verlässt den Browser nicht (es steht in keinem Zugriffsprotokoll). Ohne Thema geht es zu start/.
+// Ohne Skript schickt das Formular dieselben Felder per GET an start/ (dann als ?thema=…, die Mühle liest beides).
+(function () {
+  var f = document.getElementById("start-form");
+  f.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var wert = function (id) { return document.getElementById(id).value.trim(); };
+    var thema = wert("f-thema"), jahrgang = wert("f-jahrgang"), minuten = wert("f-minuten");
+    var q = thema ? "thema=" + encodeURIComponent(thema) : "";
+    if (q && jahrgang) q += "&jahrgang=" + encodeURIComponent(jahrgang);
+    if (q && minuten) q += "&minuten=" + encodeURIComponent(minuten);
+    location.href = "start/" + (q ? "#" + q : "");
+  });
+})();
+
+// Kopfzeile: die kleine Kachel erscheint erst, wenn die große aus dem Bild ist (ohne Skript immer sichtbar).
+(function () {
+  if (!("IntersectionObserver" in window)) return;
+  var mini = document.getElementById("mini");
+  document.documentElement.classList.add("io");
+  new IntersectionObserver(function (e) { mini.classList.toggle("zeigen", !e[e.length - 1].isIntersecting); },
+                           { rootMargin: "-56px 0px 0px 0px" }).observe(document.getElementById("kachel"));
+})();
+
+// Mühle dreht sich (CSS bei :hover und :focus-visible); beim Verlassen läuft das Rad bis zur nächsten halben
+// Umdrehung aus (das Bild ist um 180° symmetrisch), statt zurückzuspringen. Gleich in impressum.html.
+(function () {
+  var ruhig = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)");
+  [].forEach.call(document.querySelectorAll(".dreh"), function (a) {
+    var rad = a.querySelector(".rad"), aus = null;
+    if (!rad || !rad.animate) return;
+    function an() { if (aus) { aus.cancel(); aus = null; } a.classList.add("dreht"); }
+    function bleibt() { try { return a.matches(":hover") || a.matches(":focus-visible"); } catch (e) { return false; } }
+    function ab() {
+      if (bleibt()) return;
+      if (!a.classList.contains("dreht") || (ruhig && ruhig.matches)) { a.classList.remove("dreht"); return; }
+      var m = getComputedStyle(rad).transform, w = 0;
+      if (m && m !== "none") { var z = m.match(/-?[\d.e]+/g).map(Number); w = Math.atan2(z[1], z[0]) * 180 / Math.PI; }
+      a.classList.remove("dreht");
+      if (w > 0) w -= 360;                                 // (-360, 0]
+      var ziel = Math.floor(w / 180 - 1e-6) * 180;         // nächste halbe Umdrehung gegen den Uhrzeigersinn
+      aus = rad.animate([{ transform: "rotate(" + w + "deg)" }, { transform: "rotate(" + ziel + "deg)" }],
+                        { duration: 400 + (w - ziel) * 8, easing: "cubic-bezier(.25,.6,.4,1)" });
+      aus.onfinish = function () { aus = null; };
+    }
+    a.addEventListener("mouseenter", an);
+    a.addEventListener("focus", function () { if (bleibt()) an(); });
+    a.addEventListener("mouseleave", ab);
+    a.addEventListener("blur", ab);
+  });
+})();
+
 // „Weiter mit deiner Einheit“: nur lesen, was die Mühle unter start/ gesichert hat (gleiche Adresse, gleicher Speicher).
 // Gibt es die Datenbank nicht, wird das Anlegen abgebrochen, damit die Mühle sie später selbst anlegt.
 (function () {

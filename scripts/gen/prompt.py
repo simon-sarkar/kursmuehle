@@ -2,9 +2,10 @@
 
     chats()                                        Chat-Auswahl aus dem Katalog
     einheit(mappe, steckbrief, chat, material, nur_leere)  -> {teile, groessen, ids, typen}: Text „Diese Einheit“ oder
-                                                   „Alle leeren Bausteine“, gestückelt über 10 KB oder nach Chat
+                                                   „Alle leeren Bausteine“, gestückelt über 12 KB oder nach Chat
     baustein(mappe, ids, kurs_md, steckbrief, chat)  -> Text „Nur dieser Baustein“ (etwa 1 KB, bisheriger Inhalt als Kontext)
-    korrektur(pruefung)                            -> Sätze an den Chat, einer je Fehler
+    korrektur(pruefung)                            -> Sätze an den Chat, einer je Fehler (eigener Satz, wenn die Prüfung
+                                                   einen mitgibt: `bitte`, etwa bei einer Zeit-Annahme)
     fragen(pruefung)                               -> Ansicht „Fragen und Lösungen“ (Fragen, Optionen, Lösungen, ohne Rückmeldung)
     fachcheck(pruefung, steckbrief)                -> Text für einen neuen Chat: Aufgaben ohne Lösungen
     vergleich(pruefung, antwort)                   -> Abweichungen zwischen Antwort des neuen Chats und Kursdatei
@@ -16,7 +17,8 @@ import re
 from . import api
 from . import mappe as M
 
-GRENZE = 10 * 1024          # Ziel je Text in Bytes (Plan §4); darüber stückelt einheit() nach Abschnitten
+GRENZE = 12 * 1024          # Ziel je Text in Bytes (Plan §4; 12 KB seit AP13.1 für sechs Typen zu „automatisch“, 68 KB
+                            # liefen im Test in AIS-Chat und fobizz); darüber stückelt einheit() nach Abschnitten
 _TEXTTYPEN = {"Textfeld", "Seite", "Lesebuch", "Buch", "Aufgabe", "Datei", "Geschichte"}
 _FRAGETYPEN = {"Quiz", "Test", "Lesebuch"}
 
@@ -99,6 +101,10 @@ def wortziel(e, jahrgang=None):
         wpm = z["abschreiben"] if heft else z["woerter_je_minute"].get(rolle, z["woerter_je_minute"]["rahmen"])
         lesen = max(0.5, soll - z["aufgabe_minuten"]["einfach"]) if einstieg else soll   # Denkaufgabe abziehen
         woerter = max(20, int(round(lesen * wpm * faktor / 10.0)) * 10)
+        if rolle == "einstieg":                      # Einstieg kurz (AP13.1), mit Abstand zur Grenze der Prüfung
+            woerter = min(woerter, k["pruefregeln"]["einstieg_woerter"] - 20)
+        if heft:                                     # Wortziel nie unter dem Mindestmaß des Hefteintrags
+            woerter = max(woerter, next((t["mindest"]["zahl"] for t in k["typen"] if t["typ"] == typ and t.get("mindest")), 0))
         art = "wortziel_heft" if heft else "wortziel_einstieg" if einstieg else "wortziel_text"
         return p[art].format(min=minuten, woerter=woerter)
     if typ in _AUFGABENTYPEN:
@@ -140,6 +146,29 @@ def _zeile(e, nr, jahrgang=None, selbst=True):
     return " · ".join(teile)
 
 
+def zaehlregeln(liste, typen, uebung=True):
+    """Zählregeln für den Inhalt (AP13.1): Mindestmaße der Typen dieser Einheit (`mindest` im Katalog; der Hefteintrag
+    nur, wenn eine Karte so heißt oder diesen Teilschritt hat), Einstieg kurz (wenn eine Karte die Rolle Einstieg hat),
+    mit `uebung` die Regel, dass Denkaufgaben keine Übung sind (nur im Text für die ganze Einheit)."""
+    k = _kat()
+    p, regeln = k["prompt"], k["pruefregeln"]
+    teile = []
+    for e in k["typen"]:
+        m = e.get("mindest")
+        if not m or e["typ"] not in typen or m.get("nur"):
+            continue
+        teile.append(p["mindest_typ"].format(typ=e["typ"], zahl=m["zahl"], einheit=m["einheit"]))
+    heft = next((e["mindest"] for e in k["typen"] if (e.get("mindest") or {}).get("nur") == "Hefteintrag"), None)
+    if heft and any("Hefteintrag" in f"{x.get('titel', '')} {x.get('schritt', '')}" for x in liste):
+        teile.append(p["mindest_hefteintrag"].format(zahl=heft["zahl"]))
+    out = [p["mindest"].format(liste="; ".join(teile))] if teile else []
+    if any(M.rolle_von(x) == "einstieg" for x in liste):
+        out.append(p["einstieg"].format(woerter=regeln["einstieg_woerter"]))
+    if uebung:
+        out.append(p["uebung"].format(typen=", ".join(regeln["uebung"][:-1]) + " oder " + regeln["uebung"][-1]))
+    return out
+
+
 def braucht_skizze(angaben, thema=""):
     """Fach aus `skizze_faecher` oder ein Stichwort aus `skizze_stichworte` im Thema (Geometrie, Brüche, Diagramme …)."""
     p = _kat()["prompt"]
@@ -153,7 +182,7 @@ def _format(typen, ch, kopf=True):
     zeilen = ["Format der Kursdatei"]
     if kopf:
         zeilen.append("- Erste Zeile `# Drehbuch v1 · Thema · N min`; darunter im Kopf nur Zeilen `Angenommen: …`, "
-                      "`Bildwunsch: …` und `Offen: …` (fachliche Zweifel für die Lehrkraft).")
+                      "`Bildwunsch: …`, `Bildprompt: …` und `Offen: …` (fachliche Zweifel für die Lehrkraft).")
         zeilen.append("- " + k["kopf"]["abschnitt"]["regeln"][0])
     zeilen += ["- " + r for r in k["gemeinsam"]["regeln"]]
     if set(typen) & _TEXTTYPEN:
@@ -198,7 +227,8 @@ def _einheit_text(mappe, angaben, ch, liste, alle, material, teil, von, nur_leer
     auftrag, thema, minuten = _auftrag(mappe, angaben)
     jahrgang = (mappe.get("einheit") or {}).get("jahrgang") or angaben.get("jahrgang")
     selbst = zeit_selbst(mappe)
-    typen, auto = [], any(e.get("typ") == AUTO for e in liste)
+    # Typen zur Wahl auch ohne Karte „automatisch“, sobald die Zeitregel zum Ergänzen auffordert (Prompttest AP13.1, Lauf C)
+    typen, auto = [], any(e.get("typ") == AUTO for e in liste) or bool(minuten)
     for e in liste:
         if e.get("typ") and e["typ"] != AUTO and e["typ"] not in typen:
             typen.append(e["typ"])
@@ -230,12 +260,15 @@ def _einheit_text(mappe, angaben, ch, liste, alle, material, teil, von, nur_leer
         z.append(p["zeit_frei"].format(minuten=minuten, lesen=int(round(wpm["lesen"] * f)), einstieg=int(round(wpm["einstieg"] * f)),
                                        heft=int(round(zb["abschreiben"] * f)), einfach=zahl(zb["aufgabe_minuten"]["einfach"]),
                                        rechnen=zahl(zb["aufgabe_minuten"]["rechnen"])))
+    if minuten:
+        z.append(p["zeit"].format(minuten=minuten))
     z.append("")
     if material and teil == 1:
         z += ["Material der Lehrkraft (nutze es als Grundlage; Tatsachen daraus haben Vorrang vor deinen):",
               material.strip(), ""]
     z += _format(typen, ch)
     z += ["", "Vorgaben für den Inhalt (zähle nach, bevor du ausgibst):"] + ["- " + r for r in p["leitplanken"]]
+    z += ["- " + r for r in zaehlregeln(liste, typen)]
     if braucht_skizze(angaben, thema):
         z.append("- " + p["skizze"])
     z += ["", "Prüfe vor der Ausgabe:"] + ["- " + r for r in p["checkliste"]]
@@ -326,6 +359,7 @@ def baustein(mappe, ids, kurs_md="", steckbrief=None, chat_wert=None, kontext=90
                      + f": {d['text'].rstrip('. ')}.")
     if any(e["typ"] == AUTO for e in liste):
         z += [p["automatisch"]] + [f"- {t}: {zeile}" for t, zeile in _kat()["automatisch"]["typen"].items()]
+    z += ["- " + r for r in zaehlregeln(liste, typen, uebung=False)]
     z.append("")
     k = _kat()
     z.append("Format")
@@ -357,7 +391,9 @@ def korrektur(pruefung):
         if d.get("stufe") != "fehler":
             continue
         text = d["text"].rstrip(". ")
-        if d.get("baustein"):
+        if d.get("bitte"):
+            satz = d["bitte"]
+        elif d.get("baustein"):
             zeile = f" in Zeile {d['zeile_im_baustein']}" if d.get("zeile_im_baustein") else ""
             satz = vorlage.format(titel=d.get("titel") or titel.get(d["baustein"], ""), id=d["baustein"], zeile=zeile,
                                   text=text)

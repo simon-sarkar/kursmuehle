@@ -256,7 +256,7 @@ Markerliste mit Proben). Hier nur, was der Generator dazu beiträgt, und die Beg
 - Der Generator mischt die Antworten (H5P `randomAnswers`, Test `shuffle`, Website deterministisch je Frage); die Position
   der richtigen Option ist deshalb kein Marker, die Länge schon.
 - Drehbuch-Marker und -Zeilen filtert der Parser (`gen/kursdatei.py`: `_clean` für `[Quelle: …]`, `[KI…]`, `[Zweck: …]`,
-  `(← …)`; `Zeilen` für `Zeit … min`, `v2:`, `Angenommen:`, `Abweichung:`, `Offen:`, `Bildwunsch:`). Kurs-Angaben im Kopf
+  `(← …)`; `Zeilen` für `Zeit … min`, `v2:`, `Angenommen:`, `Abweichung:`, `Offen:`, `Bildwunsch:`, `Bildprompt:`). Kurs-Angaben im Kopf
   werden zeilenweise gelesen, eine fremde Zeile davor verschluckt `farbe:` nicht.
 - Fachliches prüfen (Notrufnummern inkl. Erreichbarkeitszeiten, Fristen, Rechtsbegriffe, Fehlercodes); Genderzeichen
   vermeiden (Bayern, Schulbereich), Doppelform oder neutral.

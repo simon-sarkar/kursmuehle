@@ -5,9 +5,10 @@
  * Aktionen: laden | pruefe {text, assets, steckbrief} | baue {kurs_md, steckbrief, assets, zeit, seed, optionen}
  *           | mappe_lesen {daten} | mappe_aus_dateien {dateien} | mappe_schreiben {mappe, kurs_md, steckbrief, assets}
  *           | steckbrief_lesen {text} | steckbrief_schreiben {sb} | heap
- *           | stand {text, assets, steckbrief, mappe}  prüfen, Mappe abgleichen, Kennzahlen in einem Lauf
+ *           | stand {text, assets, steckbrief, mappe}  prüfen (mit den Prüfregeln der Mühle), Mappe abgleichen,
+ *             Kennzahlen in einem Lauf
  *           | mappe {funktion, args}  gen.mappe: verschiebe, entferne, umbenennen, kennzahlen, angaben_lesen,
- *             angaben_schreiben, geplant, antwort, modus, einsetzen, anhaengen (Liste in PY_BRUECKE)
+ *             angaben_schreiben, geplant, planung, auffuellen, antwort, modus, einsetzen, anhaengen (Liste in PY_BRUECKE)
  *           | prompt {funktion, args}  gen.prompt: einheit, baustein, korrektur, fragen, fachcheck, vergleich (AP11)
  * Bytes laufen als ArrayBuffer/Uint8Array (Assets: {name: Uint8Array}); die .mbz kommt als übertragener ArrayBuffer.
  * Klassischer Worker ohne ES-Module (läuft so auch aus einem Blob, Offline-Datei später). */
@@ -78,11 +79,12 @@ var PY_BRUECKE = [
   "    return api.steckbrief_schreiben(e.get('sb') or {})",
   "",
   "def km_stand(e):",
-  "    pr = api.pruefe(e.get('text') or '', _bytes(e.get('assets')), e.get('steckbrief'))",
+  "    pr = api.pruefe(e.get('text') or '', _bytes(e.get('assets')), e.get('steckbrief'), e.get('mappe'))",
   "    m = _M.abgleich(e.get('mappe') or _M.neu(), pr['bausteine'])",
   "    return {'pruefung': pr, 'mappe': m, 'kennzahlen': _M.kennzahlen(m, pr, steckbrief=e.get('steckbrief'))}",
   "",
   "_MAPPE = {'verschiebe', 'entferne', 'umbenennen', 'kennzahlen', 'angaben_lesen', 'angaben_schreiben', 'geplant',",
+  "          'planung', 'auffuellen',",
   "          'antwort', 'modus', 'einsetzen', 'anhaengen', 'dateiname'}",
   "_PROMPT = {'einheit', 'baustein', 'korrektur', 'fragen', 'fachcheck', 'vergleich'}",
   "",

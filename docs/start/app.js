@@ -174,14 +174,19 @@ var km = (function () {
     });
   }
 
-  // ---- Autosave in IndexedDB (nur gegen den geschlossenen Tab; die Kursdatei gehört als Datei der Lehrkraft)
-  var DB = "kursmuehle", STORE = "mappe";
+  // ---- Autosave in IndexedDB (nur gegen den geschlossenen Tab; die Kursdatei gehört als Datei der Lehrkraft).
+  // Version 2 (AP13.1): Speicher `einstellungen` für Hinweise und Infobox; die Landingpage liest nur `mappe`/`aktuell`.
+  var DB = "kursmuehle", STORE = "mappe", EINST = "einstellungen";
   function db() {
     return new Promise(function (resolve, reject) {
       if (!window.indexedDB) return reject(new Error("IndexedDB fehlt"));
-      var r = indexedDB.open(DB, 1);
-      r.onupgradeneeded = function () { r.result.createObjectStore(STORE); };
-      r.onsuccess = function () { resolve(r.result); };
+      var r = indexedDB.open(DB, 2);
+      r.onupgradeneeded = function () {
+        var d = r.result;
+        if (!d.objectStoreNames.contains(STORE)) d.createObjectStore(STORE);
+        if (!d.objectStoreNames.contains(EINST)) d.createObjectStore(EINST);
+      };
+      r.onsuccess = function () { r.result.onversionchange = function () { r.result.close(); }; resolve(r.result); };
       r.onerror = function () { reject(r.error); };
     });
   }
@@ -205,14 +210,26 @@ var km = (function () {
       r.onerror = function () { reject(r.error); };
     });
   }
-  // kleine Einstellungen im selben Speicher (Infobox „nicht mehr anzeigen“)
+  // kleine Einstellungen im Speicher `einstellungen` (Infobox „nicht mehr anzeigen“, Hinweise); vor 2.0.0-b2 lagen sie
+  // als „einstellung:<name>“ im Speicher der Mappe und werden von dort noch gelesen
   async function einstellung(name, wert) {
     var d = await db();
+    function hole(store, key) {
+      return new Promise(function (resolve, reject) {
+        var r = d.transaction(store, "readonly").objectStore(store).get(key);
+        r.onsuccess = function () { resolve(r.result); };
+        r.onerror = function () { reject(r.error); };
+      });
+    }
+    if (wert === undefined) {
+      var w = await hole(EINST, name);
+      return w !== undefined ? w : hole(STORE, "einstellung:" + name);
+    }
     return new Promise(function (resolve, reject) {
-      var tx = d.transaction(STORE, wert === undefined ? "readonly" : "readwrite"), st = tx.objectStore(STORE);
-      var r = wert === undefined ? st.get("einstellung:" + name) : st.put(wert, "einstellung:" + name);
-      r.onsuccess = function () { resolve(wert === undefined ? r.result : wert); };
-      r.onerror = function () { reject(r.error); };
+      var tx = d.transaction(EINST, "readwrite");
+      tx.objectStore(EINST).put(wert, name);
+      tx.oncomplete = function () { resolve(wert); };
+      tx.onerror = function () { reject(tx.error); };
     });
   }
   async function autosaveLoeschen() {
@@ -241,7 +258,10 @@ window.km = km;
   var texte = { teile: [], art: "einheit", teil: 0, laeuft: 0, kopiert: {} }, fragenListe = [], korrekturen = [], letzteAntwort = null;
   var infoboxAus = false;
   var schreibKette = Promise.resolve();
-  var KEIN_INHALT = "Noch kein Inhalt. Füge in Schritt 5 die Antwort des Chats ein.";
+  var schleife = null;                            // offene Korrekturschleife an einer Karte: {id, art, text, eingabe, stand}
+  var hinweise = { an: true, gesehen: [] }, hinweisTexte = {}, hinweiseGeladen = false;
+  var bauLaeuft = false;
+  var SCHRITTE = [1, 2, 3, 4, 5, 5.5, 6, 7];       // 5.5 = Bilder (AP13.1), nur mit Bildwünschen in der Antwort
   var MAX_KANTE = 1600;                           // Bilder werden beim Hochladen auf diese lange Kante verkleinert
   var KOPIERT = "Jetzt in deinen Chat einfügen, die Antwort dann in Schritt 5 einfügen.";
   var STANDARD_FARBE = "#1D5FD1";                 // Akzent der Designvorlagen ohne eigene Farbe (gen/html.py HUE)
@@ -295,6 +315,10 @@ window.km = km;
   function kb(n) { return n < 1024 ? n + " Bytes" : (Math.round(n / 102.4) / 10).toString().replace(".", ",") + " KB"; }
   function zweig() { return (Z.mappe && Z.mappe.zweig) || ""; }
   function schritt() { return Z.mappe ? (Z.mappe.schritt || 2) : 1; }
+  function sektion(n) { return $(n === 1 ? "start" : n === 5.5 ? "schritt-bilder" : "schritt-" + n); }
+  function bildwuensche() { return (Z.pruefung && Z.pruefung.bildwuensche) || []; }
+  function sichtbareSchritte() { return SCHRITTE.filter(function (n) { return n !== 5.5 || bildwuensche().length > 0; }); }
+  function nrVon(n) { return sichtbareSchritte().indexOf(n) + 1; }      // angezeigte Nummer (mit Bildern acht Schritte)
   function inhalt() { return !!(Z.kurs_md && Z.kurs_md.trim()); }
   function fehlerZahl() { return Z.pruefung ? Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler"; }).length : 0; }
 
@@ -302,7 +326,7 @@ window.km = km;
   function kopieren(text, feld, stand, satz, fertigCb) {
     function fertig(ok) {
       stand.textContent = ok ? satz : "Kopieren ging nicht. Öffne „Text ansehen“, markiere den Text und kopiere ihn.";
-      stand.className = "stand " + (ok ? "ok" : "fehler");
+      stand.classList.remove("ok", "fehler"); stand.classList.add("stand", ok ? "ok" : "fehler");
       if (ok && fertigCb) fertigCb();
     }
     function rueckfall() {
@@ -324,16 +348,31 @@ window.km = km;
   km.setStatus(function () { if (!Z.geladen) status("Wird vorbereitet …", "lauf"); });
   status("Wird vorbereitet …", "lauf");
   km.bereit().then(function () {
-    status("Bereit", "ok");
+    if (!bauLaeuft) status("Bereit", "ok");
     knoepfe();
     if (Z.mappe) neuPruefen().catch(zeigeFehler);
   }).catch(function () {
-    status("Der Baukasten der Seite ließ sich nicht laden. Speichere später die Kursdatei und öffne die Seite in einem anderen Netz noch einmal.", "fehler");
+    status("Kursmühle ließ sich nicht vollständig laden. Speichere deine Einheit und versuch es später oder in einem anderen Netz noch einmal.", "fehler");
   });
 
   km.einstellung("infobox_aus").then(function (w) { infoboxAus = !!w; }).catch(function () { /* ohne IndexedDB: Box jedes Mal */ });
+  // Hinweise beim ersten Durchlauf (AP13.1): an, bis die Lehrkraft sie ausschaltet; ein Schritt, den sie in einer früheren
+  // Einheit schon abgeschlossen hat, zeigt keinen Hinweis mehr. Texte in hinweise.json, Zustand in der IndexedDB.
+  Promise.all([
+    km.einstellung("hinweise").then(function (w) { if (w && typeof w === "object") hinweise = { an: w.an !== false, gesehen: w.gesehen || [] }; })
+      .catch(function () { /* ohne IndexedDB: Hinweise bei jedem Besuch */ }),
+    fetch("hinweise.json", { cache: "no-cache" }).then(function (r) { return r.json(); }).then(function (h) { hinweisTexte = h; })
+      .catch(function () { hinweisTexte = {}; })
+  ]).then(function () { hinweiseGeladen = true; zeichneSchritte(); });
+  function hinweiseSichern() { km.einstellung("hinweise", { an: hinweise.an, gesehen: hinweise.gesehen }).catch(function () {}); }
+  function erledigtBis(n) {            // Schritte vor n gelten als einmal abgeschlossen
+    var neu = false;
+    SCHRITTE.forEach(function (k) { if (k < n && hinweise.gesehen.indexOf(String(k)) < 0) { hinweise.gesehen.push(String(k)); neu = true; } });
+    if (neu) hinweiseSichern();
+  }
+  $("hinweise-an").addEventListener("change", function () { hinweise.an = $("hinweise-an").checked; hinweiseSichern(); zeichneSchritte(); });
 
-  fetch("katalog.json", { cache: "no-cache" }).then(function (r) { return r.json(); }).then(function (k) {
+  var katalogDa = fetch("katalog.json", { cache: "no-cache" }).then(function (r) { return r.json(); }).then(function (k) {
     katalog = k;
     testfassung(k.version);
     vorlagenZeigen();
@@ -401,18 +440,40 @@ window.km = km;
       var voll = Z.mappe.bausteine.filter(function (k) { return !k.geplant; }).length, f = fehlerZahl();
       return voll ? voll + " Bausteine" + (f ? ", " + f + " Fehler" : ", geprüft") : "";
     }
+    if (n === 5.5) {
+      var w = bildwuensche().filter(function (b) { return b.datei; }), da = w.filter(function (b) { return Z.assets[b.datei]; }).length;
+      return !w.length ? "" : da === w.length ? (da === 1 ? "Bild da" : "alle " + da + " Bilder da") : da + " von " + w.length + " Bildern da, sonst Platzhalter";
+    }
     if (n === 6) return fragenListe.length ? fragenListe.length + " Fragen" + (Z.mappe.durchsicht ? " durchgesehen" : "") : "keine Fragen";
     return "";
   }
 
+  // Hinweis unter der Überschrift des aktiven Schritts, höchstens zwei Sätze, nie blockierend
+  function zeichneHinweis(sec, n, aktiv) {
+    var box = sec.querySelector(".s-hinweis"), text = hinweisTexte[String(n)];
+    var zeigen = aktiv && hinweiseGeladen && hinweise.an && !!text && hinweise.gesehen.indexOf(String(n)) < 0;
+    if (!zeigen) { if (box) box.remove(); return; }
+    if (!box) {
+      box = el("div", { cls: "s-hinweis", role: "note" }, [el("p"), el("button", { type: "button", cls: "textlink hinweis-aus", text: "Hinweise ausblenden" })]);
+      sec.querySelector(".s-inhalt").insertBefore(box, sec.querySelector(".s-inhalt").firstChild);
+    }
+    box.querySelector("p").textContent = text;
+  }
+  document.querySelector(".spalte-haupt").addEventListener("click", function (ev) {
+    if (!ev.target.closest(".hinweis-aus")) return;
+    hinweise.an = false; hinweiseSichern(); zeichneSchritte();
+  });
+
   function zeichneSchritte() {
     var s = schritt(), z = zweig();
+    if (s === 5.5 && Z.pruefung && !bildwuensche().length) s = 6;     // Bildwünsche inzwischen weg: weiter mit den Fragen
     document.body.dataset.schritt = String(s);
     document.body.dataset.zweig = z;
     document.body.dataset.bildschirm = Z.mappe ? "ansicht" : "start";
-    for (var n = 1; n <= 7; n++) {
-      var sec = $(n === 1 ? "start" : "schritt-" + n);
-      var stand = n < s ? "erledigt" : n === s ? "aktiv" : "zu";
+    var sichtbar = sichtbareSchritte();
+    SCHRITTE.forEach(function (n) {
+      var sec = sektion(n);
+      var stand = sichtbar.indexOf(n) < 0 ? "zu" : n < s ? "erledigt" : n === s ? "aktiv" : "zu";
       // Schritt 4 bleibt offen, solange ein gestückelter Text noch nicht ganz kopiert ist
       var teileOffen = n === 4 && s === 5 && texte.teile.length > 1 && Object.keys(texte.kopiert).length < texte.teile.length;
       var offen = stand === "aktiv" || (stand === "erledigt" && (!!auf[n] || teileOffen));
@@ -423,7 +484,10 @@ window.km = km;
       b.setAttribute("aria-expanded", String(offen));
       b.disabled = stand !== "erledigt";
       sec.querySelector(".s-fazit").textContent = stand === "erledigt" && Z.mappe ? fazit(n) : "";
-    }
+      sec.querySelector(".s-nr").textContent = String(sichtbar.indexOf(n) + 1);
+      zeichneHinweis(sec, n, stand === "aktiv");
+    });
+    $("hinweise-an").checked = hinweise.an;
     // Zweig 2: Kacheln, darunter im Zweig „Ich steuere“ Vorlagen, Karten und „Mehr einstellen“
     ["mach", "steuer"].forEach(function (w) { $("zweig-" + w).setAttribute("aria-pressed", String(z === w)); });
     $("steuer-teil").hidden = z !== "steuer";
@@ -442,16 +506,18 @@ window.km = km;
     document.querySelector(".seite").classList.toggle("mit-rand", s >= 5);
     $("weiter").hidden = !!Z.mappe || !$("weiter").dataset.da;
     $("weiter-5").hidden = !(s === 5 && inhalt() && !fehlerZahl());
-    $("weiter-5").textContent = fragenListe.length ? "Weiter zu den Fragen und Lösungen" : "Weiter zur Datei";
+    $("weiter-5").textContent = bildwuensche().length ? "Weiter zu den Bildern" : fragenListe.length ? "Weiter zu den Fragen und Lösungen" : "Weiter zur Datei";
     $("rueckmeldung").hidden = !(s >= 7 && Z.bau && Z.bau.mbz) && !$("rueckmeldung").dataset.offen;
     $("speichern").hidden = !Z.mappe;
+    $("neue-einheit").hidden = !Z.mappe;
     $("schliessen").hidden = !Z.mappe;
+    if (!Z.mappe) $("autosave-stand").textContent = "";
   }
 
   // Erledigte Zeile auf- und zuklappen
   document.querySelector(".spalte-haupt").addEventListener("click", function (ev) {
     var b = ev.target.closest(".s-zeile"); if (!b || b.disabled) return;
-    var n = parseInt(b.dataset.nr, 10);
+    var n = parseFloat(b.dataset.nr);
     auf[n] = !auf[n];
     zeichneSchritte();
     if (auf[n]) Array.prototype.forEach.call(document.querySelectorAll(".k-auftrag"), hoehe);
@@ -459,11 +525,12 @@ window.km = km;
 
   function gehe(n, fokus) {
     if (!Z.mappe) return;
+    if (n > schritt()) erledigtBis(n);
     Z.mappe.schritt = n;
     auf = {};
     zeichne();
     autosave();
-    var sec = $(n === 1 ? "start" : "schritt-" + n);
+    var sec = sektion(n);
     if (sec && !sec.hidden) {
       sec.scrollIntoView({ block: "start" });
       var f = fokus ? $(fokus) : sec.querySelector(".s-inhalt button:not([hidden]):not(:disabled), .s-inhalt input, .s-inhalt textarea");
@@ -485,12 +552,40 @@ window.km = km;
     }).catch(function () { $("weiter").hidden = true; });
   }
   weiterAnzeigen();
-  if (/[?&]weiter=1/.test(location.search)) {           // Startseite „Weiter mit deiner Einheit“
-    km.autosaveLesen().then(function (r) { if (r) oeffne(async function () { await km.mappeAusBytes(r.zip, null); }); }).catch(function () {});
-  }
+  // Adresse von der Landingpage: `?weiter=1` öffnet die gesicherte Einheit; `#thema=…&jahrgang=…&minuten=…` (Fragment,
+  // bleibt im Browser; `?thema=…` als Rückfall des Formulars ohne Skript) füllt
+  // Schritt 1 vor und legt die Einheit an, wenn ein Thema dabei ist (eine gesicherte Einheit wird vorher nicht
+  // stillschweigend ersetzt). Die Parameter verschwinden danach aus der Adresse; replaceState legt keinen Eintrag an,
+  // der Zurück-Knopf führt weiter zur Landingpage.
+  (function () {
+    var q = new URLSearchParams(location.search), h = new URLSearchParams((location.hash || "").replace(/^#/, ""));
+    if (h.has("thema") || h.has("jahrgang") || h.has("minuten")) q = h;
+    var weiter = q.get("weiter") === "1", thema = (q.get("thema") || "").trim().slice(0, 120);
+    var vor = q.has("thema") || q.has("jahrgang") || q.has("minuten");
+    if (weiter || vor) history.replaceState(history.state, "", location.pathname + (q === h ? "" : location.hash));
+    if (weiter) {
+      km.autosaveLesen().then(function (r) { if (r) oeffne(async function () { await km.mappeAusBytes(r.zip, null); }); }).catch(function () {});
+      return;
+    }
+    if (!vor) return;
+    var min = parseInt(q.get("minuten"), 10);
+    $("f-thema").value = thema;
+    $("f-jahrgang").value = (q.get("jahrgang") || "").trim().slice(0, 12);
+    $("f-minuten").value = min >= 10 && min <= 300 ? min : 45;
+    if (!thema) { $("f-thema").focus(); return; }
+    katalogDa.then(function () { return km.autosaveLesen().catch(function () { return null; }); }).then(function (r) {
+      if (!r) { startAbsenden(); return; }
+      frage("Einheit „" + (r.titel || r.dateiname) + "“ verwerfen? Was du nicht mit „Einheit speichern“ gesichert hast, geht verloren.",
+        async function () {
+          await km.autosaveLoeschen();
+          $("weiter").dataset.da = ""; $("weiter").hidden = true;
+          startAbsenden();
+        });
+    });
+  })();
 
-  $("start-form").onsubmit = function (ev) {
-    ev.preventDefault();
+  $("start-form").onsubmit = function (ev) { ev.preventDefault(); startAbsenden(); };
+  function startAbsenden() {
     var thema = $("f-thema").value.trim();
     if (!thema) { $("f-thema").focus(); return; }
     var e = { thema: thema, jahrgang: $("f-jahrgang").value.trim(), minuten: parseInt($("f-minuten").value, 10) || 45 };
@@ -509,7 +604,7 @@ window.km = km;
     auf = {};
     zeichne();
     angabenSchreiben(Z.mappe.anhaengen ? { jahrgang: e.jahrgang } : { thema: thema, jahrgang: e.jahrgang, minuten: e.minuten });
-  };
+  }
 
   function vorlageNach(name) { return katalog && katalog.vorlagen.filter(function (v) { return v.name === name; })[0]; }
 
@@ -595,6 +690,7 @@ window.km = km;
   function neuStart() {
     clearTimeout(kennzahlTimer); clearTimeout(textTimer); clearTimeout(eingabeTimer);
     texte.teile = []; texte.teil = 0; texte.art = "einheit"; texte.kopiert = {}; fragenListe = []; korrekturen = []; letzteAntwort = null;
+    schleife = null;
     chatWahlOffen = false; auf = {};
     $("chat-text-feld").value = ""; $("gegen-text-feld").value = ""; $("gegen-antwort").value = "";
     $("gegen-ergebnis").innerHTML = ""; $("gegen-stand").textContent = ""; $("kopiert").textContent = "";
@@ -637,7 +733,7 @@ window.km = km;
     ev.target.value = "";
     if (!files.length) return;
     if (files.length === 1 && /\.zip$/i.test(files[0].name)) {
-      oeffne(async function () { await km.mappeAusBytes(await files[0].arrayBuffer(), null); }, "Kursdatei wird geöffnet …");
+      oeffne(async function () { await km.mappeAusBytes(await files[0].arrayBuffer(), null); }, "Einheit wird geöffnet …");
     } else {
       oeffne(async function () { await km.mappeAusDateien(await dateienLesen(files), null); }, "Dateien werden geöffnet …");
     }
@@ -651,17 +747,20 @@ window.km = km;
   $("ordner-oeffnen").onchange = dateiWahl;
 
   // ---------------------------------------------------------------- 2 Mach du / Ich steuere
+  // Nächste Einheit (AP13.1): Aussehen und Chat sind vorbelegt, nach Schritt 2 geht es direkt zum Text für den Chat;
+  // Schritt 3 steht dann als erledigte Zeile darüber
+  function nachZwei() { return Z.mappe && Z.mappe.anhaengen && Z.mappe.aussehen && chatInfo(Z.mappe.chat) ? 4 : 3; }
   document.querySelector(".zweige").addEventListener("click", function (ev) {
     var b = ev.target.closest("[data-zweig]"); if (!b || !Z.mappe) return;
     Z.mappe.zweig = b.dataset.zweig;
     if (b.dataset.zweig === "mach") {
-      if (schritt() <= 2) gehe(3); else { zeichne(); geaendert(); }
+      if (schritt() <= 2) gehe(nachZwei()); else { zeichne(); geaendert(); }
     } else {
       if (schritt() <= 2) { zeichne(); geaendert(); var k = $("vorlagen").querySelector("button"); if (k && !inhalt()) k.focus({ preventScroll: true }); }
       else { auf[2] = true; zeichne(); geaendert(); }
     }
   });
-  $("weiter-2").onclick = function () { gehe(3); };
+  $("weiter-2").onclick = function () { gehe(nachZwei()); };
 
   function vorlagenZeigen() {
     var box = $("vorlagen"); box.innerHTML = "";
@@ -816,7 +915,7 @@ window.km = km;
     autosaveTimer = setTimeout(function () {
       if (!Z.geladen || !Z.mappe) return;
       km.autosaveSchreiben().then(function () { $("autosave-stand").textContent = "Zuletzt gesichert um " + zeit(Date.now()); })
-        .catch(function () { $("autosave-stand").textContent = "Dieser Browser sichert nicht automatisch. Speichere die Kursdatei."; });
+        .catch(function () { $("autosave-stand").textContent = "Dieser Browser sichert nicht automatisch. Speichere die Einheit."; });
     }, 700);
   }
 
@@ -830,13 +929,14 @@ window.km = km;
       b.setAttribute("aria-pressed", String(katalog.vorlagen[b.dataset.vorlage].name === (Z.mappe.einheit || {}).vorlage));
     });
     var v = (Z.mappe.einheit || {}).vorlage;
-    $("vorlage-zeile").textContent = inhalt() ? "Aufbau: " + (v || "aus der Kursdatei") + ". Der Aufbau lässt sich wählen, solange noch kein Inhalt da ist."
+    $("vorlage-zeile").textContent = inhalt() ? "Aufbau: " + (v || "eigener Aufbau") + ". Du kannst ihn ändern, bis die erste Antwort eingefügt ist."
       : "Wähle den Aufbau; die Bausteine darunter folgen ihm.";
     zeichneAussehen();
     zeichneKarten();
     zeichneDiagnosen();
     zeichneChat();
     zeichneKorrektur();
+    zeichneBilder();
     zeichneFragen();
     zeichneWiederherstellen();
     rueckmeldungFuellen();
@@ -893,6 +993,80 @@ window.km = km;
     return { bytes: new Uint8Array(await blob.arrayBuffer()), breite: w, hoehe: h };
   }
 
+  // Bild in die Kursdatei (assets/), von der Karte oder aus dem Schritt Bilder; danach neu prüfen
+  async function bildSetzen(datei, name) {
+    try {
+      var bild = await bildVorbereiten(datei, name);
+      Z.assets[name] = bild.bytes;
+      await km.stand(Z.kurs_md);
+      await auswertung();
+      zeichne(); geaendert();
+    } catch (e) { zeigeFehler(e); }
+  }
+
+  // ---------------------------------------------------------------- Bilder (AP13.1)
+  // Eine Zeile je Bildwunsch: Datei, Baustein, Status, beide Texte mit Kopierknopf, Hochladen und Ablagefläche
+  function zeichneBilder() {
+    var ol = $("bilder-liste"), w = bildwuensche();
+    ol.innerHTML = "";
+    var fehlen = 0;
+    w.forEach(function (b, i) {
+      var da = !!(b.datei && Z.assets[b.datei]);
+      if (b.datei && !da) fehlen += 1;
+      var nr = b.baustein ? Z.mappe.bausteine.findIndex(function (k) { return k.id === b.baustein; }) + 1 : 0;
+      var text = function (art, titel, inhalt, knopf) {
+        return inhalt ? el("div", { cls: "bild-text" }, [
+          el("div", { cls: "bild-text-kopf" }, [el("span", { text: titel }),
+            el("button", { type: "button", cls: "klein bild-kopieren", "data-nr": i, "data-art": art, text: knopf })]),
+          el("p", { cls: art === "wunsch" ? "" : "von-chat", text: inhalt })]) : null;
+      };
+      ol.appendChild(el("li", { cls: "bild-zeile" + (da ? " da" : ""), "data-datei": b.datei || "" }, [
+        el("p", { cls: "bild-kopf" }, [
+          el("span", { cls: "bild-name", text: b.datei || "Bild ohne Dateinamen" }),
+          el("span", { cls: "bild-baustein", text: nr ? "zu Baustein " + nr + " „" + b.titel + "“" : "kein Baustein nennt dieses Bild" }),
+          el("span", { cls: "bild-status" }, [el("span", { cls: "punkt", "aria-hidden": "true" }), da ? "da" : "fehlt"])]),
+        text("wunsch", "Was zu sehen ist", b.wunsch, "Beschreibung kopieren"),
+        text("prompt", "Auftrag für einen Bildgenerator", b.prompt, "Auftrag kopieren"),
+        b.datei ? el("div", { cls: "bild-ablage", "data-datei": b.datei }, [
+          el("span", { text: "Bild hierher ziehen oder" }),
+          el("label", { cls: "knopf klein-knopf" }, [da ? "Bild ersetzen" : "Bild hochladen",
+            el("input", { type: "file", cls: "unsichtbar bild-datei", accept: "image/png,image/jpeg", "data-datei": b.datei })])]) : null,
+        el("p", { cls: "stand bild-stand", role: "status" })]));
+    });
+    $("weiter-bilder").textContent = fehlen ? "Ohne Bild weiter" : "Weiter";
+    $("bilder-stand").textContent = !w.length ? "" : fehlen
+      ? (fehlen === 1 ? "Ein Bild fehlt" : fehlen + " Bilder fehlen") + "; im Kurs steht dort ein grauer Platzhalter, bis du es nachlieferst."
+      : "Alle Bilder sind da.";
+    $("bilder-stand").className = "stand " + (fehlen ? "" : "ok");
+  }
+  $("bilder-liste").addEventListener("click", function (ev) {
+    var b = ev.target.closest(".bild-kopieren"); if (!b) return;
+    var w = bildwuensche()[parseInt(b.dataset.nr, 10)]; if (!w) return;
+    var t = b.dataset.art === "wunsch" ? w.wunsch : w.prompt;
+    $("bild-feld").value = t;
+    kopieren(t, $("bild-feld"), b.closest(".bild-zeile").querySelector(".bild-stand"),
+      b.dataset.art === "wunsch" ? "Kopiert. Damit findest du ein freies Bild oder zeichnest es." : "Kopiert. Füge den Auftrag in einen Bildgenerator ein.");
+  });
+  $("bilder-liste").addEventListener("change", function (ev) {
+    if (!ev.target.classList.contains("bild-datei")) return;
+    var f = ev.target.files && ev.target.files[0], name = ev.target.dataset.datei;
+    ev.target.value = "";
+    if (f) bildSetzen(f, name);
+  });
+  ["dragenter", "dragover"].forEach(function (art) {
+    $("bilder-liste").addEventListener(art, function (ev) {
+      var z = ev.target.closest(".bild-ablage"); if (!z) return;
+      ev.preventDefault(); z.classList.add("ueber");
+    });
+  });
+  $("bilder-liste").addEventListener("dragleave", function (ev) { var z = ev.target.closest(".bild-ablage"); if (z) z.classList.remove("ueber"); });
+  $("bilder-liste").addEventListener("drop", function (ev) {
+    var z = ev.target.closest(".bild-ablage"); if (!z) return;
+    ev.preventDefault(); z.classList.remove("ueber");
+    var f = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+    if (f && /^image\/(png|jpeg)$/.test(f.type)) bildSetzen(f, z.dataset.datei);
+  });
+
   function pruefBaustein(id) { return Z.pruefung ? Z.pruefung.bausteine.filter(function (b) { return b.id === id; })[0] : null; }
   // Herkunft des Titels: geplante Karten und umbenannte Titel von der Lehrkraft, sonst vom Chat
   function titelHerkunft(k) { return k.geplant || (k.herkunft && k.herkunft.titel === "lehrkraft") ? "lehrkraft" : "chat"; }
@@ -929,6 +1103,80 @@ window.km = km;
     Z.mappe.bausteine.forEach(function (k) { ids[k.id] = 1; });
     while (ids["b" + n]) n += 1;
     return "b" + n;
+  }
+
+  // ---------------------------------------------------------------- Korrekturschleife an der Karte (AP13.1)
+  // „Korrektur anfordern“ (rote Karte) oder „Diesen Baustein neu beauftragen“ öffnet unter der Karte: Satz oder Text für
+  // den Chat, Kopierknopf, Einfügefeld. Die Antwort ersetzt nur diesen Baustein (gen/mappe.py einsetzen mit `nur`); der
+  // Block bleibt offen, bis die Karte nicht mehr rot ist oder die Lehrkraft ihn schließt.
+  function schleifeBlock(k, korrektur) {
+    var neu = schleife.art === "neu";
+    var box = el("div", { cls: "k-schleife", "data-id": k.id }, [
+      neu ? el("p", { cls: "k-schleife-zeile", text: "Schreib oben in den Auftrag, was anders werden soll, und kopiere dann den Text für den Chat." })
+        : el("ul", { cls: "k-saetze" }, korrektur.map(function (x) { return el("li", { text: x.satz }); })),
+      el("div", { cls: "kopieren" }, [
+        el("button", { type: "button", cls: "knopf", "data-aktion": "schleife-kopieren", disabled: !schleife.text,
+          text: neu ? (schleife.text ? "Text kopieren" : "Text entsteht …") : "Satz kopieren" }),
+        el("button", { type: "button", cls: "textlink", "data-aktion": "schleife-zu", text: "Schließen" })]),
+      el("p", { cls: "k-schleife-zeile", text: neu ? "Füge den Text in deinen Chat ein und kopiere seine Antwort hierher."
+        : "Füge den Satz in deinen Chat ein und kopiere seine Antwort hierher." }),
+      el("label", { cls: "unsichtbar", "for": "schleife-eingabe", text: "Antwort des Chats für diesen Baustein" }),
+      el("textarea", { id: "schleife-eingabe", cls: "k-schleife-eingabe", rows: "4", spellcheck: "false", placeholder: "Antwort hier einfügen" }),
+      el("p", { cls: "stand k-schleife-stand " + (schleife.standArt || ""), role: "status", "aria-live": "polite", text: schleife.stand || "" })]);
+    box.querySelector("textarea").value = schleife.eingabe || "";
+    return box;
+  }
+  function schleifeSaetze(id) { return korrekturen.filter(function (x) { return x.baustein === id; }).map(function (x) { return x.satz; }).join("\n"); }
+  function schleifeOeffnen(id, art) {
+    schleife = { id: id, art: art, text: art === "neu" ? "" : schleifeSaetze(id), eingabe: "", stand: "" };
+    zeichneKarten();
+    if (art === "neu") schleifeText();
+    var b = document.querySelector('.k-schleife [data-aktion="schleife-kopieren"]');
+    if (b) b.focus();
+  }
+  // Text „Nur dieser Baustein“ fertig halten (Kopieren nur in der Geste, Safari)
+  var schleifeTimer = null;
+  async function schleifeText() {
+    if (!schleife || schleife.art !== "neu" || !Z.geladen) return;
+    var s0 = schleife;
+    try {
+      var t = await km.prompt("baustein", [Z.mappe, [s0.id], Z.kurs_md, Z.steckbrief_text, null, 900, Z.pruefung]);
+      if (schleife !== s0) return;
+      s0.text = t;
+      var b = document.querySelector('.k-schleife [data-aktion="schleife-kopieren"]');
+      if (b) { b.disabled = false; b.textContent = "Text kopieren"; }
+    } catch (e) { zeigeFehler(e); }
+  }
+  var schleifeEinfuegenTimer = null;
+  async function schleifeEinsetzen() {
+    var s0 = schleife;
+    if (!s0 || !(s0.eingabe || "").trim()) return;
+    try {
+      await km.bereit();
+      var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, s0.eingabe, s0.id]);
+      if (!r.ersetzt.length && !r.eingefuegt.length) {
+        s0.stand = r.fehler.join(" ") || "In der Antwort steht kein Baustein. Kopiere die ganze Antwort mit dem Kopierknopf des Chats.";
+        s0.standArt = "fehler"; zeichneKarten(); return;
+      }
+      await km.stand(r.kurs_md);
+      await auswertung();
+      Z.mappe.durchsicht = false;
+      if (schritt() !== 5) { Z.mappe.schritt = 5; auf = {}; }
+      var b = pruefBaustein(s0.id);
+      if (b && b.status !== "fehler") {
+        schleife = null;
+        status("„" + b.titel + "“ ist ersetzt und in Ordnung.", "ok");
+      } else {
+        s0.art = "korrektur"; s0.text = schleifeSaetze(s0.id); s0.eingabe = "";
+        s0.stand = "Ersetzt, aber noch rot. Kopiere den Satz oben und füge die Antwort wieder hier ein."; s0.standArt = "fehler";
+      }
+      zeichne(); geaendert();
+      var karte = $("karte-" + s0.id);
+      if (karte) {
+        var f = schleife ? karte.querySelector('[data-aktion="schleife-kopieren"]') : karte.querySelector(".k-titel");
+        if (f) f.focus({ preventScroll: true });
+      }
+    } catch (e) { zeigeFehler(e); }
   }
 
   function zeichneKarten() {
@@ -993,16 +1241,16 @@ window.km = km;
         steuer && !k.aus ? el("label", { cls: "k-auftrag-l" }, [el("span", { cls: "unsichtbar", text: "Auftrag für Baustein " + (i + 1) }),
           el("textarea", { cls: "k-auftrag von-lehrkraft", rows: "1", placeholder: "Was soll hinein? Ein Satz genügt (optional)" })]) : null,
         diag,
-        korrektur.length ? el("div", { cls: "k-korrektur" }, [
-          el("button", { type: "button", cls: "klein k-satz", "data-aktion": "satz", text: "Satz für den Chat kopieren" }),
-          el("span", { cls: "k-satz-stand stand", role: "status" })]) : null,
+        korrektur.length && !(schleife && schleife.id === k.id) ? el("div", { cls: "k-korrektur" }, [
+          el("button", { type: "button", cls: "knopf klein-knopf k-satz", "data-aktion": "korrektur", text: "Korrektur anfordern" })]) : null,
         hochladen, inhaltEl,
         steuer ? el("div", { cls: "k-aktionen" }, [
           el("button", { type: "button", cls: "k-hoch klein", "data-aktion": "hoch", "aria-label": "Baustein " + (i + 1) + " nach oben", disabled: i === 0, text: "↑" }),
           el("button", { type: "button", cls: "k-runter klein", "data-aktion": "runter", "aria-label": "Baustein " + (i + 1) + " nach unten", disabled: i === liste.length - 1, text: "↓" }),
-          k.geplant ? null : el("button", { type: "button", cls: "k-neu klein", "data-aktion": "neu", "aria-pressed": k.neu ? "true" : "false",
-            text: k.neu ? "Wird neu beauftragt" : "Diesen Baustein neu beauftragen" }),
-          el("button", { type: "button", cls: "k-loeschen klein", "data-aktion": "loeschen", text: "Löschen" })]) : null]);
+          k.geplant ? null : el("button", { type: "button", cls: "k-neu klein", "data-aktion": "neu",
+            "aria-pressed": schleife && schleife.id === k.id && schleife.art === "neu" ? "true" : "false", text: "Diesen Baustein neu beauftragen" }),
+          el("button", { type: "button", cls: "k-loeschen klein", "data-aktion": "loeschen", text: "Löschen" })]) : null,
+        schleife && schleife.id === k.id ? schleifeBlock(k, korrektur) : null]);
       var auftrag = li.querySelector(".k-auftrag");
       if (auftrag) auftrag.value = k.auftrag || "";
       ol.appendChild(li);
@@ -1016,6 +1264,7 @@ window.km = km;
 
   function zeichneDiagnosen() {
     var k = Z.kennzahlen;
+    zeichnePlanung();
     var setze = function (id, wert, warn) { var e = $(id); e.textContent = wert; e.parentNode.classList.toggle("warn", !!warn); };
     if (!k) {
       ["kz-minuten", "kz-folge", "kz-mc", "kz-rueckmeldung"].forEach(function (id) { setze(id, "–"); $(id).parentNode.hidden = false; });
@@ -1064,21 +1313,23 @@ window.km = km;
     if (karte) { karte.scrollIntoView({ behavior: "smooth", block: "center" }); karte.querySelector(".k-titel").focus({ preventScroll: true }); }
   }
 
+  // Schritt 7 (AP13.1): EIN Knopf baut die Datei und lädt sie herunter; ohne fertige Antwort gibt es ihn nicht
   function knoepfe() {
     var fehler = fehlerZahl(), voll = inhalt();
     // Fragen und Lösungen einmal ansehen (oder bewusst überspringen), bevor die Datei entsteht (Plan §10)
     var durchsicht = !fragenListe.length || !!(Z.mappe && Z.mappe.durchsicht);
-    $("erstellen").disabled = !Z.geladen || !voll || fehler > 0 || !durchsicht;
-    $("herunterladen").hidden = !(Z.bau && Z.bau.mbz);
-    $("erstellen").hidden = !!(Z.bau && Z.bau.mbz);         // fertig: nur noch Herunterladen; jede Änderung macht ihn wieder sichtbar
-    $("glossar-laden").hidden = !(Z.bau && Z.bau.mbz && Z.bau.glossare && Z.bau.glossare.length);
+    var fertig = !!(Z.bau && Z.bau.mbz);
+    $("herunterladen").hidden = !(voll && !fehler && durchsicht) && !fertig;
+    $("herunterladen").disabled = bauLaeuft;
+    $("glossar-laden").hidden = !(fertig && Z.bau.glossare && Z.bau.glossare.length);
     var t = "";
-    if (!Z.geladen) t = "Wird vorbereitet …";
-    else if (!voll) t = KEIN_INHALT;
-    else if (fehler) t = fehler + " Fehler in den Bausteinen. Die rot markierten Karten in Schritt 5 zeigen, wo.";
-    else if (!durchsicht) t = "Sieh vorher in Schritt 6 die " + fragenListe.length + " Fragen und ihre Lösungen durch.";
-    else if (Z.bau && Z.bau.mbz) t = "Die Datei ist fertig (" + Math.round(Z.bau.mbz.length / 1024) + " KB)" + (Z.bau.nachlieferung ? ", nur die neue Einheit." : ".");
-    else if (Z.bau && !Z.bau.mbz) t = "Das Erstellen ist an einem Fehler gescheitert: " + ((Z.bau.diagnosen || []).filter(function (d) { return d.stufe === "fehler"; }).map(function (d) { return d.text; })[0] || "");
+    if (bauLaeuft) t = "Datei wird erstellt …";
+    else if (!voll) t = "";
+    else if (fehler) t = "In der Antwort " + (fehler === 1 ? "steht 1 Fehler" : "stehen " + fehler + " Fehler") + "; behebe sie in Schritt " + nrVon(5) + ".";
+    else if (!durchsicht) t = "Sieh vorher in Schritt " + nrVon(6) + " die " + fragenListe.length + " Fragen und ihre Lösungen durch.";
+    else if (fertig) t = "Die Datei ist heruntergeladen (" + Math.round(Z.bau.mbz.length / 1024) + " KB)" + (Z.bau.nachlieferung ? " und enthält nur die neue Einheit." : ".");
+    else if (Z.bau && !Z.bau.mbz) t = "Die Datei ließ sich nicht erstellen: " + ((Z.bau.diagnosen || []).filter(function (d) { return d.stufe === "fehler"; }).map(function (d) { return d.text; })[0] || "");
+    else if (!Z.geladen) t = "Wird vorbereitet …";
     $("erstellen-stand").textContent = t;
     $("speichern").disabled = !Z.geladen || !Z.mappe;
     $("wiederherstellen").hidden = !(Z.bau && Z.bau.mbz);
@@ -1090,7 +1341,7 @@ window.km = km;
   function zeichneFragen() {
     var ol = $("fragen-liste"); ol.innerHTML = "";
     $("fragen-zeile").textContent = fragenListe.length
-      ? fragenListe.length + " Fragen mit den Lösungen aus der Kursdatei, ohne Rückmeldungen. Prüfe, ob jede Lösung stimmt."
+      ? fragenListe.length + " Fragen mit ihren Lösungen, ohne Rückmeldungen. Prüfe, ob jede Lösung stimmt."
       : "In dieser Einheit stehen noch keine Fragen.";
     var letzter = null;
     fragenListe.forEach(function (f) {
@@ -1107,13 +1358,17 @@ window.km = km;
     });
   }
   $("fragen-liste").onclick = function (ev) { var z = ev.target.closest("[data-ziel]"); if (z) zuKarte(z.dataset.ziel); };
-  function durchgesehen() { if (Z.mappe) { Z.mappe.durchsicht = true; geaendert(); gehe(7, "erstellen"); } }
+  function durchgesehen() { if (Z.mappe) { Z.mappe.durchsicht = true; geaendert(); gehe(7, "herunterladen"); } }
   $("durchsicht-ok").onclick = durchgesehen;
   $("ohne-durchsicht").onclick = durchgesehen;
+  function nachBildern() {
+    if (fragenListe.length && !Z.mappe.durchsicht) gehe(6, "durchsicht-ok"); else gehe(7, "herunterladen");
+  }
   $("weiter-5").onclick = function () {
     if (!Z.mappe) return;
-    if (fragenListe.length && !Z.mappe.durchsicht) gehe(6, "durchsicht-ok"); else gehe(7, "erstellen");
+    if (bildwuensche().length) gehe(5.5); else nachBildern();
   };
+  $("weiter-bilder").onclick = function () { if (Z.mappe) nachBildern(); };
 
   // ---------------------------------------------------------------- 4 Text für den Chat
   function markiert() { return Z.mappe ? Z.mappe.bausteine.filter(function (k) { return k.neu; }) : []; }
@@ -1125,7 +1380,11 @@ window.km = km;
   function zeichneChat() {
     var gewaehlt = !!(Z.mappe && Z.mappe.chat && chatInfo(Z.mappe.chat));
     $("chat-wahl").hidden = gewaehlt && !chatWahlOffen;
-    $("chat-text").hidden = !gewaehlt;
+    $("chat-text").hidden = !gewaehlt || chatWahlOffen;       // „Anderer Chat“: nur die Kacheln, der Text bleibt erhalten
+    Array.prototype.forEach.call(document.querySelectorAll("#chat-knoepfe [data-chat]"), function (b) {
+      b.setAttribute("aria-pressed", String(gewaehlt && b.dataset.chat === Z.mappe.chat));
+    });
+    zeichnePlanung();
     if (!gewaehlt) return;
     var c = chatInfo(Z.mappe.chat), m = markiert();
     var leer = Z.mappe.bausteine.filter(function (k) { return k.geplant; }).length;
@@ -1150,6 +1409,32 @@ window.km = km;
     $("text-kopieren").disabled = !t;
     $("text-kopieren").textContent = texte.teile.length > 1 ? "Teil " + (texte.teil + 1) + " kopieren" : "Text kopieren";
   }
+
+  // Plan der Einheit (AP13.1, gen/mappe.py planung): zu wenig Karten für die Minuten oder eine Phase ohne Karte; Warnung
+  // vor dem Kopieren mit „Vorlage auffüllen“ und an der Kartenliste, keine Sperre
+  function planungText() {
+    var p = Z.kennzahlen && Z.kennzahlen.planung;
+    if (!p || (!p.zu_wenig && !p.fehlen.length)) return "";
+    return [p.zu_wenig ? p.text + ", Bausteine ergänzen?" : ""].concat(p.fehlen.map(function (f) { return f + "."; })).filter(Boolean).join(" ");
+  }
+  function zeichnePlanung() {
+    var t = planungText();
+    $("kopier-warnung").hidden = !t || !Z.mappe || !chatInfo(Z.mappe.chat);
+    $("kopier-warnung-text").textContent = t;
+    $("karten-warnung").hidden = !t || zweig() !== "steuer";
+    $("karten-warnung").textContent = t;
+  }
+  $("auffuellen").onclick = async function () {
+    if (!Z.mappe) return;
+    try {
+      await km.bereit();
+      Z.mappe = await km.mappeFn("auffuellen", [Z.mappe]);
+      Z.kennzahlen = await km.mappeFn("kennzahlen", [Z.mappe, Z.pruefung, null, Z.steckbrief_text]);
+      zeichne(); geaendert(); textSpaeter(0);
+      $("kopiert").textContent = "Bausteine ergänzt. Sie stehen jetzt im Text unten.";
+      $("kopiert").className = "stand ok";
+    } catch (e) { zeigeFehler(e); }
+  };
 
   function textSpaeter(ms) {
     clearTimeout(textTimer);
@@ -1184,7 +1469,15 @@ window.km = km;
     zeichneChat(); geaendert(); textSpaeter(0); zeichneSchritte();
     setTimeout(function () { var k = $("text-kopieren"); if (k) k.focus({ preventScroll: true }); }, 0);
   });
-  $("chat-aendern").onclick = function () { chatWahlOffen = true; zeichneChat(); var k = $("chat-knoepfe").querySelector("button"); if (k) k.focus(); };
+  // „Anderer Chat“ (AP13.1): zurück zu den Kacheln von Schritt 4, auch wenn Schritt 4 schon erledigt ist
+  $("chat-aendern").onclick = function () {
+    chatWahlOffen = true;
+    if (schritt() > 4) auf[4] = true;
+    zeichneSchritte(); zeichneChat();
+    sektion(4).scrollIntoView({ block: "start" });
+    var k = $("chat-knoepfe").querySelector("[aria-pressed=true]") || $("chat-knoepfe").querySelector("button");
+    if (k) k.focus({ preventScroll: true });
+  };
   Array.prototype.forEach.call(document.querySelectorAll("input[name=text-art]"), function (r) {
     r.addEventListener("change", function () { $("kopiert").textContent = ""; textSpaeter(0); });
   });
@@ -1199,7 +1492,7 @@ window.km = km;
     if (!Z.mappe) return;
     Z.mappe.kopiert = true;
     var naechster = texte.teile.length > 1 ? texte.teile.findIndex(function (_, i) { return !texte.kopiert[i]; }) : -1;
-    if (schritt() < 5) { Z.mappe.schritt = 5; auf = {}; }
+    if (schritt() < 5) { erledigtBis(5); Z.mappe.schritt = 5; auf = {}; }
     zeichne(); autosave();
     if (naechster >= 0) {
       texte.teil = naechster; zeichneChat();
@@ -1225,9 +1518,19 @@ window.km = km;
   $("karten").addEventListener("input", function (ev) {
     var k = karteVon(ev.target); if (!k) return;
     var c = ev.target.classList;
+    if (c.contains("k-schleife-eingabe")) {
+      if (!schleife) return;
+      schleife.eingabe = ev.target.value;
+      clearTimeout(schleifeEinfuegenTimer);
+      schleifeEinfuegenTimer = setTimeout(schleifeEinsetzen, ev.inputType === "insertFromPaste" ? 30 : 500);
+      return;
+    }
     if (c.contains("k-phase")) k.phase = ev.target.value;
     else if (c.contains("k-soll")) k.soll = ev.target.value === "" ? null : Math.max(0, parseInt(ev.target.value, 10) || 0);
-    else if (c.contains("k-auftrag")) { k.auftrag = ev.target.value; hoehe(ev.target); }
+    else if (c.contains("k-auftrag")) {
+      k.auftrag = ev.target.value; hoehe(ev.target);
+      if (schleife && schleife.id === k.id && schleife.art === "neu") { clearTimeout(schleifeTimer); schleifeTimer = setTimeout(schleifeText, 400); }
+    }
     else return;
     geaendert();
   });
@@ -1259,14 +1562,7 @@ window.km = km;
     if (ev.target.classList.contains("k-bild")) {
       var f = ev.target.files && ev.target.files[0], name = ev.target.dataset.datei;
       ev.target.value = "";
-      if (!f) return;
-      try {
-        var bild = await bildVorbereiten(f, name);
-        Z.assets[name] = bild.bytes;
-        await km.stand(Z.kurs_md);
-        await auswertung();
-        zeichne(); geaendert();
-      } catch (e) { zeigeFehler(e); }
+      if (f) bildSetzen(f, name);
     }
   });
   $("karten").addEventListener("keydown", function (ev) {
@@ -1289,15 +1585,22 @@ window.km = km;
     var k = karteVon(knopf); if (!k) return;
     var liste = Z.mappe.bausteine, i = liste.indexOf(k), a = knopf.dataset.aktion;
     try {
-      if (a === "satz") {
-        var saetze = korrekturen.filter(function (x) { return x.baustein === k.id; }).map(function (x) { return x.satz; }).join("\n");
-        var fld = $("korrektur-feld") || document.body.appendChild(el("textarea", { id: "korrektur-feld", cls: "unsichtbar", readonly: true, "aria-hidden": "true" }));
-        fld.value = saetze;
-        kopieren(saetze, fld, knopf.parentNode.querySelector(".k-satz-stand"), "Kopiert. Im selben Chat einfügen.");
-      } else if (a === "neu") {
-        k.neu = !k.neu;
-        if (k.neu) document.querySelector("input[name=text-art][value=baustein]").checked = true;
-        zeichneKarten(); zeichneChat(); geaendert(); textSpaeter(0);
+      if (a === "korrektur") schleifeOeffnen(k.id, "korrektur");
+      else if (a === "neu") {
+        if (schleife && schleife.id === k.id && schleife.art === "neu") { schleife = null; zeichneKarten(); }
+        else schleifeOeffnen(k.id, "neu");
+      } else if (a === "schleife-zu") {
+        schleife = null; zeichneKarten();
+        var t = document.querySelector("#karte-" + CSS.escape(k.id) + " .k-titel"); if (t) t.focus({ preventScroll: true });
+      } else if (a === "schleife-kopieren") {
+        if (!schleife || !schleife.text) return;
+        var fld = $("schleife-feld") || document.body.appendChild(el("textarea", { id: "schleife-feld", cls: "unsichtbar", readonly: true, "aria-hidden": "true", tabindex: "-1" }));
+        fld.value = schleife.text;
+        var st = knopf.closest(".k-schleife").querySelector(".k-schleife-stand");
+        kopieren(schleife.text, fld, st, "Kopiert. Füge ihn in deinen Chat ein und die Antwort dann hier unten.", function () {
+          schleife.stand = st.textContent; schleife.standArt = "ok";
+          var ein = knopf.closest(".k-schleife").querySelector("textarea"); if (ein) ein.focus({ preventScroll: true });
+        });
       } else if (a === "hoch" || a === "runter") {
         var j = a === "hoch" ? i - 1 : i + 1;
         if (j < 0 || j >= liste.length) return;
@@ -1366,7 +1669,7 @@ window.km = km;
   };
   $("weiter-weg").onclick = function () {
     var titel = $("weiter-knopf").textContent.replace(/^Weiter mit /, "");
-    frage("Einheit " + titel + " verwerfen? Sie ist nicht als Kursdatei gespeichert.", async function () {
+    frage("Einheit " + titel + " verwerfen? Sie ist nur in diesem Browser gesichert.", async function () {
       await km.autosaveLoeschen();
       $("weiter").dataset.da = ""; $("weiter").hidden = true;
       $("f-thema").focus();
@@ -1374,8 +1677,8 @@ window.km = km;
   };
   $("schliessen").onclick = function () {
     var titel = (Z.mappe && ((Z.mappe.einheit && Z.mappe.einheit.thema) || Z.mappe.titel)) || "";
-    frage("Einheit „" + titel + "“ schließen? " + (gespeichert ? "Die Kursdatei hast du gespeichert; die Sicherung im Browser wird gelöscht."
-      : "Was nicht als Kursdatei gespeichert ist, geht verloren."), async function () {
+    frage("Einheit „" + titel + "“ schließen? " + (gespeichert ? "Die Einheit hast du gespeichert; die Sicherung im Browser wird gelöscht."
+      : "Was du nicht mit „Einheit speichern“ gesichert hast, geht verloren."), async function () {
       clearTimeout(autosaveTimer);
       await km.autosaveLoeschen();
       leeren();
@@ -1474,14 +1777,17 @@ window.km = km;
       Z.mappe.durchsicht = false;
       if (schritt() > 5 || schritt() < 5) { Z.mappe.schritt = 5; auf = {}; }      // neuer Inhalt: ab Schritt 5 neu durchsehen
       await auswertung();
+      if (schleife && !korrekturen.some(function (x) { return x.baustein === schleife.id; })) schleife = null;
       zeichne(); geaendert();
       // im Modus „nur Baustein“ zählen nur die eingesetzten Bausteine, sonst alle
       var rot = Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler" && (!e.ids || e.ids.indexOf(b.id) >= 0); }).length;
+      var aussen = Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler" && !d.baustein; }).length;
       $("eingabe").value = "";
       $("eingabe-stand").textContent = "Übernommen (" + MODUS_TEXT[modus] + "): " + e.n + (e.n === 1 ? " Baustein" : " Bausteine")
-        + (rot ? ", davon " + rot + " mit Fehler (rot markiert). Bitte den Chat mit dem Satz an der Karte um Korrektur und füge die Antwort hier ein."
-          : ". Sieh die Bausteine durch und geh dann weiter.") + e.text;
-      $("eingabe-stand").className = "stand " + (rot ? "fehler" : "ok");
+        + (rot ? ", davon " + rot + " mit Fehler (rot). Wähl an der roten Karte „Korrektur anfordern“."
+          : aussen ? "." : ". Sieh sie durch und geh dann weiter.")
+        + (aussen ? " Den Satz zum Fehler außerhalb der Bausteine findest du unter den Karten." : "") + e.text;
+      $("eingabe-stand").className = "stand " + (rot || aussen ? "fehler" : "ok");
     } catch (err) { zeigeFehler(err); }
   }
   $("eingabe").addEventListener("input", function () {
@@ -1498,8 +1804,16 @@ window.km = km;
   });
 
   // ---------------------------------------------------------------- Korrekturbitte
+  // Sammelblock unter der Kartenliste: für mehrere rote Karten oder einen Fehler außerhalb eines Bausteins; eine einzelne
+  // rote Karte führt ihre Korrektur selbst (Korrekturschleife). Die Antwort kommt oben ins Feld; die Seite setzt jeden
+  // Baustein anhand seiner id an seinen Platz (gen/mappe.py modus und einsetzen), eine ganze Einheit ersetzt die alte.
   function zeichneKorrektur() {
-    $("korrektur").hidden = !korrekturen.length;
+    var rote = korrekturen.map(function (k) { return k.baustein; }).filter(function (b, i, a) { return b && a.indexOf(b) === i; });
+    var ohne = korrekturen.some(function (k) { return !k.baustein; });
+    $("korrektur").hidden = !(rote.length > 1 || ohne);
+    $("korrektur-zeile").textContent = ohne && !rote.length
+      ? "Kopiere den Satz in deinen Chat und füge die Antwort oben ein. Sie ersetzt die Einheit."
+      : "Ein Satz je Fehler. Kopiere alle in deinen Chat und füge die Antwort oben ein.";
     var ul = $("korrektur-liste"); ul.innerHTML = "";
     korrekturen.forEach(function (k) { ul.appendChild(el("li", { text: k.satz })); });
     if (!$("korrektur-feld")) document.body.appendChild(el("textarea", { id: "korrektur-feld", cls: "unsichtbar", readonly: true, "aria-hidden": "true" }));
@@ -1507,7 +1821,7 @@ window.km = km;
     $("korrektur-stand").textContent = "";
   }
   $("korrektur-kopieren").onclick = function () {
-    kopieren($("korrektur-feld").value, $("korrektur-feld"), $("korrektur-stand"), "Kopiert. Im selben Chat einfügen, die Antwort oben einfügen.");
+    kopieren($("korrektur-feld").value, $("korrektur-feld"), $("korrektur-stand"), "Kopiert. Füge die Sätze in deinen Chat ein und die Antwort dann oben ins Feld.");
   };
 
   // ---------------------------------------------------------------- Lösungen gegenprüfen (neuer Chat, Blindlösung)
@@ -1533,7 +1847,7 @@ window.km = km;
       $("gegen-stand").className = "stand " + (n ? "fehler" : "ok");
       v.abweichungen.forEach(function (a) {
         ul.appendChild(el("li", {}, [el("button", { type: "button", cls: "hinweis-link", "data-ziel": a.baustein, text: "Aufgabe " + a.nr + " in „" + a.titel + "“" }),
-          el("span", { text: ": der Chat sagt „" + a.chat + "“, die Kursdatei „" + a.kursdatei + "“." })]));
+          el("span", { text: ": der Chat sagt „" + a.chat + "“, deine Einheit „" + a.kursdatei + "“." })]));
       });
     } catch (e) { zeigeFehler(e); }
   }
@@ -1574,9 +1888,11 @@ window.km = km;
     $("importiert-stand").textContent = "Vermerkt. Die nächste Einheit wird als Nachlieferung erstellt und mit „Zusammenführen“ eingespielt.";
   }
 
-  $("erstellen").onclick = async function () {
-    $("erstellen").disabled = true;
-    $("erstellen-stand").textContent = "Wird erstellt …";
+  $("herunterladen").onclick = async function () {
+    if (Z.bau && Z.bau.mbz) { herunterladen(); return; }
+    bauLaeuft = true;
+    knoepfe();
+    status("Datei wird erstellt …", "lauf");
     try {
       var neu = nachlieferung(), opt = Object.assign({}, km.bauOptionen || {});
       if (neu.length) opt.optionen = Object.assign({}, opt.optionen || {}, { delta: neu.join(",") });
@@ -1584,13 +1900,15 @@ window.km = km;
       if (Z.bau) Z.bau.nachlieferung = neu.length ? neu : null;
       // Name beim Herunterladen: <Kurstitel>_<Datum>.mbz (wie die Kursdatei); in der Sicherung bleibt der Name des Generators
       if (Z.bau && Z.bau.mbz) Z.bau.downloadName = (await km.mappeFn("dateiname", [Z.mappe, heute()])).replace(/\.kursmappe\.zip$/, neu.length ? "_nachlieferung.mbz" : ".mbz");
+      bauLaeuft = false;
+      if (Z.bau && Z.bau.mbz) { herunterladen(); status("Bereit", "ok"); }
+      else status("Die Datei ließ sich nicht erstellen.", "fehler");
       zeichneWiederherstellen(); knoepfe(); zeichneSchritte(); rueckmeldungFuellen();
-      if (Z.bau && Z.bau.mbz) $("herunterladen").focus();
-    } catch (e) { zeigeFehler(e); knoepfe(); }
+    } catch (e) { bauLaeuft = false; zeigeFehler(e); knoepfe(); }
   };
-  $("herunterladen").onclick = function () {
+  function herunterladen() {
     var b = Z.bau; if (b && b.mbz) download(b.mbz, b.downloadName || b.dateiname, "application/vnd.moodle.backup");
-  };
+  }
   $("glossar-laden").onclick = function () {
     var g = Z.bau && Z.bau.glossare;
     (g || []).forEach(function (x) { download(new TextEncoder().encode(x[1]), x[0], "application/xml"); });
@@ -1617,13 +1935,13 @@ window.km = km;
     try {
       var m = await km.mappeSchreiben();
       download(m.zip, m.dateiname, "application/zip");
-      $("autosave-stand").textContent = "Kursdatei gespeichert um " + zeit(Date.now());
+      $("autosave-stand").textContent = "Einheit gespeichert um " + zeit(Date.now());
       gespeichert = true;
       autosave();
       // Speichern schließt den laufenden Schritt ab, wenn er fertig ist (Befund des Autors): die Liste klappt zu,
       // der nächste Schritt erscheint
       var s = schritt();
-      if (s === 2 && zweig()) gehe(3);
+      if (s === 2 && zweig()) gehe(nachZwei());
       else if (s === 3) { Z.mappe.aussehen = true; gehe(4); }
       else if (s === 4 && Z.mappe.kopiert) gehe(5);
       else { auf = {}; zeichneSchritte(); }

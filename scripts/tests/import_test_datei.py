@@ -89,6 +89,9 @@ def main():
         page.click("#text-kopieren")
         page.click("#infobox-ok")
         page.wait_for_selector("#schritt-5[data-stand=aktiv]", timeout=30000)
+        # Die Antwort aus Lauf 1 entstand vor den Zählregeln (AP13.1; ein Quiz hat zwei Fragen); für die Datei des
+        # Import-Tests gelten die Prüfregeln der Mühle deshalb nicht
+        page.evaluate("km.zustand.mappe.kopiert = false")
         with open(ANTWORT, encoding="utf-8") as f:
             page.fill("#eingabe", f.read())
         page.wait_for_function("document.getElementById('eingabe-stand').textContent.startsWith('Übernommen')", timeout=60000)
@@ -99,11 +102,11 @@ def main():
         page.wait_for_function("!!km.zustand.assets['pythagoras-quadrate.png'] && "
                                "!km.zustand.pruefung.diagnosen.some(d => d.art === 'bild')", timeout=60000)
         page.click("#weiter-5")
+        if page.is_visible("#weiter-bilder"):          # AP13.1: Schritt Bilder, wenn die Antwort Bildwünsche hat
+            page.click("#weiter-bilder")
         page.click("#durchsicht-ok")
-        page.wait_for_function("!document.getElementById('erstellen').disabled", timeout=30000)
-        page.click("#erstellen")
-        page.wait_for_selector("#herunterladen:not([hidden])", timeout=60000)
-        with page.expect_download() as dl:
+        page.wait_for_selector("#herunterladen:visible", timeout=30000)
+        with page.expect_download(timeout=90000) as dl:
             page.click("#herunterladen")
         mbz = os.path.join(args.out, dl.value.suggested_filename)
         dl.value.save_as(mbz)

@@ -1,7 +1,7 @@
 """Text für den Chat (AP11, gen/prompt.py) und Einsetzen der Antwort (gen/mappe.py):
 - Text „Diese Einheit“ für jede der vier Einheitsvorlagen unter 10 KB, nur die vorkommenden Typen, alle `id:`,
   Leitplanken mit Zählregel, Checkliste höchstens zehn Zeilen
-- Chat-Varianten: Codeblock ja/nein, Stückelung („Teil 1 von 2“, jeder Teil unter 10 KB, alle IDs genau einmal),
+- Chat-Varianten: Codeblock ja/nein, Stückelung („Teil 1 von 2“, jeder Teil unter 12 KB, alle IDs genau einmal),
   Satz zum Aufwand nur bei ChatGPT (steht in der Oberfläche, nicht im Text), Bild-Prompts nur bei Chats mit Bildern
 - „Nur dieser Baustein“ unter 2 KB, mit bisherigem Inhalt als Kontext; „Alle leeren Bausteine“ nur die leeren
 - Einsetzen über `id:` (ersetzen, an den Platz eines geplanten Bausteins, ohne id an die markierte Karte, Fehler mit
@@ -100,7 +100,7 @@ def main():
         t = e["teile"][0]
         typen_v = typen_von(v, kat)
         im_text = set(re.findall(r"^### (\w+):", t, re.M))
-        ok(len(e["teile"]) == 1 and e["groessen"][0] < 10 * 1024, f"{v['name']}: ein Text, {e['groessen'][0]} Bytes")
+        ok(len(e["teile"]) == 1 and e["groessen"][0] < 12 * 1024, f"{v['name']}: ein Text, {e['groessen'][0]} Bytes")
         ok(im_text == typen_v, f"{v['name']}: Beispiele nur für {sorted(typen_v)}" + ("" if im_text == typen_v else f" (im Text {sorted(im_text)})"))
         ok(not (alle_typen - typen_v - {"Badge"}) & set(re.findall(r"^### (\w+):", t, re.M)), f"{v['name']}: keine fremden Typen")
         ids = [k["id"] for k in mappe["bausteine"] if not k.get("aus")]
@@ -129,20 +129,54 @@ def main():
     ids = [i for teil in st["ids"] for i in teil]
     ok(len(st["teile"]) == 2 and "Teil 1 von 2" in st["teile"][0] and "Teil 2 von 2" in st["teile"][1],
        f"ByLKI: gestückelt in {len(st['teile'])} Teile")
-    ok(ids == [k["id"] for k in mappe8["bausteine"] if not k.get("aus")] and all(g < 10 * 1024 for g in st["groessen"]),
+    ok(ids == [k["id"] for k in mappe8["bausteine"] if not k.get("aus")] and all(g < 12 * 1024 for g in st["groessen"]),
        f"Stückelung: jede id genau einmal, Größen {st['groessen']}")
     ok(all(f"id: {i} ·" in st["teile"][n] for n, teil in enumerate(st["ids"]) for i in teil)
        and not any(f"id: {i} ·" in st["teile"][1] for i in st["ids"][0]), "Stückelung: jeder Teil nur seine Bausteine")
     ok(P.chat("chatgpt").get("aufwand", "").count("Extra High") == 1 and not P.chat("ais").get("aufwand"),
        "Satz zum Aufwand nur bei ChatGPT")
-    ok("Bild-Prompt" in P.einheit(mappe, sb, "chatgpt")["teile"][0] and "Bild-Prompt" not in P.einheit(mappe, sb, "ais")["teile"][0],
-       "Bild-Prompts nur für Chats mit Bildern")
+    t_gpt, t_ais = P.einheit(mappe, sb, "chatgpt")["teile"][0], P.einheit(mappe, sb, "ais")["teile"][0]
+    ok("Erzeuge die Bilder" in t_gpt and "Erzeuge die Bilder" not in t_ais, "Bilder erzeugen nur für Chats mit Bildern")
+    ok(all("`Bildwunsch: name.png |" in x and "`Bildprompt: name.png |" in x and "`Bildprompt: …`" in x for x in (t_gpt, t_ais)),
+       "AP13.1: je Bild zwei Zeilen, Bildwunsch und Bildprompt (Formatzeile, Kopfzeile)")
+
+    # AP13.1 Zählregeln: Zeit nie wegerklären, Mindestmaße aus dem Katalog, Einstieg kurz, Denkaufgaben keine Übung
+    regeln = kat["pruefregeln"]
+    ok("Die Bausteine füllen die 45 Minuten" in t_ais and "nimm nie\nZeit außerhalb des Kurses an".replace("\n", " ") in t_ais
+       and "`Angenommen:` gilt nur für die Form" in t_ais and "Was an der Form nicht vorgegeben ist" in t_ais,
+       "Zeit nie wegerklären: Angenommen nur für die Form")
+    ok("ergänze Bausteine in der Phasenfolge" in t_ais and "Zusätzliche Bausteine nur" in t_ais and "keinen mehr" not in t_ais,
+       "fehlende Bausteine ergänzt der Chat in der Phasenfolge")
+    for e in kat["typen"]:
+        m = e.get("mindest")
+        if m and not m.get("nur") and e["typ"] in kat["automatisch"]["typen"]:
+            ok(f"{e['typ']} mindestens {m['zahl']} {m['einheit']}" in t_ais, f"Mindestmaß aus dem Katalog im Text: {e['typ']} {m['zahl']} {m['einheit']}")
+    ok("Hefteintrag mindestens 80 Wörter mit Zeilen `Merke: …`, Fachbegriffe **fett**" in t_ais, "Mindestmaß Hefteintrag")
+    ok(f"Der Einstieg hat höchstens {regeln['einstieg_woerter']} Wörter" in t_ais and "nimmt die Erarbeitung nicht vorweg" in t_ais,
+       "Einstieg höchstens 100 Wörter")
+    ok("Ein Kasten mit Fragen in einem Lesetext (Textfeld, Seite) ist keine Übung" in t_ais and "Quiz, Zuordnen, Lückentext, Lernkarten oder Test" in t_ais,
+       "Denkaufgaben-Kästen sind keine Übung")
+    fest = neue_mappe("P", [k for k in vorlage_karten(v) if k["typ"] != "automatisch"],
+                      {"thema": "Satz des Pythagoras", "jahrgang": "9", "minuten": 45})
+    tf = P.einheit(fest, sb, "ais")["teile"][0]
+    ok("· Typ frei ·" not in tf and all(f"- {t}: " in tf for t in kat["automatisch"]["typen"]) and "### Quiz:" in tf,
+       "ohne Karte „automatisch“: Typen und Formate zum Ergänzen stehen trotzdem im Text (Prompttest Lauf C)")
+    ok("keine Zeile `Angenommen:`" in t_ais and "dann b1-3" in t_ais, "ergänzte Bausteine: keine Annahme, ids -2, -3")
+    ok(list(kat["automatisch"]["typen"]) == ["Textfeld", "Seite", "Quiz", "Zuordnen", "Lernkarten", "Lückentext"],
+       "Typ automatisch bietet sechs Typen an (Entscheidung 24.10.)")
+    mz = neue_mappe("P", [dict(k, soll=20) if k["phase"] == "Einstieg" else k for k in vorlage_karten(v)],
+                    {"thema": "Satz des Pythagoras", "jahrgang": "9", "minuten": 45}) | {"zeit_selbst": True}
+    ok(re.search(r"Einstieg“ · Phase Einstieg · Fall mit einer Denkaufgabe im Kasten für 20 Minuten, etwa 80 Wörter",
+                 P.einheit(mz, sb, "ais")["teile"][0]), "Wortziel des Einstiegs mit Abstand unter 100 Wörtern")
+    kor = P.korrektur({"bausteine": [], "diagnosen": [{"stufe": "fehler", "text": "x", "baustein": None, "zeile": 3,
+                                                       "bitte": "Fülle die 45 Minuten mit Bausteinen."}]})
+    ok(kor[0]["satz"] == "Fülle die 45 Minuten mit Bausteinen.", "Korrektur: eigener Satz der Prüfung (bitte)")
     ok([c["gruppe"] for c in P.chats()][:4] == ["dienstlich"] * 4 and P.chats()[-1]["wert"] == "anderer",
        "Chat-Auswahl: dienstliche zuerst, anderer zuletzt")
     gross = neue_mappe("Groß", [M.geplant(f"x{i}", "Seite", f"Seite {i}", "Lesen", 5, "Ein langer Auftrag " * 20)
                            for i in range(40)])
     g = P.einheit(gross, sb, "ais")
-    ok(len(g["teile"]) > 1 and all(x < 10 * 1024 for x in g["groessen"]), f"über 10 KB: gestückelt {g['groessen']}")
+    ok(len(g["teile"]) > 1 and all(x < 12 * 1024 for x in g["groessen"]), f"über 12 KB: gestückelt {g['groessen']}")
     mat = P.einheit(mappe, sb, "ais", material="Heftaufschrieb: a² + b² = c²")
     ok("Material der Lehrkraft" in mat["teile"][0] and "a² + b² = c²" in mat["teile"][0], "Material im Text Diese Einheit")
 
@@ -244,12 +278,12 @@ def main():
        "Teilschritte in einer Zeile in der Reihenfolge Begriffe → benennen → Regel")
     ok([k["typ"] for k in karten if k["phase"] in ("Einstieg", "Sicherung")] == ["Textfeld", "Seite"],
        "feste Typen nur, wo die Phase sie vorgibt (Einstieg Text, Hefteintrag Seite)")
-    ok("2. id: b2 · Typ frei · Arbeitstitel „Lesetext mit Fragen“" in t and "Bei „Typ frei“ wählst du den Typ" in t
+    ok("2. id: b2 · Typ frei · Arbeitstitel „Lesetext mit Fragen“" in t and "Bei „Typ frei“ und bei Bausteinen, die du ergänzt, wählst du den Typ" in t
        and all(f"- {typ}: " in t for typ in kat["automatisch"]["typen"]) and "aus b3 wird b3-2" in t,
        "Typ frei: Zeile in der Liste, Typen zur Wahl mit je einer Zeile, zweiter Baustein mit -2")
     zeile1 = next(z for z in t.splitlines() if z.startswith("1. id: b1"))
     ok(re.search(r"Fall mit einer Denkaufgabe im Kasten für 8 Minuten", zeile1) is not None, f"Wortziel aus Soll und Rolle ({zeile1[:120]})")
-    ok("Hefteintrag zum Abschreiben für 6 Minuten, etwa 60 Wörter" in t, "Wortziel Hefteintrag")
+    ok("Hefteintrag zum Abschreiben für 6 Minuten, etwa 80 Wörter" in t, "Wortziel Hefteintrag, nie unter dem Mindestmaß (AP13.1)")
     m15 = neue_mappe("P", [M.geplant("x", "Seite", "Erarbeitung", "Erarbeitung", 15)], {"thema": "P", "jahrgang": "9"})
     ok("Lesetext für 15 Minuten, etwa 900 Wörter" in P.einheit(m15, sb, "ais")["teile"][0], "Erarbeitung 15 Minuten: etwa 900 Wörter (Anker 60 je Minute)")
     mq = neue_mappe("P", [M.geplant("q", "Quiz", "Übung", "Übung", 7), M.geplant("z", "Textfeld", "Was geprüft wird", "Überblick", 2)],
@@ -272,9 +306,9 @@ def main():
     ok("Bild Pflicht" not in P.einheit(m_d, sb_deutsch, "ais")["teile"][0], "Deutsch, Erörterung: keine Bild-Pflicht")
     sb_bio = M.angaben_schreiben("", {"thema": "Brüche im Alltag", "fach": "Alltagskompetenz", "jahrgang": "6"})
     ok(P.braucht_skizze(M.angaben_lesen(sb_bio), "Brüche im Alltag"), "Stichwort im Thema (Brüche) verlangt eine Skizze")
-    ok(all(g < 10 * 1024 for vl in kat["vorlagen"] for zs in (True, False) for g in P.einheit(
+    ok(all(g < 12 * 1024 for vl in kat["vorlagen"] for zs in (True, False) for g in P.einheit(
         neue_mappe("P", vorlage_karten(vl), {"thema": "Satz des Pythagoras", "jahrgang": "9", "minuten": 45}) | {"zeit_selbst": zs},
-        sb, "ais")["groessen"]), "alle Vorlagen unter 10 KB, mit und ohne Zeit je Phase")
+        sb, "ais")["groessen"]), "alle Vorlagen unter 12 KB, mit und ohne Zeit je Phase")
 
     # Antwort auf Typ frei: Typ kommt vom Chat, Teilschritt bleibt; zweiter Baustein b2-2 landet hinter b2
     antwort = ("# Drehbuch v1 · P\n\n## Pythagoras · 45 min\n### Textfeld: Die Leiter · 8 min\nid: b1\nEin Fall.\n"

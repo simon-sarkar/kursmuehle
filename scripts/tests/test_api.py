@@ -5,7 +5,9 @@ Prüft: pruefe erholt sich je ###, fehlendes Bild = Warnung + Platzhalter, Baust
 und relativer Zeile, Bereinigung (Allowlist, nur https, externe Adressen als Liste), Chat-Antwort mit Vorrede und ```,
 baue reproduzierbar (Zeit, Seed) und ohne Rest im Temp-Ordner, build.py nutzt dieselbe API (gleiche Bytes),
 Steckbrief-Rundlauf über Python (Datum, führende Null, no), Kursmappe schreiben/lesen/migrieren/aus 1.x-Ordner,
-VERSION gleich CHANGELOG.
+VERSION gleich CHANGELOG. AP13.1: Bildwunsch und Bildprompt je Bild, Prüfregeln der Mühle (Zeit-Annahme, Mindestmaße,
+Einstieg über 100 Wörter gelb, nur für kopierte Einheiten), Plan der Einheit (zu wenig Karten, fehlende Phase, auffüllen),
+einsetzen an eine Karte.
 """
 import glob
 import hashlib
@@ -307,6 +309,138 @@ def check_angaben():
     ok(p1["farbe"] == "#15803D", f"Akzentfarbe aus dem Steckbrief: {p1['farbe']}")
 
 
+def _einfuehrung(minuten=45):
+    """Karten der Vorlage Einführung wie die Mühle (b1 bis b6, b6 ausgeschaltet)."""
+    v = M.katalog()["vorlagen"][0]
+    out, n = [], 0
+    for ph in v["phasen"]:
+        for b in ph["bausteine"]:
+            n += 1
+            kopf, _, schritt = b.partition(" | ")
+            typ, _, titel = kopf.partition(":")
+            e = M.geplant(f"b{n}", typ.strip(), titel.strip(), ph["phase"], 8, schritt=schritt.strip())
+            if ph.get("optional"):
+                e["aus"] = True
+            out.append(e)
+    return {"format": 2, "bausteine": out, "einheit": {"thema": "Das Auge", "jahrgang": "5", "minuten": minuten,
+                                                       "vorlage": v["name"]}, "zeit_selbst": False}
+
+
+ANTWORT_AUGE = """```markdown
+# Drehbuch v1 · Das Auge · 45 min
+Angenommen: Kursformat Themen untereinander
+Angenommen: 30 Minuten entfallen auf angeleitete Unterrichtsgespräche außerhalb der Kursbausteine
+Bildwunsch: auge.png | Querschnitt eines Auges mit Hornhaut, Linse und Netzhaut
+Bildprompt: auge.png | Sachliche Schemazeichnung eines menschlichen Auges im Querschnitt, Hornhaut, Linse, Netzhaut, Sehnerv als Linien markiert, flache Farben, weißer Hintergrund, Querformat 3:2, keine Schrift
+
+## Das Auge · 45 min
+### Textfeld: Warum wir im Dunkeln wenig sehen · 5 min
+id: b1
+{einstieg}
+### Seite: Vom Licht zum Bild · 15 min
+id: b2
+Das Licht fällt durch die **Hornhaut** und die **Linse** auf die **Netzhaut**.
+Bild: auge.png | Querschnitt eines Auges
+### Zuordnen: Teile des Auges · 5 min
+id: b3
+zonen: vorne | hinten
+- Hornhaut → vorne
+- Netzhaut → hinten
+### Quiz: Prüfe dich · 5 min
+id: b4
+1. Wo entsteht das Bild? · ✔Netzhaut · Hornhaut
+### Seite: Hefteintrag · 5 min
+id: b5
+Das Auge bündelt Licht auf der Netzhaut.
+```"""
+
+
+def check_ap13_1():
+    # Bildwunsch und Bildprompt je Bild, Baustein zur Datei
+    pr = api.pruefe(ANTWORT_AUGE.format(einstieg="Ein Fall."))
+    bw = pr["bildwuensche"]
+    ok(len(bw) == 1 and bw[0]["datei"] == "auge.png" and bw[0]["wunsch"].startswith("Querschnitt") and "Querformat" in bw[0]["prompt"]
+       and bw[0]["baustein"] == "b2", f"Bildwunsch und Bildprompt je Bild, Baustein b2 ({bw})")
+    ok(not any("Bildprompt" in b["text"] or "Bildwunsch" in b["text"] for b in pr["bausteine"]), "Bildprompt landet nicht im Kurs")
+    ohne = api.bildwuensche("Bildwunsch: Ein Auge\nBildprompt: Zeichnung\n", [{"id": "x", "titel": "X", "text": "Bild: a.png | A\n"}])
+    ok(ohne[0]["datei"] == "a.png" and ohne[0]["prompt"] == "Zeichnung", "Wunsch ohne Dateinamen nimmt die genannte Bilddatei")
+
+    # Prüfregeln nur für kopierte Einheiten
+    lang = " ".join(["Ein Wort"] * 70)
+    md = ANTWORT_AUGE.format(einstieg=lang)
+    mappe = _einfuehrung()
+    ok(api.pruefe(md, mappe=mappe)["ok"] is True, "Prüfregeln gelten erst, wenn der Text kopiert wurde")
+    mappe["kopiert"] = True
+    pr = api.pruefe(md, mappe=mappe)
+    d = {(x.get("baustein"), x["art"]): x for x in pr["diagnosen"] if x["art"] in ("zeit", "mindest", "einstieg")}
+    zeit = d.get((None, "zeit"))
+    ok(zeit and zeit["stufe"] == "fehler" and zeit["zeile"] == 3 and zeit["bitte"].startswith("Fülle die 45 Minuten mit Bausteinen; "
+       "nimm keine Zeit außerhalb des Kurses an."), f"Zeit-Annahme ist ein Fehler mit eigenem Korrektursatz ({zeit})")
+    ok(not any(x["art"] == "zeit" and x["zeile"] == 2 for x in pr["diagnosen"]), "Angenommen zur Form bleibt erlaubt")
+    erg = md.replace("Angenommen: 30 Minuten entfallen auf angeleitete Unterrichtsgespräche außerhalb der Kursbausteine",
+                     "Angenommen: Zur Füllung der 45 Minuten ist ein Quiz (b4) ergänzt")
+    ok(not any(x["art"] == "zeit" for x in api.pruefe(erg, mappe=mappe)["diagnosen"]),
+       "Annahme mit Minuten, die ergänzte Bausteine nennt, ist keine Zeit-Annahme (Prompttest Lauf C)")
+    st = {b["id"]: b["status"] for b in pr["bausteine"]}
+    texte = {k: x["text"] for k, x in d.items()}
+    ok(texte.get(("b3", "mindest")) == "Nur 2 Paare, nötig sind mindestens 4" and texte.get(("b4", "mindest")) == "Nur 1 Frage, nötig sind mindestens 3",
+       f"Mindestmaße Zuordnen und Quiz aus dem Katalog ({texte})")
+    heft = [x["text"] for x in pr["diagnosen"] if x.get("baustein") == "b5"]
+    ok(any(t.startswith("Nur 7 Wörter, nötig sind mindestens 80") for t in heft) and any("Merksatz" in t for t in heft)
+       and any("fett" in t for t in heft), f"Hefteintrag: 80 Wörter, Merksatz, fett ({heft})")
+    ok(st["b3"] == st["b4"] == st["b5"] == "fehler" and st["b2"] in ("ok", "warnung"), f"rote Karten b3, b4, b5 ({st})")
+    ein = d.get(("b1", "einstieg"))
+    ok(ein and ein["stufe"] == "warnung" and st["b1"] == "warnung" and "hat 140 Wörter, vorgesehen sind höchstens 100" in ein["text"],
+       f"Einstieg über 100 Wörtern ist ein gelber Hinweis, kein Fehler ({ein and ein['text']})")
+    from gen import prompt as P
+    saetze = {k["baustein"]: k["satz"] for k in P.korrektur(pr)}
+    ok(saetze[None].startswith("Fülle die 45 Minuten") and "(id: b4)" in saetze["b4"] and "mindestens 3" in saetze["b4"],
+       "Korrektursätze: Zeit eigener Satz, Mindestmaß mit Titel und id")
+    gut = md.replace("- Netzhaut → hinten", "- Netzhaut → hinten\n- Linse → vorne\n- Sehnerv → hinten")
+    ok(next(b for b in api.pruefe(gut, mappe=mappe)["bausteine"] if b["id"] == "b3")["status"] != "fehler", "vier Paare: Zuordnen grün")
+
+    # Plan: zu wenig Karten, fehlende Phase, auffüllen
+    m2 = _einfuehrung()
+    m2["bausteine"] = [e for e in m2["bausteine"] if e["phase"] in ("Einstieg", "Sicherung", "Vertiefung")]
+    pl = M.planung(m2)
+    ok(pl["zu_wenig"] and pl["text"] == "2 Karten für 45 Minuten" and pl["fehlen"] == ["Keine Erarbeitung mehr", "Keine Übung mehr"],
+       f"Plan: 2 Karten für 45 Minuten, Erarbeitung und Übung fehlen ({pl})")
+    kz = M.kennzahlen(m2)
+    ok("Keine Übung mehr" in [h["text"] for h in kz["hinweise"] if h["stufe"] == "warnung"] and kz["planung"]["zu_wenig"],
+       "Kennzahlen: Warnung „Keine Übung mehr“ am Rand")
+    M.auffuellen(m2)
+    an = [e for e in m2["bausteine"] if not e.get("aus")]
+    ok([e["phase"] for e in an] == ["Einstieg", "Erarbeitung", "Übung", "Übung", "Sicherung"]
+       and [e["typ"] for e in an][1:4] == ["automatisch"] * 3 and len({e["id"] for e in m2["bausteine"]}) == len(m2["bausteine"])
+       and not M.planung(m2)["zu_wenig"] and not M.planung(m2)["fehlen"], f"Vorlage auffüllen setzt die Phasen in Folge ein ({[e['phase'] for e in an]})")
+    m3 = _einfuehrung(minuten=150)
+    ok(M.planung(m3)["zu_wenig"], "150 Minuten mit fünf Karten: zu wenig")
+    M.auffuellen(m3)
+    ok(not M.planung(m3)["zu_wenig"] and len(m3["bausteine"]) > 6, f"auffüllen ergänzt dehnbare Phasen ({len(m3['bausteine'])} Karten)")
+    ok(not M.planung(_einfuehrung(minuten=90))["zu_wenig"], "Vorlage Einführung mit 90 Minuten: keine Warnung")
+    m4 = _einfuehrung()
+    for e in m4["bausteine"]:
+        if e["phase"] == "Übung":
+            e["geplant"], e["typ"] = False, "Seite"
+    ok("Keine Übung mehr" in M.planung(m4)["fehlen"], "Seite in der Phase Übung zählt nicht als Übung (Denkaufgabe)")
+    ok(M.planung({"bausteine": [], "einheit": {"minuten": 45}})["fehlen"] == [], "ohne Vorlage keine Phasenwarnung")
+
+    # ein ergänzter Baustein ohne Karte füllt nicht die ausgeschaltete Vertiefung (Prompttest Lauf C)
+    m5 = _einfuehrung()
+    m5["bausteine"] = [e for e in m5["bausteine"] if e["phase"] not in ("Erarbeitung", "Übung")]
+    kurz = ("# D\n\n## Das Auge · 45 min\n### Textfeld: Kino · 5 min\nid: b1\nText.\n### Seite: Bau des Auges · 15 min\nid: b1-2\n"
+            "Text.\n### Seite: Hefteintrag · 10 min\nid: b5\nText.\n")
+    ab5 = M.abgleich(m5, api.pruefe(kurz)["bausteine"])
+    b6 = next(e for e in ab5["bausteine"] if e["id"] == "b6")
+    ok(b6["geplant"] and b6.get("aus") and next(e for e in ab5["bausteine"] if e["id"] == "b1-2")["phase"] == "",
+       "abgleich: ergänzter Baustein füllt keine ausgeschaltete Karte")
+
+    # einsetzen an eine Karte (Korrekturschleife), auch ohne id:
+    kurs = M.einsetzen(_einfuehrung(), "", ANTWORT_AUGE.format(einstieg="Ein Fall."))["kurs_md"]
+    r = M.einsetzen(_einfuehrung(), kurs, "### Quiz: Neu · 5 min\n1. A? · ✔a · b\n2. B? · ✔a · b\n3. C? · ✔a · b\n", nur="b4")
+    ok(r["ersetzt"] == ["b4"] and "### Quiz: Neu" in r["kurs_md"] and "id: b4" in r["kurs_md"], "einsetzen mit nur: Baustein ohne id an Karte b4")
+
+
 def check_version():
     top = lies(os.path.join(ROOT, "CHANGELOG.md")).split("## ", 2)[1].split(" ")[0]
     ok(api.VERSION == top, f"VERSION {api.VERSION} = CHANGELOG {top}")
@@ -323,6 +457,7 @@ def main():
     check_kennzahlen()
     check_angaben()
     check_version()
+    check_ap13_1()
     # AP13: nächste Einheit als Nachlieferung (teil: e2 je angehängtem Abschnitt, Bau nur dieses Teils), neue Schlüssel
     erste = "# Drehbuch v1 · A\n\n## Eins · 10 min\n### Textfeld: X\nid: b1\nHallo.\n"
     zweite = "```markdown\n# Drehbuch v1 · B\n\n## Zwei · 10 min\nteil: fremd\n### Textfeld: Y\nid: b2\nHallo zwei.\n```"
