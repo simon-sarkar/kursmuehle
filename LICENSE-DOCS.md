@@ -1,7 +1,7 @@
 # Lizenz für Texte, Vorlagen und Testkurse
 
 Alle Inhalte dieses Repositories außer dem Programmcode in `scripts/` – also
-`SKILL.md`, `README.md`, `ROADMAP.md`, `references/`, die Kursinhalte und
+`README.md`, die Texte der Projektseite, die Kursinhalte und
 Bilder der Testkurse in `scripts/tests/fixtures/` – stehen unter
 
 **Creative Commons Namensnennung – Nicht kommerziell – Weitergabe unter

@@ -16,11 +16,12 @@ keine Kurssicherungen; Links nur auf frei zugängliche Kurse (etwa teachSHARE).
 
 ## Rückmeldungen
 
-Rückmeldungen kommen über den Weg auf der Projektseite (ohne GitHub-Konto) oder als Issue. Hier stehen sie zusammengefasst,
-nach Datum, mit dem, was daraus im Skill geändert wurde.
+Rückmeldungen kommen über die Projektseite oder per Mail an kursmuehle@pm.me. Hilfreich sind Fach und Jahrgangsstufe, der
+verwendete Chat mit Modell, was gut lief und was nicht, und bei Fehlern der Wortlaut der Meldung (ohne Namen und ohne
+Kursinhalte von Schülerinnen und Schülern). Hier stehen sie zusammengefasst, nach Datum, mit dem, was daraus geändert wurde.
 
 | Datum | Rückmeldung | Folge |
 |---|---|---|
-| 2026-10-23 | Eigener Test: mit mittlerem Aufwand stoppt ChatGPT vor dem Bau und behauptet, Python fehle | SKILL.md 1.0.2: Bau sofort nach Freigabe, keine Vorab-Behauptung über fehlende Code-Ausführung |
-| 2026-10-23 | Eigener Test: Kursqualität hängt stark von Modell und Aufwand ab | README, Seite und Skill-Menü: Aufwand Extra High bei ChatGPT; bei kleinen Modellen Aufbau, Übungstypen und Umfang genau vorgeben |
+| 2026-10-23 | Eigener Test: mit mittlerem Aufwand stoppt ChatGPT vor dem Bau und behauptet, Python fehle | Version 1.0.2: Bau sofort nach Freigabe, keine Vorab-Behauptung über fehlende Code-Ausführung |
+| 2026-10-23 | Eigener Test: Kursqualität hängt stark von Modell und Aufwand ab | Hinweis auf Aufwand Extra High bei ChatGPT; bei kleinen Modellen Aufbau, Übungstypen und Umfang genau vorgeben |
 | 2026-10-23 | Eigener Test: Drehbücher aus AIS-Chat und fobizz bauen erst nach Handkorrekturen am Format | Parser 1.0.3: Angaben mit ` · ` in einer Zeile, Leerzeile nach `Schritte:`, Liefertexte ignoriert, LaTeX in Klartext |
