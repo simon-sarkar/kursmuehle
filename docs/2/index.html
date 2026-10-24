@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kursmühle</title>
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="ansicht.css">
+</head>
+<body data-muster="locker">
+<header class="kopf">
+  <a class="marke" href="#" aria-label="Kursmühle"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
+  <p id="kopf-status" class="status" role="status" aria-live="polite"></p>
+</header>
+<p id="testfassung" class="testfassung" hidden></p>
+
+<main class="seite">
+  <!-- Start: drei Felder, „Weiter mit …“ und Kursdatei öffnen zuerst -->
+  <section id="start" aria-labelledby="start-titel">
+    <p class="vorsatz">Alles bleibt in diesem Browser, nichts wird hochgeladen.</p>
+    <div id="weiter" class="weiter" hidden>
+      <button type="button" id="weiter-knopf" class="knopf haupt"></button>
+      <span id="weiter-zeit" class="leise"></span>
+    </div>
+    <h1 id="start-titel">Neue Einheit</h1>
+    <form id="start-form" class="start-form" autocomplete="off">
+      <label class="feld feld-thema">Thema
+        <input id="f-thema" type="text" required placeholder="zum Beispiel Bruchrechnen" maxlength="120">
+      </label>
+      <label class="feld feld-klein">Jahrgangsstufe
+        <input id="f-jahrgang" type="text" inputmode="numeric" maxlength="12" placeholder="7">
+      </label>
+      <label class="feld feld-klein">Minuten
+        <input id="f-minuten" type="number" min="10" max="300" step="5" value="45" inputmode="numeric">
+      </label>
+      <button type="submit" id="einheit-anlegen" class="knopf haupt">Einheit anlegen</button>
+    </form>
+    <div class="start-weitere">
+      <label for="datei-oeffnen" class="knopf">Kursdatei öffnen</label>
+      <label for="ordner-oeffnen" class="textlink">Ordner aus Kursmühle 1 öffnen</label>
+    </div>
+  </section>
+
+  <!-- Einheitsvorlage wählen -->
+  <section id="vorlage-wahl" aria-labelledby="vorlage-titel" hidden>
+    <h1 id="vorlage-titel">Wie ist die Einheit aufgebaut?</h1>
+    <p id="vorlage-thema" class="leise"></p>
+    <div id="vorlagen" class="vorlagen"></div>
+    <button type="button" id="vorlage-zurueck" class="textlink">Zurück</button>
+  </section>
+
+  <!-- Baustein-Ansicht -->
+  <section id="ansicht" aria-labelledby="titel" hidden>
+   <div class="spalte-haupt">
+    <div class="einheit-kopf">
+      <h1 id="titel"></h1>
+      <p id="unterzeile" class="leise"></p>
+      <details id="mehr" class="mehr">
+        <summary>Mehr einstellen</summary>
+        <div class="mehr-felder">
+          <label class="feld">Thema <input id="a-thema" type="text" maxlength="120"></label>
+          <label class="feld feld-klein">Jahrgangsstufe <input id="a-jahrgang" type="text" maxlength="12"></label>
+          <label class="feld feld-klein">Minuten <input id="a-minuten" type="number" min="10" max="300" step="5"></label>
+          <label class="feld">Fach <input id="a-fach" type="text" maxlength="60"></label>
+          <label class="feld">Schulart <select id="a-schulart"></select></label>
+          <label class="feld">Chat <select id="a-chat"></select></label>
+          <label class="feld">Kursformat <select id="a-format"></select></label>
+          <label class="feld">Designvorlage <select id="a-vorlage"></select></label>
+          <label class="feld">Farbe <select id="a-farbe"></select></label>
+          <label class="feld">Wie erscheinen Übungen? <select id="a-website"></select></label>
+          <label class="feld">Abschluss <select id="a-abschluss"></select></label>
+          <label class="feld">Umfang <select id="a-portionierung"></select></label>
+          <label class="schalter feld-breit"><input id="a-zeitplanung" type="checkbox"> Zeitplanung anzeigen
+            <span class="feld-zeile">Phase, Soll-Minuten und gerechnete Minuten an jeder Karte</span></label>
+          <label class="feld feld-breit">Dein Material (Stichpunkte, Heftaufschrieb)
+            <textarea id="a-material" rows="4" spellcheck="true"></textarea>
+            <span class="feld-zeile">Nur Material, an dem du die Rechte hast.</span>
+            <span id="material-grenze" class="feld-zeile"></span>
+          </label>
+        </div>
+      </details>
+    </div>
+
+    <div class="reiter" role="tablist" aria-label="Ansicht">
+      <button type="button" id="reiter-bausteine" class="reiter-knopf" role="tab" aria-selected="true" aria-controls="tafel-bausteine">Bausteine</button>
+      <button type="button" id="reiter-fragen" class="reiter-knopf" role="tab" aria-selected="false" aria-controls="tafel-fragen">Fragen und Lösungen</button>
+    </div>
+
+    <div id="tafel-bausteine" role="tabpanel" aria-labelledby="reiter-bausteine">
+    <p id="rueckgaengig" class="rueckgaengig" hidden><span id="rueckgaengig-text"></span>
+      <button type="button" id="rueckgaengig-knopf" class="textlink">Rückgängig</button></p>
+    <ol id="karten" class="karten"></ol>
+    <p id="karten-leer" class="leise" hidden>Noch keine Bausteine.</p>
+    <div class="hinzufuegen">
+      <label for="neu-typ" class="unsichtbar">Typ des neuen Bausteins</label>
+      <select id="neu-typ"></select>
+      <button type="button" id="neu-hinzufuegen" class="knopf">Baustein hinzufügen</button>
+    </div>
+
+    <section id="chat-teil" class="chat-teil" aria-labelledby="chat-titel">
+      <h2 id="chat-titel" class="abschnitt-titel">Text für den Chat</h2>
+      <div id="chat-wahl" class="chat-wahl" hidden>
+        <p>Wo fügst du den Text ein?</p>
+        <div id="chat-knoepfe" class="chat-knoepfe"></div>
+        <p class="leise">Über private Konten entscheidet deine Schule.</p>
+      </div>
+      <div id="chat-text" hidden>
+        <div class="text-art" role="radiogroup" aria-label="Welcher Text">
+          <label><input type="radio" name="text-art" value="einheit" checked> Diese Einheit</label>
+          <label id="art-leer-l" hidden><input type="radio" name="text-art" value="leer"> Alle leeren Bausteine</label>
+          <label id="art-baustein-l" hidden><input type="radio" name="text-art" value="baustein"> <span id="art-baustein-text">Nur dieser Baustein</span></label>
+        </div>
+        <div id="teil-wahl" class="teil-wahl" role="group" aria-label="Teil" hidden></div>
+        <p id="chat-zeile" class="leise"></p>
+        <p id="chat-aufwand" class="chat-aufwand" hidden></p>
+        <div class="kopieren">
+          <button type="button" id="text-kopieren" class="knopf haupt" disabled>Text kopieren</button>
+          <button type="button" id="chat-aendern" class="textlink">Anderer Chat</button>
+        </div>
+        <div id="infobox" class="infobox" role="dialog" aria-labelledby="infobox-text" hidden>
+          <p id="infobox-text">Füge eigenes Material nur ein, wenn du die Rechte daran hast. Im Chat gelten seine Nutzungsbedingungen.</p>
+          <label class="infobox-nie"><input type="checkbox" id="infobox-nie"> Nicht mehr anzeigen</label>
+          <button type="button" id="infobox-ok" class="knopf haupt">Verstanden, Text kopieren</button>
+        </div>
+        <p id="kopiert" class="stand" role="status" aria-live="polite"></p>
+        <details class="text-ansehen">
+          <summary>Text ansehen und selbst markieren</summary>
+          <textarea id="chat-text-feld" rows="12" readonly spellcheck="false" aria-label="Text für den Chat"></textarea>
+        </details>
+      </div>
+    </section>
+
+    <div class="einfuegen">
+      <label for="eingabe" class="abschnitt-titel">Antwort des Chats</label>
+      <p class="leise">Kopiere die ganze Antwort mit dem Kopierknopf des Chats und füge sie hier ein. Aufträge, Phasen und Soll-Minuten bleiben.</p>
+      <div class="modus" role="radiogroup" aria-label="Wie die Antwort eingesetzt wird">
+        <label><input type="radio" name="modus" value="ersetzen" checked> Einheit ersetzen</label>
+        <label><input type="radio" name="modus" value="baustein"> <span id="modus-baustein-text">Nur Baustein ersetzen</span></label>
+        <label><input type="radio" name="modus" value="anhaengen"> Als weitere Einheit anhängen</label>
+      </div>
+      <textarea id="eingabe" rows="6" spellcheck="false" placeholder="Hier einfügen (Strg+V oder lange drücken)"></textarea>
+      <p id="eingabe-stand" class="stand" role="status" aria-live="polite"></p>
+      <div id="korrektur" class="korrektur" hidden>
+        <p class="leise">Sätze an den Chat, einer je Fehler:</p>
+        <ul id="korrektur-liste" class="korrektur-liste"></ul>
+        <button type="button" id="korrektur-kopieren" class="knopf">Bitte um Korrektur kopieren</button>
+        <p id="korrektur-stand" class="stand" role="status" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <section id="gegenpruefen" class="gegenpruefen" aria-labelledby="gegen-titel" hidden>
+      <h2 id="gegen-titel" class="abschnitt-titel">Lösungen gegenprüfen</h2>
+      <p class="leise">Ein neuer Chat löst die Aufgaben, ohne die Lösungen zu sehen. Du siehst danach nur, wo er anders antwortet.</p>
+      <div class="kopieren">
+        <button type="button" id="gegen-kopieren" class="knopf">Aufgaben für einen neuen Chat kopieren</button>
+      </div>
+      <p id="gegen-kopiert" class="stand" role="status" aria-live="polite"></p>
+      <details class="text-ansehen">
+        <summary>Text ansehen und selbst markieren</summary>
+        <textarea id="gegen-text-feld" rows="10" readonly spellcheck="false" aria-label="Aufgaben für einen neuen Chat"></textarea>
+      </details>
+      <label for="gegen-antwort" class="feld">Antwort des neuen Chats</label>
+      <textarea id="gegen-antwort" rows="4" spellcheck="false" placeholder="Hier einfügen"></textarea>
+      <p id="gegen-stand" class="stand" role="status" aria-live="polite"></p>
+      <ul id="gegen-ergebnis" class="gegen-ergebnis"></ul>
+    </section>
+    </div>
+
+    <div id="tafel-fragen" role="tabpanel" aria-labelledby="reiter-fragen" hidden>
+      <p id="fragen-zeile" class="leise"></p>
+      <ol id="fragen-liste" class="fragen-liste"></ol>
+    </div>
+
+   </div>
+   <aside class="spalte-rand" aria-label="Stand und Kursdatei">
+    <div id="diagnosen" class="diagnosen rand-block" aria-label="Stand der Einheit">
+      <dl class="zahlen">
+        <div><dt>Minuten</dt><dd id="kz-minuten">–</dd></div>
+        <div><dt>Folge</dt><dd id="kz-folge">–</dd></div>
+        <div><dt>Multiple Choice</dt><dd id="kz-mc">–</dd></div>
+        <div><dt>Rückmeldung</dt><dd id="kz-rueckmeldung">–</dd></div>
+      </dl>
+      <ul id="hinweise" class="hinweise"></ul>
+      <button type="button" id="hinweise-mehr" class="textlink" hidden></button>
+    </div>
+
+    <div class="abschluss-leiste rand-block">
+      <div class="erstellen">
+        <button type="button" id="erstellen" class="knopf haupt" disabled>Datei für die Lernplattform erstellen</button>
+        <button type="button" id="herunterladen" class="knopf haupt" hidden>Herunterladen</button>
+        <p id="erstellen-stand" class="stand" role="status" aria-live="polite"></p>
+        <p id="durchsicht" class="durchsicht" hidden>
+          <button type="button" id="durchsicht-oeffnen" class="textlink">Fragen und Lösungen ansehen</button>
+          <button type="button" id="ohne-durchsicht" class="textlink">Ohne Durchsicht freigeben</button>
+        </p>
+      </div>
+      <div class="kursdatei">
+        <button type="button" id="speichern" class="knopf" disabled>Kursdatei speichern</button>
+        <label for="datei-oeffnen" class="knopf">Kursdatei öffnen</label>
+        <button type="button" id="neue-einheit" class="textlink">Neue Einheit</button>
+        <p id="autosave-stand" class="leise"></p>
+      </div>
+    </div>
+   </aside>
+  </section>
+
+  <input id="datei-oeffnen" class="unsichtbar" type="file" multiple accept=".zip,application/zip,.md,.yaml,.yml,image/png,image/jpeg">
+  <input id="ordner-oeffnen" class="unsichtbar" type="file" multiple webkitdirectory>
+  <datalist id="phasen"></datalist>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

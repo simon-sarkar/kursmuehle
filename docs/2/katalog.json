@@ -1,0 +1,576 @@
+{
+ "typen": [
+  {
+   "typ": "Banner",
+   "formularname": "Kursbanner",
+   "rolle": "rahmen",
+   "minuten": false
+  },
+  {
+   "typ": "Textfeld",
+   "formularname": "Text",
+   "rolle": "lesen",
+   "minuten": true
+  },
+  {
+   "typ": "Seite",
+   "formularname": "Seite",
+   "rolle": "lesen",
+   "minuten": true
+  },
+  {
+   "typ": "Überblick",
+   "formularname": "Überblick",
+   "rolle": "rahmen",
+   "minuten": false
+  },
+  {
+   "typ": "Link",
+   "formularname": "Link",
+   "rolle": "lesen",
+   "minuten": true
+  },
+  {
+   "typ": "Video",
+   "formularname": "Video",
+   "rolle": "lesen",
+   "minuten": true
+  },
+  {
+   "typ": "Lesebuch",
+   "formularname": "Lesebuch mit Fragen",
+   "rolle": "lesen",
+   "minuten": true
+  },
+  {
+   "typ": "Quiz",
+   "formularname": "Quiz",
+   "rolle": "üben",
+   "minuten": true
+  },
+  {
+   "typ": "Zuordnen",
+   "formularname": "Zuordnen",
+   "rolle": "üben",
+   "minuten": true
+  },
+  {
+   "typ": "Lernkarten",
+   "formularname": "Lernkarten",
+   "rolle": "üben",
+   "minuten": true
+  },
+  {
+   "typ": "Geschichte",
+   "formularname": "Geschichte",
+   "rolle": "üben",
+   "minuten": true
+  },
+  {
+   "typ": "Lückentext",
+   "formularname": "Lückentext",
+   "rolle": "üben",
+   "minuten": true
+  },
+  {
+   "typ": "Umfrage",
+   "formularname": "Selbsteinschätzung",
+   "rolle": "rahmen",
+   "minuten": true
+  },
+  {
+   "typ": "Badge",
+   "formularname": "Abzeichen",
+   "rolle": "rahmen",
+   "minuten": false
+  },
+  {
+   "typ": "Unterabschnitt",
+   "formularname": "Unterabschnitt",
+   "rolle": "rahmen",
+   "minuten": false
+  },
+  {
+   "typ": "Test",
+   "formularname": "Test (bewertet)",
+   "rolle": "sichern",
+   "minuten": true
+  },
+  {
+   "typ": "Aufgabe",
+   "formularname": "Aufgabe (Abgabe)",
+   "rolle": "sichern",
+   "minuten": true
+  },
+  {
+   "typ": "Datei",
+   "formularname": "Datei",
+   "rolle": "lesen",
+   "minuten": false
+  },
+  {
+   "typ": "Verzeichnis",
+   "formularname": "Dateiordner",
+   "rolle": "lesen",
+   "minuten": false
+  },
+  {
+   "typ": "Forum",
+   "formularname": "Forum",
+   "rolle": "rahmen",
+   "minuten": false
+  },
+  {
+   "typ": "Buch",
+   "formularname": "Buch",
+   "rolle": "lesen",
+   "minuten": true
+  },
+  {
+   "typ": "Abstimmung",
+   "formularname": "Abstimmung",
+   "rolle": "rahmen",
+   "minuten": false
+  },
+  {
+   "typ": "Glossar",
+   "formularname": "Glossar",
+   "rolle": "lesen",
+   "minuten": false
+  }
+ ],
+ "vorlagen": [
+  {
+   "name": "Einführung",
+   "zeile": "neues Thema",
+   "phasen": [
+    {
+     "phase": "Einstieg",
+     "anteil": 8,
+     "rolle": "einstieg",
+     "bausteine": [
+      "Textfeld"
+     ]
+    },
+    {
+     "phase": "Hinführung",
+     "anteil": 7,
+     "rolle": "einstieg",
+     "bausteine": [
+      "Textfeld"
+     ]
+    },
+    {
+     "phase": "Zielangabe",
+     "anteil": 2,
+     "rolle": "rahmen",
+     "bausteine": [
+      "Textfeld"
+     ]
+    },
+    {
+     "phase": "Erarbeitung",
+     "anteil": 35,
+     "rolle": "lesen",
+     "dehnbar": true,
+     "bausteine": [
+      "Seite: Erarbeitung 1 | Neue Begriffe einführen, jeden an einer Skizze oder einem Beispiel; noch keine Regel.",
+      "Zuordnen: Erarbeitung 2 | Die neuen Begriffe an Beispielen markieren oder benennen; nur, was Erarbeitung 1 eingeführt hat.",
+      "Seite: Erarbeitung 3 | Die Regel oder den Satz herleiten, im Merke-Kasten festhalten und an zwei durchgerechneten Beispielen mit Zwischenschritten zeigen."
+     ]
+    },
+    {
+     "phase": "Übung",
+     "anteil": 30,
+     "rolle": "üben",
+     "dehnbar": true,
+     "bausteine": [
+      "Zuordnen: Übung leicht | Die Regel anwenden, leichte Fälle.",
+      "Quiz: Übung mit Eingabe | Die Regel anwenden, mit Eingabe und einem Fall; ein Ergebnis geht nicht auf und wird gerundet."
+     ]
+    },
+    {
+     "phase": "Sicherung",
+     "anteil": 13,
+     "rolle": "sichern",
+     "bausteine": [
+      "Seite: Hefteintrag | Hefteintrag zum Abschreiben: Begriffe, Regel, ein Beispiel.",
+      "Quiz: Abschlussquiz"
+     ]
+    },
+    {
+     "phase": "Vertiefung",
+     "anteil": 5,
+     "rolle": "sichern",
+     "optional": true,
+     "bausteine": [
+      "Quiz: Der Fall vom Anfang | Den Fall aus dem Einstieg mit der Regel lösen."
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Übung und Vertiefung",
+   "zeile": "Thema ist bekannt",
+   "phasen": [
+    {
+     "phase": "Aufwärmen",
+     "anteil": 10,
+     "rolle": "einstieg",
+     "bausteine": [
+      "Zuordnen"
+     ]
+    },
+    {
+     "phase": "Kurz erinnern",
+     "anteil": 10,
+     "rolle": "lesen",
+     "bausteine": [
+      "Seite"
+     ]
+    },
+    {
+     "phase": "Üben in Stufen",
+     "anteil": 55,
+     "rolle": "üben",
+     "dehnbar": true,
+     "bausteine": [
+      "Quiz: Stufe 1",
+      "Lückentext: Stufe 2",
+      "Quiz: Stufe 3"
+     ]
+    },
+    {
+     "phase": "Selbstkontrolle",
+     "anteil": 15,
+     "rolle": "sichern",
+     "bausteine": [
+      "Quiz: Abschlussquiz"
+     ]
+    },
+    {
+     "phase": "Vertiefung",
+     "anteil": 10,
+     "rolle": "sichern",
+     "optional": true,
+     "bausteine": [
+      "Geschichte: Neuer Fall"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Wiederholung und Prüfungsvorbereitung",
+   "zeile": "Fragenkatalog oder Stoffliste liegt vor",
+   "phasen": [
+    {
+     "phase": "Überblick",
+     "anteil": 5,
+     "rolle": "rahmen",
+     "bausteine": [
+      "Textfeld: Was geprüft wird"
+     ]
+    },
+    {
+     "phase": "Erinnern",
+     "anteil": 25,
+     "rolle": "lesen",
+     "dehnbar": true,
+     "bausteine": [
+      "Buch"
+     ]
+    },
+    {
+     "phase": "Üben nach Teilthemen",
+     "anteil": 45,
+     "rolle": "üben",
+     "dehnbar": true,
+     "bausteine": [
+      "Quiz: Teilthema 1",
+      "Quiz: Teilthema 2"
+     ]
+    },
+    {
+     "phase": "Probelauf",
+     "anteil": 20,
+     "rolle": "sichern",
+     "bausteine": [
+      "Test: Probelauf"
+     ]
+    },
+    {
+     "phase": "Reflexion",
+     "anteil": 5,
+     "rolle": "sichern",
+     "optional": true,
+     "bausteine": [
+      "Umfrage: Was noch unsicher ist"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Einheit aus eigenem Material",
+   "zeile": "Folien, Heftbilder, Arbeitsblatt",
+   "phasen": [
+    {
+     "phase": "Einstieg",
+     "anteil": 10,
+     "rolle": "einstieg",
+     "bausteine": [
+      "Textfeld"
+     ]
+    },
+    {
+     "phase": "Lesen",
+     "anteil": 35,
+     "rolle": "lesen",
+     "dehnbar": true,
+     "bausteine": [
+      "Seite"
+     ]
+    },
+    {
+     "phase": "Üben",
+     "anteil": 30,
+     "rolle": "üben",
+     "dehnbar": true,
+     "bausteine": [
+      "Zuordnen: Übung 1",
+      "Quiz: Übung 2"
+     ]
+    },
+    {
+     "phase": "Sichern",
+     "anteil": 20,
+     "rolle": "sichern",
+     "bausteine": [
+      "Seite: Hefteintrag",
+      "Quiz: Abschlussquiz"
+     ]
+    },
+    {
+     "phase": "Anwendung",
+     "anteil": 5,
+     "rolle": "sichern",
+     "optional": true,
+     "bausteine": [
+      "Quiz: Anwendung"
+     ]
+    }
+   ]
+  }
+ ],
+ "oberflaeche": {
+  "format": [
+   {
+    "wert": "themen",
+    "text": "Themen untereinander"
+   },
+   {
+    "wert": "kacheln",
+    "text": "Kacheln"
+   },
+   {
+    "wert": "komprimiert",
+    "text": "Themen zum Aufklappen"
+   },
+   {
+    "wert": "einthemen",
+    "text": "Ein Thema je Reiter"
+   },
+   {
+    "wert": "wochen",
+    "text": "Wochen"
+   }
+  ],
+  "vorlage": [
+   {
+    "wert": "schlicht",
+    "text": "Schlicht"
+   },
+   {
+    "wert": "kacheln",
+    "text": "Getönte Flächen"
+   },
+   {
+    "wert": "magazin",
+    "text": "Magazin"
+   }
+  ],
+  "schulart": [
+   {
+    "wert": "",
+    "text": "Nicht angegeben"
+   },
+   {
+    "wert": "Grundschule",
+    "text": "Grundschule"
+   },
+   {
+    "wert": "Mittelschule",
+    "text": "Mittelschule"
+   },
+   {
+    "wert": "Realschule",
+    "text": "Realschule"
+   },
+   {
+    "wert": "Gymnasium",
+    "text": "Gymnasium"
+   },
+   {
+    "wert": "Wirtschaftsschule",
+    "text": "Wirtschaftsschule"
+   },
+   {
+    "wert": "Förderschule",
+    "text": "Förderschule"
+   },
+   {
+    "wert": "Berufliche Schule",
+    "text": "Berufliche Schule"
+   }
+  ],
+  "farbe": [
+   {
+    "wert": "",
+    "text": "Wie die Vorlage"
+   },
+   {
+    "wert": "blau",
+    "text": "Blau"
+   },
+   {
+    "wert": "grün",
+    "text": "Grün"
+   },
+   {
+    "wert": "rot",
+    "text": "Rot"
+   },
+   {
+    "wert": "orange",
+    "text": "Orange"
+   },
+   {
+    "wert": "lila",
+    "text": "Lila"
+   }
+  ],
+  "website": [
+   {
+    "wert": "textfeld",
+    "text": "Auf der Kursseite"
+   },
+   {
+    "wert": "nein",
+    "text": "Als eigene Aktivität"
+   }
+  ],
+  "abschluss": [
+   {
+    "wert": "keiner",
+    "text": "Kein Abschlusstest"
+   },
+   {
+    "wert": "test",
+    "text": "Abschlusstest"
+   },
+   {
+    "wert": "test und abzeichen",
+    "text": "Abschlusstest mit Abzeichen"
+   }
+  ],
+  "portionierung": [
+   {
+    "wert": "keine",
+    "text": "Alles sofort sichtbar"
+   },
+   {
+    "wert": "etappen",
+    "text": "In Etappen sichtbar"
+   },
+   {
+    "wert": "wochen",
+    "text": "Wochenweise sichtbar"
+   }
+  ]
+ },
+ "chats": [
+  {
+   "wert": "bylki",
+   "text": "ByLKI",
+   "gruppe": "dienstlich",
+   "codeblock": true,
+   "teil_bausteine": 6,
+   "eingabe_kb": null,
+   "bilder": false
+  },
+  {
+   "wert": "ais",
+   "text": "AIS-Chat",
+   "gruppe": "dienstlich",
+   "codeblock": true,
+   "teil_bausteine": null,
+   "eingabe_kb": 68,
+   "bilder": false
+  },
+  {
+   "wert": "fobizz",
+   "text": "fobizz",
+   "gruppe": "dienstlich",
+   "codeblock": true,
+   "teil_bausteine": null,
+   "eingabe_kb": 68,
+   "bilder": false
+  },
+  {
+   "wert": "mucgpt",
+   "text": "MUCGPT",
+   "gruppe": "dienstlich",
+   "codeblock": true,
+   "teil_bausteine": 6,
+   "eingabe_kb": null,
+   "bilder": false
+  },
+  {
+   "wert": "chatgpt",
+   "text": "ChatGPT",
+   "gruppe": "privat",
+   "codeblock": true,
+   "teil_bausteine": null,
+   "eingabe_kb": null,
+   "bilder": true,
+   "aufwand": "Stell in ChatGPT vor dem Senden den Aufwand auf Extra High, das geht auch im kostenlosen Konto."
+  },
+  {
+   "wert": "claude",
+   "text": "Claude",
+   "gruppe": "privat",
+   "codeblock": true,
+   "teil_bausteine": null,
+   "eingabe_kb": null,
+   "bilder": false
+  },
+  {
+   "wert": "gemini",
+   "text": "Gemini",
+   "gruppe": "privat",
+   "codeblock": true,
+   "teil_bausteine": null,
+   "eingabe_kb": null,
+   "bilder": true
+  },
+  {
+   "wert": "anderer",
+   "text": "Anderer Chat",
+   "gruppe": "anderer",
+   "codeblock": true,
+   "teil_bausteine": 6,
+   "eingabe_kb": null,
+   "bilder": false
+  }
+ ],
+ "version": "2.0.0-a4"
+}
