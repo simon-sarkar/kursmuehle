@@ -1503,7 +1503,7 @@ window.km = km;
     });
     var t = texte.teile[texte.teil] || "";
     $("chat-zeile").textContent = !t ? (Z.geladen ? "Der Text entsteht …" : "Der Text entsteht, sobald die Seite bereit ist.")
-      : "Für " + c.text + (texte.teile.length > 1 ? ", Teil " + (texte.teil + 1) + " von " + texte.teile.length + ". Kopiere die Teile nacheinander in denselben Chat." : "") + " · " + kb(new Blob([t]).size);
+      : "Für " + c.text + (texte.teile.length > 1 ? ", Teil " + (texte.teil + 1) + " von " + texte.teile.length + ". Je Teil: in dasselbe Gespräch einfügen, die Antwort in Schritt " + nrVon(5) + " übernehmen, dann der nächste Teil." : "") + " · " + kb(new Blob([t]).size);
     if ($("chat-text-feld").value !== t) $("chat-text-feld").value = t;
     $("text-kopieren").disabled = !t;
     $("text-kopieren").textContent = texte.teile.length > 1 ? "Teil " + (texte.teil + 1) + " kopieren" : "Text kopieren";
@@ -1595,8 +1595,8 @@ window.km = km;
     zeichne(); autosave();
     if (naechster >= 0) {
       texte.teil = naechster; zeichneChat();
-      $("kopiert").textContent = "Teil " + kopierterTeil + " kopiert. Füge ihn in ein neues Gespräch im Chat ein und die Antwort des Chats in Schritt " + nrVon(5)
-        + ". Danach kommt Teil " + (naechster + 1) + " ins selbe Gespräch.";
+      $("kopiert").textContent = "Teil " + kopierterTeil + " kopiert. Füge ihn " + (kopierterTeil === 1 ? "in ein neues Gespräch" : "in dasselbe Gespräch") + " ein und die Antwort in Schritt " + nrVon(5)
+        + "; danach kommt Teil " + (naechster + 1) + " dran.";
     }
   }
   function textKopieren() { kopieren($("chat-text-feld").value, $("chat-text-feld"), $("kopiert"), KOPIERT, textKopiert); }
