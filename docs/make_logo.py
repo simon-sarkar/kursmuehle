@@ -4,6 +4,7 @@ import math, os
 
 FG, BG, AC = "#2a2a2a", "#f3e9d8", "#d9a441"
 FONT = "Segoe UI, Helvetica Neue, Arial, sans-serif"
+TEETH, PHASE = 10, 54.0  # Zahnrad: Zähnezahl und Mitte des ersten Zahns (Grad, SVG-Winkel ab +x im Uhrzeigersinn)
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -19,16 +20,20 @@ def cog(cx, cy, r_out, r_in, teeth, phase_deg=0.0):
     return "M" + " L".join(f"{x:.1f},{y:.1f}" for x, y in pts) + " Z"
 
 
-def mark(fg, bg, ac, hx=128, hy=98):
-    """Mühle: Turm, vier Flügel hinter dem Zahnrad (13 Zähne, ungerade -> nie spiegelsymmetrisch zu den Flügeln),
-    dünner Rand in Hintergrundfarbe trennt Rad und Flügel, Nabe in Akzentfarbe, Kacheln als Fenster."""
+def mark(fg, bg, ac, hx=128, hy=98, gap=5):
+    """Mühle: Turm, vier Flügel hinter dem Zahnrad, dünner Rand in Hintergrundfarbe trennt Rad und Flügel,
+    Nabe in Akzentfarbe, Kacheln als Fenster. Zahnrad: 10 Zähne, Phase 54° -> jeder Flügel sitzt auf einer
+    Zahnflanke mit einem Zahn direkt daneben; gegenüberliegende Flügel gleich, links/rechts und oben/unten
+    gespiegelt (Simon 24.10.2026, Variante B). Bei anderer Zähnezahl müsste die Phase neu bestimmt werden.
+    gap = Breite des Trennrands: 5 für helle Mühle auf dunklem Grund, 4 für dunkle Mühle auf hellem Grund
+    (heller Spalt wirkt optisch breiter als dunkler, Simon 24.10.2026)."""
     sails = "".join(
         f'<g transform="rotate({a} {hx} {hy})"><path d="M{hx-7},{hy-40} L{hx+7},{hy-40} L{hx+15},{hy-96} Q{hx},{hy-108} {hx-15},{hy-96} Z" fill="{fg}"/></g>'
         for a in (45, 135, 225, 315))
-    gear = cog(hx, hy, 50, 38, 13, phase_deg=45)
+    gear = cog(hx, hy, 50, 38, TEETH, phase_deg=PHASE)
     return f'''<path d="M100,236 L156,236 L147,150 L109,150 Z" fill="{fg}"/>
   {sails}
-  <path d="{gear}" fill="{fg}" stroke="{bg}" stroke-width="5" stroke-linejoin="round"/>
+  <path d="{gear}" fill="{fg}" stroke="{bg}" stroke-width="{gap}" stroke-linejoin="round"/>
   <circle cx="{hx}" cy="{hy}" r="22" fill="{bg}"/>
   <circle cx="{hx}" cy="{hy}" r="9" fill="{ac}"/>
   <rect x="115" y="170" width="12" height="12" rx="3" fill="{bg}"/>
@@ -37,9 +42,9 @@ def mark(fg, bg, ac, hx=128, hy=98):
   <rect x="131" y="188" width="12" height="12" rx="3" fill="{ac}"/>'''
 
 
-def icon(fg, bg, ac):
+def icon(fg, bg, ac, gap=5):
     return (f'<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="Kursmühle">\n'
-            f'  <rect width="256" height="256" rx="56" fill="{bg}"/>\n  {mark(fg, bg, ac)}\n</svg>')
+            f'  <rect width="256" height="256" rx="56" fill="{bg}"/>\n  {mark(fg, bg, ac, gap=gap)}\n</svg>')
 
 
 def wortmarke():
@@ -51,10 +56,11 @@ def wortmarke():
 
 
 def banner():
-    # Wasserzeichen rechts = dieselbe Mühle wie im Logo (Flügel am Zahnkranz), ohne Turm
+    # Wasserzeichen rechts = dieselbe Mühle wie im Logo ohne Turm, exakt 1,5-fach (Flügelfuß 40 -> 60, Rad 50 -> 75);
+    # Trennrand 5 statt proportional 8, sonst wirken die Flügel bei 7 % Deckung zu weit vom Rad getrennt (Simon 24.10.2026)
     motif = "".join(
-        f'<g transform="rotate({a})"><path d="M-10,-66 L10,-66 L22,-144 Q0,-162 -22,-144 Z"/></g>' for a in (45, 135, 225, 315)
-    ) + f'<path d="{cog(0, 0, 75, 57, 13, phase_deg=45)}" stroke="{BG}" stroke-width="8" stroke-linejoin="round"/>' 
+        f'<g transform="rotate({a})"><path d="M-10.5,-60 L10.5,-60 L22.5,-144 Q0,-162 -22.5,-144 Z"/></g>' for a in (45, 135, 225, 315)
+    ) + f'<path d="{cog(0, 0, 75, 57, TEETH, phase_deg=PHASE)}" stroke="{BG}" stroke-width="5" stroke-linejoin="round"/>' 
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-label="Kursmühle – für die ByCS-Lernplattform">
   <rect width="1200" height="300" rx="18" fill="{BG}"/>
   <g transform="translate(60,46) scale(0.8)"><rect width="256" height="256" rx="56" fill="{FG}"/>{mark(BG, FG, AC)}</g>
@@ -78,9 +84,9 @@ if __name__ == "__main__":
     version = open(os.path.join(HERE, "..", "CHANGELOG.md"), encoding="utf-8").read().split("## ", 2)[1].split(" ")[0]
     files = {
         "logo.svg": icon(BG, FG, AC),          # dunkles Quadrat, helle Mühle (Hauptfassung, wie im Banner)
-        "logo-light.svg": icon(FG, BG, AC),    # Creme-Quadrat, dunkle Mühle (für dunkle Flächen)
+        "logo-light.svg": icon(FG, BG, AC, gap=4),  # Creme-Quadrat, dunkle Mühle (für dunkle Flächen), schmalerer Rand
         "wortmarke.svg": wortmarke(),
-        "banner-kursmuehle-v9.svg": banner(),
+        "banner-kursmuehle-v10.svg": banner(),
         "badge-version.svg": badge("Version", version, 62, 48),
         "badge-status.svg": badge("Status", "Release", 52, 64),
         "badge-lizenz.svg": badge("Lizenz", "nicht kommerziell", 52, 116, BG),
