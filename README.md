@@ -2,13 +2,16 @@
 
 # Kursmühle – für die ByCS-Lernplattform
 
-Kursmühle baut aus Thema, Jahrgangsstufe und Unterrichtszeit eine Einheit für die ByCS-Lernplattform. Du kopierst einen
-Text in deinen Chat, fügst die Antwort ein und lädst eine Kurssicherung herunter, die du in deinem Kurs wiederherstellst.
+Kursmühle baut aus Thema, Jahrgangsstufe und Unterrichtszeit eine Einheit mit Lesetexten und Übungen für die
+ByCS-Lernplattform. Die Seite erzeugt einen Auftrag für deinen KI-Chat; du fügst die Antwort ein und lädst eine
+Kurssicherung (.mbz) herunter, die du in deinem Kurs über „Wiederherstellen“ einspielst. Alles läuft im Browser unter
+[kursmuehle.de](https://kursmuehle.de/), installiert wird nichts.
 
 ![Status: Beta](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
 
-**Kursmühle läuft im Browser unter [kursmuehle.de](https://kursmuehle.de/) und ist in der Beta.** Installiert wird nichts.
-Die Stufen sind Beta und fertig; Änderungen stehen im [CHANGELOG](CHANGELOG.md).
+**Stand: Beta.** Die Seite baut Kurssicherungen; die Aufträge für die Chats werden an echten Durchläufen verbessert,
+und einzelne Chats antworten noch in einer Form, die die Seite nicht lesen kann. Änderungen stehen im
+[CHANGELOG](CHANGELOG.md).
 
 ## Was Kursmühle kann und was noch nicht
 
@@ -24,14 +27,27 @@ Die Stufen sind Beta und fertig; Änderungen stehen im [CHANGELOG](CHANGELOG.md)
 | Einheit speichern und später weiterbauen, nächste Einheit anhängen, Nachlieferung zu einem bestehenden Kurs | Abbruch einer Antwort des Chats erkennen |
 | Prüfung der Antwort vor dem Bau mit Hinweisen, was im Chat zu korrigieren ist | Fachliche Prüfung des Inhalts; die bleibt bei der Lehrkraft |
 
-Der Text für den Chat ist eingerichtet für ByLKI, fobizz, AIS-Chat, MUCGPT, ChatGPT, Claude und Gemini. Erprobt ist er
-bisher mit ByLKI, fobizz und einem Claude-Modell; wie die anderen Chats antworten, soll die Beta zeigen.
+Der Auftrag ist eingerichtet für ByLKI, fobizz, AIS-Chat, MUCGPT, ChatGPT, Claude und Gemini. Durchläufe gab es bisher
+mit ByLKI, fobizz und einem Claude-Modell, nicht jeder kam ohne Korrekturrunde durch; wie die anderen Chats antworten,
+soll die Beta zeigen.
+
+## Woran gearbeitet wird
+
+- [x] Generator für Kurssicherungen: sechs Kursformate, acht Modultypen, H5P-Inhalte, Übungen als Website in einem
+      Abschnitt; Import auf der Plattform geprüft für Themen und Kacheln
+- [x] Die Seite im Browser: Schrittfolge, Antwort einfügen und prüfen, ein Satz für den Chat, wenn etwas fehlt, Bilder
+      hochladen oder per Bildauftrag erzeugen, hell und dunkel
+- [ ] Mehr Einstellungen für das Aussehen des Kurses: Farben, Schrift, Kästen, Übungsblöcke, mit Vorschau
+- [ ] LehrplanPLUS: Lernbereich wählen, die Kompetenzerwartungen gehen in den Auftrag; zuerst Grund- und Mittelschule
+- [ ] 2.0 ohne Beta-Marke, nach Rückmeldungen von Lehrkräften
+- [ ] Die eigene KI direkt anbinden, ohne Kopieren und Einfügen; der Schlüssel bleibt auf dem eigenen Rechner
+- [ ] Arbeitsblätter aus derselben Einheit, auf Papier und digital
 
 ## Datenschutz
 
 Die Seite lädt nichts von anderen Adressen nach und setzt keine Cookies. Was du eingibst, bleibt im Browser; die Seite
-sendet es nirgends hin. Was du in deinen Chat einfügst, behandelt der Betreiber des Chats; dafür gelten dessen
-Bedingungen und die Regeln deiner Schule. Gib in den Chat keine personenbezogenen Daten von Schülerinnen und Schülern.
+sendet es nirgends hin. Was du in den Chat einfügst, verarbeitet dessen Anbieter; dafür gelten dessen Bedingungen und
+die Regeln deiner Schule. Gib in den Chat keine personenbezogenen Daten von Schülerinnen und Schülern.
 
 ## Kachel fürs Schulportal
 
@@ -51,7 +67,7 @@ in kommerzielle Produkte oder Dienste ist nicht erlaubt.
 - **Code:** [PolyForm Noncommercial 1.0.0](LICENSE)
 - **Texte und Vorlagen:** [CC BY-NC-SA 4.0](LICENSE-DOCS.md)
 
-Mit Kursmühle erzeugte Kurse gehören der Lehrkraft, die sie gebaut hat.
+An den Kursen, die du mit Kursmühle baust, beansprucht das Projekt keine Rechte.
 
 ## Haftungsausschluss
 
