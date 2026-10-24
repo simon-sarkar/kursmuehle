@@ -143,6 +143,23 @@ Der Generator läuft als Webseite im Browser (Pyodide), ohne Server – Kursdate
   Plan: 2.0 erscheint als geschlossene Fassung (Webseite, Code gebündelt, Repo privat); 1.0 bleibt offen und
   nicht-kommerziell als Spezifikation und Nachweis. Beiträge Dritter zu 1.0 nur unter der Beitragsregel in der README.
 
+Ablauf (Stand 24.10.2026, nach den Durchläufen mit AIS-Chat und fobizz, `docs/entwicklung/protokolle/chat-ohne-code/`):
+1. **Formular statt Fragerunde.** Die Einstiegsfragen aus `intake.md` (Weg, Rahmen, Kursformat, Design, Darstellungsweg,
+   Abschluss, Umfang, bei kleinen Modellen Phasen und Übungstypen) werden angeklickt, Material als Text eingefügt. Die
+   Seite schreibt daraus den Steckbrief selbst und baut den Prompt: Auftrag, Vorgaben als `Angenommen:`-Zeilen, dazu
+   nur `kursdatei.md` (auf die gewählten Elementtypen gekürzt) und `qualitaet.md`. `SKILL.md` und `intake.md` liest kein
+   Modell mehr; das spart etwa die Hälfte der Eingabe und die ganze Gesprächsführung.
+2. **Prompt in die Zwischenablage**, einfügen in fobizz, AIS-Chat, ByLKI, ChatGPT oder Claude. Das Modell schreibt nur
+   die Kursdatei.
+3. **Drehbuch lesen, kopieren, in die Seite einfügen.** Der Parser (Pyodide) prüft es; Hinweise und Fehler mit Zeile
+   lassen sich als Text kopieren und in den Chat zurückgeben. Banner, Kursbild, Kachelbilder und Badge zeichnet die
+   Seite selbst (Canvas), Bildwünsche bleiben Zeilen für die Lehrkraft.
+4. `.mbz` herunterladen, wiederherstellen wie bisher.
+Vorarbeit, die schon in 1.x nützt: der nachsichtige Parser (1.0.3), ein Prompt-Baukasten als statische Seite ohne Pyodide
+(Schritt 1 und 2 zum Testen mit dem Bau in Claude Code oder lokal), die Bildrender ohne Playwright.
+Offen: Eingabe- und Ausgabegrenzen der Chats (68 KB Eingabe liefen am 23.10. in AIS-Chat und fobizz), ob die Kursdatei
+abschnittsweise ausgegeben und in der Seite zusammengesetzt werden muss.
+
 ## Nach 1.0
 
 ### 1.1 (vorgemerkt)
