@@ -7,12 +7,9 @@
 <meta name="robots" content="noindex">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
-<!-- AP13b §3: nur über die Fußzeile der Startseite und der Mühle verlinkt. Tatsachen, keine Rechtsberatung.
-     AP13.2: Kopfzeile und Dark Mode wie die Startseite; die kleine Kachel ist hier immer sichtbar. Ein Absatz und eine
-     Tabellenzeile zur Adresse, die „Weiter“ auf der Startseite baut (Gutachten AP13.2, Impressum 1). -->
+<!-- Impressum und Datenschutz; nur über die Fußzeilen verlinkt. Tatsachen, keine Rechtsberatung. -->
 <script>
-// Hell ist Standard, unabhängig von der Systemeinstellung; „Dunkel“ schaltet der Leser selbst in der Kopfzeile um,
-// die Wahl bleibt in diesem Browser (localStorage; fehlt er, gilt wieder hell).
+// Hell ist Standard; die Wahl „Dunkel“ liegt im localStorage dieses Browsers.
 (function () { try { if (localStorage.getItem("kursmuehle-schema") === "dunkel") document.documentElement.dataset.theme = "dark"; } catch (e) {} })();
 </script>
 <style>
@@ -21,7 +18,6 @@
           --text: #2a2a2a; --leise: #6b6458; --linie: #e4d8c3; --ocker: #d9a441; --fokus: #8a6416;
           --fuss: #2a2a2a; --fuss-text: #f3e9d8; --schatten: rgba(42,42,42,.10);
           --logo-grund: #2a2a2a; --logo-muehle: #f3e9d8; --logo-rand: 5px; }
-  /* Dunkel wie die Startseite (Farbsatz aus Entwurf B) */
   :root[data-theme="dark"] { color-scheme: dark;
           --grund: #262522; --band: #2a2a2a; --flaeche: #1b1a18; --kachel: #35332f;
           --text: #f3e9d8; --leise: #b9ae9c; --linie: #423e37; --fokus: #d9a441;
@@ -36,8 +32,7 @@
   .innen { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
   main .innen, .kopfzeile .innen { max-width: 760px; }
 
-  /* Logo inline (make_logo.py icon_inline); das Rad dreht sich bei Hover und Fokus gegen den Uhrzeigersinn um die Nabe.
-     Wie in index.html. */
+  /* Logo; das Rad dreht sich bei Hover und Fokus. Wie in index.html. */
   .logo { display: block; }
   .logo .l-g { fill: var(--logo-grund); }
   .logo .l-m { fill: var(--logo-muehle); }
@@ -128,7 +123,7 @@ von GitHub</a>). Auf diese Protokolle habe ich keinen Zugriff.</p>
     <tr><td>Kursdatei und Datei für die Lernplattform</td><td>als Download auf deinem Rechner</td></tr>
     <tr><td>Text für den Chat</td><td>in deiner Zwischenablage; nach dem Einfügen beim Anbieter des Chats</td></tr>
     <tr><td>Rückmeldung</td><td>bei mir, wenn du sie selbst per Mail schickst</td></tr>
-    <tr><td>Abruf der Seite</td><td>in den Zugriffslogs von GitHub</td></tr>
+    <tr><td>Abruf der Seite</td><td>in den Zugriffsprotokollen von GitHub</td></tr>
   </tbody>
 </table>
 
@@ -142,8 +137,7 @@ die du mit Kursmühle erstellst, gelten diese Lizenzen nicht.</p>
 </div></main>
 <footer><div class="innen"><a href="./">Startseite</a> · <a href="start/">Mahlwerk starten</a></div></footer>
 <script>
-// Mühle dreht sich (CSS bei :hover und :focus-visible); beim Verlassen läuft das Rad bis zur nächsten halben
-// Umdrehung aus (das Bild ist um 180° symmetrisch), statt zurückzuspringen. Wie in index.html.
+// Beim Verlassen läuft das Rad bis zur nächsten halben Umdrehung aus (Bild ist 180° symmetrisch). Wie in index.html.
 (function () {
   var ruhig = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)");
   [].forEach.call(document.querySelectorAll(".dreh"), function (a) {
@@ -170,7 +164,6 @@ die du mit Kursmühle erstellst, gelten diese Lizenzen nicht.</p>
   });
 })();
 
-// Schalter hell/dunkel in der Kopfzeile.
 (function () {
   var b = document.getElementById("schema");
   if (!b) return;

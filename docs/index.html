@@ -7,17 +7,11 @@
 <title>Kursmühle</title>
 <meta name="description" content="Kursmühle macht aus deinem Thema eine Unterrichtseinheit für die ByCS-Lernplattform. Den Inhalt schreibt dein Chat, die Datei entsteht in deinem Browser.">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
-<!-- AP13.2: Die Startseite ist Schritt 1 der Mühle (drei Felder, „Weiter“ baut die Adresse start/#thema=…), daneben die
-     Kachel für den Einstieg ohne Thema. Kopfzeile klebt oben; ihre kleine Kachel erscheint erst, wenn die große aus dem
-     Bild ist. Hell als Standard, dunkel nach Systemeinstellung (Farbsatz aus Entwurf B). Lädt nichts von außen und
-     nichts von der Mühle; liest nur, ob die Mühle eine Einheit gesichert hat (IndexedDB „kursmuehle“, Speicher „mappe“,
-     Schlüssel „aktuell“), und legt selbst keine Datenbank an. Ocker an drei Stellen: Knopf „Weiter“, Ziffern im Ablauf
-     (hell im dunkleren Ton wegen des Kontrasts), Punkt vor „Weiter mit deiner Einheit“; dazu der Fokusrahmen (nur bei
-     Tastaturbedienung) und das Logo selbst.
-     Das Logo der Kacheln schreibt docs/make_logo.py (einbetten) zwischen die beiden Logo-Marken. -->
+<!-- Startseite: Schritt 1 der Mühle. Lädt nichts von außen; liest nur, ob die Mühle eine Einheit gesichert hat
+     (IndexedDB „kursmuehle“, Speicher „mappe“, Schlüssel „aktuell“). Das Logo der Kacheln schreibt docs/make_logo.py
+     zwischen die beiden Logo-Marken. -->
 <script>
-// Hell ist Standard, unabhängig von der Systemeinstellung; „Dunkel“ schaltet der Leser selbst in der Kopfzeile um,
-// die Wahl bleibt in diesem Browser (localStorage; fehlt er, gilt wieder hell).
+// Hell ist Standard; die Wahl „Dunkel“ liegt im localStorage dieses Browsers.
 (function () { try { if (localStorage.getItem("kursmuehle-schema") === "dunkel") document.documentElement.dataset.theme = "dark"; } catch (e) {} })();
 </script>
 <style>
@@ -27,7 +21,6 @@
           --fuss: #2a2a2a; --fuss-text: #f3e9d8; --fuss-leise: #cfc4b2;
           --wz: #2a2a2a; --wz-deckung: 1; --schatten: rgba(42,42,42,.10);
           --logo-grund: #2a2a2a; --logo-muehle: #f3e9d8; --logo-rand: 5px; --breite: 1040px; }
-  /* Dunkel (Schalter in der Kopfzeile, Standard hell): Anthrazit-Band, Wasserzeichen in Creme, helle Schrift (Entwurf B) */
   :root[data-theme="dark"] { color-scheme: dark;
           --grund: #262522; --band: #2a2a2a; --flaeche: #1b1a18; --feld: #1b1a18; --kachel: #35332f;
           --text: #f3e9d8; --text2: #e6dccb; --leise: #b9ae9c; --linie: #423e37;
@@ -46,8 +39,7 @@
   p { margin: 0 0 .8em; }
   .innen { max-width: var(--breite); margin: 0 auto; padding: 0 16px; }
 
-  /* Logo inline (make_logo.py icon_inline); das Rad dreht sich bei Hover und Fokus gegen den Uhrzeigersinn um die Nabe.
-     Gleich in impressum.html. */
+  /* Logo; das Rad dreht sich bei Hover und Fokus. Gleich in impressum.html. */
   .logo { display: block; }
   .logo .l-g { fill: var(--logo-grund); }
   .logo .l-m { fill: var(--logo-muehle); }
@@ -78,8 +70,7 @@
   .io .mini:not(.zeigen) { opacity: 0; visibility: hidden; }
   @media (max-width: 520px) { .mini { padding: 4px; } .mini span { display: none; } }
 
-  /* Band oben = Schritt 1: Felder links, Kachel rechts; Wasserzeichen groß am rechten Rand angeschnitten, beginnt immer
-     rechts von der Kachel (Lesebreite 1040 = 50 % + 520 px), überdeckt sie also nie */
+  /* Wasserzeichen beginnt immer rechts von der Kachel (Lesebreite 1040 = 50 % + 520 px) */
   .hero { position: relative; overflow: hidden; background: var(--band); padding: 64px 0 76px;
           display: flex; align-items: center; }
   @media (min-width: 820px) { .hero { min-height: min(56vh, 600px); } }
@@ -94,8 +85,7 @@
   h1 { font-size: clamp(1.6rem, 2.6vw, 2.1rem); line-height: 1.15; letter-spacing: -.015em; font-weight: 750;
        margin: 0 0 22px; }
 
-  /* Felder, Knopf und Vorsatz wie Schritt 1 der Mühle (aus web/ansicht.css übernommen: .feld, input, .knopf.haupt,
-     .start-form, .vorsatz, Handy-Regeln) */
+  /* Felder wie Schritt 1 der Mühle (web/ansicht.css) */
   .start-form { display: grid; grid-template-columns: 1fr 9rem 7rem; gap: 12px; align-items: end; }
   .feld { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: var(--leise); }
   input[type=text], input[type=number] { font: inherit; font-size: 16px; color: var(--text); background: var(--feld);
@@ -113,7 +103,6 @@
     .start-form .knopf { justify-self: stretch; }
   }
 
-  /* Kachel wie ein App-Symbol, ganze Fläche klickbar */
   .start { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
   @media (min-width: 820px) { .start { align-items: stretch; } }
   .kachel { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 22px 18px 18px;
@@ -133,7 +122,6 @@
     .weiter a { padding: 4px 0; }
   }
 
-  /* Band 2: Ergebnis als Bild, daneben der Ablauf */
   .ergebnis { background: var(--flaeche); padding: 72px 0; }
   .ergebnis .innen { display: grid; gap: 40px 64px; grid-template-columns: 1fr; align-items: start; }
   @media (min-width: 820px) { .ergebnis .innen { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); } }
@@ -149,7 +137,6 @@
                          font-weight: 750; line-height: 1.2; color: var(--ocker-text); }
   .chats { font-size: .98rem; color: var(--text2); padding-top: 4px; }
 
-  /* Fußzeile */
   footer { background: var(--fuss); color: var(--fuss-text); padding: 36px 0 44px; font-size: .9rem; }
   footer p { margin: 0 0 10px; max-width: 72ch; }
   footer .links { display: flex; flex-wrap: wrap; gap: 4px 20px; list-style: none; padding: 0; margin: 0 0 18px; }
@@ -210,10 +197,7 @@
 
 <section class="ergebnis" aria-labelledby="ablauf-titel">
   <div class="innen">
-    <!-- Bild tauschen, sobald docs/landing-kurs.png vorliegt (test_landing.py meldet es):
-         src="landing-kurs.png", width/height der Datei,
-         alt="Kursseite auf der ByCS-Lernplattform nach dem Wiederherstellen: (was zu sehen ist)",
-         figcaption „So sieht die Einheit im Kurs aus.“ -->
+    <!-- Bild tauschen, sobald docs/landing-kurs.png vorliegt (test_landing.py meldet es). -->
     <figure>
       <img src="landing-muehle.png" alt="Die Mühle nach dem letzten Schritt: sechs erledigte Schritte als Zeilen, darunter der Knopf Herunterladen und fünf Schritte zum Wiederherstellen." width="814" height="1054" loading="lazy">
       <figcaption>Nach dem letzten Schritt: die Datei für die Lernplattform und darunter, wie sie in deinen Kurs kommt.</figcaption>
@@ -251,9 +235,8 @@
 </footer>
 
 <script>
-// Schritt 1: „Weiter“ baut nur die Adresse der Mühle (start/#thema=…&jahrgang=…&minuten=…) und sendet nichts; das
-// Fragment nach „#“ verlässt den Browser nicht (es steht in keinem Zugriffsprotokoll). Ohne Thema geht es zu start/.
-// Ohne Skript schickt das Formular dieselben Felder per GET an start/ (dann als ?thema=…, die Mühle liest beides).
+// „Weiter“ baut die Adresse start/#thema=…&jahrgang=…&minuten=…; das Fragment verlässt den Browser nicht.
+// Ohne Skript schickt das Formular dieselben Felder als ?thema=…, die Mühle liest beides.
 (function () {
   var f = document.getElementById("start-form");
   function adresse() {
@@ -265,7 +248,7 @@
     return "start/" + (q ? "#" + q : "");
   }
   f.addEventListener("submit", function (e) { e.preventDefault(); location.href = adresse(); });
-  // Die Kacheln „Mahlwerk starten“ nehmen Eingaben in den Feldern mit, damit nichts verloren geht (Autor 24.10.2026).
+  // Die Kacheln nehmen Eingaben in den Feldern mit.
   [].forEach.call(document.querySelectorAll("#kachel, #mini"), function (a) {
     a.addEventListener("click", function (e) {
       if (e.ctrlKey || e.metaKey || e.shiftKey || e.button) return;   // neuer Tab o. ä.: Standard
@@ -275,7 +258,7 @@
   });
 })();
 
-// Kopfzeile: die kleine Kachel erscheint erst, wenn die große aus dem Bild ist (ohne Skript immer sichtbar).
+// Kleine Kachel in der Kopfzeile erst, wenn die große aus dem Bild ist.
 (function () {
   if (!("IntersectionObserver" in window)) return;
   var mini = document.getElementById("mini");
@@ -284,8 +267,7 @@
                            { rootMargin: "-56px 0px 0px 0px" }).observe(document.getElementById("kachel"));
 })();
 
-// Mühle dreht sich (CSS bei :hover und :focus-visible); beim Verlassen läuft das Rad bis zur nächsten halben
-// Umdrehung aus (das Bild ist um 180° symmetrisch), statt zurückzuspringen. Gleich in impressum.html.
+// Beim Verlassen läuft das Rad bis zur nächsten halben Umdrehung aus (Bild ist 180° symmetrisch). Gleich in impressum.html.
 (function () {
   var ruhig = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)");
   [].forEach.call(document.querySelectorAll(".dreh"), function (a) {
@@ -312,8 +294,7 @@
   });
 })();
 
-// „Weiter mit deiner Einheit“: nur lesen, was die Mühle unter start/ gesichert hat (gleiche Adresse, gleicher Speicher).
-// Gibt es die Datenbank nicht, wird das Anlegen abgebrochen, damit die Mühle sie später selbst anlegt.
+// „Weiter mit deiner Einheit“: nur lesen; gibt es die Datenbank nicht, kein Anlegen (das macht die Mühle).
 (function () {
   var r;
   try { r = window.indexedDB && indexedDB.open("kursmuehle"); } catch (e) { return; }
@@ -335,7 +316,6 @@
   };
 })();
 
-// Schalter hell/dunkel in der Kopfzeile.
 (function () {
   var b = document.getElementById("schema");
   if (!b) return;
@@ -349,7 +329,7 @@
   zeige();
 })();
 
-// Platzhalter in Schritt 1: bei jedem Laden ein anderes Paar aus Thema und Jahrgangsstufe (Autor 24.10.2026).
+// Platzhalter: bei jedem Laden ein anderes Paar aus Thema und Jahrgangsstufe.
 (function () {
   var paare = [["Bruchrechnen", 6], ["Satz des Pythagoras", 9], ["Das Ohr", 7], ["Photosynthese", 8],
     ["Die Französische Revolution", 8], ["Wetter und Klima", 5], ["Der Wasserkreislauf", 4], ["Nomen und Verben", 3],

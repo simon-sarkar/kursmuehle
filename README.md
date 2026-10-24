@@ -25,7 +25,7 @@ Die Stufen sind Beta und fertig; Änderungen stehen im [CHANGELOG](CHANGELOG.md)
 | Prüfung der Antwort vor dem Bau mit Hinweisen, was im Chat zu korrigieren ist | Fachliche Prüfung des Inhalts; die bleibt bei der Lehrkraft |
 
 Der Text für den Chat ist eingerichtet für ByLKI, fobizz, AIS-Chat, MUCGPT, ChatGPT, Claude und Gemini. Erprobt ist er
-bisher mit ByLKI und einem Claude-Modell; wie die anderen Chats antworten, soll die Beta zeigen.
+bisher mit ByLKI, fobizz und einem Claude-Modell; wie die anderen Chats antworten, soll die Beta zeigen.
 
 ## Datenschutz
 
