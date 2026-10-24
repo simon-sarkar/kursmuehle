@@ -106,10 +106,22 @@ def banner():
 
 
 def wasserzeichen():
-    """Motiv des Banners allein, Anthrazit mit 7 % Deckung auf Creme; die Oberfläche (web/) legt es rechts unter die
-    Knöpfe (Desktop und iPad)."""
+    """Motiv des Banners allein, als Maske für die Landingpage (CSS mask, Farbe und Deckung setzt die Seite): dort zählt
+    nur die Deckung der Form, deshalb entsteht der Trennrand zwischen Rad und Flügeln nicht durch eine Linie in
+    Hintergrundfarbe (die wäre in der Maske deckend und ließe Zähne und Flügel verschmelzen, Simon 24.10.2026), sondern
+    durch eine SVG-Maske, die den Rand und die Nabe aus Flügeln und Rad herausschneidet."""
+    rad = cog(0, 0, 75, 57, TEETH, phase_deg=PHASE)
+    fluegel = "".join(
+        f'<g transform="rotate({a})"><path d="M-10.5,-60 L10.5,-60 L22.5,-144 Q0,-162 -22.5,-144 Z"/></g>' for a in (45, 135, 225, 315))
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="330" height="330" viewBox="-165 -165 330 330" aria-hidden="true">
-  <g fill="{FG}" opacity="0.07">{motiv()}</g>
+  <defs>
+    <mask id="rand" maskUnits="userSpaceOnUse" x="-165" y="-165" width="330" height="330">
+      <rect x="-165" y="-165" width="330" height="330" fill="#fff"/>
+      <path d="{rad}" fill="none" stroke="#000" stroke-width="5" stroke-linejoin="round"/>
+      <circle r="33" fill="#000"/>
+    </mask>
+  </defs>
+  <g fill="{FG}" opacity="0.07" mask="url(#rand)">{fluegel}<path d="{rad}"/><circle r="14"/></g>
 </svg>'''
 
 
