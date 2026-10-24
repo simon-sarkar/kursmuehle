@@ -13,9 +13,9 @@
 </head>
 <body data-muster="locker" data-schritt="1">
 <header class="kopf">
+<div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
   <p id="kopf-status" class="status" role="status" aria-live="polite"></p>
-  <!-- AP13.1: Entwurfsverwaltung als kleine Textlinks neben dem Stand der Sicherung -->
   <div class="kopf-links">
     <span id="autosave-stand" class="kopf-stand"></span>
     <label for="datei-oeffnen" class="kopf-link">Einheit öffnen</label>
@@ -24,6 +24,7 @@
     <button type="button" id="schema" class="kopf-link" title="Farbschema wechseln">Dunkel</button>
     <button type="button" id="schliessen" class="kopf-x" aria-label="Einheit schließen" title="Einheit schließen" hidden>×</button>
   </div>
+</div>
 </header>
 <div id="verwerfen-frage" class="verwerfen-frage" role="alertdialog" aria-labelledby="verwerfen-text" hidden>
   <p id="verwerfen-text"></p>
