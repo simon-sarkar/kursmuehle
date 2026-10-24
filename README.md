@@ -371,6 +371,11 @@ Wer einen Pull Request einreicht, stellt seinen Beitrag unter die Lizenzen
 dieses Repositories und ist damit einverstanden, dass der Autor spätere
 Versionen unter anderen Bedingungen veröffentlichen kann.
 
+## Kachel für das Schulportal
+
+Für eine Kachel im ByCS-Portal der Schule oder in einer Linkliste liegen unter [`docs/kachel/`](docs/kachel/) fertige
+Bilder (PNG in 512, 256 und 128 px, mit und ohne runde Ecken, dazu SVG); Ziel der Kachel ist `https://kursmuehle.de`.
+
 ## Lizenz
 
 Nicht kommerziell. Schulen, Lehrkräfte und Fortbildungen dürfen den Skill

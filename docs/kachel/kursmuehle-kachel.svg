@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="Kursmühle">
+  <rect width="256" height="256" rx="56" fill="#2a2a2a"/>
+  <path d="M100,236 L156,236 L147,150 L109,150 Z" fill="#f3e9d8"/>
+  <rect x="115" y="170" width="12" height="12" rx="3" fill="#2a2a2a"/>
+  <rect x="131" y="170" width="12" height="12" rx="3" fill="#2a2a2a"/>
+  <rect x="115" y="188" width="12" height="12" rx="3" fill="#2a2a2a"/>
+  <rect x="131" y="188" width="12" height="12" rx="3" fill="#d9a441"/>
+  <g id="rad"><g transform="rotate(45 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" fill="#f3e9d8" stroke="#2a2a2a" stroke-width="10" stroke-linejoin="round" paint-order="stroke"/></g><g transform="rotate(135 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" fill="#f3e9d8" stroke="#2a2a2a" stroke-width="10" stroke-linejoin="round" paint-order="stroke"/></g><g transform="rotate(225 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" fill="#f3e9d8" stroke="#2a2a2a" stroke-width="10" stroke-linejoin="round" paint-order="stroke"/></g><g transform="rotate(315 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" fill="#f3e9d8" stroke="#2a2a2a" stroke-width="10" stroke-linejoin="round" paint-order="stroke"/></g>
+  <path d="M158.7,120.3 L155.7,124.0 L162.2,134.4 L152.1,141.8 L144.2,132.4 L139.7,134.1 L135.1,135.3 L134.3,147.6 L121.7,147.6 L120.9,135.3 L116.3,134.1 L111.8,132.4 L103.9,141.8 L93.8,134.4 L100.3,124.0 L97.3,120.3 L94.7,116.3 L82.8,119.3 L78.9,107.4 L90.3,102.8 L90.0,98.0 L90.3,93.2 L78.9,88.6 L82.8,76.7 L94.7,79.7 L97.3,75.7 L100.3,72.0 L93.8,61.6 L103.9,54.2 L111.8,63.6 L116.3,61.9 L120.9,60.7 L121.7,48.4 L134.3,48.4 L135.1,60.7 L139.7,61.9 L144.2,63.6 L152.1,54.2 L162.2,61.6 L155.7,72.0 L158.7,75.7 L161.3,79.7 L173.2,76.7 L177.1,88.6 L165.7,93.2 L166.0,98.0 L165.7,102.8 L177.1,107.4 L173.2,119.3 L161.3,116.3 Z" fill="#f3e9d8" stroke="#2a2a2a" stroke-width="5" stroke-linejoin="round"/></g>
+  <circle cx="128" cy="98" r="22" fill="#2a2a2a"/>
+  <circle cx="128" cy="98" r="9" fill="#d9a441"/>
+</svg>
