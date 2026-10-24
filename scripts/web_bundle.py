@@ -4,6 +4,7 @@
     web/logo.svg                  Kopie von docs/logo.svg (Kopfzeile, Favicon)
     web/muster-locker.svg         Seitenhintergrund (Motiv des Wasserzeichens gekachelt, aus docs/make_logo.py; AP12a),
     web/muster-dicht.svg          dazu die dichtere Fassung zum Vergleich (body data-muster="dicht")
+    web/muster-*-dunkel.svg       dieselben Muster in Creme für das dunkle Schema (AP13.3)
     web/katalog.json              Bausteintypen (Typ, Formularname, Rolle, Minuten), Einheitsvorlagen, Auswahl der
                                   Kursangaben, Chats, Gruppen der Typ-Auswahl, Typen zu „automatisch“ (AP13) und die
                                   Version aus CHANGELOG.md (Zeile „Beta“ oder „Testfassung“)
@@ -72,7 +73,8 @@ def katalog_json(out):
 def main():
     quellen = generator_zip(os.path.join(WEB, "generator.zip"))
     print(f"web/generator.zip: {len(quellen)} Dateien, {os.path.getsize(os.path.join(WEB, 'generator.zip')) // 1024} KB")
-    for name in ("logo.svg", "muster-locker.svg", "muster-dicht.svg"):    # Logo (Kopfzeile, Favicon), Muster
+    for name in ("logo.svg", "muster-locker.svg", "muster-dicht.svg", "muster-locker-dunkel.svg",   # Logo, Muster hell
+                 "muster-dicht-dunkel.svg"):                                                       # und dunkel (AP13.3)
         with open(os.path.join(ROOT, "docs", name), "rb") as f, open(os.path.join(WEB, name), "wb") as g:
             g.write(f.read())
     n, v = katalog_json(os.path.join(WEB, "katalog.json"))

@@ -122,6 +122,16 @@ def main():
     ok(all(isinstance(m["zahl"], int) and (1 < m["zahl"] <= 12 if m["einheit"] != "Wörter" else 40 <= m["zahl"] <= 200)
            and m.get("nur", "Hefteintrag") == "Hefteintrag" for m in mind.values()), "mindest: Zahlen plausibel, nur Hefteintrag als Bedingung")
     ok(all(mind[t]["nur"] == "Hefteintrag" for t in ("Seite", "Textfeld")), "mindest für Text und Seite nur im Hefteintrag")
+    ok(all(mind[t].get("ab_jahrgang") == {1: 50, 7: 80} for t in ("Seite", "Textfeld")),
+       "Hefteintrag nach Jahrgangsstufe gestaffelt (bis 6: 50 Wörter, ab 7: 80)")
+    # AP13.3: Teilschritte fachneutral; Rechnen, Verfahren, Rundung höchstens im Nebensatz „wenn das Thema …“
+    for v in kat["vorlagen"]:
+        for ph in v["phasen"]:
+            for b in ph["bausteine"]:
+                schritt = b.partition(" | ")[2]
+                pflicht = re.sub(r"wenn das Thema[^.;]*", "", schritt)
+                ok(not re.search(r"\bRegel\b|[Rr]echn|[Rr]und|durchgerechnet|zwei\b.*Beispiel", pflicht),
+                   f"Teilschritt fachneutral: {v['name']} · {ph['phase']}")
     pr = kat["pruefregeln"]
     ok(set(pr["uebung"]) <= alle_t and 50 <= pr["einstieg_woerter"] <= 150 and set(pr["fehlt"]) == {"einstieg", "lesen", "üben", "sichern"},
        "Prüfregeln: Übungstypen aus dem Katalog, Einstiegsgrenze, vier Phasen")

@@ -1,18 +1,40 @@
 /* Kursmühle – Oberfläche (AP13): Schrittfolge in einer Spalte, ab Schritt 5 rechts der Rand mit Zahlen und Herkunft;
  * auf dem Handy untereinander. Palette aus docs/make_logo.py; die zwei Herkunftstöne sind Ocker und Anthrazit auf Weiß
  * gemischt (keine Wertung, kein Rot oder Grün). AP13.1: Ocker als Knopf nur für das Ergebnis (`.knopf.ergebnis`);
- * Hauptknöpfe der Schritte und Auswahlrahmen sind Anthrazit, die Verwaltung steht als Textlinks in der Kopfzeile. */
+ * Hauptknöpfe der Schritte und Auswahlrahmen sind Anthrazit, die Verwaltung steht als Textlinks in der Kopfzeile.
+ * AP13.3: dunkles Schema unter :root[data-theme="dark"] (Palette der Landingpage, Schlüssel `kursmuehle-schema` in
+ * localStorage, hell ist Standard); alle Farben sind Token, Textlinks Anthrazit (dunkel: Creme), Fokusrahmen Ocker. */
 :root {
-  --creme: #f3e9d8;
+  color-scheme: light;
+  --creme: #f3e9d8;              /* Fläche in Creme: Rand, Nummern, Infobox */
   --grund: #faf6ee;
   --flaeche: #ffffff;
+  --flaeche-halb: rgba(255, 255, 255, 0.82);   /* erledigte Zeile über dem Muster */
+  --gewaehlt: #fffaf0;
   --text: #2a2a2a;
   --leise: #6b6458;
   --linie: #e4d8c3;
+  --rand-linie: #e4d5ba;
   --ocker: #d9a441;
+  --ocker-hover: #cf9632;
+  --ergebnis-text: #2a2a2a;      /* Schrift auf Ocker, in beiden Schemata */
   --ocker-tief: #8a6416;
-  --ok: #2f7d4f;
-  --warn: #9a6200;
+  --link: #2a2a2a;               /* AP13.1 offen, AP13.3 entschieden: Textlinks in Anthrazit */
+  --fokus: #d9a441;
+  --haupt: #2a2a2a;              /* Hauptknopf, aktive Schrittnummer */
+  --haupt-text: #f3e9d8;
+  --haupt-hover: #3d3d3d;
+  --kopf: #2a2a2a;
+  --kopf-text: #f3e9d8;
+  --kopf-leise: #d8ccb6;
+  --kopf-ok: #6fbf8e;
+  --kopf-fehler: #ffb4a8;
+  --kopf-hover: rgba(243, 233, 216, 0.12);
+  --kopf-strich: rgba(243, 233, 216, 0.4);
+  --warn-flaeche: #fbf1dc;
+  --schatten: rgba(42, 42, 42, 0.08);
+  --ok: #276b43;
+  --warn: #8a5800;
   --fehler: #b42318;
   --leer: #a39a8b;
   --lehrkraft: #f6ead1;          /* Ocker 20 % auf Weiß: Aufträge, Material, Titel der Lehrkraft */
@@ -21,40 +43,70 @@
   --chat-kante: #bdbab4;
   --rund: 10px;
 }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --creme: #35332f;
+  --grund: #262522;
+  --flaeche: #1b1a18;
+  --flaeche-halb: rgba(27, 26, 24, 0.85);
+  --gewaehlt: #2c2a26;
+  --text: #f3e9d8;
+  --leise: #b9ae9c;
+  --linie: #423e37;
+  --rand-linie: #4a463e;
+  --ocker-tief: #d9a441;
+  --link: #f3e9d8;
+  --haupt: #f3e9d8;
+  --haupt-text: #2a2a2a;
+  --haupt-hover: #e6dccb;
+  --kopf: #141312;
+  --warn-flaeche: #3a3122;
+  --schatten: rgba(0, 0, 0, 0.35);
+  --ok: #7cc79a;
+  --warn: #e3ad4f;
+  --fehler: #ff9a8b;
+  --leer: #8f8678;
+  --lehrkraft: #413620;          /* Ocker 20 % auf der dunklen Fläche */
+  --lehrkraft-kante: #a07a30;
+  --chat: #2c2b27;               /* Creme 8 % auf der dunklen Fläche */
+  --chat-kante: #6b665e;
+}
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--grund); color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 /* Muster: Motiv des Wasserzeichens gekachelt (docs/make_logo.py, 6 % Deckung); Karten und Flächen liegen opak darüber */
 body[data-muster=locker] { background-image: url("muster-locker.svg"); background-size: 260px 260px; }
 body[data-muster=dicht] { background-image: url("muster-dicht.svg"); background-size: 170px 170px; }
+[data-theme="dark"] body[data-muster=locker] { background-image: url("muster-locker-dunkel.svg"); }
+[data-theme="dark"] body[data-muster=dicht] { background-image: url("muster-dicht-dunkel.svg"); }
 [hidden] { display: none !important; }
 .unsichtbar { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; padding: 0; margin: -1px; }
 h2, .abschnitt-titel { display: block; font-size: 1.05rem; font-weight: 650; margin: 0 0 10px; }
 p { margin: 0 0 10px; }
 .leise { color: var(--leise); font-size: 0.94rem; }
-:focus-visible { outline: 3px solid var(--ocker); outline-offset: 2px; }
+:focus-visible { outline: 3px solid var(--fokus); outline-offset: 2px; }
 .geschaetzt { font-style: italic; }
 
 /* Kopfzeile */
-.kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 10px 16px; background: var(--text); color: var(--creme); }
-.marke { display: inline-flex; align-items: center; gap: 10px; color: var(--creme); text-decoration: none; font-weight: 700; font-size: 1.1rem; }
-.marke img { display: block; border-radius: 7px; box-shadow: 0 0 0 1px rgba(243, 233, 216, 0.25); }
-.status { margin: 0; font-size: 0.9rem; color: #d8ccb6; flex: 1 1 12rem; }
+.kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 10px 16px; background: var(--kopf); color: var(--kopf-text); }
+.marke { display: inline-flex; align-items: center; gap: 10px; color: var(--kopf-text); text-decoration: none; font-weight: 700; font-size: 1.1rem; }
+.marke img { display: block; border-radius: 7px; box-shadow: 0 0 0 1px var(--kopf-strich); }
+.status { margin: 0; font-size: 0.9rem; color: var(--kopf-leise); flex: 1 1 12rem; }
 .status::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; background: var(--leer); vertical-align: 1px; }
-.status.ok::before { background: #6fbf8e; }
+.status.ok::before { background: var(--kopf-ok); }
 .status.lauf::before { background: var(--ocker); }
-.status.fehler { color: #ffb4a8; }
-.status.fehler::before { background: #ffb4a8; }
+.status.fehler { color: var(--kopf-fehler); }
+.status.fehler::before { background: var(--kopf-fehler); }
 .kopf-links { display: flex; align-items: center; gap: 2px 14px; flex-wrap: wrap; }
-.kopf-stand { font-size: 0.85rem; color: #d8ccb6; }
+.kopf-stand { font-size: 0.85rem; color: var(--kopf-leise); }
 .kopf-stand:empty { display: none; }
-.kopf-link { background: none; border: 0; padding: 6px 0; font: inherit; font-size: 0.92rem; color: var(--creme); cursor: pointer;
-  text-decoration: underline; text-decoration-color: rgba(243, 233, 216, 0.4); text-underline-offset: 3px; }
+.kopf-link { background: none; border: 0; padding: 6px 0; font: inherit; font-size: 0.92rem; color: var(--kopf-text); cursor: pointer;
+  text-decoration: underline; text-decoration-color: var(--kopf-strich); text-underline-offset: 3px; }
 .kopf-link:hover { text-decoration-color: var(--ocker); }
 .kopf-link:disabled { opacity: 0.5; cursor: default; }
 .kopf-x { background: none; border: 0; border-radius: 6px; width: 36px; height: 36px; font: inherit; font-size: 1.35rem; line-height: 1;
   color: inherit; cursor: pointer; opacity: 0.8; }
-.kopf-x:hover { opacity: 1; background: rgba(243, 233, 216, 0.12); }
+.kopf-x:hover { opacity: 1; background: var(--kopf-hover); }
 .testfassung { margin: 0; padding: 4px 16px; background: var(--creme); color: var(--leise); font-size: 0.85rem; text-align: center; }
 .testfassung .textlink { padding: 0; font-size: inherit; }
 .verwerfen-frage { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 16px; background: var(--creme);
@@ -69,12 +121,13 @@ p { margin: 0 0 10px; }
 .knopf { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 9px 16px; border-radius: 8px;
   border: 1px solid var(--linie); background: var(--flaeche); color: var(--text); font: inherit; font-weight: 600; cursor: pointer; text-align: center; }
 .knopf:hover { border-color: var(--text); }
-.knopf.haupt { background: var(--text); border-color: var(--text); color: var(--creme); }
-.knopf.haupt:hover { background: #3d3d3d; }
-.knopf.ergebnis { background: var(--ocker); border-color: var(--ocker); color: var(--text); font-size: 1.05rem; min-height: 48px; padding: 10px 20px; }
-.knopf.ergebnis:hover { background: #cf9632; }
+.knopf.haupt { background: var(--haupt); border-color: var(--haupt); color: var(--haupt-text); }
+.knopf.haupt:hover { background: var(--haupt-hover); }
+.knopf.ergebnis { background: var(--ocker); border-color: var(--ocker); color: var(--ergebnis-text); font-size: 1.05rem; min-height: 48px; padding: 10px 20px; }
+.knopf.ergebnis:hover { background: var(--ocker-hover); }
 .knopf:disabled { opacity: 0.45; cursor: default; }
-.textlink { background: none; border: 0; padding: 6px 0; font: inherit; color: var(--ocker-tief); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.textlink { background: none; border: 0; padding: 6px 0; font: inherit; color: var(--link); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.schema { margin-left: 2px; }
 .feld { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: var(--leise); }
 input[type=text], input[type=number], select, textarea { font: inherit; font-size: 16px; color: var(--text); background: var(--flaeche);
   border: 1px solid var(--linie); border-radius: 8px; padding: 9px 10px; min-height: 44px; width: 100%; }
@@ -92,13 +145,13 @@ select { appearance: auto; }
 
 /* Weiter mit … */
 .weiter { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 16px; padding: 12px 14px; border-radius: var(--rund);
-  background: var(--flaeche); box-shadow: 0 1px 2px rgba(42, 42, 42, 0.07); }
+  background: var(--flaeche); box-shadow: 0 1px 2px var(--schatten); }
 .weiter .leise { flex-basis: 100%; margin: 0; }
 .weiter-weg { color: var(--leise); }
 .weiter-weg:hover { background: var(--grund); color: var(--text); }
 
 /* Schritte: aktiver Schritt offen, erledigte als eine Zeile zum Aufklappen */
-.schritt { background: var(--flaeche); border-radius: var(--rund); box-shadow: 0 1px 2px rgba(42, 42, 42, 0.08); margin: 0 0 12px; }
+.schritt { background: var(--flaeche); border-radius: var(--rund); box-shadow: 0 1px 2px var(--schatten); margin: 0 0 12px; }
 .s-kopf { margin: 0; font-size: inherit; }
 .s-zeile { display: flex; align-items: baseline; gap: 4px 12px; width: 100%; text-align: left; background: none; border: 0; padding: 14px 16px;
   font: inherit; color: var(--text); cursor: pointer; border-radius: var(--rund); flex-wrap: wrap; }
@@ -108,9 +161,9 @@ select { appearance: auto; }
 .s-titel { font-weight: 650; font-size: 1.05rem; }
 .s-fazit { color: var(--leise); font-size: 0.92rem; margin-left: auto; overflow-wrap: anywhere; }
 .schritt[data-stand=aktiv] .s-titel { font-size: 1.35rem; line-height: 1.25; letter-spacing: -0.01em; }
-.schritt[data-stand=aktiv] .s-nr { background: var(--text); color: var(--creme); }
+.schritt[data-stand=aktiv] .s-nr { background: var(--haupt); color: var(--haupt-text); }
 .schritt[data-stand=aktiv] .s-zeile { padding-top: 18px; }
-.schritt[data-stand=erledigt]:not(.auf) { background: rgba(255, 255, 255, 0.82); box-shadow: none; }
+.schritt[data-stand=erledigt]:not(.auf) { background: var(--flaeche-halb); box-shadow: none; }
 .schritt[data-stand=erledigt] .s-zeile:hover { background: var(--grund); }
 .schritt[data-stand=erledigt] .s-titel::after { content: "▸"; display: inline-block; margin-left: 8px; color: var(--leise); font-size: 0.8em; }
 .schritt[data-stand=erledigt].auf .s-titel::after { content: "▾"; }
@@ -135,7 +188,7 @@ select { appearance: auto; }
 .zweig { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 16px; border-radius: var(--rund); border: 1px solid var(--linie);
   background: var(--flaeche); font: inherit; color: var(--text); cursor: pointer; }
 .zweig:hover { border-color: var(--text); }
-.zweig[aria-pressed=true] { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); background: #fffaf0; }
+.zweig[aria-pressed=true] { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); background: var(--gewaehlt); }
 .zweig-name { font-weight: 700; font-size: 1.1rem; }
 .zweig-zeile { color: var(--leise); font-size: 0.93rem; }
 .steuer-teil { margin-top: 6px; }
@@ -148,7 +201,7 @@ select { appearance: auto; }
 .vorlage-zeile { color: var(--leise); font-size: 0.9rem; }
 .vorlage-phasen { font-size: 0.82rem; color: var(--leise); }
 .mehr { margin-top: 12px; }
-.mehr summary { cursor: pointer; color: var(--ocker-tief); font-weight: 600; padding: 6px 0; }
+.mehr summary { cursor: pointer; color: var(--link); font-weight: 600; padding: 6px 0; }
 .mehr-felder { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 12px 0 4px; }
 
 /* 3 Aussehen: Kacheln mit Miniatur */
@@ -159,6 +212,7 @@ select { appearance: auto; }
   border-radius: var(--rund); background: var(--grund); font: inherit; font-size: 0.9rem; color: var(--text); cursor: pointer; text-align: center; }
 .aus-kachel:hover { border-color: var(--text); }
 .aus-kachel[aria-checked=true] { border-color: var(--text); box-shadow: inset 0 0 0 2px var(--text); background: var(--flaeche); font-weight: 650; }
+.aus-kachel > * { pointer-events: none; }        /* Klick trifft immer den Knopf (AP13.3, Firefox) */
 .aus-mini svg { display: block; width: 100%; height: auto; border-radius: 6px; box-shadow: 0 0 0 1px var(--linie); }
 .farben .aus-kachel { width: 104px; }
 .farben .aus-mini svg { width: 40px; margin: 0 auto; box-shadow: none; }
@@ -180,20 +234,34 @@ select { appearance: auto; }
 .infobox p { margin-bottom: 8px; }
 .infobox-nie { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 0.93rem; color: var(--leise); }
 .text-ansehen { margin-top: 8px; }
-.text-ansehen summary { cursor: pointer; color: var(--ocker-tief); padding: 6px 0; }
+.text-ansehen summary { cursor: pointer; color: var(--link); padding: 6px 0; }
 .text-ansehen textarea { min-height: 12rem; font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace; }
 
 /* Warnung vor dem Kopieren, Phasenwarnung an der Liste (AP13.1) */
 .warnung-box { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 12px; padding: 10px 14px;
-  border-radius: 8px; background: #fbf1dc; color: var(--text); }
+  border-radius: 8px; background: var(--warn-flaeche); color: var(--text); }
 .warnung-box p { margin: 0; flex: 1 1 16rem; }
-.karten-warnung { margin: 0 0 10px; padding: 8px 12px; border-radius: 8px; background: #fbf1dc; font-size: 0.93rem; }
+.karten-warnung { margin: 0 0 10px; padding: 8px 12px; border-radius: 8px; background: var(--warn-flaeche); font-size: 0.93rem; }
 
 /* 5 Einfügen, Karten */
 .einfuegen textarea { min-height: 9rem; font: 14px/1.45 ui-monospace, Menlo, Consolas, monospace; }
-.korrektur { margin-top: 16px; padding: 12px 14px; border: 1px solid var(--linie); border-radius: var(--rund); background: var(--flaeche); }
+/* Statuskarte unter einem Einfügefeld (AP13.3): Rahmen statt einer Zeile */
+.stand-karte { margin: 10px 0 0; padding: 10px 14px; border: 1px solid var(--linie); border-left-width: 4px; border-radius: 8px;
+  background: var(--flaeche); font-size: 0.95rem; }
+.stand-karte.ok { border-left-color: var(--ok); }
+.stand-karte.fehler { border-left-color: var(--fehler); }
+.einfuegen .kopieren { margin-top: 8px; }
+/* Fortschritt des gestückelten Textes und der eine Korrekturblock, beide direkt unter dem Einfügefeld */
+.teil-stand { margin-top: 14px; padding: 12px 14px; border-radius: var(--rund); background: var(--creme); }
+.teil-stand p { margin: 0 0 8px; }
+.teil-stand .stand { margin: 6px 0 0; }
+.korrektur { margin-top: 14px; padding: 12px 14px; border: 1px solid var(--fehler); border-radius: var(--rund); background: var(--flaeche); }
+.korrektur .unterkopf { margin-top: 0; }
 .korrektur-liste { margin: 0 0 10px; padding-left: 18px; font-size: 0.93rem; }
 .korrektur-liste li { margin-bottom: 4px; }
+.korrektur-antwort { margin-top: 12px; }
+.korrektur-antwort textarea { min-height: 7rem; font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace; }
+.korrektur-antwort .kopieren { margin-top: 8px; }
 .karten-ort:not(:empty) { margin-top: 16px; }
 .zeit-schalter { margin: 4px 0 12px; }
 .karten { list-style: none; margin: 0; padding: 0; background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--rund); }
@@ -214,6 +282,7 @@ select.k-typ { width: auto; max-width: 100%; min-height: 32px; padding: 3px 6px;
 .status-warnung .punkt { background: var(--warn); }
 .status-fehler .punkt { background: var(--fehler); }
 .status-fehler .k-status { color: var(--fehler); }
+.status-wartet .punkt { background: var(--leise); }
 .karte input.k-titel { border: 0; border-left: 3px solid transparent; border-radius: 0; padding: 3px 0 3px 8px; margin: 6px 0 2px; min-height: 34px;
   font-size: 1.05rem; font-weight: 650; background: transparent; }
 .karte input.k-titel.von-lehrkraft { border-left-color: var(--lehrkraft-kante); }
@@ -237,7 +306,7 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .k-diagnosen li.warnung { color: var(--warn); }
 .k-diagnosen li.hinweis { color: var(--leise); }
 .k-inhalt { margin-top: 8px; font-size: 0.9rem; }
-.k-inhalt summary { cursor: pointer; color: var(--ocker-tief); }
+.k-inhalt summary { cursor: pointer; color: var(--link); }
 .k-text { white-space: pre-wrap; overflow-wrap: anywhere; font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace;
   border-radius: 8px; padding: 10px; margin: 6px 0 0; max-height: 22rem; overflow: auto; }
 .k-aktionen { display: flex; flex-wrap: wrap; gap: 2px 4px; margin-top: 6px; }
@@ -246,24 +315,18 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .klein:hover:not(:disabled) { background: var(--grund); color: var(--text); }
 .klein:disabled { opacity: 0.35; cursor: default; }
 .k-hoch, .k-runter { font-size: 1.05rem; }
-.k-neu[aria-pressed=true] { color: var(--ocker-tief); font-weight: 650; }
+.k-neu[aria-pressed=true] { color: var(--text); font-weight: 650; text-decoration: underline; }
 .k-loeschen { margin-left: auto; }
 .k-korrektur { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 6px; }
-/* Korrekturschleife an der Karte (AP13.1): Satz, Kopierknopf, Einfügefeld direkt unter der Karte */
-.k-schleife { margin: 8px 0 4px; padding: 12px; border-radius: 8px; background: var(--grund); border: 1px solid var(--linie); }
-.k-schleife .k-saetze { margin: 0 0 8px; padding-left: 18px; font-size: 0.93rem; }
-.k-schleife .k-saetze li { margin-bottom: 4px; }
-.k-schleife .kopieren { margin-bottom: 8px; }
-.k-schleife textarea { min-height: 6rem; font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace; }
-.k-schleife .stand { margin-top: 6px; }
-.k-schleife-zeile { margin: 4px 0 6px; font-size: 0.93rem; }
+.k-zur-korrektur { color: var(--fehler); font-size: 0.9rem; text-underline-offset: 3px; }
+.k-neu-zeile { list-style: square; }
 .k-bilder { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .k-bilder .knopf { max-width: 100%; overflow-wrap: anywhere; }
 .klein-knopf { min-height: 36px; padding: 5px 12px; font-size: 0.9rem; font-weight: 600; }
 /* „+“ zwischen den Karten: ein kleiner runder Knopf auf der Trennlinie */
 .k-zwischen { height: 0; position: relative; z-index: 1; display: flex; justify-content: center; }
 .k-plus { position: absolute; top: -13px; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--linie); background: var(--flaeche);
-  color: var(--ocker-tief); font: inherit; font-weight: 700; line-height: 1; cursor: pointer; padding: 0; opacity: 0.75; }
+  color: var(--text); font: inherit; font-weight: 700; line-height: 1; cursor: pointer; padding: 0; opacity: 0.75; }
 .k-plus:hover, .k-plus:focus-visible { opacity: 1; border-color: var(--text); }
 .karten > .k-zwischen:first-child .k-plus { top: -13px; }
 .karten > .k-zwischen:last-child { height: 30px; }
@@ -305,7 +368,7 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .f-loesung { margin: 0; font-size: 0.95rem; }
 .durchsicht { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
 .gegenpruefen { margin-top: 16px; }
-.gegenpruefen > summary { cursor: pointer; color: var(--ocker-tief); padding: 6px 0; }
+.gegenpruefen > summary { cursor: pointer; color: var(--link); padding: 6px 0; }
 .gegenpruefen .feld { margin-top: 14px; }
 .gegen-ergebnis { list-style: none; margin: 8px 0 0; padding: 0; font-size: 0.93rem; }
 .gegen-ergebnis li { margin-bottom: 6px; }
@@ -320,14 +383,14 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .danach { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--linie); }
 
 /* Rückmeldung */
-.rueckmeldung { background: var(--flaeche); border-radius: var(--rund); padding: 16px; margin: 0 0 12px; box-shadow: 0 1px 2px rgba(42, 42, 42, 0.08); }
+.rueckmeldung { background: var(--flaeche); border-radius: var(--rund); padding: 16px; margin: 0 0 12px; box-shadow: 0 1px 2px var(--schatten); }
 .rueckmeldung textarea { margin-top: 10px; font-size: 15px; }
 
 /* Rand ab Schritt 5 */
 .spalte-rand { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 12px; }
 .rand-block { background: var(--creme); border-radius: var(--rund); padding: 14px 16px; }
 .zahlen { margin: 0; }
-.zahlen > div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid #e4d5ba; }
+.zahlen > div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--rand-linie); }
 .zahlen > div:last-of-type { border-bottom: 0; }
 .zahlen dt { font-size: 0.85rem; color: var(--leise); }
 .zahlen dd { margin: 0; text-align: right; font-weight: 650; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }

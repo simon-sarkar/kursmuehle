@@ -5,19 +5,22 @@ Ablauf je Breite, Zweig „Ich steuere“: zu Beginn nur Schritt 1 (drei Felder,
 „Beta“, Muster, Entwurfsverwaltung als Textlinks in der Kopfzeile; jeder Schritt erscheint erst nach dem vorigen,
 erledigte als aufklappbare Zeile mit Fazit. Schritt 2: Vorlage Einführung, Typ „automatisch“, „+“, Zeit je Phase.
 Schritt 3: Aussehen schreibt den Steckbrief; Hinweise ausschalten (IndexedDB, Speicher einstellungen). Schritt 4: „Anderer
-Chat“ führt zu den Kacheln, Text unter 12 KB mit Zeitregel, Kopieren mit Infobox; kein Schritt 7 ohne Antwort. Schritt 5:
-Antwort mit Zeit-Annahme und zwei roten Karten (Sammelblock unter den Karten), Antwort mit einer roten Karte
-(Korrekturschleife an der Karte: Satz, Einfügen, grün), Antwort mit zwei Bildern (Bildwunsch und Bildprompt), Herkunft,
-Zweigwechsel, Bild an der Karte, Umbenennen, „Diesen Baustein neu beauftragen“ als Schleife, unbekannte id. Schritt
-Bilder: beide Texte mit Kopierknopf, Upload, Status, Nummern. Schritt 6: Fragen, Gegenprüfen. Schritt 7: ein Knopf baut
-und lädt herunter (Bytes wie der CPython-Bau), nur er ist Ocker; Wiederherstellen, Rückmeldung. Neu laden, Einheit
-öffnen, nächste Einheit (Aussehen und Chat übersprungen, Nachlieferung), „×“. „Mach du“ bis zur Datei mit Platzhaltern
-statt Bildern. Testkurs netzwerk9. Plan: Warnung vor dem Kopieren bei zu wenig Karten, Phasenwarnung, Vorlage
-auffüllen. Landingpage: Zurück-Knopf mit erhaltener Einheit, Vorbelegung über ?thema=, Rückfrage bei gesicherter
-Einheit. Überall: kein horizontales Scrollen, keine verbotenen Begriffe (auch „Kursdatei“), keine Seitenfehler.
+Chat“ führt zu den Kacheln, Text unter 14 KB mit Zeitregel, Kopieren mit Infobox; kein Schritt 7 ohne Antwort. Schritt 5
+(AP13.3: ein Korrekturweg): Antwort mit Zeit-Annahme und zwei roten Karten, ein Korrekturblock unter dem Einfügefeld,
+„Korrektur anfordern“ kopiert alle Sätze und öffnet das Feld, eigener Satz ergibt eine Statuskarte, Einsetzen nach id:;
+Antwort mit einer roten Karte (derselbe Block, ein Satz), „Antwort übernehmen“; Antwort mit zwei Bildern, Herkunft,
+Zweigwechsel, Bild an der Karte, Umbenennen, zwei Karten neu beauftragt (ein Text, eine Antwort), der Fall b3-3/b4 aus dem
+Protokoll, unbekannte id. Schritt Bilder: beide Texte mit Kopierknopf, Upload, Status, Nummern. Schritt 6: Fragen,
+Gegenprüfen. Schritt 7: ein Knopf baut und lädt herunter (Bytes wie der CPython-Bau), nur er ist Ocker; Wiederherstellen,
+Rückmeldung mit Zeile „Korrekturen“. Neu laden, Einheit öffnen, nächste Einheit (Aussehen und Chat übersprungen, Text,
+Rand und Bilder nur dieser Einheit, Nachlieferung), „×“. „Mach du“ bis zur Datei mit Platzhaltern statt Bildern. Testkurs
+netzwerk9. Plan: Warnung vor dem Kopieren bei zu wenig Karten, Phasenwarnung, Vorlage auffüllen. Teile (AP13.3):
+angehängte Einheit in zwei Teilen, Teil-Liste eingefroren, rote Karten erst nach dem letzten Teil. Dunkel (AP13.3):
+Schalter in der Kopfzeile, gemerkte Wahl, Kontrast je Schritt. Landingpage: Zurück-Knopf mit erhaltener Einheit,
+Vorbelegung über ?thema=, Rückfrage bei gesicherter Einheit. Überall: kein horizontales Scrollen, keine verbotenen Begriffe (auch „Kursdatei“), keine Seitenfehler.
 
 usage: python3 scripts/tests/test_ansicht.py [--browser chromium|webkit|firefox] [--breite 1280,390] [--screenshots DIR]
-  --screenshots DIR  zusätzlich ap13.1-muehle-{1,5,bilder,7}-{1280,390}.png
+  --screenshots DIR  zusätzlich ap13.3-muehle-{5,korrektur,bilder}-{1280,390}.png und ap13.3-muehle-{1,5,7}-dunkel-1280.png
 Exit 0 = alles gut. Braucht Playwright mit dem gewählten Browser (oder CHROMIUM_PATH). Ruft vorher web_bundle.py auf.
 """
 import argparse
@@ -358,20 +361,12 @@ def lauf(browser, basis, breite, katalog, tmp, name, hinweise):
     warte(page, "km.zustand.geladen && km.zustand.steckbrief_text")
     ok(page.locator("#aus-vorlage .aus-kachel svg").count() == 3 and page.locator("#aus-format .aus-kachel").count() == 2
        and page.locator("#aus-farbe .aus-kachel").count() == 6, f"{wo}: Aussehen: drei Vorlagen, zwei Formate, sechs Farben, mit Miniatur")
+    # drei schnelle Klicks ohne Warten dazwischen: die Kacheln werden nicht mehr neu gebaut, kein Klick geht verloren
+    # (Firefox, CI 24.10.2026; AP13.3); geprüft wird erst, wenn der Steckbrief geschrieben ist
     for feld, wert in (("vorlage", "kacheln"), ("format", "kacheln"), ("farbe", "grün")):
         page.click(f".aus-kachel[data-feld={feld}][data-wert='{wert}']")
-        # je Klick warten, bis die Kachel gewählt ist: Firefox verliert sonst gelegentlich den Steckbrief (leer) bei drei
-        # schnellen Klicks hintereinander (CI 24.10.2026, main e297dff und 3e27cdb); Ursache offen, siehe AP13.3
-        page.wait_for_function("([f, w]) => document.querySelector(`.aus-kachel[data-feld=${f}][data-wert='${w}']`).getAttribute('aria-checked') === 'true'",
-                               arg=[feld, wert], timeout=30000)
-    try:
-        warte(page, "km.zustand.steckbrief_text.includes('#15803D') && km.zustand.steckbrief_text.includes('format: kacheln')", timeout=20000)
-    except Exception:
-        print("Steckbrief nach den Kachel-Klicks nicht geschrieben, Klicks werden wiederholt (Firefox-Wettlauf)")
-        for feld, wert in (("vorlage", "kacheln"), ("format", "kacheln"), ("farbe", "grün")):
-            page.click(f".aus-kachel[data-feld={feld}][data-wert='{wert}']")
-            page.wait_for_timeout(300)
-        warte(page, "km.zustand.steckbrief_text.includes('#15803D') && km.zustand.steckbrief_text.includes('format: kacheln')", timeout=60000)
+    warte(page, "km.zustand.steckbrief_text.includes('#15803D') && km.zustand.steckbrief_text.includes('format: kacheln')"
+                " && km.zustand.steckbrief_text.includes('vorlage: kacheln')", timeout=60000)
     sb = api.steckbrief_lesen(page.evaluate("km.zustand.steckbrief_text"))
     ok(sb["kurs"]["design"]["vorlage"] == "kacheln" and sb["kurs"]["format"] == "kacheln" and sb["kurs"]["farbe"] == "#15803D"
        and page.get_attribute(".aus-kachel[data-feld=farbe][data-wert='grün']", "aria-checked") == "true",
@@ -399,7 +394,7 @@ def lauf(browser, basis, breite, katalog, tmp, name, hinweise):
     chat_waehlen(page, "ais")
     t = chat_text(page)
     ids = [k["id"] for k in st if not k["aus"]]
-    ok(len(t.encode()) < 12 * 1024 and all(f"id: {i} ·" in t for i in ids) and "id: b6 ·" not in t and "Typ frei" in t
+    ok(len(t.encode()) < 14 * 1024 and all(f"id: {i} ·" in t for i in ids) and "id: b6 ·" not in t and "Typ frei" in t
        and "Ein Fall aus dem Alltag" in t and "Verteile die 45 Minuten selbst" in t and "Die Bausteine füllen die 45 Minuten" in t,
        f"{wo}: Text ({len(t.encode())} Bytes): alle eingeschalteten id:, Typ frei, Auftrag, Zeit verteilt das Modell, Zeitregel")
     ok(page.is_hidden("#kopier-warnung"), f"{wo}: vollständige Vorlage: keine Warnung vor dem Kopieren")
@@ -418,7 +413,7 @@ def lauf(browser, basis, breite, katalog, tmp, name, hinweise):
     ok(page.locator("#karten-ort-5 .karte").count() == 0, f"{wo}: vor der Antwort keine Karten unter Schritt 5")
     begriffe(page, f"{wo} Schritt 5 leer")
 
-    # 5 Antwort mit Zeit-Annahme, zwei roten Karten und langem Einstieg: Sammelblock unter den Karten
+    # 5 Antwort mit Zeit-Annahme, zwei roten Karten und langem Einstieg: ein Korrekturblock direkt unter dem Einfügefeld
     einfuegen(page, chat(zeit=True))
     st = stand(page)
     rot = [k["id"] for k in st if k["status"] == "fehler"]
@@ -426,11 +421,43 @@ def lauf(browser, basis, breite, katalog, tmp, name, hinweise):
     ok("nötig sind mindestens 3" in page.text_content("#karte-b4 .k-diagnosen") and "Der Einstieg hat" in page.text_content("#karte-b1 .k-diagnosen"),
        f"{wo}: Mindestmaß und Einstieg an den Karten")
     kor = page.text_content("#korrektur") if page.is_visible("#korrektur") else ""
+    lage = page.evaluate("""() => { const e = document.getElementById('eingabe'), k = document.getElementById('korrektur'),
+        o = document.getElementById('karten-ort-5'); return !!(e.compareDocumentPosition(k) & 4) && !!(k.compareDocumentPosition(o) & 4); }""")
     ok("Fülle die 45 Minuten mit Bausteinen; nimm keine Zeit außerhalb des Kurses an." in kor and "(id: b3)" in kor and "(id: b4)" in kor
-       and page.evaluate("document.getElementById('korrektur').previousElementSibling.id") == "karten-ort-5",
-       f"{wo}: Sammelblock unter der Kartenliste mit Zeit-Satz und beiden ids")
+       and lage and page.locator(".korrektur").count() == 1 and page.is_hidden("#korrektur-antwort"),
+       f"{wo}: ein Korrekturblock zwischen Einfügefeld und Karten mit allen Sätzen, Antwortfeld noch zu")
+    ok(page.locator("#karten .k-satz, #karten .k-schleife").count() == 0 and page.locator("#karte-b3 .k-zur-korrektur").count() == 1
+       and page.locator("#karte-b4 .k-zur-korrektur").count() == 1, f"{wo}: rote Karten zeigen ihren Satz und verlinken den Block")
     ok("Der Chat nimmt Zeit außerhalb des Kurses an" in page.text_content("#hinweise") and page.is_hidden("#weiter-5"), f"{wo}: Zeit-Annahme am Rand, kein Weiter")
-    # Antwort mit kaputtem Baustein: genau dieser rot, Korrekturschleife an der Karte
+    ok(page.get_attribute("#karte-b3 .k-diagnosen li", "data-regel") == "zone.unbekannt"
+       and page.get_attribute("#karte-b4 .k-diagnosen li", "data-regel") == "mindest.quiz", f"{wo}: Karte führt die Regel-Kennung")
+    page.click("#karte-b3 .k-zur-korrektur")
+    warte(page, "document.activeElement && document.activeElement.id === 'korrektur-kopieren'", timeout=10000)
+    page.click("#korrektur-kopieren")
+    warte(page, "document.getElementById('korrektur-stand').textContent.startsWith('Kopiert')", timeout=10000)
+    ok(page.text_content("#korrektur-stand") == "Kopiert. Füge sie in deinen Chat ein und die Antwort des Chats hier unten."
+       and page.is_visible("#korrektur-eingabe"), f"{wo}: „Korrektur anfordern“ kopiert und öffnet das Feld für die Antwort")
+    saetze = page.evaluate("km.zustand.korrekturen.map(k => k.satz).join('\\n')")
+    if name == "chromium":
+        ok(page.evaluate("navigator.clipboard.readText()") == saetze, f"{wo}: Zwischenablage enthält alle Sätze")
+    ev = page.evaluate("km.zustand.mappe.korrekturen")
+    ok(len(ev) == 3 and {e["regel"] for e in ev} == {"zeit.annahme", "zone.unbekannt", "mindest.quiz"} and all(e["runde"] == 1 for e in ev)
+       and all(e["chat"] == "AIS-Chat" and e["version"] == katalog["version"] for e in ev) and all(set(e) <= {"version", "chat", "typ", "regel", "runde", "einheit"} for e in ev),
+       f"{wo}: Korrekturbitte als Ereignis in der Kursmappe (ohne Inhalte)")
+    kein_scrollen(page, breite, f"{wo} Korrekturblock")
+    # eigener Satz statt der Antwort: Statuskarte erklärt es
+    page.fill("#korrektur-eingabe", page.evaluate("km.zustand.korrekturen[1].satz"))
+    warte(page, "document.getElementById('korrektur-ergebnis').textContent.includes('Satz für deinen Chat')", timeout=20000)
+    ok("stand-karte" in page.get_attribute("#korrektur-ergebnis", "class") and page.is_visible("#korrektur-ergebnis"),
+       f"{wo}: eigener Korrektursatz eingefügt: Karte „Das ist der Satz für deinen Chat …“")
+    # Antwort: die ganze Kursdatei, Bausteine nach id; die Zeit-Annahme verschwindet mit dem Kopf
+    page.fill("#korrektur-eingabe", chat())
+    warte(page, "document.getElementById('korrektur').hidden && document.getElementById('eingabe-stand').textContent.startsWith('Eingesetzt')", timeout=30000)
+    st = stand(page)
+    ok(not [k for k in st if k["status"] == "fehler"] and "20 Minuten entfallen" not in page.evaluate("km.zustand.kurs_md")
+       and page.is_visible("#weiter-5") and "Alle Bausteine sind in Ordnung" in page.text_content("#eingabe-stand"),
+       f"{wo}: Korrektur eingesetzt: keine rote Karte, Zeit-Annahme weg, Weiter")
+    # Antwort mit einem kaputten Baustein: derselbe Block mit einem Satz, Antwort ohne id geht an diese Karte
     einfuegen(page, chat(kaputt=True))
     st = stand(page)
     rot = [k["id"] for k in st if k["status"] == "fehler"]
@@ -438,26 +465,26 @@ def lauf(browser, basis, breite, katalog, tmp, name, hinweise):
     k1 = st[0]
     ok(k1["auftrag"] == "Ein Fall aus dem Alltag" and k1["phase"] == "Einstieg" and k1["titel"] == "Die Leiter am Fenster",
        f"{wo}: id: ordnet zu, Auftrag und Phase bleiben")
-    ok(page.is_visible("#karte-b3 .k-satz") and page.text_content("#karte-b3 .k-satz") == "Korrektur anfordern"
-       and page.is_hidden("#korrektur") and page.is_hidden("#weiter-5"), f"{wo}: eine rote Karte: „Korrektur anfordern“, kein Sammelblock, kein Weiter")
-    page.click("#karte-b3 .k-satz")
-    page.wait_for_selector("#karte-b3 .k-schleife")
-    schl = page.text_content("#karte-b3 .k-schleife")
-    ok("„Kathete oder Hypotenuse?“ (id: b3)" in schl and "Füge den Satz in deinen Chat ein und kopiere seine Antwort hierher." in schl
-       and page.is_visible("#karte-b3 .k-schleife textarea") and page.locator("#karte-b3 .k-schleife input[name=modus]").count() == 0,
-       f"{wo}: Schleife unter der Karte: Satz, Zeile, Einfügefeld, keine Moduswahl")
-    page.click("#karte-b3 [data-aktion=schleife-kopieren]")
-    warte(page, "document.querySelector('#karte-b3 .k-schleife-stand').textContent.startsWith('Kopiert')", timeout=10000)
-    kein_scrollen(page, breite, f"{wo} Korrekturschleife")
-    page.fill("#karte-b3 .k-schleife textarea", "```markdown\n" + zuordnen("Dachboden", id_zeile=False) + "```")
-    warte(page, "document.querySelector('#karte-b3 .k-schleife-stand') && document.querySelector('#karte-b3 .k-schleife-stand').textContent.includes('noch rot')", timeout=30000)
-    ok(page.is_visible("#karte-b3 .k-schleife") and "status-fehler" in page.get_attribute("#karte-b3", "class"),
-       f"{wo}: Antwort noch falsch: Karte bleibt rot, Schleife bleibt offen")
-    page.fill("#karte-b3 .k-schleife textarea", "```markdown\n" + zuordnen(id_zeile=False) + "```")
-    warte(page, "document.getElementById('karte-b3').classList.contains('status-ok') && !document.querySelector('.k-schleife')", timeout=30000)
-    ok(stand(page)[2]["titel"] == "Kathete oder Hypotenuse?" and page.is_visible("#weiter-5"), f"{wo}: Korrektur eingefügt: Karte grün, Schleife zu, Weiter")
-    # Antwort mit zwei Bildern (Bildwunsch und Bildprompt)
-    einfuegen(page, chat(bild=True))
+    ok(page.is_visible("#korrektur") and page.locator("#korrektur-liste li").count() == 1 and "„Kathete oder Hypotenuse?“ (id: b3)" in page.text_content("#korrektur")
+       and page.text_content("#korrektur-titel") == "Ein Baustein braucht eine Korrektur" and page.is_hidden("#weiter-5"),
+       f"{wo}: ein Satz: derselbe Block, kein Weiter")
+    page.click("#korrektur-kopieren")
+    warte(page, "document.getElementById('korrektur-stand').textContent.startsWith('Kopiert')", timeout=10000)
+    ok(page.evaluate("Math.max(...km.zustand.mappe.korrekturen.map(e => e.runde))") == 2, f"{wo}: zweite Korrekturbitte = Runde 2")
+    page.fill("#korrektur-eingabe", "```markdown\n" + zuordnen("Dachboden", id_zeile=False) + "```")
+    warte(page, "document.getElementById('korrektur-ergebnis').textContent.includes('Noch ein Fehler')", timeout=30000)
+    ok(page.is_visible("#korrektur") and "status-fehler" in page.get_attribute("#karte-b3", "class"), f"{wo}: Antwort noch falsch: Karte rot, Block bleibt")
+    page.evaluate("t => { document.getElementById('korrektur-eingabe').value = t; }", "```markdown\n" + zuordnen(id_zeile=False) + "```")
+    page.click("#korrektur-uebernehmen")
+    warte(page, "document.getElementById('karte-b3').classList.contains('status-ok') && document.getElementById('korrektur').hidden", timeout=30000)
+    ok(stand(page)[2]["titel"] == "Kathete oder Hypotenuse?" and page.is_visible("#weiter-5"), f"{wo}: „Antwort übernehmen“: Karte grün, Block zu, Weiter")
+    # eigener Text für den Chat im Hauptfeld: Statuskarte; Antwort mit zwei Bildern über den Knopf „Antwort übernehmen“
+    page.fill("#eingabe", chat_text(page))
+    warte(page, "document.getElementById('eingabe-stand').textContent.includes('Text für deinen Chat')", timeout=20000)
+    ok("stand-karte" in page.get_attribute("#eingabe-stand", "class"), f"{wo}: Text der Mühle eingefügt: Statuskarte statt Fehlerzeile")
+    page.evaluate("t => { document.getElementById('eingabe').value = t; document.getElementById('eingabe-stand').textContent = ''; }", chat(bild=True))
+    page.click("#eingabe-uebernehmen")
+    warte(page, "document.getElementById('eingabe-stand').textContent.startsWith('Übernommen')")
     st = stand(page)
     ok([k["id"] for k in st if k["status"] == "warnung"] == ["b1", "b2"] and not [k for k in st if k["status"] == "fehler"],
        f"{wo}: fehlende Bilder = Hinweis auf Karte b1 und b2, keine Fehler")
@@ -503,19 +530,41 @@ def lauf(browser, basis, breite, katalog, tmp, name, hinweise):
     # die Herkunft kommt mit dem nächsten Zeichnen (Firefox: Wettlauf mit der Auswertung)
     warte(page, "document.querySelector('#karte-b4 .k-titel').dataset.herkunft === 'lehrkraft'", timeout=30000)
     ok(page.get_attribute("#karte-b4 .k-titel", "data-herkunft") == "lehrkraft", f"{wo}: umbenannter Titel in der Farbe der Lehrkraft")
-    # Baustein neu beauftragen: geführte Schleife an der Karte (Text nur für diesen Baustein, Antwort nur hier)
+    # „Diesen Baustein neu beauftragen“ an zwei Karten: derselbe Block, ein Text, eine Antwort, Einsetzen nach id:
+    page.click("#karte-b4 .k-neu")
     page.click("#karte-b5 .k-neu")
-    page.wait_for_selector("#karte-b5 .k-schleife")
-    warte(page, "!document.querySelector('#karte-b5 [data-aktion=schleife-kopieren]').disabled", timeout=30000)
-    page.click("#karte-b5 [data-aktion=schleife-kopieren]")
-    warte(page, "(document.getElementById('schleife-feld') || {}).value", timeout=10000)
-    tb = page.evaluate("document.getElementById('schleife-feld').value")
-    ok(len(tb.encode()) < 3000 and "id: b5" in tb and "Hefteintrag mindestens 80 Wörter" in tb, f"{wo}: Text nur Baustein ({len(tb.encode())} Bytes) mit Mindestmaß")
-    page.fill("#karte-b5 .k-schleife textarea", "```markdown\n### Seite: Hefteintrag Pythagoras · 6 min\n" + HEFT + "\n```")
-    warte(page, "!document.querySelector('.k-schleife') && km.zustand.mappe.bausteine[4].titel === 'Hefteintrag Pythagoras'", timeout=30000)
+    warte(page, "!document.getElementById('korrektur').hidden && document.querySelectorAll('#korrektur-liste .k-neu-zeile').length === 2"
+                " && !document.getElementById('korrektur-kopieren').disabled && document.getElementById('korrektur-feld').value.includes('id: b5')", timeout=30000)
+    tb = page.evaluate("document.getElementById('korrektur-feld').value")
+    ok("id: b4" in tb and "id: b5" in tb and "Hefteintrag mindestens 80 Wörter" in tb and len(tb.encode()) < 6000
+       and page.get_attribute("#karte-b5 .k-neu", "aria-pressed") == "true",
+       f"{wo}: zwei Karten neu beauftragt: ein Text nur für diese Bausteine ({len(tb.encode())} Bytes)")
+    page.click("#korrektur-kopieren")
+    warte(page, "document.getElementById('korrektur-stand').textContent.startsWith('Kopiert')", timeout=10000)
+    page.fill("#korrektur-eingabe", "```markdown\n### Quiz: Seiten im Dreieck berechnen · 10 min\nid: b4\n"
+              "1. MC: Welche Seite ist die längste? · ✔Hypotenuse · Kathete\n"
+              "2. RF: Katheten liegen am rechten Winkel. ✔ → richtig: Beide bilden ihn. → falsch: Doch, beide bilden ihn.\n"
+              "3. RF: Der Satz gilt in jedem Dreieck. ✘ → richtig: Nur im rechtwinkligen. → falsch: Nur im rechtwinkligen.\n"
+              "### Seite: Hefteintrag Pythagoras · 6 min\nid: b5\n" + HEFT + "\n```")
+    warte(page, "document.getElementById('korrektur').hidden && km.zustand.mappe.bausteine[4].titel === 'Hefteintrag Pythagoras'", timeout=30000)
     st = stand(page)
-    ok(st[4]["titel"] == "Hefteintrag Pythagoras" and st[3]["titel"] == "Seiten im Dreieck berechnen" and st[4]["status"] == "ok",
-       f"{wo}: neu beauftragt: nur Baustein b5 ersetzt, Schleife zu")
+    ok(st[4]["titel"] == "Hefteintrag Pythagoras" and st[3]["titel"] == "Seiten im Dreieck berechnen" and st[4]["status"] == "ok"
+       and not page.evaluate("km.zustand.mappe.bausteine.some(k => k.neu)"), f"{wo}: beide nach id ersetzt, Markierung weg, Block zu")
+    # Fall aus dem Protokoll: Block für b5 offen, die Antwort trägt id: b4 und landet in b4, nicht in b5
+    page.click("#karte-b5 .k-neu")
+    warte(page, "!document.getElementById('korrektur').hidden && !document.getElementById('korrektur-kopieren').disabled", timeout=30000)
+    page.click("#korrektur-kopieren")
+    page.fill("#korrektur-eingabe", "```markdown\n### Quiz: Seiten im Dreieck berechnen · 10 min\nid: b4\n"
+              "1. MC: Ein Dreieck mit 3, 4 und 5 cm: rechtwinklig? · ✔ja · nein\n"
+              "2. RF: Katheten liegen am rechten Winkel. ✔ → richtig: Beide bilden ihn. → falsch: Doch, beide bilden ihn.\n"
+              "3. RF: Der Satz gilt in jedem Dreieck. ✘ → richtig: Nur im rechtwinkligen. → falsch: Nur im rechtwinkligen.\n```")
+    warte(page, "km.zustand.kurs_md.includes('Ein Dreieck mit 3, 4 und 5 cm')", timeout=30000)
+    st = stand(page)
+    ok("id: b4\n1. MC: Ein Dreieck mit 3, 4 und 5 cm" in page.evaluate("km.zustand.kurs_md") and st[4]["titel"] == "Hefteintrag Pythagoras"
+       and page.is_visible("#korrektur"),
+       f"{wo}: Antwort mit id: b4 bei offenem Block für b5 ersetzt b4, b5 bleibt neu beauftragt")
+    page.click("#karte-b5 .k-neu")
+    warte(page, "document.getElementById('korrektur').hidden", timeout=10000)
     einfuegen(page, "### Quiz: Irgendwas · 2 min\nid: x99\n1. A? · ✔a · b\n")
     ok("die es in dieser Einheit nicht gibt" in page.text_content("#eingabe-stand"), f"{wo}: unbekannte id: Fehlermeldung")
     begriffe(page, f"{wo} Schritt 5")
@@ -590,6 +639,9 @@ def lauf(browser, basis, breite, katalog, tmp, name, hinweise):
     ok(f"Kursmühle {katalog['version']}" in rm and "Chat: AIS-Chat" in rm and "Jahrgangsstufe: 9" in rm and "Vorlage: Einführung" in rm
        and "Wo hat es gestockt?" in rm and "Was hättest du anders gewollt?" in rm and "Nutzt du es nächste Woche wieder?" in rm,
        f"{wo}: Rückmeldungstext mit Version, Chat, Jahrgangsstufe, Vorlage und drei Fragen")
+    zk = re.search(r"^Korrekturen: (\d+) · (.+) · Chat: (.+)$", rm, re.M)
+    ok(zk and int(zk.group(1)) == len(page.evaluate("km.zustand.mappe.korrekturen")) >= 4 and "zeit.annahme" in zk.group(2)
+       and "mindest.quiz" in zk.group(2) and zk.group(3) == "AIS-Chat", f"{wo}: Rückmeldung mit Zeile „Korrekturen: n · Regeln · Chat“ ({zk and zk.group(0)})")
     ok(not any(w in rm for w in ("Pythagoras", "Leiter", "Hypotenuse", "Hefteintrag", "Fall aus dem Alltag")),
        f"{wo}: Rückmeldungstext ohne Inhalte der Einheit")
     page.click("#rm-adresse-kopieren")
@@ -658,18 +710,22 @@ def lauf(browser, basis, breite, katalog, tmp, name, hinweise):
     ok(schritte(page).get("3") == "erledigt zu" and page.is_visible("#chat-text") and page.is_hidden("#chat-wahl"),
        f"{wo}: nächste Einheit: Aussehen und Chat vorbelegt, Schritt 3 als erledigte Zeile, Text direkt da")
     warte(page, "document.getElementById('chat-text-feld').value.includes('id: b7 ·')", timeout=30000)
-    t2 = "\n".join(page.evaluate("km.zustand.texte.teile"))       # über 12 KB in Teilen (AP13.1: Typen zum Ergänzen)
-    ok(all(f"id: b{i} ·" in t2 for i in (7, 8, 9, 10, 11)) and "id: b2 ·" not in t2 and "gibt es schon" in t2,
-       f"{wo}: Text nur für die neue Einheit (alle leeren Bausteine, {page.evaluate('km.zustand.texte.teile.length')} Teile)")
+    t2 = "\n".join(page.evaluate("km.zustand.texte.teile"))
+    ok(all(f"id: b{i} ·" in t2 for i in (7, 8, 9, 10, 11)) and "id: b2 ·" not in t2 and "gibt es schon" not in t2
+       and "Katheten und Hypotenuse" not in t2,
+       f"{wo}: Text nur mit den Karten der neuen Einheit, keine der ersten ({page.evaluate('km.zustand.texte.teile.length')} Teile)")
     kopieren(page, infobox=False)
     page.wait_for_selector("#schritt-5[data-stand=aktiv]")
     einfuegen(page, chat_zwei())
     ok("als weitere Einheit angehängt" in page.text_content("#eingabe-stand") and "teil: e2" in page.evaluate("km.zustand.kurs_md")
        and page.evaluate("km.zustand.pruefung.abschnitte.length") == 2 and page.evaluate("km.zustand.pruefung.ok"),
        f"{wo}: zweite Einheit als eigener Abschnitt mit teil: e2, ohne Fehler")
+    ok(page.text_content("#kz-minuten").endswith("von 45 geplant") and page.text_content("#kz-folge").startswith("Lesen")
+       and page.evaluate("km.zustand.kennzahlen.bausteine") == 5,
+       f"{wo}: Rand rechnet nur die neue Einheit ({page.text_content('#kz-minuten')}, {page.text_content('#kz-folge')})")
     page.click("#weiter-5")
-    page.wait_for_selector("#schritt-bilder[data-stand=aktiv]")
-    page.click("#weiter-bilder")
+    page.wait_for_selector("#schritt-6[data-stand=aktiv]")
+    ok(page.is_hidden("#schritt-bilder"), f"{wo}: Bilder der ersten Einheit erscheinen nicht im Schritt Bilder der zweiten")
     page.click("#ohne-durchsicht")
     with page.expect_download(timeout=90000) as dl:
         page.click("#herunterladen")
@@ -765,6 +821,253 @@ def lauf(browser, basis, breite, katalog, tmp, name, hinweise):
     ctx.close()
 
 
+# ---------------------------------------------------------------- AP13.3: angehängte Einheit in zwei Teilen
+OHR_KURS = """# Drehbuch v1 · Das Ohr · 45 min
+Angenommen: Kursformat Themen untereinander
+Bildwunsch: ohr.png | Querschnitt des Ohrs mit Ohrmuschel, Trommelfell und Schnecke
+Bildprompt: ohr.png | Sachliche Zeichnung des Ohrs im Querschnitt, nummerierte Pfeile 1 bis 3, keine Wörter, Querformat
+
+## Das Ohr · 45 min
+### Textfeld: Ein Geräusch in der Nacht · 5 min
+id: b1
+Nachts hörst du ein leises Klopfen. Woher weißt du, aus welcher Richtung es kommt?
+### Seite: Der Weg des Schalls · 15 min
+id: b2
+Der Schall gelangt durch den Gehörgang zum Trommelfell und bringt es zum Schwingen.
+Bild: ohr.png | Querschnitt des Ohrs
+### Zuordnen: Teile des Ohrs · 7 min
+id: b3
+zonen: Außenohr | Mittelohr | Innenohr
+- Ohrmuschel → Außenohr
+- Gehörknöchelchen → Mittelohr
+- Schnecke → Innenohr
+- Gehörgang → Außenohr
+### Quiz: Fragen zum Ohr · 7 min
+id: b4
+1. RF: Das Trommelfell schwingt. ✔ → richtig: Der Schall bewegt es. → falsch: Doch, es schwingt.
+2. RF: Die Schnecke liegt im Außenohr. ✘ → richtig: Sie liegt im Innenohr. → falsch: Sie liegt im Innenohr.
+3. RF: Der Gehörgang führt zum Trommelfell. ✔ → richtig: Genau dorthin. → falsch: Doch, er endet dort.
+"""
+
+RF3 = lambda thema: "".join(f"{i}. RF: {thema} {i}. ✔ → richtig: Das stimmt, weil es so beobachtet wird. → falsch: Doch, das stimmt.\n"
+                            for i in (1, 2, 3))
+
+
+def eichhoernchen_teil1(zone="frisst es"):
+    """Antwort auf Teil 1 von 2 (b7 bis b12): Bildwunsch zweimal zum gleichen Dateinamen, Zuordnen mit falscher Zone."""
+    return f"""```markdown
+# Drehbuch v1 · Das Eichhörnchen · 45 min
+Bildwunsch: eichhoernchen.png | Eichhörnchen auf einem Ast
+Bildprompt: eichhoernchen.png | Zeichnung eines Eichhörnchens auf einem Ast
+Bildwunsch: eichhoernchen.png | Eichhörnchen seitlich auf einem Ast, buschiger Schwanz gut zu sehen
+Bildprompt: eichhoernchen.png | Sachliche Zeichnung, seitlich, nummerierte Pfeile 1 bis 3 auf Schwanz, Ohren und Krallen, keine Wörter, Querformat
+
+## Das Eichhörnchen · 45 min
+### Textfeld: Wer klettert da? · 4 min
+id: b7
+phase: Einstieg
+Im Park springt ein Tier von Ast zu Ast. Es hat einen buschigen Schwanz.
+### Seite: So lebt das Eichhörnchen · 12 min
+id: b8
+Das Eichhörnchen hat ein rotbraunes Fell und einen langen, buschigen Schwanz.
+Bild: eichhoernchen.png | Eichhörnchen auf einem Ast | 1 Schwanz, 2 Ohren, 3 Krallen
+### Zuordnen: Was frisst das Eichhörnchen? · 6 min
+id: b9
+zonen: frisst es | frisst es nicht
+- Nüsse → frisst es
+- Bucheckern → frisst es
+- Steine → {zone}
+- Pilze → frisst es
+### Quiz: Fragen zum Eichhörnchen · 6 min
+id: b10
+{RF3("Das Eichhörnchen klettert gut, Satz")}### Lernkarten: Wörter zum Eichhörnchen · 5 min
+id: b11
+- Kobel → Nest des Eichhörnchens
+- Krallen → spitze Nägel an den Pfoten
+- Winterruhe → im Winter viel schlafen
+- Vorrat → Futter, das es versteckt
+### Quiz: Noch einmal üben · 6 min
+id: b12
+{RF3("Das Eichhörnchen versteckt Nüsse, Satz")}```"""
+
+
+EICH_HEFT = """```markdown
+### Seite: Hefteintrag · 6 min
+id: b13
+Das **Eichhörnchen** lebt im Wald und im Park. Es klettert mit seinen **Krallen** an Bäumen hoch. Sein Nest heißt **Kobel**.
+Im Herbst versteckt es Nüsse als Vorrat. Im Winter schläft es viel und holt sich ab und zu etwas aus seinem Vorrat.
+Merke: Das Eichhörnchen baut einen Kobel und legt im Herbst einen Vorrat an.
+```"""
+
+
+def ohr_mappe(tmp):
+    """Kursmappe: erste Einheit „Das Ohr“ (Biologie 7) mit vier Bausteinen und zwei leeren Karten, angehängt die zweite
+    Einheit „Das Eichhörnchen“ (Jahrgangsstufe 2) mit sieben leeren Karten (Teil e2), Schritt 4, Chat ByLKI."""
+    m = M.neu("Das Ohr", einheit={"thema": "Das Eichhörnchen", "jahrgang": "2", "minuten": 45, "vorlage": "Einführung"})
+    pr = api.pruefe(OHR_KURS)
+    M.abgleich(m, pr["bausteine"])
+    for e, ph in zip(m["bausteine"], ("Einstieg", "Erarbeitung", "Übung", "Übung")):
+        e["phase"] = ph
+    m["bausteine"] += [M.geplant("b5", "Seite", "Hefteintrag", "Sicherung", 6), dict(M.geplant("b6", "automatisch", "Der Fall vom Anfang", "Vertiefung", 2), aus=True)]
+    plan = [("automatisch", "Einstieg", "Einstieg"), ("automatisch", "Lesetext", "Erarbeitung"), ("automatisch", "Übung zum Zuordnen", "Übung"),
+            ("automatisch", "Übung zum Anwenden", "Übung"), ("automatisch", "Wörter üben", "Übung"), ("automatisch", "Noch einmal üben", "Übung"),
+            ("Seite", "Hefteintrag", "Sicherung")]
+    m["bausteine"] += [dict(M.geplant(f"b{7 + i}", typ, titel, phase, 6), einheit="e2") for i, (typ, titel, phase) in enumerate(plan)]
+    m.update(chat="bylki", schritt=4, zweig="steuer", aussehen=True, anhaengen="e2", laufend="e2", einheiten=2, zeit_selbst=False,
+             importiert=["e1"], kopiert=True)
+    sb = M.angaben_schreiben("", {"thema": "Das Ohr", "jahrgang": "2", "minuten": 45, "fach": "HSU", "website": "nein",
+                                  "format": "themen", "vorlage": "schlicht", "abschluss": "keiner", "portionierung": "keine"})
+    pfad = os.path.join(tmp, "ohr.kursmappe.zip")
+    with open(pfad, "wb") as f:
+        f.write(M.schreiben(m, pr["kursdatei"], sb, {}))
+    return pfad
+
+
+def teile_lauf(browser, basis, breite, name, tmp):
+    """Angehängte Einheit, Text in zwei Teilen (ByLKI: höchstens sechs Bausteine je Teil): Teil-Liste nur aus der
+    laufenden Einheit, eingefroren beim ersten Kopieren; nach Teil 1 nur der Fortschritt, rote Karten und Korrektur erst
+    nach dem letzten Teil; Rand und Schritt Bilder nur für diese Einheit, ein Bildwunsch je Dateiname."""
+    wo = f"{name}/{breite} Teile"
+    ctx = browser.new_context(viewport={"width": breite, "height": 900})
+    if name == "chromium":
+        ctx.grant_permissions(["clipboard-read", "clipboard-write"])
+    page = ctx.new_page()
+    seitenfehler = []
+    page.on("pageerror", lambda e: seitenfehler.append(str(e)))
+    page.goto(f"{basis}/index.html")
+    page.set_input_files("#datei-oeffnen", ohr_mappe(tmp))
+    warte(page, "document.body.dataset.schritt === '4' && km.zustand.texte.teile.length === 2", timeout=120000)
+    teile = page.evaluate("km.zustand.texte.teile")
+    ids = page.evaluate("km.zustand.texte.ids")
+    ok([i for t in ids for i in t] == [f"b{i}" for i in range(7, 14)] and not any(f"id: b{i} ·" in "".join(teile) for i in range(1, 7)),
+       f"{wo}: Teil-Liste nur aus der laufenden Einheit ({ids})")
+    ok("Teil 1 von 2" in teile[0] and "Teil 2 von 2" in teile[1] and "Prüfe vor der Ausgabe" not in teile[1]
+       and "Alle Teile zusammen ergeben 45 Minuten. Auf diesen Teil entfallen" in teile[1] and "Hefteintrag mindestens 50 Wörter" in teile[1] and "Grundschule:" in teile[0],
+       f"{wo}: Teil 2 ohne Format und Prüfliste, mit Anteil an den Minuten; Grundschule-Zeile in Teil 1")
+    ok(page.text_content("#text-kopieren") == "Teil 1 kopieren", f"{wo}: Knopf „Teil 1 kopieren“")
+    kopieren(page, infobox=True)
+    st = page.evaluate("km.zustand.mappe.stueckelung")
+    ok(st and st["ids"] == ids and st["einheit"] == "e2" and st["eingefuegt"] == [], f"{wo}: beim ersten Kopieren eingefroren ({st})")
+    page.wait_for_selector("#schritt-5[data-stand=aktiv]")
+    einfuegen(page, eichhoernchen_teil1(zone="Wiese"))
+    warte(page, "!document.getElementById('teil-stand').hidden", timeout=30000)
+    ok(page.text_content("#teil-stand-text") == "Teil 1 von 2 eingefügt, jetzt Teil 2 kopieren." and page.text_content("#teil-weiter") == "Teil 2 kopieren",
+       f"{wo}: nach Teil 1 der Fortschritt mit Knopf ({page.text_content('#teil-stand-text')})")
+    ok(page.locator("#karten .status-fehler").count() == 0 and "status-wartet" in page.get_attribute("#karte-b9", "class")
+       and page.is_hidden("#korrektur") and page.is_hidden("#weiter-5") and "fehler" not in page.evaluate("[...document.querySelectorAll('#hinweise li')].map(l => l.className).join(' ')"),
+       f"{wo}: keine roten Karten, kein Korrekturblock, kein Weiter vor dem letzten Teil")
+    ok(page.evaluate("km.zustand.texte.ids") == ids and page.evaluate("km.zustand.texte.teile.length") == 2,
+       f"{wo}: Teil-Liste bleibt nach dem Einfügen eingefroren")
+    page.click("#teil-weiter")
+    warte(page, "document.getElementById('teil-kopiert').textContent.startsWith('Kopiert')", timeout=10000)
+    if name == "chromium":
+        ok(page.evaluate("navigator.clipboard.readText()") == teile[1], f"{wo}: ein Klick kopiert Teil 2")
+    einfuegen(page, EICH_HEFT)
+    warte(page, "!km.zustand.mappe.stueckelung && !document.getElementById('korrektur').hidden", timeout=30000)
+    ok(page.is_hidden("#teil-stand") and "status-fehler" in page.get_attribute("#karte-b9", "class")
+       and "(id: b9)" in page.text_content("#korrektur"), f"{wo}: nach dem letzten Teil: rote Karte und Korrektur")
+    kz = page.evaluate("km.zustand.kennzahlen")
+    ok(kz["bausteine"] == 7 and page.text_content("#kz-minuten").endswith("von 45 geplant") and "1 Baustein" not in page.text_content("#hinweise"),
+       f"{wo}: Rand rechnet nur die laufende Einheit ({kz['bausteine']} Bausteine, {page.text_content('#kz-minuten')})")
+    ok("teil: e2" in page.evaluate("km.zustand.kurs_md") and page.evaluate("km.zustand.mappe.bausteine.filter(k => k.einheit === 'e2' && !k.geplant).length") == 7,
+       f"{wo}: beide Teile in der zweiten Einheit")
+    page.click("#korrektur-kopieren")
+    page.fill("#korrektur-eingabe", eichhoernchen_teil1())
+    warte(page, "document.getElementById('korrektur').hidden && !document.getElementById('weiter-5').hidden", timeout=30000)
+    page.click("#weiter-5")
+    page.wait_for_selector("#schritt-bilder[data-stand=aktiv]")
+    zeilen = page.locator("#bilder-liste .bild-zeile")
+    ok(zeilen.count() == 1 and page.get_attribute("#bilder-liste .bild-zeile", "data-datei") == "eichhoernchen.png"
+       and "seitlich" in page.text_content("#bilder-liste .bild-zeile"), f"{wo}: Schritt Bilder nur mit der laufenden Einheit, ein Eintrag je Datei")
+    ok("nummerierten Pfeilen" in page.text_content("#schritt-bilder"), f"{wo}: Zeile zu Beschriftungen im Schritt Bilder")
+    kein_scrollen(page, breite, wo)
+    begriffe(page, wo)
+    ok(not seitenfehler, f"{wo}: keine Seitenfehler" + (f" ({seitenfehler[:2]})" if seitenfehler else ""))
+    ctx.close()
+
+
+# Kontrast aller sichtbaren Schrift gegen ihren Hintergrund (WCAG), schlechtestes Element zuerst; deaktivierte und
+# halb durchsichtige Elemente zählen nicht
+KONTRAST = """() => {
+  const lum = (c) => { const v = c.match(/[\\d.]+/g).slice(0, 3).map(Number).map(x => x / 255)
+      .map(x => x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4)); return .2126 * v[0] + .7152 * v[1] + .0722 * v[2]; };
+  const grund = (e) => { for (let x = e; x; x = x.parentElement) { const c = getComputedStyle(x).backgroundColor;
+      const a = c.match(/rgba\\([^)]*,\\s*([\\d.]+)\\)/); if (c !== 'transparent' && !(a && parseFloat(a[1]) < 0.5)) return c; }
+    return getComputedStyle(document.body).backgroundColor; };
+  const blass = (e) => { for (let x = e; x; x = x.parentElement) { if (parseFloat(getComputedStyle(x).opacity) < 1 || x.disabled) return true; } return false; };
+  const out = [];
+  document.querySelectorAll('body *').forEach(e => {
+    if (!e.offsetParent && getComputedStyle(e).position !== 'fixed') return;
+    if (![...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())) return;
+    if (['TEXTAREA', 'OPTION', 'SCRIPT', 'STYLE'].includes(e.tagName) || blass(e)) return;
+    const r = e.getBoundingClientRect(); if (!r.width || !r.height) return;
+    const a = lum(getComputedStyle(e).color), b = lum(grund(e));
+    out.push([(Math.max(a, b) + .05) / (Math.min(a, b) + .05), (e.id ? '#' + e.id : e.tagName.toLowerCase() + '.' + String(e.className).split(' ')[0])
+      + ' „' + e.textContent.trim().slice(0, 30) + '“']);
+  });
+  out.sort((x, y) => x[0] - y[0]); return out.slice(0, 3); }"""
+
+
+def kontrast(page, wo):
+    schlecht = page.evaluate(KONTRAST)
+    ok(not schlecht or schlecht[0][0] >= 4.5, f"{wo}: Kontrast mindestens 4,5 : 1" + (f" (schlechteste {[(round(k, 2), t) for k, t in schlecht]})" if schlecht else ""))
+
+
+def dunkel_lauf(browser, basis, breite, name):
+    """Dunkel im Editor (AP13.3): hell ist Standard, auch bei dunkler Systemeinstellung; der Textlink in der Kopfzeile
+    schaltet um und merkt die Wahl unter demselben Schlüssel wie die Landingpage; Muster in Creme; Kontrast je Schritt
+    hell und dunkel mindestens 4,5 : 1."""
+    wo = f"{name}/{breite} Dunkel"
+    ctx = browser.new_context(viewport={"width": breite, "height": 900}, color_scheme="dark", accept_downloads=True)
+    page = ctx.new_page()
+    page.goto(f"{basis}/index.html")
+    ok(page.evaluate("document.documentElement.dataset.theme") is None and page.text_content("#schema") == "Dunkel"
+       and page.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(250, 246, 238)",
+       f"{wo}: hell ist Standard, auch bei dunkler Systemeinstellung")
+    kontrast(page, f"{wo} hell Schritt 1")
+    page.click("#schema")
+    ok(page.evaluate("document.documentElement.dataset.theme") == "dark" and page.evaluate("localStorage.getItem('kursmuehle-schema')") == "dunkel"
+       and page.text_content("#schema") == "Hell",
+       f"{wo}: „Dunkel“ schaltet um und merkt die Wahl (kursmuehle-schema)")
+    page.reload()
+    page.wait_for_selector("#f-thema")
+    ok(page.evaluate("document.documentElement.dataset.theme") == "dark" and "muster-locker-dunkel.svg" in page.evaluate("getComputedStyle(document.body).backgroundImage")
+       and page.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(38, 37, 34)",
+       f"{wo}: gemerkte Wahl nach dem Neuladen, Grund #262522, Muster in Creme")
+    kontrast(page, f"{wo} Schritt 1")
+    kein_scrollen(page, breite, f"{wo} Schritt 1")
+    bis_schritt5(page, basis, None)
+    page.evaluate("document.documentElement.dataset.theme = 'dark'")
+    aufklappen(page, 4)
+    kontrast(page, f"{wo} Schritt 2 bis 4")
+    page.click("#schritt-4 .s-zeile")
+    einfuegen(page, chat(kaputt=True, bild=True))
+    kontrast(page, f"{wo} Schritt 5 mit roter Karte")
+    page.click("#korrektur-kopieren")
+    kontrast(page, f"{wo} Korrekturblock")
+    kein_scrollen(page, breite, f"{wo} Schritt 5")
+    page.fill("#korrektur-eingabe", zuordnen(id_zeile=False))
+    warte(page, "document.getElementById('karte-b3').classList.contains('status-ok')", timeout=30000)
+    page.click("#weiter-5")
+    page.wait_for_selector("#schritt-bilder[data-stand=aktiv]")
+    kontrast(page, f"{wo} Schritt Bilder")
+    page.click("#weiter-bilder")
+    page.wait_for_selector("#schritt-6[data-stand=aktiv]")
+    kontrast(page, f"{wo} Schritt 6")
+    page.click("#durchsicht-ok")
+    page.wait_for_selector("#schritt-7[data-stand=aktiv]", timeout=30000)
+    with page.expect_download(timeout=90000):
+        page.click("#herunterladen")
+    page.wait_for_selector("#wiederherstellen:not([hidden])", timeout=60000)
+    kontrast(page, f"{wo} Schritt 7")
+    page.mouse.move(0, 0)
+    ok(page.evaluate("getComputedStyle(document.getElementById('herunterladen')).backgroundColor") == "rgb(217, 164, 65)",
+       f"{wo}: Ergebnis-Knopf bleibt Ocker")
+    page.evaluate("delete document.documentElement.dataset.theme")
+    kontrast(page, f"{name}/{breite} hell Schritt 7")
+    ctx.close()
+
+
 def planung_lauf(browser, basis, breite, name):
     """Warnung vor dem Kopieren bei zu wenig Karten (Bylki-Lauf „Das Auge“: Erarbeitung und Übung gelöscht), Vorlage
     auffüllen setzt die fehlenden Phasen mit Typ automatisch ein."""
@@ -788,7 +1091,7 @@ def planung_lauf(browser, basis, breite, name):
     chat_waehlen(page, "bylki")
     page.wait_for_selector("#kopier-warnung:not([hidden])", timeout=20000)
     wt = page.text_content("#kopier-warnung-text")
-    ok(wt.startswith("2 Karten für 45 Minuten, Bausteine ergänzen?") and "Keine Übung mehr." in wt and page.is_enabled("#text-kopieren"),
+    ok(wt.startswith("2 Karten für 45 Minuten. Bausteine ergänzen?") and "Keine Übung mehr." in wt and page.is_enabled("#text-kopieren"),
        f"{wo}: Warnung vor dem Kopieren ({wt}), Kopieren bleibt möglich")
     kein_scrollen(page, breite, wo)
     page.click("#auffuellen")
@@ -883,41 +1186,60 @@ def bis_schritt5(page, basis, antwort=None, zweig="steuer"):
 
 
 def screenshots(browser, basis, ordner):
-    """AP13.1: Mühle bei Schritt 1 (mit Hinweis), Schritt 5 (rote Karte mit offener Korrekturschleife), Schritt Bilder
-    (ein Bild da, eins fehlt) und Schritt 7 (Datei heruntergeladen) bei 1280 und 390 px:
-    ap13.1-muehle-{1,5,bilder,7}-{1280,390}.png."""
+    """AP13.3: Schritt 5 mit roter Karte und dem einen Korrekturblock, derselbe Block nach „Korrektur anfordern“ (Feld
+    für die Antwort offen), Schritt Bilder, je bei 1280 und 390 px hell: ap13.3-muehle-{5,korrektur,bilder}-{1280,390}.png;
+    dunkel bei 1280 px Schritt 1, Schritt 5 mit Korrekturblock und Schritt 7: ap13.3-muehle-{1,5,7}-dunkel-1280.png."""
+    import tempfile as _t
+
+    def bild(page, name):
+        page.add_style_tag(content=".spalte-rand { position: static !important; }")
+        page.mouse.move(0, 0)
+        page.wait_for_timeout(300)
+        page.screenshot(path=os.path.join(ordner, name), full_page=True)
+
     for w, h in ((1280, 900), (390, 844)):
         ctx = browser.new_context(viewport={"width": w, "height": h}, accept_downloads=True)
         page = ctx.new_page()
-        page.goto(f"{basis}/index.html")
-        page.wait_for_selector("#start .s-hinweis", timeout=20000)
-        page.wait_for_timeout(300)
-        page.screenshot(path=os.path.join(ordner, f"ap13.1-muehle-1-{w}.png"), full_page=True)
         bis_schritt5(page, basis, chat(kaputt=True, bild=True))
-        page.click("#karte-b3 .k-satz")
-        page.wait_for_selector("#karte-b3 .k-schleife")
-        page.add_style_tag(content=".spalte-rand { position: static !important; }")
-        page.wait_for_timeout(300)
-        page.screenshot(path=os.path.join(ordner, f"ap13.1-muehle-5-{w}.png"), full_page=True)
-        page.fill("#karte-b3 .k-schleife textarea", zuordnen(id_zeile=False))
+        page.wait_for_selector("#korrektur:not([hidden])")
+        bild(page, f"ap13.3-muehle-5-{w}.png")
+        page.click("#korrektur-kopieren")
+        page.wait_for_selector("#korrektur-antwort:not([hidden])")
+        page.fill("#korrektur-eingabe", zuordnen("Dachboden", id_zeile=False))
+        warte(page, "document.getElementById('korrektur-ergebnis').textContent.includes('Noch ein Fehler')", timeout=30000)
+        page.evaluate("document.getElementById('korrektur').scrollIntoView()")
+        bild(page, f"ap13.3-muehle-korrektur-{w}.png")
+        page.fill("#korrektur-eingabe", zuordnen(id_zeile=False))
         warte(page, "document.getElementById('karte-b3').classList.contains('status-ok')", timeout=30000)
         page.click("#weiter-5")
         page.wait_for_selector("#schritt-bilder[data-stand=aktiv]")
-        import tempfile as _t
         with _t.TemporaryDirectory() as tmp:
             page.set_input_files("#bilder-liste input.bild-datei[data-datei='dreieck.png']", grosses_bild(tmp))
         warte(page, "!!km.zustand.assets['dreieck.png']", timeout=30000)
-        page.wait_for_timeout(300)
-        page.screenshot(path=os.path.join(ordner, f"ap13.1-muehle-bilder-{w}.png"), full_page=True)
-        page.click("#weiter-bilder")
-        page.click("#durchsicht-ok")
-        page.wait_for_selector("#schritt-7[data-stand=aktiv]", timeout=30000)
-        with page.expect_download(timeout=90000):
-            page.click("#herunterladen")
-        page.wait_for_selector("#wiederherstellen:not([hidden])", timeout=60000)
-        page.wait_for_timeout(300)
-        page.screenshot(path=os.path.join(ordner, f"ap13.1-muehle-7-{w}.png"), full_page=True)
+        bild(page, f"ap13.3-muehle-bilder-{w}.png")
         ctx.close()
+    ctx = browser.new_context(viewport={"width": 1280, "height": 900}, accept_downloads=True)
+    page = ctx.new_page()
+    page.goto(f"{basis}/index.html")
+    page.evaluate("localStorage.setItem('kursmuehle-schema', 'dunkel')")
+    page.reload()
+    page.wait_for_selector("#start .s-hinweis", timeout=20000)
+    bild(page, "ap13.3-muehle-1-dunkel-1280.png")
+    bis_schritt5(page, basis, chat(kaputt=True, bild=True))
+    page.wait_for_selector("#korrektur:not([hidden])")
+    bild(page, "ap13.3-muehle-5-dunkel-1280.png")
+    page.click("#korrektur-kopieren")
+    page.fill("#korrektur-eingabe", zuordnen(id_zeile=False))
+    warte(page, "document.getElementById('karte-b3').classList.contains('status-ok')", timeout=30000)
+    page.click("#weiter-5")
+    page.click("#weiter-bilder")
+    page.click("#durchsicht-ok")
+    page.wait_for_selector("#schritt-7[data-stand=aktiv]", timeout=30000)
+    with page.expect_download(timeout=90000):
+        page.click("#herunterladen")
+    page.wait_for_selector("#wiederherstellen:not([hidden])", timeout=60000)
+    bild(page, "ap13.3-muehle-7-dunkel-1280.png")
+    ctx.close()
     print(f"Screenshots in {ordner}")
 
 
@@ -955,6 +1277,8 @@ def main():
                 print(f"--- {args.browser}, {b} px")
                 lauf(browser, basis, b, katalog, tmp, args.browser, hinweise)
                 planung_lauf(browser, basis, b, args.browser)
+                teile_lauf(browser, basis, b, args.browser, tmp)
+                dunkel_lauf(browser, basis, b, args.browser)
                 landing_lauf(browser, basis, b, args.browser)
         if args.screenshots:
             os.makedirs(args.screenshots, exist_ok=True)

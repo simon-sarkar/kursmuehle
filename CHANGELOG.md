@@ -1,5 +1,55 @@
 # Changelog
 
+## 2.0.0-b4 – 2026-10-24 (AP13.3: ein Korrekturweg, Stückelung, nachsichtiger Parser, fachneutrale Vorlage, Dunkel)
+
+Grundlage sind zwei Durchläufe des Autors in ByLKI (Biologie 7 und Heimat- und Sachunterricht 2, als angehängte
+Einheit) und ein Fremdtest (`docs/entwicklung/protokolle/korrekturen.md`). Die Landingpage ist unverändert.
+
+- **Ein Korrekturweg:** Die Korrekturschleife an der Karte entfällt. Direkt unter dem Einfügefeld von Schritt 5 steht
+  ein Block mit allen Sätzen der Prüfung, auch wenn es nur einer ist; „Korrektur anfordern“ kopiert sie in einem Text
+  und öffnet das Feld für die Antwort. Die Seite setzt jeden Baustein der Antwort nach seiner `id:` ein, nur die, die
+  darin stehen; eine ganze Kursdatei ersetzt dabei auch die alten Zeilen `Angenommen:`. „Diesen Baustein neu
+  beauftragen“ markiert Karten (auch mehrere) und läuft über denselben Block. Eine Antwort mit `id: b4` landet in b4,
+  auch wenn der Block für eine andere Karte offen ist (Fehler aus dem Protokoll). Rote Karten zeigen ihren Satz und
+  verlinken den Block.
+- **Einfügefeld:** zusätzlich zur Automatik ein Knopf „Antwort übernehmen“; die Meldung steht als Karte mit Rahmen
+  darunter. Wer den eigenen Satz oder Text der Mühle einfügt, liest „Das ist der Satz für deinen Chat …“.
+- **Stückelung:** Die Teile entstehen nur aus den Karten der laufenden Einheit und frieren beim ersten Kopieren ein
+  (Teilzahl und Zuordnung), bis alle Teile eingefügt sind. Bis dahin zeigt Schritt 5 „Teil 1 von 2 eingefügt, jetzt
+  Teil 2 kopieren“ mit einem Knopf, der sofort kopiert; rote Karten und Korrektur erscheinen erst nach dem letzten Teil.
+  Jeder Teil nennt seinen Anteil an den Minuten („Alle Teile zusammen ergeben 45 Minuten; dieser Teil etwa 34“); Teil
+  2 und folgende wiederholen Format und Prüfliste nicht. Grenze 14 KB, eine Einheit mit sechs Karten passt in einen
+  Teil.
+- **Je Einheit:** Rand (Minuten, Bausteine, Folge, Multiple Choice) und Schritt Bilder rechnen nur die laufende Einheit;
+  ein neuer Bildwunsch zum gleichen Dateinamen ersetzt den alten. Ergänzte Bausteine (b7-2) gehören zur Einheit ihres
+  Abschnitts.
+- **Parser nachsichtiger:** `phase: …` unter einer Überschrift wird übergangen; `website:` am Element wird geduldet,
+  wenn der Abschnitt denselben Wert hat; beim Zuordnen trennt der letzte Pfeil die Zone; eine Frage darf mit einem
+  Situationssatz beginnen (`Einsetzen:` in derselben oder der nächsten Zeile); ein Kasten, Beispiel oder Hinweis ohne
+  eingerückten Inhalt nimmt die folgenden Zeilen bis zur Leerzeile, mit gelbem Hinweis.
+- **Vorlage fachneutral:** Die Teilschritte der Einführung sagen „Kernaussage“ statt „Regel“, „an Beispielen oder Fällen“
+  statt „zwei durchgerechnete Beispiele“, Rundung nur noch in der Leitplanke für Rechenaufgaben; „Übung zum Anwenden“
+  ohne implizite Anzahl. Der Text für den Chat sagt: Rechenaufgaben, Formeln und Maßstäbe nur, wenn das Thema sie hat;
+  für Jahrgangsstufe 1 bis 4 kurze Sätze ohne Nachkommastellen; keine Namen aus Gespräch oder Profil; Einstieg 3 bis 5
+  Minuten, Ziel als Frage an die Lernenden; ein Auftrag mit einer Zahl von Bildern geht der Bildregel vor; Phase nie
+  in die Datei; keine weiteren Zeilen `Angenommen:`; Bildprompt je Beschriftung mit dem Ziel des Pfeils, ab etwa fünf
+  Beschriftungen nummerierte Pfeile. Hefteintrag bis Jahrgangsstufe 6 mindestens 50 Wörter, ab 7 mindestens 80.
+- **Korrektur-Tracking:** Jede Regel der Prüfung hat eine Kennung (`zeit.annahme`, `mindest.quiz`, `zone.unbekannt` …,
+  Liste `REGELN` in `gen/api.py`), die Karte und Korrektursatz mitführen. Jede Korrekturbitte steht als Ereignis in der
+  Kursmappe (`korrekturen`: Version, Chat, Typ, Regel, Runde, keine Inhalte); die Rückmeldung hat die Zeile
+  „Korrekturen: n · Regeln · Chat“. Neuer Workflow `prompttest.yml` (von Hand und wöchentlich): zehn Aufträge gegen
+  ein Modell der Sonnet-Klasse, Tabelle je Lauf in `protokolle/prompttest-verlauf.md`; ohne das Secret
+  `ANTHROPIC_API_KEY` endet er mit einem Hinweis.
+- **Dunkel im Editor:** Die Mühle liest denselben Schlüssel wie die Landingpage (`kursmuehle-schema`) vor dem Zeichnen
+  und hat in der Kopfzeile den Textlink „Dunkel“/„Hell“; hell bleibt Standard. Alle Farben sind Token, dunkler Satz nach
+  der Palette der Landingpage, Herkunftstöne und Muster (`muster-*-dunkel.svg`, Creme auf Anthrazit) abgestimmt.
+- **Ocker:** nur Ergebnis-Knopf, Herkunftston der Lehrkraft und Fokusrahmen; Textlinks in Anthrazit (dunkel: Creme).
+  Warnung vor dem Kopieren: „2 Karten für 45 Minuten. Bausteine ergänzen?“.
+- **Prompttest** (drei Läufe der Sonnet-Klasse, `protokolle/AP11_prompttest.md`): Biologie 7 und HSU 2 ohne Rechnung,
+  Maßstab oder Formel, Einstieg je 3 Minuten, Korrekturen 0, 0 und 1. Gutachten `protokolle/AP13.3_gutachten.md`.
+- **Firefox:** Die Aussehen-Kacheln werden nicht mehr bei jedem Klick neu gebaut; ein Neubau zwischen mousedown und
+  mouseup verlor den Klick und damit die Wahl im Steckbrief. Der Test klickt dreimal schnell, ohne Wiederholung.
+
 ## 2.0.0-b3 – 2026-10-24 (AP13.2: Landingpage als Schritt 1, Dark Mode, Kopfzeile, drehende Mühle)
 
 Die Startseite beschreibt das Werkzeug nicht mehr, sie fängt an: Befund des Autors zur b1 war, dass Gliederung und

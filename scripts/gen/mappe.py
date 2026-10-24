@@ -34,7 +34,10 @@ _ZEIT = (1980, 1, 1, 0, 0, 0)
 # die Schrittfolge: erreichter Schritt, Zweig („mach“, „steuer“), Aussehen gewählt, Text kopiert, importierte Einheiten,
 # Zahl der Einheiten und der Teil der Einheit, die gerade angehängt wird
 ZUSATZ = ("chat", "material", "durchsicht", "zeitplanung", "schritt", "zweig", "aussehen", "kopiert", "importiert",
-          "einheiten", "anhaengen", "zeit_selbst")
+          "einheiten", "anhaengen", "zeit_selbst", "laufend", "stueckelung", "korrekturen")
+# seit 2.0.0-b4 (AP13.3): `laufend` = Teil der Einheit, an der gerade gearbeitet wird („e2“ …; fehlt = erste Einheit),
+# `stueckelung` = beim ersten Kopieren eingefrorene Teile des Textes ({einheit, leer, ids: [[id]], eingefuegt: [Teil]}),
+# `korrekturen` = Ereignisse je Korrekturbitte ({version, chat, typ, regel, runde}, keine Inhalte)
 # Schlüssel je Baustein, die neben den Feldern des Parsers in der Mappe bleiben (AP13): Einheit der Nachlieferung,
 # ausgeschaltete Karte (optionale Phase der Vorlage)
 BLEIBT = ("einheit", "aus")
@@ -112,6 +115,14 @@ def abgleich(mappe, bausteine):
             genutzt.add(kandidat)
             letzter, abschnitt = kandidat, b.get("abschnitt")
     neu_liste = [_eintrag(b, alt[paar[j]] if j in paar else None) for j, b in enumerate(bausteine)]
+    # ein Baustein ohne Karte (vom Chat ergänzt, b7-2) gehört zur Einheit seines Abschnitts (AP13.3): wie der Nachbar
+    for j, b in enumerate(bausteine):
+        if j in paar:
+            continue
+        nachbar = next((neu_liste[k] for k in list(range(j - 1, -1, -1)) + list(range(j + 1, len(bausteine)))
+                        if k in paar and bausteine[k].get("abschnitt") == b.get("abschnitt")), None)
+        if nachbar is not None and nachbar.get("einheit"):
+            neu_liste[j]["einheit"] = nachbar["einheit"]
     platz = {paar[j]: neu_liste[j] for j in paar}          # alter Index -> Eintrag in der neuen Liste
     for i, e in enumerate(alt):
         if i in genutzt or not e.get("geplant"):
@@ -401,6 +412,17 @@ def _jahrgang_faktor(jahrgang):
     return tab[max([k for k in stufen if jg >= k] or [stufen[0]])]
 
 
+def mindestzahl(m, jahrgang=None):
+    """Mindestmaß eines Typs (`mindest` im Katalog) für eine Jahrgangsstufe: `ab_jahrgang` staffelt (AP13.3, Hefteintrag
+    bis 6 mindestens 50 Wörter, ab 7 mindestens 80); ohne Stufe oder Staffel gilt `zahl`."""
+    stufen = m.get("ab_jahrgang") or {}
+    jg = re.match(r"\d+", str(jahrgang or ""))
+    if not stufen or not jg:
+        return m["zahl"]
+    passend = [int(k) for k in stufen if int(jg.group(0)) >= int(k)]
+    return stufen[max(passend)] if passend else stufen[min(stufen, key=int)]
+
+
 def rolle_von(e):
     """Rolle eines Mappen-Eintrags: Phase aus der Vorlage vor Rolle des Typs (einstieg, lesen, üben, sichern, rahmen)."""
     typ_rolle, phase_rolle = _rollen()
@@ -501,10 +523,16 @@ def _luecke(e, genau, ziel):
 
 
 # ---------------------------------------------------------------- Plan der Einheit: reichen die Karten? (AP13.1)
+def laufende_einheit(mappe):
+    """Teil der Einheit, an der gerade gearbeitet wird: beim Anhängen die neue (`anhaengen`), danach `laufend`; None =
+    die erste Einheit (Karten ohne `einheit`)."""
+    return mappe.get("anhaengen") or mappe.get("laufend") or None
+
+
 def _einheit_karten(mappe):
-    """Eingeschaltete Karten der laufenden Einheit ohne Strukturbausteine: beim Anhängen nur die neue Einheit, sonst
-    die Karten ohne `einheit`."""
-    teil = mappe.get("anhaengen")
+    """Eingeschaltete Karten der laufenden Einheit ohne Strukturbausteine: beim Anhängen und danach nur die neue
+    Einheit, sonst die Karten ohne `einheit`."""
+    teil = laufende_einheit(mappe)
     return [e for e in mappe.get("bausteine", []) if not e.get("aus") and e.get("typ") not in struktur()
             and (e.get("einheit") == teil if teil else not e.get("einheit"))]
 
@@ -561,7 +589,7 @@ def auffuellen(mappe):
     minuten = int((mappe.get("einheit") or {}).get("minuten") or 45)
     uebung = katalog()["pruefregeln"]["uebung"]
     reihe = {r: i for i, r in enumerate(ROLLEN)}
-    teil = mappe.get("anhaengen")
+    teil = laufende_einheit(mappe)
     ids = {e["id"] for e in liste}
 
     def neue_id():
@@ -613,7 +641,10 @@ def kennzahlen(mappe, pruefung=None, minuten=None, steckbrief=None):
     nach_id = {b["id"]: b for b in pruefung.get("bausteine", [])}
     typ_rolle, phase_rolle = _rollen()
     ohne = struktur()
-    eintraege = [e for e in mappe.get("bausteine", []) if e.get("typ") not in ohne and not e.get("aus")]
+    # AP13.3: nur die laufende Einheit (beim Anhängen und danach die neue, sonst die Karten ohne `einheit`)
+    tag = laufende_einheit(mappe)
+    eigene = {e["id"] for e in mappe.get("bausteine", []) if (e.get("einheit") or None) == tag}
+    eintraege = [e for e in mappe.get("bausteine", []) if e.get("typ") not in ohne and not e.get("aus") and e["id"] in eigene]
     # Zeit je Phase selbst eingestellt (AP13)? Sonst verteilt das Modell, Soll der Karten zählt nicht
     selbst = mappe.get("zeit_selbst", True) is not False
     soll_von = (lambda e: e.get("soll")) if selbst else (lambda e: None)
@@ -659,6 +690,8 @@ def kennzahlen(mappe, pruefung=None, minuten=None, steckbrief=None):
                              "text": f"Rückmeldung fehlt bei {auswahl - mit} von {auswahl} Auswahlfragen in Baustein "
                                      f"{nummer[e['id']]}"})
     for d in pruefung.get("diagnosen", []):
+        if d.get("baustein") and d["baustein"] not in eigene and d["baustein"] in nummer:
+            continue
         n = nummer.get(d.get("baustein"))
         if d["stufe"] == "fehler":
             hinweise.append({"art": "fehler", "stufe": "fehler", "baustein": d.get("baustein"), "nummer": n,
@@ -668,8 +701,9 @@ def kennzahlen(mappe, pruefung=None, minuten=None, steckbrief=None):
                              "text": f"Bild fehlt in Baustein {n}"})
     plan = planung(mappe)
     for text in plan["fehlen"]:
-        hinweise.append({"art": "phase", "stufe": "warnung", "baustein": None, "nummer": None, "text": text})
-    leer = [e for e in mappe.get("bausteine", []) if e.get("geplant") and not e.get("aus")]
+        hinweise.append({"art": "phase", "stufe": "warnung", "baustein": None, "nummer": None, "text": text,
+                         "regel": "phase.fehlt"})
+    leer = [e for e in mappe.get("bausteine", []) if e.get("geplant") and not e.get("aus") and e["id"] in eigene]
     if leer:
         hinweise.append({"art": "leer", "stufe": "hinweis", "baustein": leer[0]["id"], "nummer": nummer[leer[0]["id"]],
                          "text": f"{len(leer)} {'Baustein' if len(leer) == 1 else 'Bausteine'} noch ohne Inhalt"})
@@ -770,13 +804,16 @@ def modus(mappe, text):
     return {"modus": art, "bausteine": n, "treffer": len(treffer), "ids": [b["id"] for b, _ in bl]}
 
 
-def einsetzen(mappe, kurs_md, text, nur=None):
+def einsetzen(mappe, kurs_md, text, nur=None, kopf=False):
     """Nur die Bausteine der Antwort in die Kursdatei setzen, Abgleich über `id:`: steht die ID in der Kursdatei, ersetzt
     der Block den alten (Ebene wie dort); ist sie ein geplanter Baustein der Mappe, kommt der Block an seinen Platz in der
     Reihenfolge der Mappe. Ein einzelner Baustein ohne `id:` geht an die markierte Karte (`neu`), wenn genau eine
     markiert ist. Sonst eine Fehlermeldung mit Vorschlag; die Kursdatei bleibt dann für diesen Baustein unverändert.
-    `nur` (AP13.1, Korrekturschleife an der Karte): ein einzelner Baustein der Antwort geht an diese Karte, mit oder
-    ohne `id:`. -> {kurs_md, ersetzt, eingefuegt, fehler}"""
+    `nur` (AP13.1, seit AP13.3 der Korrekturblock mit genau einer Karte): ein einzelner Baustein der Antwort ohne `id:`
+    (oder mit einer, die es nicht gibt) geht an diese Karte; eine bekannte `id:` der Antwort geht vor (Protokoll
+    24.10.: die Antwort mit `id: b4` landete in b3-3). `kopf` (Korrekturblock): bringt die Antwort eigene Zeilen
+    `Angenommen:` mit, ersetzen sie die bisherigen (die Zeit-Annahme verschwindet mit der Korrektur).
+    -> {kurs_md, ersetzt, eingefuegt, fehler}"""
     pa = antwort(text)
     antwort_md = pa["kursdatei"]
     bl = _bloecke(antwort_md, pa["bausteine"])
@@ -787,7 +824,7 @@ def einsetzen(mappe, kurs_md, text, nur=None):
     ersetzt, eingefuegt, fehler_ = [], [], []
     for b, block in bl:
         id = b["id"] if b.get("id_explizit") else None
-        if nur and len(bl) == 1:
+        if nur and len(bl) == 1 and (id is None or id not in nach_id):
             id = nur
         elif id is None and len(bl) == 1 and len(markiert) == 1:
             id = markiert[0]["id"]
@@ -832,6 +869,16 @@ def einsetzen(mappe, kurs_md, text, nur=None):
             lines[pos:pos] = neu_block + [""]
             eingefuegt.append(id)
         md = _text(lines)
+    if (ersetzt or eingefuegt) and kopf:
+        neu_annahmen = [z for z in _kopfzeilen(antwort_md) if z.startswith("Angenommen:")]
+        ganz = re.search(r"^# ", api.extrahiere_kursdatei(text or "")[0], re.M)    # ganze Kursdatei mit eigenem Kopf
+        if neu_annahmen or ganz:
+            lines, im_kopf = [], True
+            for z in md.splitlines():
+                im_kopf = im_kopf and not z.startswith("## ")
+                if not (im_kopf and z.startswith("Angenommen:")):
+                    lines.append(z)
+            md = _text(lines)
     if ersetzt or eingefuegt:
         kopf = [z for z in _kopfzeilen(antwort_md) if z not in md]
         if kopf:

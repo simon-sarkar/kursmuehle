@@ -32,7 +32,7 @@ from .kursdatei import Diagnosen, KursdateiFehler
 from .mbz import Course, Section, Writer, glossary_import_xml, moodle_format
 from .website import vorschau_textfeld
 
-VERSION = "2.0.0-b3"
+VERSION = "2.0.0-b4"
 
 
 class Ergebnis:
@@ -215,8 +215,56 @@ def _steckbrief(sb):
     return _json_sicher(dict(sb))
 
 
+# ---------------------------------------------------------------- Regel-Kennungen (AP13.3)
+# Stabile Kennung je Prüfregel, die Korrektursatz, Karte und das Ereignis in der Kursmappe (`korrekturen`) mitführen;
+# `protokolle/korrekturen.md` nennt dieselben Kennungen. Die Prüfung setzt `regel` selbst, wo sie die Regel kennt
+# (einheit_pruefen); sonst ordnet `regel()` die Meldung des Parsers über Art und Wortlaut zu.
+REGELN = {
+    "zeit.annahme": "Zeile `Angenommen:` nimmt Zeit außerhalb des Kurses an",
+    "mindest.quiz": "Quiz unter dem Mindestmaß (Fragen)", "mindest.zuordnen": "Zuordnen unter dem Mindestmaß (Paare)",
+    "mindest.lueckentext": "Lückentext unter dem Mindestmaß (Lücken)",
+    "mindest.lernkarten": "Lernkarten unter dem Mindestmaß (Karten)", "mindest.test": "Test unter dem Mindestmaß",
+    "mindest.hefteintrag": "Hefteintrag unter dem Mindestmaß (Wörter, Merksatz, fette Fachbegriffe)",
+    "einstieg.lang": "Einstieg über der Wortgrenze", "phase.fehlt": "eine Phase der Vorlage hat keine Karte mehr",
+    "vorgriff": "Aufgabe verwendet, was erst später eingeführt wird (nur im Protokoll, keine Prüfung)",
+    "format.frage": "Frage nicht im Format", "typ.unbekannt": "unbekannter Typ in der Überschrift",
+    "angabe.unbekannt": "unbekannte Angabe unter der Überschrift", "zone.unbekannt": "Zone nicht in `zonen`",
+    "website.element": "`website:` am Element mit anderem Wert als im Abschnitt",
+    "hinweis.leer": "Kasten, Beispiel oder Hinweis ohne Inhalt",
+    "hinweis.einrueckung": "Inhalt von Kasten, Beispiel oder Hinweis nicht eingerückt (angenommen)",
+    "bild.fehlt": "Bild nicht hochgeladen", "id.ungueltig": "`id:` ungültig oder doppelt",
+    "format.abschnitt": "Abschnitt fehlt oder Text außerhalb eines Elements", "format.sonst": "übriges Format",
+}
+_REGEL_TEXT = [
+    (re.compile(r"unbekannter Elementtyp"), "typ.unbekannt"),
+    (re.compile(r"unbekannte Angabe"), "angabe.unbekannt"),
+    (re.compile(r"^Zone „"), "zone.unbekannt"),
+    (re.compile(r"website am Element"), "website.element"),
+    (re.compile(r"ohne Inhalt – Inhalt um zwei"), "hinweis.leer"),
+    (re.compile(r"^(?:MC|RF|Einsetzen|Markieren|Lückentext|Aussagen|Schnellquiz|Kurzantwort)\b|jede Frage beginnt mit"),
+     "format.frage"),
+    (re.compile(r"Abschnitt \(`## Titel`\)|außerhalb eines Elements|kein Abschnitt"), "format.abschnitt"),
+]
+_REGEL_ART = {"zeit": "zeit.annahme", "einstieg": "einstieg.lang", "einrueckung": "hinweis.einrueckung",
+              "bild": "bild.fehlt", "id": "id.ungueltig", "phase": "phase.fehlt"}
+
+
+def _ascii(t):
+    return t.lower().replace("ü", "ue").replace("ä", "ae").replace("ö", "oe").replace("ß", "ss")
+
+
+def regel(d):
+    """Kennung der Regel einer Diagnose (siehe REGELN)."""
+    if d.get("regel"):
+        return d["regel"]
+    for muster, kennung in _REGEL_TEXT:
+        if muster.search(d.get("text") or ""):
+            return kennung
+    return _REGEL_ART.get(d.get("art"), "format.sonst" if d.get("art") == "format" else d.get("art") or "format.sonst")
+
+
 def _diagnose_dicts(diag):
-    return [dict(d, satz=diag.satz(d)) for d in diag]
+    return [dict(d, satz=diag.satz(d), regel=regel(d)) for d in diag]
 
 
 # ---------------------------------------------------------------- Bildwünsche (AP13.1)
@@ -238,6 +286,8 @@ def bildwuensche(kursdatei, bausteine=()):
         d = _RE_DATEI.match(m.group(2).strip())
         datei, text = (d.group(1), (d.group(2) or "").strip()) if d else (None, m.group(2).strip())
         if m.group(1) == "Bildwunsch":
+            # ein neuer Wunsch zum gleichen Dateinamen ersetzt den alten (AP13.3)
+            out = [w for w in out if not (datei and w["datei"] == datei)]
             out.append({"datei": datei, "wunsch": text, "prompt": "", "zeile": i})
             continue
         ziel = next((w for w in reversed(out) if datei and w["datei"] == datei), None) \
@@ -311,6 +361,7 @@ def einheit_pruefen(ergebnis, mappe):
     typen = {t["typ"]: t for t in kat["typen"]}
     plan = {e["id"]: e for e in mappe.get("bausteine", [])}
     minuten = (mappe.get("einheit") or {}).get("minuten")
+    jahrgang = (mappe.get("einheit") or {}).get("jahrgang")
     diag = Diagnosen()
     ids = {b["id"] for b in ergebnis.get("bausteine", [])}
     for i, z in enumerate((ergebnis.get("kursdatei") or "").splitlines(), 1):
@@ -320,10 +371,11 @@ def einheit_pruefen(ergebnis, mappe):
             d = diag.fehler("Der Chat nimmt Zeit außerhalb des Kurses an (Zeile „Angenommen:“); die Minuten gehören "
                             "in die Bausteine", i, art="zeit")
             d["bitte"] = prompt["korrektur_zeit"].format(minuten=minuten or "geplanten")
+            d["regel"] = "zeit.annahme"
 
-    def melde(stufe, b, text, art):
+    def melde(stufe, b, text, art, kennung):
         d = diag.add(stufe, art, text, b["zeile"], f"{b['typ']} „{b['titel']}“")
-        d["baustein"], d["titel"], d["zeile_im_baustein"] = b["id"], b["titel"], 1
+        d["baustein"], d["titel"], d["zeile_im_baustein"], d["regel"] = b["id"], b["titel"], 1, kennung
 
     for b in ergebnis.get("bausteine", []):
         if b.get("status") == "fehler":
@@ -332,21 +384,22 @@ def einheit_pruefen(ergebnis, mappe):
         mind = typen.get(b["typ"], {}).get("mindest")
         heft = "Hefteintrag" in " ".join(str(x or "") for x in (e.get("titel"), e.get("schritt"), b["titel"]))
         if mind and (not mind.get("nur") or heft):
-            n, soll, ein = _zaehle(b, mind["einheit"]), mind["zahl"], mind["einheit"]
+            n, soll, ein = _zaehle(b, mind["einheit"]), M.mindestzahl(mind, jahrgang), mind["einheit"]
+            kennung = "mindest.hefteintrag" if mind.get("nur") == "Hefteintrag" else "mindest." + _ascii(b["typ"])
             if n < soll:
                 melde("fehler", b, f"Nur {n} {_EINZAHL.get(ein, ein) if n == 1 else ein}, nötig sind mindestens {soll}",
-                      "mindest")
+                      "mindest", kennung)
             if mind.get("nur") == "Hefteintrag":
                 if not re.search(r"^\s*Merke:", b.get("text") or "", re.M):
-                    melde("fehler", b, "Der Hefteintrag hat keinen Merksatz (Zeile „Merke:“)", "mindest")
+                    melde("fehler", b, "Der Hefteintrag hat keinen Merksatz (Zeile „Merke:“)", "mindest", kennung)
                 if not re.search(r"\*\*[^*]+\*\*|<(?:b|strong)>", b.get("text") or ""):
-                    melde("fehler", b, "Der Hefteintrag hat keine fett gesetzten Fachbegriffe", "mindest")
+                    melde("fehler", b, "Der Hefteintrag hat keine fett gesetzten Fachbegriffe", "mindest", kennung)
         if M.rolle_von(e) == "einstieg" and b["typ"] in ("Textfeld", "Seite"):
             n, grenze = woerter(b), regeln["einstieg_woerter"]
             if n > grenze:
                 melde("warnung", b, f"Der Einstieg hat {n} Wörter, vorgesehen sind höchstens {grenze}; das Neue gehört in "
                                     "die Erarbeitung",
-                      "einstieg")
+                      "einstieg", "einstieg.lang")
     if not diag:
         return ergebnis
     status = {b["id"]: b for b in ergebnis.get("bausteine", [])}
@@ -369,6 +422,7 @@ def pruefe(text, assets=None, steckbrief=None, mappe=None):
     (Kursmappe der Mühle) zusätzlich die Prüfregeln aus `einheit_pruefen`."""
     t0 = time.time()
     kurs, hinweise = extrahiere_kursdatei(text or "")
+    kurs = K.normalisiere(kurs)
     sb = _steckbrief(steckbrief)
     with _Arbeit() as work:
         diag = Diagnosen()

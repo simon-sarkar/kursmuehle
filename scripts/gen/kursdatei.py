@@ -399,9 +399,73 @@ def _directive(s):
     return None
 
 
+_RE_VOR_FRAGE = re.compile(r"^(\d+\.\s+)?(?!(?:MC|RF|Einsetzen|Markieren|Lückentext)\b)(.+?[.?!])\s+"
+                           r"(MC|RF|Einsetzen|Markieren|Lückentext):\s*(.*)$")
+
+
+def _situation_vor_frage(lines):
+    """Quiz und Test (AP13.3): eine Frage darf mit einem Situationssatz beginnen. `1. Situation. Einsetzen: Aufgabe`
+    und `1. Situation.` mit `Einsetzen: Aufgabe` in der nächsten Zeile werden zu `1. Einsetzen: Situation. Aufgabe`."""
+    out = []
+    for idx, (ln, s) in enumerate(lines):
+        m = _RE_VOR_FRAGE.match(s.strip()) if not s.startswith(" ") else None
+        if m and not _directive(_RE_NUM.sub("", s.strip())):
+            out.append((ln, f"{m.group(1) or ''}{m.group(3)}: {m.group(2)} {m.group(4)}".rstrip()))
+            continue
+        prev = out[-1] if out else None
+        st = _RE_NUM.sub("", s.strip())
+        d = _directive(st)
+        if (d and d[0] in QUIZ_FRAGEN and prev is not None and prev[1].strip() and not prev[1].startswith(" ")
+                and (len(out) < 2 or not out[-2][1].strip()) and not _directive(_RE_NUM.sub("", prev[1].strip()))
+                and not _RE_BULLET.match(prev[1]) and "*" not in prev[1] and not any(c in prev[1] for c in OK + NOK)
+                and not prev[1].lstrip().startswith(("<", "|", "#")) and re.search(r"[.?!]$", prev[1].strip())
+                and not re.match(r"^[a-zäöüß][a-zäöüß ]{1,24}:\s", prev[1].strip())):
+            num = _RE_NUM.match(prev[1].strip())
+            vor = _RE_NUM.sub("", prev[1].strip())
+            out[-1] = (prev[0], f"{num.group(0) if num else ''}{d[0]}: {vor} {d[2]}".rstrip())
+            continue
+        out.append((ln, s))
+    return out
+
+
+_RE_ELEMENT_KOPF = re.compile(r"^#{3,4}\s+([A-Za-zÄÖÜäöüß]+)\s*:")
+
+
+def normalisiere(text):
+    """Kursdatei in die Schreibweise bringen, die alle Leser erwarten (AP13.3, `gen.api.pruefe`): `phase: …` direkt unter
+    einer Elementüberschrift fällt weg, Fragen mit Situationssatz in Quiz und Test werden zu `1. Einsetzen: Situation.
+    Aufgabe` (wie `_situation_vor_frage`). Sonst bleibt jede Zeile, wie sie ist."""
+    zeilen = text.split("\n")
+    out, typ, kopf, block = [], None, False, []
+
+    def fertig():
+        if block:
+            out.extend(s for _, s in _situation_vor_frage(block))
+            block.clear()
+    for z in zeilen:
+        m = _RE_ELEMENT_KOPF.match(z)
+        if m or z.startswith("#"):
+            fertig()
+            typ, kopf = (m.group(1) if m else None), bool(m)
+            out.append(z)
+            continue
+        if kopf and z.strip() and re.match(r"^phase:\s", z, re.I):
+            continue
+        if kopf and z.strip() and not _RE_ATTR.match(z):
+            kopf = False
+        if typ in ("Quiz", "Test"):
+            block.append((0, z))
+        else:
+            out.append(z)
+    fertig()
+    return "\n".join(out)
+
+
 def parse_body(lines, zl, element, quiz=False):
     """lines: [(ln, text)] (ohne Überschriften). Ergebnis: Liste von Blöcken (dict, kind=...)."""
     blocks = []
+    if quiz:
+        lines = _situation_vor_frage(lines)
     i, n = 0, len(lines)
     lst_re = _RE_BULLET if quiz else _RE_LIST
 
@@ -425,6 +489,7 @@ def parse_body(lines, zl, element, quiz=False):
             name, title, rest = d
             indented, follow, lst = [], [], []
             j = i + 1
+            lose = False
             if name in BOX_DIRS:
                 while j < n:
                     ln2, s2 = lines[j]
@@ -436,6 +501,12 @@ def parse_body(lines, zl, element, quiz=False):
                         j += 1
                     else:
                         break
+                # AP13.3: Inhalt nicht eingerückt – die folgenden Zeilen bis zur Leerzeile oder Überschrift gehören dazu
+                if not indented and name in ("Kasten", "Beispiel", "Hinweis"):
+                    while j < n and lines[j][1].strip() and not lines[j][1].startswith("#"):
+                        indented.append((lines[j][0], lines[j][1].strip()))
+                        j += 1
+                    lose = bool(indented)
             elif name in LIST_DIRS:
                 k2 = j                                   # Leerzeilen zwischen `Schritte: …` und der Liste überspringen
                 while k2 < n and not lines[k2][1].strip():
@@ -459,7 +530,7 @@ def parse_body(lines, zl, element, quiz=False):
                     follow.append((ln2, s2.strip()))
                     j += 1
             blocks.append({"kind": "dir", "name": name, "title": title, "rest": rest, "ln": ln,
-                           "indented": indented, "follow": follow, "list": lst})
+                           "indented": indented, "follow": follow, "list": lst, "lose": lose})
             i = j
             continue
         if s.lstrip().startswith("<"):
@@ -583,6 +654,9 @@ def block_html(b, k: Kontext):
     if name in ("Kasten", "Beispiel", "Hinweis"):
         if not b["indented"]:
             k.fehler(ln, f"{name} ohne Inhalt – Inhalt um zwei Leerzeichen einrücken")
+        if b.get("lose"):
+            k.zl.diag.warnung(f"{name}: Inhalt nicht eingerückt, die Zeilen bis zur Leerzeile als Inhalt genommen", ln,
+                              k.element, art="einrueckung")
         inner = body_html(parse_body(b["indented"], k.zl, k.element), k)
         title = inl(b["rest"])
         if name == "Beispiel":
@@ -851,6 +925,7 @@ class Parser:
         self.web_titel = set()  # Titel der Elemente, die in einer Website aufgegangen sind
         self.websites = []      # (Abschnittstitel, Pfad der HTML-Datei)
         self.textfeld = False   # Textfeld-Modus im aktuellen Abschnitt: Übungen als Block im Textfeld (AP7b)
+        self._abschnitt_web = ""   # Wert von `website:` im aktuellen Abschnitt (AP13.3: am Element geduldet)
         self.textfelder = []    # (Titel, HTML, Dateien) aller Blöcke, für die Vorschau
         try:
             self.kacheln = moodle_format((self.sb.get("kurs") or {}).get("format")) == "tiles"
@@ -902,6 +977,13 @@ class Parser:
             if not m or s.startswith(" ") or m.group(2).startswith("//"):
                 break
             key = m.group(1).strip().lower()
+            # AP13.3: `phase: …` (die Liste im Text nennt die Phase) und `website:` mit dem Wert des Abschnitts am
+            # Element werden still übergangen
+            if (key == "phase" and allowed is not ATTRS["kurs"]) or (
+                    key == "website" and allowed is not ATTRS["abschnitt"] and self._abschnitt_web
+                    and m.group(2).strip().lower() == self._abschnitt_web):
+                i += 1
+                continue
             if key in allowed:
                 attrs[key] = m.group(2).strip()
                 # `versuche: 2 · rückmeldung: sofort · einleitung: …` in einer Zeile: weitere Angaben abtrennen
@@ -1015,6 +1097,8 @@ class Parser:
             if not s.strip():
                 continue
             m = _RE_ATTR.match(s)
+            if m and not s.startswith(" ") and m.group(1).strip().lower() == "phase":
+                continue                         # AP13.3: `Phase: …` vor `id:` wird übergangen
             if not m or s.startswith(" ") or s[0].isupper():
                 break
             if m.group(1).strip().lower() != "id":
@@ -1156,6 +1240,9 @@ class Parser:
         # Website-Modus: Angabe im Abschnitt, sonst Steckbrief kurs.website (nicht für Allgemeines)
         anzeige = self._web_anzeige(attrs["website"], ln, element) if "website" in attrs else \
             (None if allg else self.web_standard)
+        wk = (self.sb.get("kurs") or {}).get("website")
+        self._abschnitt_web = str(attrs["website"]).strip().lower() if "website" in attrs else \
+            ("" if allg or wk in (None, False) or not self.web_standard else str(wk).strip().lower())
         self.textfeld = anzeige == "textfeld"
         self.web = Website(title or "Allgemeines", hue, anzeige) if anzeige and not self.textfeld else None
         self.allg = allg
@@ -1375,7 +1462,7 @@ class Parser:
                 if b["kind"] != "list":
                     self.fehler(b["ln"], element, "Zuordnen: nur eine Liste `- Element → Zone`")
                 for t, _ in b["items"]:
-                    txt, _, zone = t.partition(" → ")
+                    txt, _, zone = t.rpartition(" → ") if " → " in t else (t, "", "")   # letzter Pfeil trennt die Zone (AP13.3)
                     zone = zone.strip()
                     if zone in ("", "–", "-"):
                         elements.append((inl(txt.strip()), None))
@@ -1634,7 +1721,7 @@ class Parser:
                 if b["kind"] != "list":
                     self.fehler(b["ln"], element, "Zuordnen: nur eine Liste `- Element → Zone`")
                 for t, _ in b["items"]:
-                    txt, _, zone = t.partition(" → ")
+                    txt, _, zone = t.rpartition(" → ") if " → " in t else (t, "", "")   # letzter Pfeil trennt die Zone (AP13.3)
                     zone = zone.strip()
                     if zone in ("", "–", "-"):
                         elemente.append((inl(txt.strip()), None))

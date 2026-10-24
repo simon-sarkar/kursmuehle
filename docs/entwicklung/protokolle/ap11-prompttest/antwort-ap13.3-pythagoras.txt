@@ -1,0 +1,120 @@
+```markdown
+# Drehbuch v1 · Satz des Pythagoras · 45 min
+Angenommen: Kursformat Themen untereinander
+Angenommen: Designvorlage Schlicht
+Angenommen: Übungen erscheinen als eigene Aktivitäten
+Angenommen: Kein Abschlusstest
+Angenommen: Alles sofort sichtbar
+Bildwunsch: leiter-an-wand.png | Skizze einer schräg an eine Hauswand gelehnten Leiter mit Maßen und einer Dachrinne über der Leiterspitze.
+Bildprompt: leiter-an-wand.png | Einfache Strichzeichnung im Querformat 4:3, weißer Hintergrund, schwarze Linien, leichte Grautöne. Seitenansicht: links eine senkrechte Hauswand mit einer Dachrinne weit oben, unten eine waagerechte Bodenlinie, eine Leiter lehnt schräg an der Wand, ihre Spitze endet unterhalb der Dachrinne. Der rechte Winkel zwischen Wand und Boden ist mit einem kleinen Quadrat markiert. Beschriftungen: ‚Leiter 3 m': Pfeil auf die Leiter, ‚Abstand 1 m': Pfeil auf die Strecke zwischen Leiterfuß und Wand, ‚Höhe ?': Pfeil auf die Strecke an der Wand bis zur Leiterspitze, ‚Dachrinne': Pfeil auf die Dachrinne. Keine Personen, keine weiteren Wörter.
+Bildwunsch: dreieck-beschriftet.png | Rechtwinkliges Dreieck mit den Seiten a, b und c und markiertem rechtem Winkel.
+Bildprompt: dreieck-beschriftet.png | Einfache Strichzeichnung im Querformat 4:3, weißer Hintergrund, schwarze Linien. Ein rechtwinkliges Dreieck, der rechte Winkel liegt unten links und ist mit einem kleinen Quadrat markiert, die senkrechte Seite ist kurz, die waagerechte etwas länger, die schräge Seite ist die längste. Beschriftungen: ‚a': Pfeil auf die senkrechte Seite, ‚b': Pfeil auf die waagerechte Seite, ‚c': Pfeil auf die schräge Seite, ‚rechter Winkel': Pfeil auf das Quadrat in der Ecke. Keine weiteren Wörter, kein Zahlenwerk.
+Offen: Die Aufgaben setzen Quadrieren, Wurzelziehen und einen Taschenrechner voraus; ohne Taschenrechner sind √8 und √65 nicht zu bestimmen.
+
+## Satz des Pythagoras · 45 min
+
+### Textfeld: Eine Leiter an der Hauswand · 3 min
+id: b1
+Vorspann: Jonas will die Dachrinne am Haus reinigen. Sie hängt 3 m über dem Boden.
+Bild: leiter-an-wand.png | Skizze einer Hauswand mit Dachrinne und einer schräg angelehnten Leiter. Beschriftet sind die Leiterlänge 3 m, der Abstand des Leiterfußes von der Wand mit 1 m, die gesuchte Höhe und die Dachrinne.
+Jonas besitzt eine Leiter, die 3 m lang ist. Er stellt den Fuß 1 m von der Wand entfernt auf, damit die Leiter sicher steht.
+Kasten: Denk kurz nach
+  Wie hoch reicht die Leiter an der Wand, und kommt Jonas damit an die Dachrinne? Schreib deine Vermutung auf und begründe sie kurz.
+Hervorhebung: Lässt sich die Höhe berechnen, ohne die Leiter aufzustellen?
+
+### Seite: Katheten, Hypotenuse und die Formel · 10 min
+id: b2
+Überschrift: Die Seiten im rechtwinkligen Dreieck
+Bild: dreieck-beschriftet.png | Rechtwinkliges Dreieck mit dem rechten Winkel unten links. Die senkrechte Seite ist mit a beschriftet, die waagerechte mit b und die längste, schräge Seite mit c. | Das Dreieck aus der Leiter-Skizze mit den Seiten a, b und c
+Die Leiter, die Wand und der Boden bilden ein Dreieck mit einem **rechten Winkel**, also einem Winkel von 90°. Solche Dreiecke heißen **rechtwinklige Dreiecke**. Ihre Seiten haben eigene Namen.
+Beispiel: Ein rechter Winkel im Alltag
+  Die Ecke eines Blatts Papier ist ein rechter Winkel. Ein Dreieck, das du aus dieser Ecke ausschneidest, ist rechtwinklig.
+Überschrift: Die Namen der Seiten
+Die beiden Seiten, die am rechten Winkel anliegen, heißen **Katheten**. Im Bild sind das a und b.
+Beispiel: Katheten bei der Leiter
+  Die Höhe an der Wand (a) und der Abstand am Boden (b) treffen sich im rechten Winkel. Beide sind Katheten.
+Die dritte Seite liegt dem rechten Winkel gegenüber. Sie heißt **Hypotenuse** und ist die längste Seite des Dreiecks. Im Bild ist das c.
+Beispiel: Hypotenuse bei der Leiter
+  Die Leiter liegt gegenüber vom rechten Winkel. Sie ist die Hypotenuse und mit 3 m länger als der Abstand von 1 m.
+Hinweis: Auf die Lage kommt es an
+  In manchen Aufgaben heißen die Seiten p, q und r oder anders. Die Hypotenuse ist trotzdem die Seite gegenüber dem rechten Winkel.
+Überschrift: Quadrat und Wurzel
+Für die Rechnung brauchst du zwei Schritte, die sich gegenseitig aufheben. **Quadrieren** heißt, eine Zahl mit sich selbst zu multiplizieren; a² ist also a · a. Die **Quadratwurzel** √ macht das rückgängig.
+Beispiel: Quadrieren und Wurzelziehen
+  7² = 7 · 7 = 49, und umgekehrt ist √49 = 7. Ein Quadrat mit 7 cm Seitenlänge hat den Flächeninhalt 49 cm².
+Nicht jede Wurzel geht auf. √10 liegt zwischen 3 und 4, der Taschenrechner zeigt etwa 3,16. Solche Werte rundest du, wenn die Aufgabe es verlangt.
+Überschrift: Der Satz des Pythagoras
+Zwischen den drei Seiten eines rechtwinkligen Dreiecks besteht eine feste Beziehung, der **Satz des Pythagoras**.
+Merke: Im rechtwinkligen Dreieck gilt a² + b² = c². Dabei sind a und b die Katheten und c ist die Hypotenuse.
+Hinweis: Nur mit rechtem Winkel
+  Der Satz gilt nur, wenn das Dreieck einen rechten Winkel hat. Ohne rechten Winkel stimmt die Gleichung nicht.
+Überschrift: Eine fehlende Seite berechnen
+Sind zwei Seiten bekannt, lässt sich die dritte berechnen. Dabei gibt es zwei Fälle. Entweder ist die Hypotenuse gesucht oder eine Kathete.
+Schritte: Eine fehlende Seite berechnen
+1. Skizze zeichnen, den rechten Winkel markieren und die gesuchte Seite benennen.
+2. Hypotenuse und Katheten erkennen und die bekannten Längen in a² + b² = c² einsetzen.
+3. Die Quadrate ausrechnen. Ist c gesucht, werden die Quadrate addiert. Ist eine Kathete gesucht, wird das Quadrat der bekannten Kathete von c² abgezogen.
+4. Die Wurzel ziehen, bei Bedarf runden und die Einheit angeben.
+Beispiel: Gesucht ist die Hypotenuse
+  Gegeben sind die Katheten a = 6 cm und b = 8 cm.
+  Einsetzen ergibt 6² + 8² = c².
+  Ausgerechnet ist das 36 + 64 = c², also c² = 100.
+  Die Wurzel ergibt c = √100 = 10 cm.
+Beispiel: Gesucht ist eine Kathete
+  Die Leiter ist die Hypotenuse mit c = 3 m. Der Abstand ist die Kathete b = 1 m. Gesucht ist die Höhe a.
+  Einsetzen ergibt a² + 1² = 3².
+  Ausgerechnet ist das a² + 1 = 9, also a² = 9 − 1 = 8.
+  Die Wurzel ergibt a = √8 ≈ 2,83 m. Auf eine Stelle nach dem Komma gerundet sind das 2,8 m.
+Die Leiter reicht also nur etwa 2,8 m hoch. Die Dachrinne in 3 m Höhe erreicht Jonas damit nicht.
+Hinweis: Probe mit der Länge
+  Die Hypotenuse ist die längste Seite. Kommt bei einer gesuchten Kathete ein Wert heraus, der größer ist als c, wurde addiert statt subtrahiert.
+
+### Quiz: Seiten benennen und Ansatz wählen · 6 min
+id: b2-2
+1. MC: Ein Dreieck ABC hat den rechten Winkel bei B. Die Seiten messen AB = 5 cm, BC = 12 cm und AC = 13 cm. Welche Seite ist die Hypotenuse?
+- ✔ AC → Die Seite AC liegt dem rechten Winkel bei B gegenüber und ist mit 13 cm die längste Seite.
+- AB → AB liegt am rechten Winkel an und ist deshalb eine Kathete. Die Hypotenuse ist die längste Seite, AB ist die kürzeste.
+- BC → BC liegt ebenfalls am rechten Winkel an und ist eine Kathete, auch wenn sie länger ist als AB.
+2. Einsetzen: Tom zeichnet die Dachschräge eines Hauses, der rechte Winkel liegt zwischen Wand und Boden. Setze die Begriffe ein.
+Die Dachschräge liegt gegenüber dem rechten Winkel und ist die *Hypotenuse:Sie ist die längste Seite*. Wand und Boden bilden den rechten Winkel, sie sind die *Katheten:Sie liegen am rechten Winkel an*.
+3. RF: Lena behauptet, in einem rechtwinkligen Dreieck könne eine Kathete länger sein als die Hypotenuse. ✘ → richtig: Die Hypotenuse liegt dem rechten Winkel gegenüber und ist die längste Seite des Dreiecks. → falsch: Die Aussage stimmt nicht. Im Dreieck mit 6 cm, 8 cm und 10 cm ist die Hypotenuse mit 10 cm länger als beide Katheten.
+4. MC: Jana kennt in einem rechtwinkligen Dreieck die Hypotenuse c = 17 cm und die Kathete a = 8 cm. Sie sucht die Kathete b. Welchen Ansatz wählt sie?
+- ✔ b² = 17² − 8² → Bei einer gesuchten Kathete wird vom Quadrat der Hypotenuse abgezogen, hier 289 − 64 = 225.
+- b² = 17² + 8² → Hier wurde addiert wie bei einer gesuchten Hypotenuse. Die Kathete muss kürzer als 17 cm sein, die Summe ergäbe eine längere Seite.
+- b² = 8² − 17² → Die Zahlen sind vertauscht. Das Ergebnis wäre negativ, und aus einer negativen Zahl lässt sich keine Wurzel ziehen.
+
+### Zuordnen: Hypotenuse oder Kathete gesucht · 4 min
+id: b3
+zonen: Hypotenuse gesucht | Kathete gesucht
+titel: Ein Fall passt zu keiner Zone.
+- Beide Katheten sind bekannt, 5 cm und 12 cm → Hypotenuse gesucht
+- Hypotenuse 10 cm und eine Kathete 6 cm sind bekannt → Kathete gesucht
+- Von einem Bildschirm sind Breite und Höhe bekannt, gesucht ist die Diagonale → Hypotenuse gesucht
+- Von einer Rampe sind Länge und Höhe bekannt, gesucht ist die Strecke am Boden → Kathete gesucht
+- Jemand geht 6 km nach Osten und 8 km nach Norden, gesucht ist die Entfernung zum Start → Hypotenuse gesucht
+- Ein Dreieck hat die Seiten 4 cm, 5 cm und 6 cm und keinen rechten Winkel
+
+### Quiz: Fehlende Seiten berechnen · 9 min
+id: b4
+1. Einsetzen: Mira misst ihren Bildschirm. Er ist 40 cm breit und 30 cm hoch. Wie lang ist die Diagonale?
+Die Diagonale ist die Hypotenuse. Es gilt 40² + 30² = *2500:Rechne 40 mal 40 und 30 mal 30 und addiere*, also c = √2500 = *50:Probe 50 mal 50 gleich 2500* cm.
+2. Einsetzen: Ben legt eine 2 m lange Rampe an die Ladefläche eines Transporters, die 1,2 m hoch liegt. Wie weit vom Fahrzeug entfernt liegt das untere Ende der Rampe?
+Die Rampe liegt gegenüber dem rechten Winkel, sie ist die Hypotenuse. Es gilt b² = 2² − 1,2² = 4 − 1,44 = *2,56:Gesucht ist eine Kathete, deshalb wird subtrahiert*, also b = √2,56 = *1,6:Probe 1,6 mal 1,6 gleich 2,56* m.
+3. Einsetzen: Ein Zimmer ist 4 m breit und 7 m lang. Wie lang ist die Diagonale? Runde auf eine Stelle nach dem Komma.
+Die Diagonale ist die Hypotenuse. Es gilt 4² + 7² = *65:16 + 49*, also c = √65 ≈ *8,1/8.1:Der Taschenrechner zeigt 8,06 und der Auftrag verlangt eine Stelle nach dem Komma* m.
+
+### Lückentext: Das Halteseil eines Fahnenmasts · 4 min
+id: b4-2
+aufgabe: Ergänze den Rechenweg für das Halteseil.
+Ein Fahnenmast ist 9 m hoch. Sein Halteseil ist 12 m vom Mast entfernt am Boden befestigt. Mast und Boden bilden einen *rechten* Winkel. Das Seil liegt gegenüber diesem Winkel und ist deshalb die *Hypotenuse*. Mast und Bodenstrecke sind die *Katheten*. Es gilt 9² + 12² = c². Mit 9² = *81* und 12² = *144* ist c² = *225*. Die Wurzel daraus ergibt c = *15* m.
+
+### Seite: Hefteintrag zum Satz des Pythagoras · 9 min
+id: b5
+Überschrift: Satz des Pythagoras
+Ein Dreieck mit rechtem Winkel ist ein **rechtwinkliges Dreieck**. Die Seiten am rechten Winkel sind die **Katheten** (a und b), die Seite gegenüber ist die **Hypotenuse** (c).
+Merke: Im rechtwinkligen Dreieck gilt a² + b² = c².
+Merke: Ist c gesucht, addierst du die Quadrate, ist eine Kathete gesucht, subtrahierst du. Danach ziehst du die **Wurzel**.
+Beispiel: Dachsparren
+  Ein Haus ist 8 m breit, das Dach 3 m hoch. Die halbe Breite beträgt 4 m.
+  4² + 3² = c², also c² = 25 und c = √25 = 5 m.
+```

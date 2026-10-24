@@ -2,7 +2,7 @@
 
     chats()                                        Chat-Auswahl aus dem Katalog
     einheit(mappe, steckbrief, chat, material, nur_leere)  -> {teile, groessen, ids, typen}: Text „Diese Einheit“ oder
-                                                   „Alle leeren Bausteine“, gestückelt über 12 KB oder nach Chat
+                                                   „Alle leeren Bausteine“, gestückelt über 14 KB oder nach Chat
     baustein(mappe, ids, kurs_md, steckbrief, chat)  -> Text „Nur dieser Baustein“ (etwa 1 KB, bisheriger Inhalt als Kontext)
     korrektur(pruefung)                            -> Sätze an den Chat, einer je Fehler (eigener Satz, wenn die Prüfung
                                                    einen mitgibt: `bitte`, etwa bei einer Zeit-Annahme)
@@ -17,7 +17,7 @@ import re
 from . import api
 from . import mappe as M
 
-GRENZE = 12 * 1024          # Ziel je Text in Bytes (Plan §4; 12 KB seit AP13.1 für sechs Typen zu „automatisch“, 68 KB
+GRENZE = 14 * 1024          # Ziel je Text in Bytes (Plan §4; 14 KB seit AP13.3, damit sechs Karten in einen Teil passen; 68 KB
                             # liefen im Test in AIS-Chat und fobizz); darüber stückelt einheit() nach Abschnitten
 _TEXTTYPEN = {"Textfeld", "Seite", "Lesebuch", "Buch", "Aufgabe", "Datei", "Geschichte"}
 _FRAGETYPEN = {"Quiz", "Test", "Lesebuch"}
@@ -104,7 +104,8 @@ def wortziel(e, jahrgang=None):
         if rolle == "einstieg":                      # Einstieg kurz (AP13.1), mit Abstand zur Grenze der Prüfung
             woerter = min(woerter, k["pruefregeln"]["einstieg_woerter"] - 20)
         if heft:                                     # Wortziel nie unter dem Mindestmaß des Hefteintrags
-            woerter = max(woerter, next((t["mindest"]["zahl"] for t in k["typen"] if t["typ"] == typ and t.get("mindest")), 0))
+            woerter = max(woerter, next((M.mindestzahl(t["mindest"], jahrgang) for t in k["typen"]
+                                         if t["typ"] == typ and t.get("mindest")), 0))
         art = "wortziel_heft" if heft else "wortziel_einstieg" if einstieg else "wortziel_text"
         return p[art].format(min=minuten, woerter=woerter)
     if typ in _AUFGABENTYPEN:
@@ -139,6 +140,8 @@ def _zeile(e, nr, jahrgang=None, selbst=True):
             teile.append(ziel)
         elif selbst and e.get("soll"):
             teile.append(f"{e['soll']} min")
+        elif not selbst and M.rolle_von(e) == "einstieg":
+            teile.append(_kat()["prompt"]["einstieg_dauer"])     # Prompttest AP13.3: sonst schrieb das Modell 1 min
     if (e.get("schritt") or "").strip():
         teile.append("Teilschritt: " + " ".join(e["schritt"].split()))
     if (e.get("auftrag") or "").strip():
@@ -146,7 +149,7 @@ def _zeile(e, nr, jahrgang=None, selbst=True):
     return " · ".join(teile)
 
 
-def zaehlregeln(liste, typen, uebung=True):
+def zaehlregeln(liste, typen, uebung=True, jahrgang=None):
     """Zählregeln für den Inhalt (AP13.1): Mindestmaße der Typen dieser Einheit (`mindest` im Katalog; der Hefteintrag
     nur, wenn eine Karte so heißt oder diesen Teilschritt hat), Einstieg kurz (wenn eine Karte die Rolle Einstieg hat),
     mit `uebung` die Regel, dass Denkaufgaben keine Übung sind (nur im Text für die ganze Einheit)."""
@@ -157,10 +160,10 @@ def zaehlregeln(liste, typen, uebung=True):
         m = e.get("mindest")
         if not m or e["typ"] not in typen or m.get("nur"):
             continue
-        teile.append(p["mindest_typ"].format(typ=e["typ"], zahl=m["zahl"], einheit=m["einheit"]))
+        teile.append(p["mindest_typ"].format(typ=e["typ"], zahl=M.mindestzahl(m, jahrgang), einheit=m["einheit"]))
     heft = next((e["mindest"] for e in k["typen"] if (e.get("mindest") or {}).get("nur") == "Hefteintrag"), None)
     if heft and any("Hefteintrag" in f"{x.get('titel', '')} {x.get('schritt', '')}" for x in liste):
-        teile.append(p["mindest_hefteintrag"].format(zahl=heft["zahl"]))
+        teile.append(p["mindest_hefteintrag"].format(zahl=M.mindestzahl(heft, jahrgang)))
     out = [p["mindest"].format(liste="; ".join(teile))] if teile else []
     if any(M.rolle_von(x) == "einstieg" for x in liste):
         out.append(p["einstieg"].format(woerter=regeln["einstieg_woerter"]))
@@ -177,8 +180,14 @@ def braucht_skizze(angaben, thema=""):
     return any(f.lower() in fach for f in p["skizze_faecher"]) or any(w.lower() in text for w in p["skizze_stichworte"])
 
 
-def _format(typen, ch, kopf=True):
+def _format(typen, ch, kopf=True, nur_typen=False):
     k = _kat()
+    if nur_typen:                     # Teil 2 und folgende: nur die Formatzeilen neuer Typen (AP13.3)
+        zeilen = ["Format der Typen, die neu dazukommen:"]
+        for e in k["typen"]:
+            if e["typ"] in typen:
+                zeilen += ["```"] + e["beispiel"].rstrip("\n").splitlines() + ["```"] + ["- " + r for r in e.get("regeln", [])]
+        return zeilen
     zeilen = ["Format der Kursdatei"]
     if kopf:
         zeilen.append("- Erste Zeile `# Drehbuch v1 · Thema · N min`; darunter im Kopf nur Zeilen `Angenommen: …`, "
@@ -221,24 +230,60 @@ def _gruppen(eintraege):
     return out
 
 
-def _einheit_text(mappe, angaben, ch, liste, alle, material, teil, von, nur_leere):
+def _anteil(e):
+    """Gewicht einer Karte für die Minuten eines Teils: Soll, sonst Richtwert nach Rolle (`zeitbedarf.karte_minuten`)."""
+    if e.get("typ") in M.struktur():
+        return 0
+    richt = _kat()["zeitbedarf"]["karte_minuten"]
+    return e.get("soll") or richt.get(M.rolle_von(e), richt["rahmen"])
+
+
+def teil_minuten(liste, stueck, minuten):
+    """Minuten, die ein Teil der Stückelung trägt (AP13.3): Anteil seiner Karten an allen Karten des Textes."""
+    gesamt = sum(_anteil(e) for e in liste)
+    if not minuten or not gesamt:
+        return None
+    return max(1, round(int(minuten) * sum(_anteil(e) for e in stueck) / gesamt))
+
+
+def _grundschule(jahrgang, angaben):
+    jg = re.match(r"\d+", str(jahrgang or ""))
+    return (bool(jg) and int(jg.group(0)) <= 4) or (angaben.get("schulart") or "") == "Grundschule"
+
+
+def _einheit_text(mappe, angaben, ch, liste, alle, material, teil, von, nur_leere, ganz=None, erste=None):
+    """Text eines Teils. `ganz` = alle Karten des Textes (für die Minuten je Teil), `erste` = Karten von Teil 1 (Teil 2
+    und folgende wiederholen Format und Prüfliste nicht, nur die Formatzeilen der Typen, die Teil 1 nicht hatte)."""
     k = _kat()
     p = k["prompt"]
     auftrag, thema, minuten = _auftrag(mappe, angaben)
     jahrgang = (mappe.get("einheit") or {}).get("jahrgang") or angaben.get("jahrgang")
     selbst = zeit_selbst(mappe)
-    # Typen zur Wahl auch ohne Karte „automatisch“, sobald die Zeitregel zum Ergänzen auffordert (Prompttest AP13.1, Lauf C)
-    typen, auto = [], any(e.get("typ") == AUTO for e in liste) or bool(minuten)
-    for e in liste:
-        if e.get("typ") and e["typ"] != AUTO and e["typ"] not in typen:
-            typen.append(e["typ"])
-    if auto:
-        typen += [t for t in k["automatisch"]["typen"] if t not in typen]
-    z = [p["einheit"], "", "Auftrag", auftrag, p["lernende"], ""]
-    z.append("Vorgaben, schon entschieden (übernimm diese Zeilen unverändert in den Kopf):")
-    z += _angenommen(angaben)
-    z.append("")
-    if nur_leere:
+    folge = von > 1 and teil > 1
+
+    def typen_von(karten):
+        # Typen zur Wahl auch ohne Karte „automatisch“, sobald die Zeitregel zum Ergänzen auffordert (Prompttest AP13.1, Lauf C)
+        out, auto_ = [], any(e.get("typ") == AUTO for e in karten) or bool(minuten)
+        for e in karten:
+            if e.get("typ") and e["typ"] != AUTO and e["typ"] not in out:
+                out.append(e["typ"])
+        if auto_:
+            out += [t for t in k["automatisch"]["typen"] if t not in out]
+        return out, auto_
+    typen, auto = typen_von(liste)
+    if folge:
+        schon = set(typen_von(erste or [])[0])
+        z = [p["einheit_teil"], "", "Auftrag", auftrag, ""]
+    else:
+        z = [p["einheit"], "", "Auftrag", auftrag, p["lernende"]]
+        if _grundschule(jahrgang, angaben):
+            z.append(p["grundschule"])
+        z.append("")
+        z.append("Vorgaben, schon entschieden (übernimm diese Zeilen unverändert in den Kopf):")
+        z += _angenommen(angaben)
+        z.append(p["angenommen_nur"])
+        z.append("")
+    if nur_leere and not folge:
         fertig = [e for e in alle if not e.get("geplant") and e.get("typ") not in M.struktur()]
         if fertig:
             z.append("Diese Bausteine der Einheit gibt es schon, schreib sie nicht noch einmal: "
@@ -249,26 +294,40 @@ def _einheit_text(mappe, angaben, ch, liste, alle, material, teil, von, nur_leer
              "worum es geht):")
     nr = {e["id"]: i + 1 for i, e in enumerate(alle)}
     for abschnitt, gruppe in _gruppen(liste):
-        z.append(f"Abschnitt „{abschnitt or thema}“" + (f" · {minuten} min" if minuten and len(_gruppen(alle)) == 1 else ""))
+        z.append(f"Abschnitt „{abschnitt or thema}“" + (f" · {minuten} min" if minuten and von == 1 and len(_gruppen(alle)) == 1 else ""))
         z += [_zeile(e, nr[e["id"]], jahrgang, selbst) for e in gruppe]
-    if auto:
+    if auto and not folge:
         z += [p["automatisch"]] + [f"- {t}: {zeile}" for t, zeile in k["automatisch"]["typen"].items()] + [p["automatisch_zwei"]]
-    if not selbst and minuten:
+    anteil = teil_minuten(ganz or liste, liste, minuten) if von > 1 else None
+    if not selbst and minuten and not folge:
         zb, f = k["zeitbedarf"], M._jahrgang_faktor(jahrgang)
         wpm = zb["woerter_je_minute"]
         zahl = lambda x: f"{x:g}".replace(".", ",")
-        z.append(p["zeit_frei"].format(minuten=minuten, lesen=int(round(wpm["lesen"] * f)), einstieg=int(round(wpm["einstieg"] * f)),
-                                       heft=int(round(zb["abschreiben"] * f)), einfach=zahl(zb["aufgabe_minuten"]["einfach"]),
+        z.append(p["zeit_frei"].format(minuten=anteil or minuten, lesen=int(round(wpm["lesen"] * f)),
+                                       einstieg=int(round(wpm["einstieg"] * f)), heft=int(round(zb["abschreiben"] * f)),
+                                       einfach=zahl(zb["aufgabe_minuten"]["einfach"]),
                                        rechnen=zahl(zb["aufgabe_minuten"]["rechnen"])))
     if minuten:
-        z.append(p["zeit"].format(minuten=minuten))
+        z.append(p["zeit_teil"].format(minuten=minuten, n=anteil) if anteil else p["zeit_summe"].format(minuten=minuten))
+        if not folge:
+            z.append(p["zeit"].format(minuten=minuten))
     z.append("")
+    if folge:
+        neu = [t for t in typen if t not in schon]
+        z.append(p["teil_format"])
+        regeln = zaehlregeln(liste, neu, uebung=False, jahrgang=jahrgang)     # Mindestmaße der Typen, die neu dazukommen
+        if neu or regeln:
+            z.append("")
+            z += _format(neu, ch, kopf=False, nur_typen=True) if neu else []
+            z += ["- " + r for r in regeln]
+        z += ["", p["ausgabe_teil"].format(als="als ein Codeblock" if ch.get("codeblock", True) else "als reiner Text")]
+        return "\n".join(z) + "\n", typen
     if material and teil == 1:
         z += ["Material der Lehrkraft (nutze es als Grundlage; Tatsachen daraus haben Vorrang vor deinen):",
               material.strip(), ""]
     z += _format(typen, ch)
     z += ["", "Vorgaben für den Inhalt (zähle nach, bevor du ausgibst):"] + ["- " + r for r in p["leitplanken"]]
-    z += ["- " + r for r in zaehlregeln(liste, typen)]
+    z += ["- " + r for r in zaehlregeln(liste, typen, jahrgang=jahrgang)]
     if braucht_skizze(angaben, thema):
         z.append("- " + p["skizze"])
     z += ["", "Prüfe vor der Ausgabe:"] + ["- " + r for r in p["checkliste"]]
@@ -283,43 +342,67 @@ def _groesse(t):
 def einheit(mappe, steckbrief=None, chat_wert=None, material=None, nur_leere=False, grenze=GRENZE):
     """Text „Diese Einheit“ (oder mit nur_leere „Alle leeren Bausteine“). Sprengt der Text die Grenze oder hat er mehr
     Bausteine, als der Chat je Antwort schafft (`teil_bausteine`), stückelt die Seite nach Abschnitten, notfalls
-    innerhalb eines Abschnitts; jeder Teil sagt „Teil n von m“. -> {teile: [Text], groessen: [Bytes], ids: [[id]], typen: [[Typ]]}"""
+    innerhalb eines Abschnitts; jeder Teil sagt „Teil n von m“ und nennt seinen Anteil an den Minuten. Nur Karten der
+    laufenden Einheit (AP13.3). Steht in der Mappe eine eingefrorene Stückelung (`stueckelung`, gesetzt beim ersten
+    Kopieren, gelöscht, wenn alle Teile eingefügt sind) für diese Einheit und Textart, gelten ihre Teile.
+    -> {teile: [Text], groessen: [Bytes], ids: [[id]], typen: [[Typ]], minuten: [Minuten je Teil]}"""
     ch = chat(chat_wert if chat_wert is not None else mappe.get("chat"))
     angaben = M.angaben_lesen(steckbrief or "")
     material = material if material is not None else mappe.get("material", "")
-    alle = [e for e in mappe.get("bausteine", []) if e.get("typ") != "Badge" and not e.get("aus")]
+    tag = M.laufende_einheit(mappe)
+    alle = [e for e in mappe.get("bausteine", []) if e.get("typ") != "Badge" and not e.get("aus")
+            and (e.get("einheit") or None) == tag]
     liste = [e for e in alle if e.get("geplant")] if nur_leere else alle
+    st = mappe.get("stueckelung") or {}
+    if st.get("ids") and (st.get("einheit") or None) == tag and bool(st.get("leer")) == bool(nur_leere):
+        nach_id = {e["id"]: e for e in alle}
+        teile = [[nach_id[i] for i in ids if i in nach_id] for ids in st["ids"]]
+        liste = [e for t in teile for e in t]
+        if liste:
+            return _teile_texte(mappe, angaben, ch, liste, alle, material, nur_leere, teile)
     if not liste:
-        return {"teile": [], "groessen": [], "ids": [], "typen": []}
+        return {"teile": [], "groessen": [], "ids": [], "typen": [], "minuten": []}
     n = ch.get("teil_bausteine") or len(liste)
 
-    def text(stueck, teil=1, von=1):
-        return _einheit_text(mappe, angaben, ch, stueck, alle, material, teil, von, nur_leere)
-
-    ganz, typen = text(liste)
+    ganz, typen = _einheit_text(mappe, angaben, ch, liste, alle, material, 1, 1, nur_leere)
     if _groesse(ganz) <= grenze and len(liste) <= n:
-        return {"teile": [ganz], "groessen": [_groesse(ganz)], "ids": [[e["id"] for e in liste]], "typen": [typen]}
+        return {"teile": [ganz], "groessen": [_groesse(ganz)], "ids": [[e["id"] for e in liste]], "typen": [typen],
+                "minuten": [(mappe.get("einheit") or {}).get("minuten")]}
     # Teile: ganze Abschnitte, solange sie passen; ein Abschnitt, der nicht passt, füllt den laufenden Teil Baustein für
-    # Baustein auf (Grenze: Bytes und Bausteine je Teil)
-    def passt(stueck):
-        return len(stueck) <= n and _groesse(text(stueck, 2, 2)[0]) <= grenze
-
+    # Baustein auf (Grenze: Bytes und Bausteine je Teil; Teil 1 mit Format und Prüfliste, die übrigen ohne)
     teile = [[]]
+
+    def passt(stueck):
+        erster = len(teile) == 1
+        t = _einheit_text(mappe, angaben, ch, stueck, alle, material, 1 if erster else 2, 2, nur_leere, liste,
+                          None if erster else teile[0])[0]
+        return len(stueck) <= n and _groesse(t) <= grenze
+
     for _, gruppe in _gruppen(liste):
         if passt(teile[-1] + gruppe):
             teile[-1] += gruppe
             continue
-        if teile[-1] and passt(gruppe):
-            teile.append(list(gruppe))
-            continue
+        if teile[-1]:
+            teile.append([])
+            if passt(gruppe):
+                teile[-1] += gruppe
+                continue
         for e in gruppe:
             if teile[-1] and not passt(teile[-1] + [e]):
                 teile.append([])
             teile[-1].append(e)
+    return _teile_texte(mappe, angaben, ch, liste, alle, material, nur_leere, teile)
+
+
+def _teile_texte(mappe, angaben, ch, liste, alle, material, nur_leere, teile):
+    teile = [t for t in teile if t]
     von = len(teile)
-    texte = [text(t, i + 1, von) for i, t in enumerate(teile)]
+    minuten = (mappe.get("einheit") or {}).get("minuten")
+    texte = [_einheit_text(mappe, angaben, ch, t, alle, material, i + 1, von, nur_leere, liste, teile[0])
+             for i, t in enumerate(teile)]
     return {"teile": [t for t, _ in texte], "groessen": [_groesse(t) for t, _ in texte],
-            "ids": [[e["id"] for e in t] for t in teile], "typen": [ty for _, ty in texte]}
+            "ids": [[e["id"] for e in t] for t in teile], "typen": [ty for _, ty in texte],
+            "minuten": [teil_minuten(liste, t, minuten) if von > 1 else minuten for t in teile]}
 
 
 def baustein(mappe, ids, kurs_md="", steckbrief=None, chat_wert=None, kontext=900, pruefung=None):
@@ -359,7 +442,7 @@ def baustein(mappe, ids, kurs_md="", steckbrief=None, chat_wert=None, kontext=90
                      + f": {d['text'].rstrip('. ')}.")
     if any(e["typ"] == AUTO for e in liste):
         z += [p["automatisch"]] + [f"- {t}: {zeile}" for t, zeile in _kat()["automatisch"]["typen"].items()]
-    z += ["- " + r for r in zaehlregeln(liste, typen, uebung=False)]
+    z += ["- " + r for r in zaehlregeln(liste, typen, uebung=False, jahrgang=jahrgang)]
     z.append("")
     k = _kat()
     z.append("Format")
@@ -400,7 +483,7 @@ def korrektur(pruefung):
         else:
             satz = f"Die Prüfung meldet{' in Zeile ' + str(d['zeile']) if d.get('zeile') else ''}: {text}. Gib die " \
                    f"Kursdatei im selben Format noch einmal aus."
-        out.append({"baustein": d.get("baustein"), "titel": d.get("titel"), "satz": satz})
+        out.append({"baustein": d.get("baustein"), "titel": d.get("titel"), "satz": satz, "regel": api.regel(d)})
     return out
 
 
@@ -448,7 +531,7 @@ def _fragen_baustein(b):
         zonen = [z.strip() for z in angabe("zonen").split("|") if z.strip()]
         for z in zeilen:
             if z.startswith("- "):
-                teil = z[2:].split(" → ")
+                teil = z[2:].rsplit(" → ", 1)          # der letzte Pfeil trennt die Zone (AP13.3)
                 out.append({"art": "zuordnen", "frage": _sauber(teil[0]), "optionen": zonen + ["keine"],
                             "loesung": [[_sauber(teil[1]) if len(teil) > 1 else "keine"]]})
         return out

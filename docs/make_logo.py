@@ -125,16 +125,17 @@ def wasserzeichen():
 </svg>'''
 
 
-def muster(rapport, deckung=0.06):
+def muster(rapport, deckung=0.06, farbe=FG):
     """Seitenhintergrund der Oberfläche (AP12a): das Motiv des Wasserzeichens gekachelt, zwei Motive je Kachel diagonal
     versetzt, Anthrazit mit `deckung`. `rapport` = Kantenlänge der Kachel in px; die Oberfläche legt Karten und Flächen
     opak darüber, das Muster bleibt in den Zwischenräumen. AP13 (Befund des Autors 24.10.: „locker“ zu blass und zu
-    klein): Deckung 6 statt 4 %, Rapport 260 und 170 statt 200 und 130."""
+    klein): Deckung 6 statt 4 %, Rapport 260 und 170 statt 200 und 130. AP13.3: `farbe` Creme für das dunkle Schema
+    (gleiche Deckung, auf Anthrazit)."""
     m = rapport * 0.32 / 330            # Motiv (330 Einheiten breit) auf etwa ein Drittel der Kachel
     a, b = rapport / 4, rapport * 3 / 4
     teil = lambda x, y: f'<g transform="translate({x:.1f},{y:.1f}) scale({m:.4f})">{motiv()}</g>'
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{rapport}" height="{rapport}" viewBox="0 0 {rapport} {rapport}" aria-hidden="true">
-  <g fill="{FG}" opacity="{deckung}">{teil(a, a)}{teil(b, b)}</g>
+  <g fill="{farbe}" opacity="{deckung}">{teil(a, a)}{teil(b, b)}</g>
 </svg>'''
 
 
@@ -158,6 +159,8 @@ if __name__ == "__main__":
         "wasserzeichen.svg": wasserzeichen(),
         "muster-locker.svg": muster(260),        # Standard der Oberfläche (AP12a, kräftiger seit AP13)
         "muster-dicht.svg": muster(170),
+        "muster-locker-dunkel.svg": muster(260, farbe=BG),   # dunkles Schema der Oberfläche (AP13.3)
+        "muster-dicht-dunkel.svg": muster(170, farbe=BG),
         "badge-version.svg": badge("Version", version, 62, 48),
         "badge-status.svg": badge("Status", "Beta", 52, 48),          # Stufe der neuesten Version (2.x Beta)
         "badge-lizenz.svg": badge("Lizenz", "nicht kommerziell", 52, 116, BG),

@@ -1,0 +1,132 @@
+Schreibe eine Unterrichtseinheit als Kursdatei für die ByCS-Lernplattform. Du schreibst nur den Inhalt im Format unten; eine Webseite baut daraus den Kurs. Stell keine Rückfragen. Was an der Form nicht vorgegeben ist, entscheidest du selbst und schreibst es als Zeile `Angenommen: …` in den Kopf.
+
+Auftrag
+Thema: Satz des Pythagoras · Fach: Mathematik · Schulart: Mittelschule · Jahrgangsstufe 9 · 45 Minuten
+Sprich die Lernenden mit du an. Personen, Firmen und Marken in Fällen sind erfunden; keine Namen aus dem Gespräch, dem Profil oder der Anrede, sondern erfundene Vornamen.
+
+Vorgaben, schon entschieden (übernimm diese Zeilen unverändert in den Kopf):
+Angenommen: Kursformat Themen untereinander
+Angenommen: Designvorlage Schlicht
+Angenommen: Übungen erscheinen als eigene Aktivitäten
+Angenommen: Kein Abschlusstest
+Angenommen: Alles sofort sichtbar
+Keine weiteren Zeilen `Angenommen:` als diese, außer für Formatentscheidungen, die du ergänzt.
+
+Bausteine (genau diese, in dieser Reihenfolge; Arbeitstitel ersetzt du durch einen Titel, der sagt, worum es geht):
+Abschnitt „Satz des Pythagoras“ · 45 min
+1. id: b1 · Textfeld · Arbeitstitel „Einstieg“
+2. id: b2 · Typ frei · Arbeitstitel „Lesetext mit Fragen“
+3. id: b3 · Typ frei · Arbeitstitel „Übung zum Zuordnen“
+4. id: b4 · Typ frei · Arbeitstitel „Übung zum Anwenden“
+5. id: b5 · Seite · Arbeitstitel „Hefteintrag“
+6. id: b6 · Typ frei · Arbeitstitel „Der Fall vom Anfang“
+Bei „Typ frei“ und bei Bausteinen, die du ergänzt, wählst du den Typ, der zu Arbeitstitel, Teilschritt und Auftrag passt, aus diesen:
+- Textfeld: kurzer Text direkt auf der Kursseite: Fall, Frage, Merksatz
+- Seite: Lesetext auf eigener Seite mit Zwischenüberschriften, Kästen und Bild; Fragen dazu im Quiz danach
+- Quiz: Übungsfragen mit Rückmeldung (Auswahl, richtig/falsch, Eingabe)
+- Zuordnen: Begriffe oder Fälle in Gruppen sortieren
+- Lernkarten: Begriff vorn, Erklärung hinten, zum Wiederholen
+- Lückentext: Text mit Lücken zum Einsetzen von Fachbegriffen oder Zahlen
+Nennt ein Auftrag zwei Dinge (etwa „Sachtext mit Quiz“), gib zwei Bausteine aus; der zweite trägt die id mit -2 (aus b3 wird b3-2).
+Zeit: Verteile die 45 Minuten selbst auf die Bausteine und schreib die Minuten in jede Überschrift. Richtwerte für diese Jahrgangsstufe: Lesetext zum Erarbeiten etwa 60 Wörter je Minute, Einstieg etwa 120, Hefteintrag zum Abschreiben etwa 10; eine Aufgabe 1,5 Minuten, mit Rechnung 3.
+Die Bausteine füllen die 45 Minuten; die Minuten in den Überschriften ergeben zusammen 45.
+`Angenommen:` gilt nur für die Form (Kursformat, Designvorlage, Darstellung, Abschluss, Portionierung); nimm nie Zeit außerhalb des Kurses an (Unterrichtsgespräch, Hausaufgabe, Folgestunde). Reichen die Bausteine der Liste nicht für die Minuten, ergänze Bausteine in der Phasenfolge Einstieg, Erarbeitung, Übung, Sicherung, Typ nach eigener Wahl; ein ergänzter Baustein trägt die id des Bausteins davor mit -2, ein weiterer dahinter -3 (aus b1 wird b1-2, dann b1-3). Für ergänzte Bausteine schreibst du keine Zeile `Angenommen:`.
+
+Format der Kursdatei
+- Erste Zeile `# Drehbuch v1 · Thema · N min`; darunter im Kopf nur Zeilen `Angenommen: …`, `Bildwunsch: …`, `Bildprompt: …` und `Offen: …` (fachliche Zweifel für die Lehrkraft).
+- Ein Abschnitt beginnt mit `## Titel · N min`; der erste Abschnitt heißt Allgemeines (optional).
+- Jedes Element steht als `### Typ: Titel · N min` in einem Abschnitt, mit vier Rauten in einem Unterabschnitt.
+- Angaben stehen direkt unter der Überschrift als `schlüssel: wert`, klein geschrieben, je Zeile eine.
+- `id: b3` ist die Baustein-ID der Kursmappe; steht sie im Auftrag, bleibt sie unverändert in der Antwort.
+- Titel sind im Kurs eindeutig; Zweck und Quelle stehen nur im Drehbuch, nie im Kursinhalt.
+- Inline erlaubt: **fett**, *kursiv*, ==markiert==, HTML nur b, i, em, strong, br, sup, sub, mark; Adressen nur https.
+- Textbausteine je Zeile: Absatz (Leerzeile trennt), `Vorspann: …`, `Überschrift: …`, `Hervorhebung: …`, `- Punkt`, `Schritte: Titel` mit `1. …`, `| Begriff | Erklärung |`, `Merke: …`; `Kasten: Titel`, `Beispiel: Titel` und `Hinweis: Titel` stehen allein in der Zeile, ihr Inhalt folgt darunter um zwei Leerzeichen eingerückt (nie Text direkt nach dem Titel); `Bild: datei.png | Alt-Text | Unterschrift`. Formeln als Text mit ², ³, √, ·, kein LaTeX.
+- Fragen je Zeile: `MC: Frage? · A · ✔B · C` (✔ = richtig) oder `MC: Frage?` mit Zeilen `- ✔ Antwort → Rückmeldung` und `- Antwort → Rückmeldung`; `RF: Aussage ✔` oder `✘`, dahinter `→ richtig: …` und `→ falsch: …`; `1. Einsetzen: Situation und Aufgabe in einer Zeile` mit Text darunter, Lücken als `*Wort*` (auch Zahlen: `*2,5*`). Antworten enthalten kein ` · `.
+- Bilder: Schreib im Baustein `Bild: name.png | Alt-Text` und in den Kopf je Bild zwei Zeilen: `Bildwunsch: name.png | ein Satz, was zu sehen ist` (zum Suchen eines freien Bildes oder zum Zeichnen) und darunter `Bildprompt: name.png | ausführlicher Auftrag für einen Bildgenerator` (Motiv, Stil, Seitenverhältnis; je Beschriftung das Wort in Anführungszeichen und wohin ihr Pfeil zeigt, etwa ‚Wort‘: Pfeil auf …, so viele, wie der Inhalt braucht; ab etwa fünf Beschriftungen nummerierte Pfeile ohne Wörter im Bild und die Legende in der Bildunterschrift, weil Bildgeneratoren Wörter verschreiben). Die Lehrkraft besorgt das Bild.
+
+Beispiel und Regeln je Typ (nur die Typen dieser Einheit):
+```
+### Textfeld: Einstieg · 3 min
+Vorspann: Sonntagabend, das Handy zeigt 23 % und lädt nicht.
+Kasten: Denk kurz nach
+  Was würdest du als Erstes prüfen?
+Merke: Erst beschreiben, dann suchen.
+```
+- Textbausteine: Absatz, Vorspann, Überschrift, Hervorhebung, Liste, Schritte, Tabelle, Kasten, Beispiel, Hinweis, Merke, Vergleich, Bild, Bildzeile.
+- Kein Absatz länger als fünf Zeilen auf dem Handy (etwa 60 Wörter).
+```
+### Seite: Der Fall · 4 min
+Überschrift: Vier Fragen vor jeder Suche
+Mia weiß noch nicht, was ihr Problem ist. Solange sie es nicht beschreiben kann, bekommt sie Antworten auf fremde Fragen.
+Schritte: So beschreibst du ein Problem
+1. Welches Gerät genau?
+2. Was passiert, was nicht?
+Beispiel: Mias Problem-Satz
+  Mein Handy lädt seit gestern nicht mehr, das Ladesymbol blinkt kurz.
+```
+- Eine Seite für längere Lesetexte mit Zwischenüberschriften; `abschluss` ansehen (Standard), bestehen, keine, manuell.
+```
+### Quiz: Zwischencheck · 5 min
+bestehen: 2 von 3
+1. Welches Gerät macht aus einem Anschluss viele? · ✔Switch · Router · Buchse
+2. RF: Der Router verbindet das Heimnetz mit dem Internet. ✔ → richtig: Genau. → falsch: Doch, das ist seine Aufgabe.
+3. Einsetzen: Ordne die Geräte dem Weg des Signals zu
+Wand: *Buchse* → *Router* → *Switch* → Endgerät
+```
+- Fragen als nummerierte Liste; eine Zeile mit ` · ` und ✔ ist automatisch MC; Rückmeldung je Antwort mit →.
+- `bestehen` als `80 %` oder `5 von 6`; Standard 70 %. Ein Quiz im Textfeld-Modus braucht `abschluss: ansehen`.
+```
+### Zuordnen: Kabel oder Funk · 4 min
+zonen: Kabel | Funk
+titel: Ein Gerät passt zu keiner Zone.
+- Switch → Kabel
+- Access Point → Funk
+- Netzwerkkabel → Kabel
+- Drucker
+```
+- `zonen: A | B | C` ist Pflicht; `- Element → Zone`, ein → je Zeile, vor der Zone; ein Element ohne Zone ist ein Ablenker, dann nennt `titel` das.
+```
+### Lernkarten: Netzbegriffe · 4 min
+- Router → Verbindet das Heimnetz mit dem Internet. · Tipp: steht meist neben der Telefonbuchse
+- Switch → Macht aus einem Netzwerkanschluss viele.
+```
+- `- Vorderseite → Rückseite · Bild: datei.png · Tipp: …`; `modus` normal (Standard) oder repetition.
+```
+### Lückentext: Der Weg des Signals · 3 min
+aufgabe: Setze die Geräte ein.
+Der *Router* verbindet das Heimnetz mit dem *Internet*. Der *Switch* macht aus einem Anschluss viele.
+```
+- `aufgabe:` ist Pflicht; Lücken als `*Lücke/Alternative:Tipp*`; Brüche nie als ganze Lücke.
+
+Vorgaben für den Inhalt (zähle nach, bevor du ausgibst):
+- Rechenaufgaben, Formeln und Maßstäbe nur, wenn das Thema sie hat oder der Auftrag sie nennt; sonst keine.
+- Die Einheit beginnt mit einem Fall oder einer Frage aus dem Alltag der Lernenden; ein Lesebaustein danach löst sie auf.
+- Keine Aufgabe verwendet etwas, das erst später in der Einheit eingeführt wird; prüfe jede Aufgabe gegen die Bausteine davor. Der Einstieg fragt nach Vermutungen, nicht nach der Regel.
+- Halte die Teilschritte und die Länge je Baustein ein (Wortziel, Zahl der Aufgaben); ein Lesetext für 15 Minuten ist kein Absatz, sondern eine Folge kurzer Abschnitte mit Zwischenüberschriften.
+- Hat das Thema ein Verfahren, zeig es an zwei durchgerechneten Beispielen mit allen Zwischenschritten; sonst Beispiele als Fälle.
+- Erst Lesen, dann Üben, dann Sichern; die Übungen steigen an: erst erkennen, dann auf einen Fall anwenden.
+- Höchstens die Hälfte aller Fragen der Einheit ist Multiple Choice. Zähle MC gegen alle Fragen (RF, Einsetzen, Lückentext und Kurzantwort zählen als andere).
+- Die Mehrheit der Fragen in Quiz und Test schildert eine Situation, in der etwas zu entscheiden ist; zähle sie.
+- In Übungen (Quiz zwischendurch, Fragen im Lesebuch) bekommt jede falsche Antwort, die eine Fehlvorstellung abbildet, eine Rückmeldung mit →: was falsch ist und warum. Zähle je Übungsfrage mindestens eine.
+- Nur wenn die Einheit Rechenaufgaben hat: mindestens eine Aufgabe, deren Ergebnis nicht aufgeht, mit Rundungsanweisung (etwa „runde auf eine Stelle nach dem Komma“).
+- Ein Bild nur, wo der Inhalt eine Fachgrafik braucht (Figur, Skizze, Diagramm), höchstens eins je Lesebaustein; nennt der Auftrag eine Zahl von Bildern, gilt der Auftrag. Jede Zeile `Bild:` hat einen Alt-Text; zähle Bilder und Alt-Texte, die Zahlen sind gleich.
+- Die Phase aus der Liste steht nie in der Datei, weder in der Überschrift noch als Angabe; der Typ in der Überschrift ist einer aus der Liste.
+- Die Sicherung am Ende enthält mindestens einen Fall, der vorher nicht vorkam.
+- Mindestmaße je Baustein (zähle nach): Quiz mindestens 3 Fragen; Zuordnen mindestens 4 Paare; Lernkarten mindestens 4 Karten; Lückentext mindestens 5 Lücken; Hefteintrag mindestens 80 Wörter mit Zeilen `Merke: …`, Fachbegriffe **fett**.
+- Ein Kasten mit Fragen in einem Lesetext (Textfeld, Seite) ist keine Übung; als Übung zählen nur Quiz, Zuordnen, Lückentext, Lernkarten oder Test.
+- Bild Pflicht: Einstieg und jeder Erarbeitungsbaustein haben ein Bild (Skizze mit Beschriftung) mit Alt-Text; im Kopf stehen dazu je Bild die Zeilen `Bildwunsch:` und `Bildprompt:`. Auf das Bild bezieht sich der Text.
+
+Prüfe vor der Ausgabe:
+- Keine Dreierreihen um des Klangs willen, keine Doppelpunkt-Pointen im Fließtext („Das Ergebnis: …“).
+- Keine rhetorischen Fragen ohne Aufgabe oder Antwort danach.
+- Rückmeldungen nennen den Grund; kein bloßes „Super“ oder „Genau richtig“.
+- Falsche Antworten kommen aus Fehlvorstellungen zum Thema und sind etwa so lang wie die richtige.
+- Keine Ausrufezeichen, keine Emojis, kein Genderzeichen (Doppelform oder neutral: Lernende).
+- Keine Zeilen über Zweck oder Quelle im Kurs („Hier übst du …“, „Ziel: …“); Untertitel nennen nicht die Dauer.
+- Überschriften sagen, worum es geht; keine Floskeln wie „Los geht’s“ oder „Spannende Fakten“.
+- Kein „immer“, „nie“, „alle“, wenn es Ausnahmen gibt; keine Werbesprache („spannend“, „entdecke“).
+- Arbeitsaufträge als ein Satz oder als Stichzeilen; kein Absatz über 60 Wörter.
+- Keine Schlussformeln wie „Viel Erfolg“.
+
+Ausgabe: die ganze Kursdatei als ein einziger Codeblock (```markdown am Anfang, ``` am Ende), ohne Text davor oder danach.
+Jeder Baustein beginnt mit `### Typ: Titel · N min`, in der Zeile darunter steht `id:` genau wie in der Liste. Gib alle Bausteine der Liste aus, in dieser Reihenfolge. Zusätzliche Bausteine nur, wenn ein Auftrag zwei verlangt oder die Minuten sonst nicht gefüllt sind (Regeln zu zwei Bausteinen und zur Zeit oben).

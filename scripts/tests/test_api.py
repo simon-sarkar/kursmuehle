@@ -355,6 +355,60 @@ Das Auge bündelt Licht auf der Netzhaut.
 ```"""
 
 
+def check_ap13_3():
+    """Regel-Kennungen je Diagnose und Korrektursatz; Mindestmaß Hefteintrag nach Jahrgangsstufe."""
+    from gen import prompt as P
+    mappe = _einfuehrung()
+    mappe["kopiert"] = True
+    pr = api.pruefe(ANTWORT_AUGE.format(einstieg=" ".join(["Ein Wort"] * 70)), mappe=mappe)
+    regeln = {(d.get("baustein"), d["regel"]) for d in pr["diagnosen"] if d["stufe"] != "hinweis"}
+    ok({(None, "zeit.annahme"), ("b3", "mindest.zuordnen"), ("b4", "mindest.quiz"), ("b5", "mindest.hefteintrag"),
+        ("b1", "einstieg.lang")} <= regeln, f"Regel-Kennungen der Prüfregeln ({sorted(regeln, key=str)})")
+    ok(all(d["regel"] in api.REGELN or d["stufe"] == "hinweis" for d in pr["diagnosen"]), "jede Kennung steht in REGELN")
+    ok({k["regel"] for k in P.korrektur(pr)} == {"zeit.annahme", "mindest.zuordnen", "mindest.quiz", "mindest.hefteintrag"},
+       "Korrektursatz führt die Kennung mit")
+    kaputt = api.pruefe("# T\n## A\n### Wiki: X\nt\n### Quiz: Q\nbestehn: 1\n1. F? · ✔a · b\n### Zuordnen: Z\nzonen: A | B\n"
+                        "- e → C\n### Quiz: R\n1. F? · a · b\n")
+    ok([d["regel"] for d in kaputt["diagnosen"] if d["stufe"] == "fehler"]
+       == ["typ.unbekannt", "angabe.unbekannt", "zone.unbekannt", "format.frage"],
+       f"Kennungen der Parser-Fehler ({[d['regel'] for d in kaputt['diagnosen'] if d['stufe'] == 'fehler']})")
+    heft = {"zahl": 80, "einheit": "Wörter", "nur": "Hefteintrag", "ab_jahrgang": {1: 50, 7: 80}}
+    ok([M.mindestzahl(heft, j) for j in ("2", "6", "7", "10", "", None, "Q11")] == [50, 50, 80, 80, 80, 80, 80],
+       "Mindestmaß Hefteintrag: bis 6 mindestens 50, ab 7 mindestens 80, ohne Stufe 80")
+    mappe["einheit"]["jahrgang"] = "8"
+    heft8 = [d["text"] for d in api.pruefe(ANTWORT_AUGE.format(einstieg="Ein Fall."), mappe=mappe)["diagnosen"]
+             if d.get("baustein") == "b5" and d["art"] == "mindest"]
+    ok(any("mindestens 80" in t for t in heft8), f"Hefteintrag Jahrgangsstufe 8: 80 Wörter ({heft8})")
+    # Einsetzen nach id: eine bekannte id der Antwort geht vor dem Ziel des Korrekturblocks (Fall b3-3/b4 aus dem Protokoll)
+    plan = M.neu("O", einheit={"thema": "O", "minuten": 45})
+    plan["bausteine"] = [M.geplant("b3", "Quiz", "Q", "Übung", 5), M.geplant("b3-3", "Quiz", "Ergänzt", "Übung", 5),
+                         M.geplant("b4", "Quiz", "Kraft", "Übung", 5)]
+    kurs = ("# Drehbuch v1 · O\nAngenommen: 30 Minuten entfallen auf Unterrichtsgespräche\n\n## O · 45 min\n"
+            "### Quiz: Q · 5 min\nid: b3\n1. RF: A ✔\n\n### Quiz: Ergänzt · 5 min\nid: b3-3\n1. RF: B ✔\n\n"
+            "### Quiz: Kraft · 5 min\nid: b4\n1. RF: C ✔\n")
+    r = M.einsetzen(plan, kurs, "```markdown\n### Quiz: Kraft neu · 5 min\nid: b4\n1. RF: D ✔\n```", nur="b3-3")
+    ok(r["ersetzt"] == ["b4"] and "Ergänzt" in r["kurs_md"] and "Kraft neu" in r["kurs_md"],
+       f"Antwort mit id: b4 landet in b4, nicht in b3-3 ({r['ersetzt']})")
+    r = M.einsetzen(plan, kurs, "### Quiz: Ohne id · 5 min\n1. RF: E ✔\n", nur="b3-3")
+    ok(r["ersetzt"] == ["b3-3"], "Antwort ohne id geht an das einzige Ziel")
+    r = M.einsetzen(plan, kurs, "# Drehbuch v1 · O\nAngenommen: Kursformat Themen untereinander\n\n## O · 45 min\n"
+                    "### Quiz: Q · 5 min\nid: b3\n1. RF: F ✔\n", kopf=True)
+    ok("30 Minuten" not in r["kurs_md"] and "Angenommen: Kursformat" in r["kurs_md"], "Korrektur ersetzt die Zeit-Annahme im Kopf")
+    # Bildwünsche: gleicher Dateiname ersetzt den alten
+    bw = api.bildwuensche("Bildwunsch: a.png | alt\nBildwunsch: b.png | B\nBildwunsch: a.png | neu\nBildprompt: a.png | P\n")
+    ok([(w["datei"], w["wunsch"], w["prompt"]) for w in bw] == [("b.png", "B", ""), ("a.png", "neu", "P")],
+       f"Bildwunsch je Dateiname einmal, der neue ersetzt den alten ({bw})")
+    # Rand je Einheit: Kennzahlen zählen nur die laufende Einheit
+    zwei = M.neu("Z", einheit={"thema": "Z", "minuten": 45})
+    zwei["bausteine"] = [M.geplant("b1", "Seite", "Eins", "Erarbeitung", 30), M.geplant("b2", "Quiz", "Zwei", "Übung", 15),
+                         dict(M.geplant("b3", "Seite", "Drei", "Erarbeitung", 20), einheit="e2")]
+    zwei["laufend"] = "e2"
+    kz = M.kennzahlen(zwei)
+    ok(kz["bausteine"] == 1 and kz["geplant"] == 1, f"Rand rechnet die laufende Einheit ({kz['bausteine']} Bausteine)")
+    zwei.pop("laufend")
+    ok(M.kennzahlen(zwei)["bausteine"] == 2, "ohne laufende Einheit: die erste")
+
+
 def check_ap13_1():
     # Bildwunsch und Bildprompt je Bild, Baustein zur Datei
     pr = api.pruefe(ANTWORT_AUGE.format(einstieg="Ein Fall."))
@@ -386,8 +440,8 @@ def check_ap13_1():
     ok(texte.get(("b3", "mindest")) == "Nur 2 Paare, nötig sind mindestens 4" and texte.get(("b4", "mindest")) == "Nur 1 Frage, nötig sind mindestens 3",
        f"Mindestmaße Zuordnen und Quiz aus dem Katalog ({texte})")
     heft = [x["text"] for x in pr["diagnosen"] if x.get("baustein") == "b5"]
-    ok(any(t.startswith("Nur 7 Wörter, nötig sind mindestens 80") for t in heft) and any("Merksatz" in t for t in heft)
-       and any("fett" in t for t in heft), f"Hefteintrag: 80 Wörter, Merksatz, fett ({heft})")
+    ok(any(t.startswith("Nur 7 Wörter, nötig sind mindestens 50") for t in heft) and any("Merksatz" in t for t in heft)
+       and any("fett" in t for t in heft), f"Hefteintrag Jahrgangsstufe 5: 50 Wörter, Merksatz, fett ({heft})")
     ok(st["b3"] == st["b4"] == st["b5"] == "fehler" and st["b2"] in ("ok", "warnung"), f"rote Karten b3, b4, b5 ({st})")
     ein = d.get(("b1", "einstieg"))
     ok(ein and ein["stufe"] == "warnung" and st["b1"] == "warnung" and "hat 140 Wörter, vorgesehen sind höchstens 100" in ein["text"],
@@ -458,6 +512,7 @@ def main():
     check_angaben()
     check_version()
     check_ap13_1()
+    check_ap13_3()
     # AP13: nächste Einheit als Nachlieferung (teil: e2 je angehängtem Abschnitt, Bau nur dieses Teils), neue Schlüssel
     erste = "# Drehbuch v1 · A\n\n## Eins · 10 min\n### Textfeld: X\nid: b1\nHallo.\n"
     zweite = "```markdown\n# Drehbuch v1 · B\n\n## Zwei · 10 min\nteil: fremd\n### Textfeld: Y\nid: b2\nHallo zwei.\n```"

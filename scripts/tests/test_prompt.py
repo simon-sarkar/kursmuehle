@@ -100,7 +100,7 @@ def main():
         t = e["teile"][0]
         typen_v = typen_von(v, kat)
         im_text = set(re.findall(r"^### (\w+):", t, re.M))
-        ok(len(e["teile"]) == 1 and e["groessen"][0] < 12 * 1024, f"{v['name']}: ein Text, {e['groessen'][0]} Bytes")
+        ok(len(e["teile"]) == 1 and e["groessen"][0] <= P.GRENZE, f"{v['name']}: ein Text, {e['groessen'][0]} Bytes")
         ok(im_text == typen_v, f"{v['name']}: Beispiele nur für {sorted(typen_v)}" + ("" if im_text == typen_v else f" (im Text {sorted(im_text)})"))
         ok(not (alle_typen - typen_v - {"Badge"}) & set(re.findall(r"^### (\w+):", t, re.M)), f"{v['name']}: keine fremden Typen")
         ids = [k["id"] for k in mappe["bausteine"] if not k.get("aus")]
@@ -129,7 +129,7 @@ def main():
     ids = [i for teil in st["ids"] for i in teil]
     ok(len(st["teile"]) == 2 and "Teil 1 von 2" in st["teile"][0] and "Teil 2 von 2" in st["teile"][1],
        f"ByLKI: gestückelt in {len(st['teile'])} Teile")
-    ok(ids == [k["id"] for k in mappe8["bausteine"] if not k.get("aus")] and all(g < 12 * 1024 for g in st["groessen"]),
+    ok(ids == [k["id"] for k in mappe8["bausteine"] if not k.get("aus")] and all(g <= P.GRENZE for g in st["groessen"]),
        f"Stückelung: jede id genau einmal, Größen {st['groessen']}")
     ok(all(f"id: {i} ·" in st["teile"][n] for n, teil in enumerate(st["ids"]) for i in teil)
        and not any(f"id: {i} ·" in st["teile"][1] for i in st["ids"][0]), "Stückelung: jeder Teil nur seine Bausteine")
@@ -152,7 +152,7 @@ def main():
         if m and not m.get("nur") and e["typ"] in kat["automatisch"]["typen"]:
             ok(f"{e['typ']} mindestens {m['zahl']} {m['einheit']}" in t_ais, f"Mindestmaß aus dem Katalog im Text: {e['typ']} {m['zahl']} {m['einheit']}")
     ok("Hefteintrag mindestens 80 Wörter mit Zeilen `Merke: …`, Fachbegriffe **fett**" in t_ais, "Mindestmaß Hefteintrag")
-    ok(f"Der Einstieg hat höchstens {regeln['einstieg_woerter']} Wörter" in t_ais and "nimmt die Erarbeitung nicht vorweg" in t_ais,
+    ok(f"hat höchstens {regeln['einstieg_woerter']} Wörter" in t_ais and "nimmt die Erarbeitung nicht vorweg" in t_ais,
        "Einstieg höchstens 100 Wörter")
     ok("Ein Kasten mit Fragen in einem Lesetext (Textfeld, Seite) ist keine Übung" in t_ais and "Quiz, Zuordnen, Lückentext, Lernkarten oder Test" in t_ais,
        "Denkaufgaben-Kästen sind keine Übung")
@@ -176,13 +176,13 @@ def main():
     gross = neue_mappe("Groß", [M.geplant(f"x{i}", "Seite", f"Seite {i}", "Lesen", 5, "Ein langer Auftrag " * 20)
                            for i in range(40)])
     g = P.einheit(gross, sb, "ais")
-    ok(len(g["teile"]) > 1 and all(x < 12 * 1024 for x in g["groessen"]), f"über 12 KB: gestückelt {g['groessen']}")
+    ok(len(g["teile"]) > 1 and all(x <= P.GRENZE for x in g["groessen"]), f"über 14 KB: gestückelt {g['groessen']}")
     mat = P.einheit(mappe, sb, "ais", material="Heftaufschrieb: a² + b² = c²")
     ok("Material der Lehrkraft" in mat["teile"][0] and "a² + b² = c²" in mat["teile"][0], "Material im Text Diese Einheit")
 
     # 3 nur Baustein, alle leeren
     t = P.baustein(mappe, "b5", "", sb, "ais")
-    ok(len(t.encode()) < 2048 and "id: b5" in t and "### Seite" in t, f"nur Baustein: {len(t.encode())} Bytes")
+    ok(len(t.encode()) < 2400 and "id: b5" in t and "### Seite" in t, f"nur Baustein: {len(t.encode())} Bytes")
     n9 = ordner("netzwerk9")
     t = P.baustein(n9["mappe"], "check-weg", n9["kurs_md"], n9["steckbrief_text"], "ais")
     ok("Bisheriger Inhalt" in t and "Telefonbuchse" in t and len(t.encode()) < 3000, f"nur Baustein mit Kontext: {len(t.encode())} Bytes")
@@ -274,8 +274,8 @@ def main():
     ok(len(erarbeitung) == 1 and erarbeitung[0]["typ"] == "automatisch" and erarbeitung[0].get("schritt"),
        "Einführung: Erarbeitung ist eine Karte, Typ automatisch, Teilschritt im Text")
     ok(f"Teilschritt: {erarbeitung[0]['schritt']}" in t
-       and t.index("neue Begriffe einführen") < t.index("an Beispielen benennen") < t.index("Regel oder den Satz"),
-       "Teilschritte in einer Zeile in der Reihenfolge Begriffe → benennen → Regel")
+       and t.index("neue Begriffe einführen") < t.index("als Quiz direkt nach der Seite") < t.index("Kernaussage im Merke-Kasten"),
+       "Teilschritte in einer Zeile in der Reihenfolge Begriffe → benennen → Kernaussage")
     ok([k["typ"] for k in karten if k["phase"] in ("Einstieg", "Sicherung")] == ["Textfeld", "Seite"],
        "feste Typen nur, wo die Phase sie vorgibt (Einstieg Text, Hefteintrag Seite)")
     ok("2. id: b2 · Typ frei · Arbeitstitel „Lesetext mit Fragen“" in t and "Bei „Typ frei“ und bei Bausteinen, die du ergänzt, wählst du den Typ" in t
@@ -300,15 +300,16 @@ def main():
     ok("etwa 45 Wörter je Minute" in tf6, "Richtwerte nach Jahrgangsstufe (6: Faktor 0,75)")
     ok("Verteile" not in t, "Zeit je Phase an (oder Kursdatei vor b1): Soll-Minuten wie bisher")
     ok("Keine Aufgabe verwendet etwas, das erst später in der Einheit eingeführt wird" in t, "Vorgriff-Regel im Text")
-    ok("Bild Pflicht" in t and "zwei durchgerechnete Beispiele" in t, "Mathematik: Bild Pflicht bei Einstieg und Erarbeitung")
+    ok("Bild Pflicht" in t and "führ sie an zwei Beispielen Schritt für Schritt vor" in t,
+       "Mathematik: Bild Pflicht bei Einstieg und Erarbeitung, Verfahren mit zwei Beispielen")
     sb_deutsch = M.angaben_schreiben("", {"thema": "Die Erörterung", "fach": "Deutsch", "jahrgang": "9", "minuten": 45})
     m_d = neue_mappe("Die Erörterung", vorlage_karten(v), {"thema": "Die Erörterung", "jahrgang": "9", "minuten": 45})
     ok("Bild Pflicht" not in P.einheit(m_d, sb_deutsch, "ais")["teile"][0], "Deutsch, Erörterung: keine Bild-Pflicht")
     sb_bio = M.angaben_schreiben("", {"thema": "Brüche im Alltag", "fach": "Alltagskompetenz", "jahrgang": "6"})
     ok(P.braucht_skizze(M.angaben_lesen(sb_bio), "Brüche im Alltag"), "Stichwort im Thema (Brüche) verlangt eine Skizze")
-    ok(all(g < 12 * 1024 for vl in kat["vorlagen"] for zs in (True, False) for g in P.einheit(
+    ok(all(g <= P.GRENZE for vl in kat["vorlagen"] for zs in (True, False) for g in P.einheit(
         neue_mappe("P", vorlage_karten(vl), {"thema": "Satz des Pythagoras", "jahrgang": "9", "minuten": 45}) | {"zeit_selbst": zs},
-        sb, "ais")["groessen"]), "alle Vorlagen unter 12 KB, mit und ohne Zeit je Phase")
+        sb, "ais")["groessen"]), "alle Vorlagen unter 14 KB, mit und ohne Zeit je Phase")
 
     # Antwort auf Typ frei: Typ kommt vom Chat, Teilschritt bleibt; zweiter Baustein b2-2 landet hinter b2
     antwort = ("# Drehbuch v1 · P\n\n## Pythagoras · 45 min\n### Textfeld: Die Leiter · 8 min\nid: b1\nEin Fall.\n"
@@ -341,6 +342,62 @@ def main():
        "migriere behält Herkunft und aus")
     ab4 = M.abgleich(json_kopie(ab3), api.pruefe(r["kurs_md"])["bausteine"])
     ok("herkunft" not in next(e for e in ab4["bausteine"] if e["id"] == "b2"), "Herkunft: neuer Titel vom Chat = Chat")
+
+    # 8 AP13.3: Stückelung je Einheit eingefroren, Teil-Minuten, Teil 2 ohne Format, fachneutrale Vorlage, neue Zeilen
+    sechs = neue_mappe("Das Ohr", vorlage_karten(v), {"thema": "Das Ohr", "jahrgang": "7", "minuten": 45, "vorlage": v["name"]})
+    sb_bio7 = M.angaben_schreiben("", {"thema": "Das Ohr", "fach": "Biologie", "jahrgang": "7", "minuten": 45})
+    eins = P.einheit(dict(sechs, zeit_selbst=False), sb_bio7, "bylki")
+    ok(len(eins["teile"]) == 1 and eins["groessen"][0] <= P.GRENZE == 14 * 1024,
+       f"Sechs-Karten-Einheit passt in einen Teil ({eins['groessen']} Bytes, Grenze 14 KB)")
+    viele = neue_mappe("Das Ohr", vorlage_karten(v) + [M.geplant(f"s{i}", "Seite", f"Vertiefung {i}", "Erarbeitung", 5)
+                                                       for i in range(4)], {"thema": "Das Ohr", "jahrgang": "7", "minuten": 45})
+    st = P.einheit(viele, sb_bio7, "bylki")
+    t1, t2 = st["teile"][0], st["teile"][-1]
+    ok(len(st["teile"]) == 2 and "Prüfe vor der Ausgabe" in t1 and "Prüfe vor der Ausgabe" not in t2
+       and "Vorgaben für den Inhalt (zähle nach" not in t2 and "Format, Vorgaben für den Inhalt und Prüfliste wie in Teil 1" in t2
+       and "Angenommen: Kursformat" not in t2 and len(t2.encode()) < len(t1.encode()) / 2,
+       f"Teil 2 wiederholt Format und Prüfliste nicht ({st['groessen']} Bytes)")
+    ok(all(f"Alle Teile zusammen ergeben 45 Minuten. Auf diesen Teil entfallen {n} Minuten" in t for t, n in zip(st["teile"], st["minuten"]))
+       and abs(sum(st["minuten"]) - 45) <= 1 and "Die Bausteine füllen die 45 Minuten" not in t1,
+       f"Teil-Minuten aus den Anteilen der Karten ({st['minuten']})")
+    eingefroren = dict(json_kopie(viele), stueckelung={"einheit": None, "leer": False, "ids": st["ids"], "eingefuegt": [0]})
+    for k in eingefroren["bausteine"][:3]:
+        k["geplant"] = False                      # Teil 1 ist eingefügt
+    eingefroren["bausteine"].append(M.geplant("x9", "Quiz", "Später ergänzt", "Übung", 5))
+    st2 = P.einheit(eingefroren, sb_bio7, "bylki")
+    ok(st2["ids"] == st["ids"] and len(st2["teile"]) == 2, "Teil-Liste bleibt eingefroren (Teilzahl und Zuordnung)")
+    # zweite Einheit: nur ihre Karten, nie die leeren der ersten
+    zwei = json_kopie(sechs)
+    for k in zwei["bausteine"][:4]:
+        k["geplant"] = False
+    zwei["bausteine"] += [dict(M.geplant(f"b{10 + i}", "automatisch", f"Teil {i}", "Erarbeitung", 7), einheit="e2")
+                          for i in range(4)]
+    zwei["laufend"] = "e2"
+    leer2 = P.einheit(zwei, sb_bio7, "bylki", nur_leere=True)
+    ids2 = [i for t in leer2["ids"] for i in t]
+    ok(ids2 == ["b10", "b11", "b12", "b13"] and "gibt es schon" not in leer2["teile"][0],
+       f"angehängte Einheit: Text nur mit ihren Karten ({ids2})")
+    # fachneutrale Vorlage und neue Zeilen
+    tbio = eins["teile"][0]
+    ok("Rechenaufgaben, Formeln und Maßstäbe nur, wenn das Thema sie hat oder der Auftrag sie nennt; sonst keine" in tbio,
+       "Rechnen nur, wenn das Thema ein Verfahren hat")
+    ok("Grundschule:" not in tbio and "keine Nachkommastellen" in P.einheit(
+        dict(sechs, einheit={"thema": "Das Eichhörnchen", "jahrgang": "2", "minuten": 45}),
+        M.angaben_schreiben("", {"thema": "Das Eichhörnchen", "fach": "HSU", "jahrgang": "2"}), "bylki")["teile"][0],
+       "Grundschule-Zeile nur für Jahrgangsstufe 1 bis 4")
+    ok("Nimm keine Namen aus dem Gespräch, dem Profil oder der Begrüßung" in tbio and "erfundene Vornamen" in tbio, "Namen-Zeile")
+    ok("‚Wort‘: Pfeil auf …" in tbio and "bei mehr als vier Beschriftungen nummerierte Pfeile" in tbio, "Bildprompt: Beschriftung mit Ziel, ab fünf nummeriert")
+    ok("nennt der Auftrag eine Zahl von Bildern, gilt sie" in tbio, "Auftrag schlägt Bildregel")
+    ok("Ziel der Stunde steht dort als Frage" in tbio and "3 bis 5 Minuten" in tbio and "Phase Einstieg · 3 bis 5 min" in tbio,
+       "Einstieg: Richtwert in der Liste und im Text, Ziel als Frage")
+    ok("Weitere Zeilen `Angenommen:` schreibst du nur" in tbio and "Schreib die Phase aus der Bausteinliste nicht in die Datei" in tbio,
+       "keine weiteren Annahmen, Phase nicht in die Datei")
+    ok("`1. Einsetzen: Situation und Aufgabe in einer Zeile`" in tbio, "Formatzeile Einsetzen mit Situation")
+    teilschritte = " ".join(k.get("schritt", "") for k in vorlage_karten(v))
+    ok(not re.search(r"\bRegel\b|gerundet|durchgerechnet", teilschritte) and "Kernaussage" in teilschritte
+       and "Übung zum Anwenden" in [k["titel"] for k in vorlage_karten(v)], "Teilschritte der Einführung fachneutral")
+    ok("Hefteintrag mindestens 50 Wörter" in P.einheit(dict(sechs, einheit={"thema": "T", "jahrgang": "5", "minuten": 45}),
+                                                        sb, "ais")["teile"][0], "Mindestmaß Hefteintrag Jahrgangsstufe 5: 50 Wörter")
 
     if fehler:
         print(f"\n{len(fehler)} Fehler")

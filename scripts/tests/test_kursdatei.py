@@ -40,7 +40,7 @@ FEHLER = [
     ("## A\n### Textfeld: X\nBild: fehlt.png | alt", "Zeile 3 (Textfeld „X“): Bild „fehlt.png“ nicht in assets/"),
     ("## A\n### Banner: X\nbild: fehlt.png", "Zeile 2 (Banner „X“): Bild „fehlt.png“ nicht in assets/"),
     ("## A\n### Quiz: X\n1. F? · a · b", "Zeile 3 (Quiz „X“): MC ohne ✔"),
-    ("## A\n### Textfeld: X\nKasten: Titel\nNicht eingerückt", "Zeile 3 (Textfeld „X“): Kasten ohne Inhalt"),
+    ("## A\n### Textfeld: X\nKasten: Titel\n\nNicht eingerückt", "Zeile 3 (Textfeld „X“): Kasten ohne Inhalt"),
     ("## A\n### Zuordnen: X\nzonen: A | B\n- e → C", "Zeile 4 (Zuordnen „X“): Zone „C“ nicht in zonen"),
     ("## A\n### Geschichte: X\nSzene (s): T → nix\nText", "Zeile 3 (Geschichte „X“): Ziel „nix“ unbekannt"),
     ("## A\n### Badge: B\nbild: router.png\nvoraussetzung: Nix", "Zeile 2 (Badge „B“): voraussetzung „Nix“: 0 Elemente"),
@@ -56,9 +56,9 @@ FEHLER = [
     ("## A\nkachelbild: fehlt.png\n### Textfeld: X\nt", "Zeile 1 (Abschnitt „A“): Bild „fehlt.png“ nicht in assets/"),
     ("## A\nkachelicon: Book Icon\n### Textfeld: X\nt", "Zeile 1 (Abschnitt „A“): kachelicon „Book Icon“"),
     ("## A\nwebsite: vielleicht\n### Textfeld: X\nt", "Zeile 1 (Abschnitt „A“): website „vielleicht“: erlaubt sind ja"),
-    ("## A\nwebsite: ja\n### Textfeld: X\nwebsite: ja\nt", "Zeile 3 (Textfeld „X“): website am Element: nur `website: nein`"),
+    ("## A\nwebsite: ja\n### Textfeld: X\nwebsite: vollbild\nt", "Zeile 3 (Textfeld „X“): website am Element: nur `website: nein`"),
     ("## A\nwebsite: ja\n### Quiz: X\n1. F? · a · b", "Zeile 4 (Quiz „X“): MC ohne ✔"),
-    ("## A\nwebsite: textfeld\n### Quiz: X\nwebsite: textfeld\n1. F? · ✔a · b", "Zeile 3 (Quiz „X“): website am Element: nur `website: nein`"),
+    ("## A\nwebsite: textfeld\n### Quiz: X\nwebsite: ja\n1. F? · ✔a · b", "Zeile 3 (Quiz „X“): website am Element: nur `website: nein`"),
     ("## A\nwebsite: textfeld\n### Lernkarten: X\n- ohne Pfeil", "Zeile 4 (Lernkarten „X“): Lernkarte: `Vorderseite → Rückseite` erwartet"),
 ]
 
@@ -376,6 +376,75 @@ Text.
 """
 
 
+# AP13.3: fünf Nachsichtigkeiten aus dem zweiten Testtag (protokolle/korrekturen.md)
+NACHSICHT_133 = """# Drehbuch v1 · Nachsicht · 30
+## Teil · 30 min
+website: textfeld
+### Textfeld: Einstieg · 5 min
+phase: Einstieg
+website: textfeld
+id: b1
+Ein Fall aus dem Alltag.
+### Zuordnen: Längen · 5 min
+Phase: Übung
+id: b2
+zonen: Kabel | Funk
+- 16 cm → 4 cm → Kabel
+- Antenne → Funk
+### Quiz: Rechnen · 10 min
+phase: Übung
+id: b3
+abschluss: ansehen
+1. Lena kauft drei Hefte. Einsetzen: Wie viel zahlt sie?
+Sie zahlt *6* Euro.
+
+2. Tom misst die Tür.
+Einsetzen: Wie breit ist sie?
+Die Tür ist *90* cm breit.
+### Seite: Hefteintrag · 10 min
+phase: Sicherung
+id: b4
+Hinweis: Achtung
+Dieser Satz steht nicht eingerückt.
+
+Ein Absatz danach.
+"""
+
+
+def check_nachsicht_133():
+    from gen import api, prompt
+    bad = 0
+    pr = api.pruefe(NACHSICHT_133)
+    fehler = [d["text"] for d in pr["diagnosen"] if d["stufe"] == "fehler"]
+    if fehler:
+        print(f"FALSCH AP13.3 Nachsicht: {fehler}")
+        bad += 1
+    if [b["id"] for b in pr["bausteine"]] != ["b1", "b2", "b3", "b4"]:
+        print(f"FALSCH AP13.3 phase vor id: {[b['id'] for b in pr['bausteine']]}")
+        bad += 1
+    if any("phase" in d["text"].lower() for d in pr["diagnosen"]):
+        print("FALSCH AP13.3: Diagnose zu `phase:`")
+        bad += 1
+    warn = [d for d in pr["diagnosen"] if d["stufe"] == "warnung"]
+    if [d.get("regel") for d in warn] != ["hinweis.einrueckung"]:
+        print(f"FALSCH AP13.3 Hinweis ohne Einrückung: {[(d['text'], d.get('regel')) for d in warn]}")
+        bad += 1
+    fr = prompt.fragen(pr)
+    zu = [f for f in fr if f["art"] == "zuordnen"]
+    if not zu or zu[0]["frage"] != "16 cm → 4 cm" or zu[0]["loesung"] != [["Kabel"]]:
+        print(f"FALSCH AP13.3 Zuordnen mit Pfeil im Element: {zu[:1]}")
+        bad += 1
+    ein = [f["frage"] for f in fr if f["art"] == "luecken"]
+    if len(ein) != 2 or not ein[0].startswith("Lena kauft drei Hefte. Wie viel") or not ein[1].startswith("Tom misst"):
+        print(f"FALSCH AP13.3 Einsetzen mit Situationssatz: {ein}")
+        bad += 1
+    mbz, diag = api.baue(NACHSICHT_133, {"kurs": {"website": "textfeld"}}, {}, zeit=1700000000, seed=1)
+    if not mbz:
+        print(f"FALSCH AP13.3 Bau: {[d['satz'] for d in diag if d['stufe'] == 'fehler']}")
+        bad += 1
+    return bad
+
+
 def check_id():
     """`id:` je Baustein: gesetzt = diese ID, fehlend = berechnete ID, doppelt oder ungültig = Warnung und berechnete ID;
     der strenge Bau (build.py) läuft mit `id:` durch und baut dieselben Bytes wie ohne."""
@@ -428,6 +497,6 @@ def check_beispiele():
 
 
 if __name__ == "__main__":
-    n = check_fehler() + check_nachsicht() + check_id() + check_beispiele()
+    n = check_fehler() + check_nachsicht() + check_nachsicht_133() + check_id() + check_beispiele()
     print("OK" if n == 0 else f"{n} Problem(e)")
     sys.exit(1 if n else 0)

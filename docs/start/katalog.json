@@ -154,7 +154,7 @@
       "Zielangabe"
      ],
      "bausteine": [
-      "Textfeld: Einstieg | Ein Text: Fall oder Frage aus dem Alltag, Hinführung zum Thema und das Ziel der Stunde in einem Satz."
+      "Textfeld: Einstieg | Ein Text: Fall oder Frage aus dem Alltag, Hinführung zum Thema, am Ende das Ziel der Stunde als Frage an die Lernenden, ohne die Kernaussage zu verraten."
      ]
     },
     {
@@ -163,7 +163,7 @@
      "rolle": "lesen",
      "dehnbar": true,
      "bausteine": [
-      "automatisch: Lesetext mit Fragen | Aufbau dieser einen Seite: neue Begriffe einführen, jeden an einer Skizze oder einem Beispiel; die Begriffe an Beispielen benennen lassen (Fragen dazwischen); dann die Regel oder den Satz herleiten, im Merke-Kasten festhalten und an zwei durchgerechneten Beispielen mit Zwischenschritten zeigen."
+      "automatisch: Lesetext mit Fragen | Eine Seite in vier Schritten: 1. neue Begriffe einführen, jeden an einem Beispiel; 2. Fragen, in denen die Lernenden die Begriffe an Beispielen anwenden, als Quiz direkt nach der Seite (id mit -2); 3. die Kernaussage im Merke-Kasten festhalten; 4. die Kernaussage an Fällen zeigen, Schritt für Schritt, wenn das Thema ein Verfahren hat."
      ]
     },
     {
@@ -172,8 +172,8 @@
      "rolle": "üben",
      "dehnbar": true,
      "bausteine": [
-      "automatisch: Übung zum Zuordnen | Die Regel an leichten Fällen erkennen.",
-      "automatisch: Übung mit Eingabe | Die Regel anwenden, mit Eingabe und einem Fall; ein Ergebnis geht nicht auf und wird gerundet."
+      "automatisch: Übung zum Zuordnen | Die Kernaussage an leichten Fällen erkennen.",
+      "automatisch: Übung zum Anwenden | Die Kernaussage auf neue Fälle anwenden (Eingabe, Lückentext oder Fall)."
      ]
     },
     {
@@ -181,7 +181,7 @@
      "anteil": 13,
      "rolle": "sichern",
      "bausteine": [
-      "Seite: Hefteintrag | Hefteintrag zum Abschreiben: Begriffe, Regel, ein Beispiel."
+      "Seite: Hefteintrag | Hefteintrag zum Abschreiben: Begriffe, Kernaussage, ein Beispiel."
      ]
     },
     {
@@ -190,7 +190,7 @@
      "rolle": "sichern",
      "optional": true,
      "bausteine": [
-      "automatisch: Der Fall vom Anfang | Den Fall aus dem Einstieg mit der Regel lösen."
+      "automatisch: Der Fall vom Anfang | Den Fall aus dem Einstieg mit der Kernaussage lösen."
      ]
     }
    ]
@@ -212,7 +212,7 @@
      "anteil": 10,
      "rolle": "lesen",
      "bausteine": [
-      "automatisch: Kurz erinnern | Regel und ein Beispiel in wenigen Sätzen."
+      "automatisch: Kurz erinnern | Kernaussage und ein Beispiel in wenigen Sätzen."
      ]
     },
     {
@@ -605,5 +605,5 @@
   "Lernkarten",
   "Lückentext"
  ],
- "version": "2.0.0-b3"
+ "version": "2.0.0-b4"
 }

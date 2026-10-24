@@ -255,10 +255,12 @@ window.km = km;
   var Z = km.zustand;
   var katalog = null, angaben = {}, rueckgaengig = null, auf = {}, chatWahlOffen = false;
   var autosaveTimer = null, kennzahlTimer = null, eingabeTimer = null, textTimer = null, hinweiseAlle = false;
-  var texte = { teile: [], art: "einheit", teil: 0, laeuft: 0, kopiert: {} }, fragenListe = [], korrekturen = [], letzteAntwort = null;
+  var texte = { teile: [], ids: [], art: "einheit", teil: 0, laeuft: 0, kopiert: {} }, fragenListe = [], korrekturen = [], letzteAntwort = null;
   var infoboxAus = false;
   var schreibKette = Promise.resolve();
-  var schleife = null;                            // offene Korrekturschleife an einer Karte: {id, art, text, eingabe, stand}
+  // AP13.3: ein Korrekturweg. Der Block unter dem Einfügefeld von Schritt 5 sammelt alle Sätze und die neu beauftragten
+  // Karten; `korrektur` hält Text zum Kopieren, ob die Antwort-Zeile offen ist, und die letzte Meldung
+  var korrektur = { text: "", offen: false, stand: "", art: "" }, korrekturTimer = null;
   var hinweise = { an: true, gesehen: [] }, hinweisTexte = {}, hinweiseGeladen = false;
   var bauLaeuft = false;
   var SCHRITTE = [1, 2, 3, 4, 5, 5.5, 6, 7];       // 5.5 = Bilder (AP13.1), nur mit Bildwünschen in der Antwort
@@ -316,11 +318,23 @@ window.km = km;
   function zweig() { return (Z.mappe && Z.mappe.zweig) || ""; }
   function schritt() { return Z.mappe ? (Z.mappe.schritt || 2) : 1; }
   function sektion(n) { return $(n === 1 ? "start" : n === 5.5 ? "schritt-bilder" : "schritt-" + n); }
-  function bildwuensche() { return (Z.pruefung && Z.pruefung.bildwuensche) || []; }
+  // laufende Einheit (AP13.3): „e2“ … beim Anhängen und danach, "" = die erste; Bilder, Rand und Text nur für sie
+  function einheitTag() { return Z.mappe ? (Z.mappe.anhaengen || Z.mappe.laufend || "") : ""; }
+  function karteNach(id) { return Z.mappe ? Z.mappe.bausteine.filter(function (k) { return k.id === id; })[0] : null; }
+  function inEinheit(id) { var k = karteNach(id); return !!k && (k.einheit || "") === einheitTag(); }
+  function bildwuensche() {
+    return ((Z.pruefung && Z.pruefung.bildwuensche) || []).filter(function (b) { return b.baustein ? inEinheit(b.baustein) : !einheitTag(); });
+  }
+  // Stückelung eingefroren und noch nicht ganz eingefügt: rote Karten und Korrektur warten, bis der letzte Teil da ist
+  function teileOffen() {
+    var st = Z.mappe && Z.mappe.stueckelung;
+    return !!(st && st.ids && st.ids.length > 1 && (st.eingefuegt || []).length < st.ids.length);
+  }
   function sichtbareSchritte() { return SCHRITTE.filter(function (n) { return n !== 5.5 || bildwuensche().length > 0; }); }
   function nrVon(n) { return sichtbareSchritte().indexOf(n) + 1; }      // angezeigte Nummer (mit Bildern acht Schritte)
   function inhalt() { return !!(Z.kurs_md && Z.kurs_md.trim()); }
   function fehlerZahl() { return Z.pruefung ? Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler"; }).length : 0; }
+  function markiert() { return Z.mappe ? Z.mappe.bausteine.filter(function (k) { return k.neu; }) : []; }
 
   // Kopieren nur in der Geste (Safari): der Text liegt schon fertig im Feld; ohne Zwischenablage markieren und execCommand
   function kopieren(text, feld, stand, satz, fertigCb) {
@@ -437,7 +451,7 @@ window.km = km;
     if (n === 3) return [oberText("vorlage", angaben.vorlage), oberText("format", angaben.format), oberText("farbe", angaben.farbe || "")].filter(Boolean).join(" · ");
     if (n === 4) { var c = chatInfo(Z.mappe.chat); return c ? c.text + (Z.mappe.kopiert ? " · Text kopiert" : "") : ""; }
     if (n === 5) {
-      var voll = Z.mappe.bausteine.filter(function (k) { return !k.geplant; }).length, f = fehlerZahl();
+      var voll = Z.mappe.bausteine.filter(function (k) { return !k.geplant && (k.einheit || "") === einheitTag(); }).length, f = fehlerZahl();
       return voll ? voll + " Bausteine" + (f ? ", " + f + " Fehler" : ", geprüft") : "";
     }
     if (n === 5.5) {
@@ -475,8 +489,8 @@ window.km = km;
       var sec = sektion(n);
       var stand = sichtbar.indexOf(n) < 0 ? "zu" : n < s ? "erledigt" : n === s ? "aktiv" : "zu";
       // Schritt 4 bleibt offen, solange ein gestückelter Text noch nicht ganz kopiert ist
-      var teileOffen = n === 4 && s === 5 && texte.teile.length > 1 && Object.keys(texte.kopiert).length < texte.teile.length;
-      var offen = stand === "aktiv" || (stand === "erledigt" && (!!auf[n] || teileOffen));
+      var teileKopieren = n === 4 && s === 5 && texte.teile.length > 1 && Object.keys(texte.kopiert).length < texte.teile.length;
+      var offen = stand === "aktiv" || (stand === "erledigt" && (!!auf[n] || teileKopieren));
       sec.hidden = stand === "zu";
       sec.dataset.stand = stand;
       sec.classList.toggle("auf", offen);
@@ -505,7 +519,7 @@ window.km = km;
     document.querySelector(".spalte-rand").hidden = s < 5;
     document.querySelector(".seite").classList.toggle("mit-rand", s >= 5);
     $("weiter").hidden = !!Z.mappe || !$("weiter").dataset.da;
-    $("weiter-5").hidden = !(s === 5 && inhalt() && !fehlerZahl());
+    $("weiter-5").hidden = !(s === 5 && inhalt() && !fehlerZahl() && !teileOffen());
     $("weiter-5").textContent = bildwuensche().length ? "Weiter zu den Bildern" : fragenListe.length ? "Weiter zu den Fragen und Lösungen" : "Weiter zur Datei";
     $("rueckmeldung").hidden = !(s >= 7 && Z.bau && Z.bau.mbz) && !$("rueckmeldung").dataset.offen;
     $("speichern").hidden = !Z.mappe;
@@ -677,6 +691,8 @@ window.km = km;
     karten.forEach(function (k) { k.einheit = Z.mappe.anhaengen; });
     Z.mappe.bausteine = Z.mappe.bausteine.concat(karten);
     Z.mappe.einheit = e;
+    Z.mappe.laufend = Z.mappe.anhaengen;           // AP13.3: Text, Bilder und Rand gehören jetzt zu dieser Einheit
+    delete Z.mappe.stueckelung;
     Z.mappe.durchsicht = false; delete Z.mappe.kopiert;
     Z.bau = null;
     neuStart();
@@ -689,8 +705,9 @@ window.km = km;
   // Zustand der Ansicht beim Wechsel der Kursdatei oder Einheit zurücksetzen
   function neuStart() {
     clearTimeout(kennzahlTimer); clearTimeout(textTimer); clearTimeout(eingabeTimer);
-    texte.teile = []; texte.teil = 0; texte.art = "einheit"; texte.kopiert = {}; fragenListe = []; korrekturen = []; letzteAntwort = null;
-    schleife = null;
+    texte.teile = []; texte.ids = []; texte.teil = 0; texte.art = "einheit"; texte.kopiert = {}; fragenListe = []; korrekturen = []; letzteAntwort = null;
+    korrektur = { text: "", offen: false, stand: "", art: "" };
+    $("korrektur-eingabe").value = ""; $("eingabe-stand").hidden = true;
     chatWahlOffen = false; auf = {};
     $("chat-text-feld").value = ""; $("gegen-text-feld").value = ""; $("gegen-antwort").value = "";
     $("gegen-ergebnis").innerHTML = ""; $("gegen-stand").textContent = ""; $("kopiert").textContent = "";
@@ -823,29 +840,36 @@ window.km = km;
     b.appendChild(el("span", { cls: "aus-name", text: text }));
     return b;
   }
+  // Kacheln werden einmal gebaut und danach nur umgeschaltet (aria-checked, Miniatur bei neuer Farbe): ein Neubau zwischen
+  // mousedown und mouseup schluckte in Firefox den Klick, der Steckbrief blieb ohne die Wahl (CI 24.10.2026, AP13.3)
+  function kachelGruppe(box, gruppe, werte, mini, gewaehlt) {
+    var alt = box.querySelectorAll(".aus-kachel");
+    if (alt.length !== werte.length || werte.some(function (w, i) { return alt[i].dataset.wert !== w.wert; })) {
+      box.innerHTML = "";
+      werte.forEach(function (w) { box.appendChild(kachel(gruppe, w.wert, w.text, "", false)); });
+    }
+    Array.prototype.forEach.call(box.querySelectorAll(".aus-kachel"), function (b, i) {
+      b.setAttribute("aria-checked", String(werte[i].wert === gewaehlt));
+      var m = b.querySelector(".aus-mini"), svg = mini(werte[i].wert);
+      if (m.dataset.svg !== svg) { m.innerHTML = svg; m.dataset.svg = svg; }      // eigenes SVG, keine Eingabe
+    });
+  }
   function zeichneAussehen() {
     if (!katalog) return;
     var o = katalog.oberflaeche, hue = akzent();
-    var v = $("aus-vorlage"); v.innerHTML = "";
-    o.vorlage.forEach(function (w) { v.appendChild(kachel("vorlage", w.wert, w.text, miniVorlage(w.wert, hue), (angaben.vorlage || "schlicht") === w.wert)); });
-    var f = $("aus-format"); f.innerHTML = "";
-    o.format.filter(function (w) { return AUS_FORMATE.indexOf(w.wert) >= 0; }).forEach(function (w) {
-      f.appendChild(kachel("format", w.wert, w.text, miniFormat(w.wert, hue), (angaben.format || "themen") === w.wert));
-    });
-    var c = $("aus-farbe"); c.innerHTML = "";
-    o.farbe.forEach(function (w) {
-      var hex = FARBEN[w.wert] || STANDARD_FARBE;
-      c.appendChild(kachel("farbe", w.wert, w.text, '<svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><circle cx="20" cy="20" r="16" fill="'
-        + hex + '"/>' + (w.wert ? "" : '<circle cx="20" cy="20" r="7" fill="#fff"/>') + "</svg>", (angaben.farbe || "") === w.wert));
-    });
+    kachelGruppe($("aus-vorlage"), "vorlage", o.vorlage, function (w) { return miniVorlage(w, hue); }, angaben.vorlage || "schlicht");
+    kachelGruppe($("aus-format"), "format", o.format.filter(function (w) { return AUS_FORMATE.indexOf(w.wert) >= 0; }),
+      function (w) { return miniFormat(w, hue); }, angaben.format || "themen");
+    kachelGruppe($("aus-farbe"), "farbe", o.farbe, function (w) {
+      return '<svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><circle cx="20" cy="20" r="16" fill="'
+        + (FARBEN[w] || STANDARD_FARBE) + '"/>' + (w ? "" : '<circle cx="20" cy="20" r="7" fill="#fff"/>') + "</svg>";
+    }, angaben.farbe || "");
   }
   $("schritt-3").addEventListener("click", function (ev) {
     var b = ev.target.closest(".aus-kachel"); if (!b || !Z.mappe) return;
     var a = {}; a[b.dataset.feld] = b.dataset.wert;
     angaben[b.dataset.feld] = b.dataset.wert;
     zeichneAussehen(); felderFuellen();
-    var neu = $("schritt-3").querySelector('.aus-kachel[data-feld="' + b.dataset.feld + '"][data-wert="' + b.dataset.wert + '"]');
-    if (neu) neu.focus({ preventScroll: true });
     angabenSchreiben(a, true);
   });
   $("weiter-3").onclick = function () { if (Z.mappe) { Z.mappe.aussehen = true; gehe(4); } };
@@ -894,6 +918,8 @@ window.km = km;
     var fc = await km.prompt("fachcheck", [pr, Z.steckbrief_text]);
     $("gegen-text-feld").value = fc.text;
     Z.fragen = fragenListe; Z.korrekturen = korrekturen;
+    korrektur.text = "";
+    if (neuBeauftragt().length) korrekturSpaeter(0);
     textSpaeter(0);
   }
 
@@ -936,6 +962,7 @@ window.km = km;
     zeichneDiagnosen();
     zeichneChat();
     zeichneKorrektur();
+    zeichneTeile();
     zeichneBilder();
     zeichneFragen();
     zeichneWiederherstellen();
@@ -1105,80 +1132,6 @@ window.km = km;
     return "b" + n;
   }
 
-  // ---------------------------------------------------------------- Korrekturschleife an der Karte (AP13.1)
-  // „Korrektur anfordern“ (rote Karte) oder „Diesen Baustein neu beauftragen“ öffnet unter der Karte: Satz oder Text für
-  // den Chat, Kopierknopf, Einfügefeld. Die Antwort ersetzt nur diesen Baustein (gen/mappe.py einsetzen mit `nur`); der
-  // Block bleibt offen, bis die Karte nicht mehr rot ist oder die Lehrkraft ihn schließt.
-  function schleifeBlock(k, korrektur) {
-    var neu = schleife.art === "neu";
-    var box = el("div", { cls: "k-schleife", "data-id": k.id }, [
-      neu ? el("p", { cls: "k-schleife-zeile", text: "Schreib oben in den Auftrag, was anders werden soll, und kopiere dann den Text für den Chat." })
-        : el("ul", { cls: "k-saetze" }, korrektur.map(function (x) { return el("li", { text: x.satz }); })),
-      el("div", { cls: "kopieren" }, [
-        el("button", { type: "button", cls: "knopf", "data-aktion": "schleife-kopieren", disabled: !schleife.text,
-          text: neu ? (schleife.text ? "Text kopieren" : "Text entsteht …") : "Satz kopieren" }),
-        el("button", { type: "button", cls: "textlink", "data-aktion": "schleife-zu", text: "Schließen" })]),
-      el("p", { cls: "k-schleife-zeile", text: neu ? "Füge den Text in deinen Chat ein und kopiere seine Antwort hierher."
-        : "Füge den Satz in deinen Chat ein und kopiere seine Antwort hierher." }),
-      el("label", { cls: "unsichtbar", "for": "schleife-eingabe", text: "Antwort des Chats für diesen Baustein" }),
-      el("textarea", { id: "schleife-eingabe", cls: "k-schleife-eingabe", rows: "4", spellcheck: "false", placeholder: "Antwort hier einfügen" }),
-      el("p", { cls: "stand k-schleife-stand " + (schleife.standArt || ""), role: "status", "aria-live": "polite", text: schleife.stand || "" })]);
-    box.querySelector("textarea").value = schleife.eingabe || "";
-    return box;
-  }
-  function schleifeSaetze(id) { return korrekturen.filter(function (x) { return x.baustein === id; }).map(function (x) { return x.satz; }).join("\n"); }
-  function schleifeOeffnen(id, art) {
-    schleife = { id: id, art: art, text: art === "neu" ? "" : schleifeSaetze(id), eingabe: "", stand: "" };
-    zeichneKarten();
-    if (art === "neu") schleifeText();
-    var b = document.querySelector('.k-schleife [data-aktion="schleife-kopieren"]');
-    if (b) b.focus();
-  }
-  // Text „Nur dieser Baustein“ fertig halten (Kopieren nur in der Geste, Safari)
-  var schleifeTimer = null;
-  async function schleifeText() {
-    if (!schleife || schleife.art !== "neu" || !Z.geladen) return;
-    var s0 = schleife;
-    try {
-      var t = await km.prompt("baustein", [Z.mappe, [s0.id], Z.kurs_md, Z.steckbrief_text, null, 900, Z.pruefung]);
-      if (schleife !== s0) return;
-      s0.text = t;
-      var b = document.querySelector('.k-schleife [data-aktion="schleife-kopieren"]');
-      if (b) { b.disabled = false; b.textContent = "Text kopieren"; }
-    } catch (e) { zeigeFehler(e); }
-  }
-  var schleifeEinfuegenTimer = null;
-  async function schleifeEinsetzen() {
-    var s0 = schleife;
-    if (!s0 || !(s0.eingabe || "").trim()) return;
-    try {
-      await km.bereit();
-      var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, s0.eingabe, s0.id]);
-      if (!r.ersetzt.length && !r.eingefuegt.length) {
-        s0.stand = r.fehler.join(" ") || "In der Antwort steht kein Baustein. Kopiere die ganze Antwort mit dem Kopierknopf des Chats.";
-        s0.standArt = "fehler"; zeichneKarten(); return;
-      }
-      await km.stand(r.kurs_md);
-      await auswertung();
-      Z.mappe.durchsicht = false;
-      if (schritt() !== 5) { Z.mappe.schritt = 5; auf = {}; }
-      var b = pruefBaustein(s0.id);
-      if (b && b.status !== "fehler") {
-        schleife = null;
-        status("„" + b.titel + "“ ist ersetzt und in Ordnung.", "ok");
-      } else {
-        s0.art = "korrektur"; s0.text = schleifeSaetze(s0.id); s0.eingabe = "";
-        s0.stand = "Ersetzt, aber noch rot. Kopiere den Satz oben und füge die Antwort wieder hier ein."; s0.standArt = "fehler";
-      }
-      zeichne(); geaendert();
-      var karte = $("karte-" + s0.id);
-      if (karte) {
-        var f = schleife ? karte.querySelector('[data-aktion="schleife-kopieren"]') : karte.querySelector(".k-titel");
-        if (f) f.focus({ preventScroll: true });
-      }
-    } catch (e) { zeigeFehler(e); }
-  }
-
   function zeichneKarten() {
     var ol = $("karten"); ol.innerHTML = "";
     var liste = Z.mappe.bausteine, letzter = null, steuer = zweig() === "steuer";
@@ -1191,16 +1144,18 @@ window.km = km;
       if (k.abschnitt) letzter = k.abschnitt;
       var b = pruefBaustein(k.id);
       var st = k.geplant ? "leer" : (b ? b.status : "leer");
-      var stText = { ok: "Geprüft", warnung: "Hinweis", fehler: "Fehler", leer: "Noch ohne Inhalt" }[st];
+      var warten = st === "fehler" && teileOffen();     // AP13.3: rot erst, wenn alle Teile eingefügt sind
+      if (warten) st = "wartet";
+      var stText = { ok: "Geprüft", warnung: "Hinweis", fehler: "Fehler", leer: "Noch ohne Inhalt", wartet: "Eingefügt" }[st];
       var minuten = mitMinuten(k.typ);
       // Typ: „Ich steuere“ native Auswahl nach Rolle, „Mach du“ eine Beschriftung (Klick wechselt den Zweig)
       var typFeld = k.geplant && steuer ? typAuswahl(k.typ, "Typ von Baustein " + (i + 1))
         : !steuer ? el("button", { type: "button", cls: "k-typ k-typ-mach", "data-aktion": "steuern", title: "Ändern in „Ich steuere“", text: formularname(k.typ) })
         : el("span", { cls: "k-typ", text: formularname(k.typ) });
       var diag = el("ul", { cls: "k-diagnosen" });
-      if (Z.pruefung && !k.geplant) {
+      if (Z.pruefung && !k.geplant && !warten) {
         Z.pruefung.diagnosen.filter(function (d) { return d.baustein === k.id && d.stufe !== "hinweis"; }).forEach(function (d) {
-          diag.appendChild(el("li", { cls: d.stufe, text: (d.zeile_im_baustein ? "Zeile " + d.zeile_im_baustein + ": " : "") + d.text }));
+          diag.appendChild(el("li", { cls: d.stufe, "data-regel": d.regel || "", text: (d.zeile_im_baustein ? "Zeile " + d.zeile_im_baustein + ": " : "") + d.text }));
         });
       }
       // Ist-Minuten aus dem Inhalt (Rolle und Jahrgang); Zeitfelder und die Lücke nur mit „Zeitplanung anzeigen“
@@ -1209,7 +1164,7 @@ window.km = km;
         ist = el("span", { cls: "k-ist geschaetzt", text: "gerechnet " + z.gerechnet + " min" });
         if (z.abweichung && zeitplanung) diag.appendChild(el("li", { cls: "hinweis k-luecke", text: z.text }));
       } else if (minuten && b && b.minuten) ist = el("span", { cls: "k-ist geschaetzt", text: "im Inhalt " + b.minuten + " min" });
-      var korrektur = korrekturen.filter(function (x) { return x.baustein === k.id; });
+      var korrektur = korrekturen.filter(function (x) { return x.baustein === k.id; });   // Satz steht im Block, die Karte verlinkt
       var inhaltEl = null;
       if (b && !k.geplant) {
         var pre = el("pre", { cls: "k-text von-chat" }); pre.textContent = b.text;    // nur Text, nie HTML aus der Chat-Antwort
@@ -1241,16 +1196,15 @@ window.km = km;
         steuer && !k.aus ? el("label", { cls: "k-auftrag-l" }, [el("span", { cls: "unsichtbar", text: "Auftrag für Baustein " + (i + 1) }),
           el("textarea", { cls: "k-auftrag von-lehrkraft", rows: "1", placeholder: "Was soll hinein? Ein Satz genügt (optional)" })]) : null,
         diag,
-        korrektur.length && !(schleife && schleife.id === k.id) ? el("div", { cls: "k-korrektur" }, [
-          el("button", { type: "button", cls: "knopf klein-knopf k-satz", "data-aktion": "korrektur", text: "Korrektur anfordern" })]) : null,
+        korrektur.length && !warten ? el("p", { cls: "k-korrektur" }, [
+          el("a", { href: "#korrektur", cls: "k-zur-korrektur", "data-aktion": "zur-korrektur", text: "Zur Korrektur unter dem Feld" })]) : null,
         hochladen, inhaltEl,
         steuer ? el("div", { cls: "k-aktionen" }, [
           el("button", { type: "button", cls: "k-hoch klein", "data-aktion": "hoch", "aria-label": "Baustein " + (i + 1) + " nach oben", disabled: i === 0, text: "↑" }),
           el("button", { type: "button", cls: "k-runter klein", "data-aktion": "runter", "aria-label": "Baustein " + (i + 1) + " nach unten", disabled: i === liste.length - 1, text: "↓" }),
           k.geplant ? null : el("button", { type: "button", cls: "k-neu klein", "data-aktion": "neu",
-            "aria-pressed": schleife && schleife.id === k.id && schleife.art === "neu" ? "true" : "false", text: "Diesen Baustein neu beauftragen" }),
-          el("button", { type: "button", cls: "k-loeschen klein", "data-aktion": "loeschen", text: "Löschen" })]) : null,
-        schleife && schleife.id === k.id ? schleifeBlock(k, korrektur) : null]);
+            "aria-pressed": k.neu ? "true" : "false", text: "Diesen Baustein neu beauftragen" }),
+          el("button", { type: "button", cls: "k-loeschen klein", "data-aktion": "loeschen", text: "Löschen" })]) : null]);
       var auftrag = li.querySelector(".k-auftrag");
       if (auftrag) auftrag.value = k.auftrag || "";
       ol.appendChild(li);
@@ -1291,14 +1245,15 @@ window.km = km;
     setze("kz-mc", f.fragen ? k.mc_anteil + " % von " + f.fragen + " Fragen" : "keine Fragen", f.fragen && k.mc_anteil > 50);
     setze("kz-rueckmeldung", f.auswahl ? f.rueckmeldung + " von " + f.auswahl + " Auswahlfragen" : "–", f.auswahl && f.rueckmeldung < f.auswahl / 2);
     var ul = $("hinweise"); ul.innerHTML = "";
-    var liste = hinweiseAlle ? k.hinweise : k.hinweise.slice(0, 3);
+    var alleH = teileOffen() ? k.hinweise.filter(function (h) { return h.stufe !== "fehler"; }) : k.hinweise;   // rot erst nach dem letzten Teil
+    var liste = hinweiseAlle ? alleH : alleH.slice(0, 3);
     liste.forEach(function (h) {
       var li = el("li", { cls: h.stufe }, [h.baustein
         ? el("button", { type: "button", cls: "hinweis-link", "data-ziel": h.baustein, text: h.text }) : h.text]);
       ul.appendChild(li);
     });
-    $("hinweise-mehr").hidden = k.hinweise.length <= 3;
-    $("hinweise-mehr").textContent = hinweiseAlle ? "Weniger anzeigen" : "Weitere " + (k.hinweise.length - 3) + " anzeigen";
+    $("hinweise-mehr").hidden = alleH.length <= 3;
+    $("hinweise-mehr").textContent = hinweiseAlle ? "Weniger anzeigen" : "Weitere " + (alleH.length - 3) + " anzeigen";
   }
   $("hinweise-mehr").onclick = function () { hinweiseAlle = !hinweiseAlle; zeichneDiagnosen(); };
   $("hinweise").onclick = function (ev) {
@@ -1333,7 +1288,7 @@ window.km = km;
     $("erstellen-stand").textContent = t;
     $("speichern").disabled = !Z.geladen || !Z.mappe;
     $("wiederherstellen").hidden = !(Z.bau && Z.bau.mbz);
-    $("weiter-5").hidden = !(schritt() === 5 && voll && !fehler);
+    $("weiter-5").hidden = !(schritt() === 5 && voll && !fehler && !teileOffen());
   }
 
   // ---------------------------------------------------------------- 6 Fragen und Lösungen
@@ -1371,7 +1326,6 @@ window.km = km;
   $("weiter-bilder").onclick = function () { if (Z.mappe) nachBildern(); };
 
   // ---------------------------------------------------------------- 4 Text für den Chat
-  function markiert() { return Z.mappe ? Z.mappe.bausteine.filter(function (k) { return k.neu; }) : []; }
   function textArt() {
     if (zweig() !== "steuer") return Z.mappe && Z.mappe.anhaengen ? "leer" : "einheit";
     return (document.querySelector("input[name=text-art]:checked") || {}).value || "einheit";
@@ -1386,12 +1340,11 @@ window.km = km;
     });
     zeichnePlanung();
     if (!gewaehlt) return;
-    var c = chatInfo(Z.mappe.chat), m = markiert();
-    var leer = Z.mappe.bausteine.filter(function (k) { return k.geplant; }).length;
-    var voll = Z.mappe.bausteine.filter(function (k) { return !k.geplant; }).length;
+    var c = chatInfo(Z.mappe.chat);
+    var eigene = Z.mappe.bausteine.filter(function (k) { return (k.einheit || "") === einheitTag(); });
+    var leer = eigene.filter(function (k) { return k.geplant; }).length;
+    var voll = eigene.filter(function (k) { return !k.geplant; }).length;
     $("art-leer-l").hidden = !(leer && voll);
-    $("art-baustein-l").hidden = !m.length;
-    $("art-baustein-text").textContent = m.length === 1 ? "Nur Baustein „" + m[0].titel + "“" : "Nur die " + m.length + " markierten Bausteine";
     var art = document.querySelector("input[name=text-art]:checked");
     if (art && art.closest("label").hidden) document.querySelector("input[name=text-art][value=einheit]").checked = true;
     $("chat-aufwand").hidden = !c.aufwand;
@@ -1415,7 +1368,7 @@ window.km = km;
   function planungText() {
     var p = Z.kennzahlen && Z.kennzahlen.planung;
     if (!p || (!p.zu_wenig && !p.fehlen.length)) return "";
-    return [p.zu_wenig ? p.text + ", Bausteine ergänzen?" : ""].concat(p.fehlen.map(function (f) { return f + "."; })).filter(Boolean).join(" ");
+    return [p.zu_wenig ? p.text + ". Bausteine ergänzen?" : ""].concat(p.fehlen.map(function (f) { return f + "."; })).filter(Boolean).join(" ");
   }
   function zeichnePlanung() {
     var t = planungText();
@@ -1444,18 +1397,13 @@ window.km = km;
     if (!Z.geladen || !Z.mappe || !Z.mappe.chat) { if (Z.mappe) zeichneChat(); return; }
     var nr = ++texte.laeuft;
     var art = textArt();
-    var m = markiert();
-    if (art === "baustein" && !m.length) art = "einheit";
     try {
-      var teile;
-      if (art === "baustein") {
-        teile = [await km.prompt("baustein", [Z.mappe, m.map(function (k) { return k.id; }), Z.kurs_md, Z.steckbrief_text, null, 900, Z.pruefung])];
-      } else {
-        teile = (await km.prompt("einheit", [Z.mappe, Z.steckbrief_text, null, null, art === "leer"])).teile;
-      }
+      // Teile aus gen/prompt.py: nur die laufende Einheit; nach dem ersten Kopieren gilt die eingefrorene Stückelung
+      var e = await km.prompt("einheit", [Z.mappe, Z.steckbrief_text, null, null, art === "leer"]);
+      var teile = e.teile;
       if (nr !== texte.laeuft) return;           // ein neuerer Lauf ist schon unterwegs
       if (art !== texte.art || teile.length !== texte.teile.length) { texte.teil = 0; texte.kopiert = {}; }
-      texte.art = art; texte.teile = teile;
+      texte.art = art; texte.teile = teile; texte.ids = e.ids || [];
       if (texte.teil >= teile.length) texte.teil = 0;
       zeichneChat();
       felderFuellen();
@@ -1488,15 +1436,21 @@ window.km = km;
 
   // Text kopiert: Schritt 5 erscheint; bei gestückeltem Text springt die Auswahl auf den nächsten Teil
   function textKopiert() {
+    var kopierterTeil = texte.teil + 1;
     texte.kopiert[texte.teil] = true;
     if (!Z.mappe) return;
     Z.mappe.kopiert = true;
+    // AP13.3: beim ersten Kopieren eines gestückelten Textes Teilzahl und Zuordnung der Karten einfrieren
+    if (texte.teile.length > 1 && !Z.mappe.stueckelung) {
+      Z.mappe.stueckelung = { einheit: einheitTag() || null, leer: texte.art === "leer", ids: texte.ids, eingefuegt: [] };
+    }
     var naechster = texte.teile.length > 1 ? texte.teile.findIndex(function (_, i) { return !texte.kopiert[i]; }) : -1;
     if (schritt() < 5) { erledigtBis(5); Z.mappe.schritt = 5; auf = {}; }
     zeichne(); autosave();
     if (naechster >= 0) {
       texte.teil = naechster; zeichneChat();
-      $("kopiert").textContent = "Teil " + (naechster) + " kopiert. Füge ihn in den Chat ein; danach kommt Teil " + (naechster + 1) + ".";
+      $("kopiert").textContent = "Teil " + kopierterTeil + " kopiert. Füge ihn in ein neues Gespräch im Chat ein und die Antwort des Chats in Schritt " + nrVon(5)
+        + ". Danach kommt Teil " + (naechster + 1) + " ins selbe Gespräch.";
     }
   }
   function textKopieren() { kopieren($("chat-text-feld").value, $("chat-text-feld"), $("kopiert"), KOPIERT, textKopiert); }
@@ -1518,18 +1472,11 @@ window.km = km;
   $("karten").addEventListener("input", function (ev) {
     var k = karteVon(ev.target); if (!k) return;
     var c = ev.target.classList;
-    if (c.contains("k-schleife-eingabe")) {
-      if (!schleife) return;
-      schleife.eingabe = ev.target.value;
-      clearTimeout(schleifeEinfuegenTimer);
-      schleifeEinfuegenTimer = setTimeout(schleifeEinsetzen, ev.inputType === "insertFromPaste" ? 30 : 500);
-      return;
-    }
     if (c.contains("k-phase")) k.phase = ev.target.value;
     else if (c.contains("k-soll")) k.soll = ev.target.value === "" ? null : Math.max(0, parseInt(ev.target.value, 10) || 0);
     else if (c.contains("k-auftrag")) {
       k.auftrag = ev.target.value; hoehe(ev.target);
-      if (schleife && schleife.id === k.id && schleife.art === "neu") { clearTimeout(schleifeTimer); schleifeTimer = setTimeout(schleifeText, 400); }
+      if (k.neu) korrekturSpaeter();           // neu beauftragt: Text im Korrekturblock folgt dem Auftrag
     }
     else return;
     geaendert();
@@ -1580,27 +1527,19 @@ window.km = km;
       if (a) a.focus();
       return;
     }
-    var knopf = ev.target.closest("button[data-aktion]"); if (!knopf) return;
+    var knopf = ev.target.closest("[data-aktion]"); if (!knopf) return;
     if (knopf.dataset.aktion === "steuern") { Z.mappe.zweig = "steuer"; auf[2] = schritt() > 2; zeichne(); geaendert(); return; }
     var k = karteVon(knopf); if (!k) return;
     var liste = Z.mappe.bausteine, i = liste.indexOf(k), a = knopf.dataset.aktion;
     try {
-      if (a === "korrektur") schleifeOeffnen(k.id, "korrektur");
+      if (a === "zur-korrektur") { ev.preventDefault(); zurKorrektur(); }
       else if (a === "neu") {
-        if (schleife && schleife.id === k.id && schleife.art === "neu") { schleife = null; zeichneKarten(); }
-        else schleifeOeffnen(k.id, "neu");
-      } else if (a === "schleife-zu") {
-        schleife = null; zeichneKarten();
-        var t = document.querySelector("#karte-" + CSS.escape(k.id) + " .k-titel"); if (t) t.focus({ preventScroll: true });
-      } else if (a === "schleife-kopieren") {
-        if (!schleife || !schleife.text) return;
-        var fld = $("schleife-feld") || document.body.appendChild(el("textarea", { id: "schleife-feld", cls: "unsichtbar", readonly: true, "aria-hidden": "true", tabindex: "-1" }));
-        fld.value = schleife.text;
-        var st = knopf.closest(".k-schleife").querySelector(".k-schleife-stand");
-        kopieren(schleife.text, fld, st, "Kopiert. Füge ihn in deinen Chat ein und die Antwort dann hier unten.", function () {
-          schleife.stand = st.textContent; schleife.standArt = "ok";
-          var ein = knopf.closest(".k-schleife").querySelector("textarea"); if (ein) ein.focus({ preventScroll: true });
-        });
+        // „Diesen Baustein neu beauftragen“ (AP13.3): markiert die Karte; Text, Antwort und Einsetzen laufen über den
+        // einen Korrekturblock, mehrere Karten zugleich
+        if (k.neu) k.neu = false; else k.neu = true;
+        korrektur.text = ""; zeichneKarten(); zeichneKorrektur(); geaendert(); korrekturSpaeter(0);
+        var af = document.querySelector("#karte-" + CSS.escape(k.id) + " .k-auftrag");
+        if (k.neu && af) af.focus({ preventScroll: true });
       } else if (a === "hoch" || a === "runter") {
         var j = a === "hoch" ? i - 1 : i + 1;
         if (j < 0 || j >= liste.length) return;
@@ -1746,19 +1685,80 @@ window.km = km;
     return { ok: true, n: pr.bausteine.length, text: "" };
   }
 
+  // Meldung unter einem Einfügefeld als Karte mit Rahmen (AP13.3, Fremdtest: eine Zeile wurde übersehen)
+  function standKarte(e, text, art) {
+    e.hidden = !text; e.textContent = text || "";
+    e.className = "stand-karte" + (art ? " " + art : "");
+  }
+  // Hat die Lehrkraft den eigenen Satz oder Text der Mühle eingefügt statt der Antwort des Chats?
+  function eigenerText(text) {
+    var t = String(text || "").trim();
+    if (!t) return "";
+    var gleich = function (x) { x = String(x || "").trim(); return !!x && (x === t || (t.length >= 40 && x.indexOf(t) >= 0) || (t.length >= 200 && t.indexOf(x.slice(0, 200)) >= 0)); };
+    if (gleich(korrektur.text) || korrekturen.some(function (k) { return gleich(k.satz); })) return "satz";
+    if (texte.teile.some(gleich)) return "text";
+    return "";
+  }
+  var EIGEN = { satz: "Das ist der Satz für deinen Chat; füge ihn dort ein und kopiere seine Antwort hierher.",
+    text: "Das ist der Text für deinen Chat; füge ihn dort ein und kopiere seine Antwort hierher." };
+
+  // Gestückelter Text (AP13.3): welcher Teil kam? Der mit den meisten ids der Antwort (eine ergänzte id b7-2 zählt zu
+  // b7), sonst der erste, der noch fehlt. Sind alle da, endet die Stückelung und die roten Karten erscheinen.
+  function teilEingefuegt(ids) {
+    var st = Z.mappe && Z.mappe.stueckelung;
+    if (!st || !st.ids) return;
+    st.eingefuegt = st.eingefuegt || [];
+    var basis = function (x) { return String(x).replace(/-\d+$/, ""); };
+    var best = -1, treffer = 0;
+    st.ids.forEach(function (teil, i) {
+      var n = (ids || []).filter(function (x) { return teil.indexOf(x) >= 0 || teil.indexOf(basis(x)) >= 0; }).length;
+      if (n > treffer) { treffer = n; best = i; }
+    });
+    if (best < 0) best = st.ids.findIndex(function (_, i) { return st.eingefuegt.indexOf(i) < 0; });
+    if (best >= 0 && st.eingefuegt.indexOf(best) < 0) st.eingefuegt.push(best);
+    // schrieb der Chat mehrere Teile auf einmal, gilt jeder Teil als da, dessen Karten alle Inhalt haben
+    st.ids.forEach(function (teil, i) {
+      if (st.eingefuegt.indexOf(i) < 0 && teil.every(function (id) { var k = karteNach(id); return !k || !k.geplant; })) st.eingefuegt.push(i);
+    });
+    if (st.eingefuegt.length >= st.ids.length) delete Z.mappe.stueckelung;
+  }
+  function naechsterTeil() {
+    var st = Z.mappe && Z.mappe.stueckelung;
+    return st ? st.ids.findIndex(function (_, i) { return (st.eingefuegt || []).indexOf(i) < 0; }) : -1;
+  }
+  function zeichneTeile() {
+    var offen = teileOffen() && inhalt();
+    $("teil-stand").hidden = !offen;
+    if (!offen) return;
+    var st = Z.mappe.stueckelung, n = naechsterTeil(), da = (st.eingefuegt || []).length;
+    $("teil-stand-text").textContent = (da === 1 ? "Teil " + (st.eingefuegt[0] + 1) : da + " Teile") + " von " + st.ids.length
+      + " eingefügt, jetzt Teil " + (n + 1) + " kopieren.";
+    var bereitText = texte.teile.length === st.ids.length && !!texte.teile[n];
+    $("teil-weiter").textContent = "Teil " + (n + 1) + " kopieren";
+    $("teil-weiter").disabled = !bereitText;
+  }
+  $("teil-weiter").onclick = function () {
+    var n = naechsterTeil();
+    if (n < 0 || !texte.teile[n]) return;
+    texte.teil = n; zeichneChat();             // Feld „Text ansehen“ trägt jetzt diesen Teil (Rückfall ohne Zwischenablage)
+    kopieren(texte.teile[n], $("chat-text-feld"), $("teil-kopiert"), "Kopiert. Füge Teil " + (n + 1)
+      + " in dasselbe Gespräch ein und die Antwort des Chats oben ins Feld.", function () { textKopiert(); $("eingabe").focus({ preventScroll: true }); });
+  };
+
   async function eingabeUebernehmen(modusErzwungen) {
     var text = modusErzwungen && letzteAntwort ? letzteAntwort.text : $("eingabe").value;
     if (!text.trim()) return;
+    var eigen = !modusErzwungen && eigenerText(text);
+    if (eigen) { standKarte($("eingabe-stand"), EIGEN[eigen], "fehler"); return; }
     try {
       await km.bereit();
-      var modus = modusErzwungen;
+      var modus = modusErzwungen, mo = null;
       if (!modus) {
-        var mo = await km.mappeFn("modus", [Z.mappe, text]);
+        mo = await km.mappeFn("modus", [Z.mappe, text]);
         if (mo.modus === "keine") {
           var p = await km.anfrage("pruefe", { text: text, assets: Z.assets, steckbrief: Z.steckbrief_text });
           var tipp = p.ergebnis.diagnosen.filter(function (d) { return d.art === "eingabe"; }).map(function (d) { return d.text; })[0];
-          $("eingabe-stand").textContent = "Im Text stehen keine Bausteine. " + (tipp ? tipp + "." : "Kopiere die ganze Antwort mit dem Kopierknopf des Chats.");
-          $("eingabe-stand").className = "stand fehler";
+          standKarte($("eingabe-stand"), "Im Text stehen keine Bausteine. " + (tipp ? tipp + "." : "Kopiere die ganze Antwort mit dem Kopierknopf des Chats."), "fehler");
           return;
         }
         // nächste Einheit, die noch ohne Inhalt ist: anhängen statt in die erste Einheit einsetzen
@@ -1769,25 +1769,30 @@ window.km = km;
       }
       var e = await einsetzen(text, modus, letzteAntwort.vorher);
       if (!e.ok) {
-        $("eingabe-stand").textContent = e.text;
-        $("eingabe-stand").className = "stand fehler";
+        standKarte($("eingabe-stand"), e.text, "fehler");
         zeichne();
         return;
       }
+      if (mo) teilEingefuegt(e.ids || mo.ids);
       Z.mappe.durchsicht = false;
       if (schritt() > 5 || schritt() < 5) { Z.mappe.schritt = 5; auf = {}; }      // neuer Inhalt: ab Schritt 5 neu durchsehen
       await auswertung();
-      if (schleife && !korrekturen.some(function (x) { return x.baustein === schleife.id; })) schleife = null;
       zeichne(); geaendert();
+      $("eingabe").value = "";
+      var st = Z.mappe.stueckelung, mehr = "";
+      if (teileOffen()) {
+        standKarte($("eingabe-stand"), "Übernommen: " + e.n + (e.n === 1 ? " Baustein" : " Bausteine") + ". Kopiere jetzt Teil "
+          + (naechsterTeil() + 1) + " von " + st.ids.length + "; die Prüfung zeigt Fehler erst, wenn alle Teile da sind.", "ok");
+        $("teil-weiter").focus({ preventScroll: true });
+        return;
+      }
       // im Modus „nur Baustein“ zählen nur die eingesetzten Bausteine, sonst alle
       var rot = Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler" && (!e.ids || e.ids.indexOf(b.id) >= 0); }).length;
       var aussen = Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler" && !d.baustein; }).length;
-      $("eingabe").value = "";
-      $("eingabe-stand").textContent = "Übernommen (" + MODUS_TEXT[modus] + "): " + e.n + (e.n === 1 ? " Baustein" : " Bausteine")
-        + (rot ? ", davon " + rot + " mit Fehler (rot). Wähl an der roten Karte „Korrektur anfordern“."
-          : aussen ? "." : ". Sieh sie durch und geh dann weiter.")
-        + (aussen ? " Den Satz zum Fehler außerhalb der Bausteine findest du unter den Karten." : "") + e.text;
-      $("eingabe-stand").className = "stand " + (rot || aussen ? "fehler" : "ok");
+      if (rot || aussen) mehr = " Unter dem Feld steht die Korrektur: „Korrektur anfordern“ kopiert die Bitte für den Chat.";
+      standKarte($("eingabe-stand"), "Übernommen (" + MODUS_TEXT[modus] + "): " + e.n + (e.n === 1 ? " Baustein" : " Bausteine")
+        + (rot ? ", davon " + rot + " mit Fehler (rot)." : aussen ? "." : ". Sieh sie durch und geh dann weiter.") + mehr + e.text,
+        rot || aussen ? "fehler" : "ok");
     } catch (err) { zeigeFehler(err); }
   }
   $("eingabe").addEventListener("input", function () {
@@ -1798,31 +1803,140 @@ window.km = km;
     clearTimeout(eingabeTimer);
     eingabeTimer = setTimeout(function () { eingabeUebernehmen(null); }, 30);
   });
+  // Knopf zusätzlich zur Automatik (Fremdtest 24.10.: nach dem Einfügen fehlte etwas zum Klicken)
+  $("eingabe-uebernehmen").onclick = function () { clearTimeout(eingabeTimer); eingabeUebernehmen(null); };
   // Anderen Modus gewählt: die letzte Antwort vom Stand davor aus neu einsetzen
   Array.prototype.forEach.call(document.querySelectorAll("input[name=modus]"), function (r) {
     r.addEventListener("change", function () { if (letzteAntwort && r.checked) eingabeUebernehmen(r.value); });
   });
 
-  // ---------------------------------------------------------------- Korrekturbitte
-  // Sammelblock unter der Kartenliste: für mehrere rote Karten oder einen Fehler außerhalb eines Bausteins; eine einzelne
-  // rote Karte führt ihre Korrektur selbst (Korrekturschleife). Die Antwort kommt oben ins Feld; die Seite setzt jeden
-  // Baustein anhand seiner id an seinen Platz (gen/mappe.py modus und einsetzen), eine ganze Einheit ersetzt die alte.
+  // ---------------------------------------------------------------- Korrektur (AP13.3: ein Weg)
+  // Ein Block direkt unter dem Einfügefeld: alle Sätze der Prüfung (auch wenn es nur einer ist) und die Karten, die die
+  // Lehrkraft neu beauftragt hat. „Korrektur anfordern“ kopiert alles in einem Text und öffnet das Feld für die Antwort;
+  // die Seite setzt jeden Baustein der Antwort nach seiner `id:` ein, nur die, die darin stehen (kein Modus).
+  function neuBeauftragt() { return markiert().filter(function (k) { return !k.geplant; }); }
+  function korrekturZiele() {
+    var ids = [];
+    korrekturen.forEach(function (k) { if (k.baustein && ids.indexOf(k.baustein) < 0) ids.push(k.baustein); });
+    neuBeauftragt().forEach(function (k) { if (ids.indexOf(k.id) < 0) ids.push(k.id); });
+    return ids;
+  }
+  async function korrekturText() {
+    var neu = neuBeauftragt();
+    if (!neu.length) return korrekturen.map(function (k) { return k.satz; }).join("\n");
+    // neu beauftragte und rote Karten in einem Text „Nur diese Bausteine“ (mit den Meldungen der Prüfung)
+    var ids = korrekturZiele();
+    var t = await km.prompt("baustein", [Z.mappe, ids, Z.kurs_md, Z.steckbrief_text, null, 900, Z.pruefung]);
+    var ohne = korrekturen.filter(function (k) { return !k.baustein; }).map(function (k) { return k.satz; });
+    return t + (ohne.length ? "\n" + ohne.join("\n") + "\n" : "");
+  }
+  function korrekturSpaeter(ms) {
+    clearTimeout(korrekturTimer);
+    korrekturTimer = setTimeout(async function () {
+      if (!Z.geladen || !Z.mappe) return;
+      try {
+        var t = await korrekturText();
+        korrektur.text = t;
+        $("korrektur-feld").value = t;
+        $("korrektur-kopieren").disabled = !t;
+      } catch (e) { zeigeFehler(e); }
+    }, ms === undefined ? 400 : ms);
+  }
   function zeichneKorrektur() {
-    var rote = korrekturen.map(function (k) { return k.baustein; }).filter(function (b, i, a) { return b && a.indexOf(b) === i; });
-    var ohne = korrekturen.some(function (k) { return !k.baustein; });
-    $("korrektur").hidden = !(rote.length > 1 || ohne);
-    $("korrektur-zeile").textContent = ohne && !rote.length
-      ? "Kopiere den Satz in deinen Chat und füge die Antwort oben ein. Sie ersetzt die Einheit."
-      : "Ein Satz je Fehler. Kopiere alle in deinen Chat und füge die Antwort oben ein.";
+    var neu = neuBeauftragt(), ziele = korrekturZiele();
+    var zeigen = !!Z.mappe && inhalt() && !teileOffen() && (korrekturen.length > 0 || neu.length > 0);
+    $("korrektur").hidden = !zeigen;
+    if (!zeigen) { korrektur.offen = false; }
     var ul = $("korrektur-liste"); ul.innerHTML = "";
-    korrekturen.forEach(function (k) { ul.appendChild(el("li", { text: k.satz })); });
-    if (!$("korrektur-feld")) document.body.appendChild(el("textarea", { id: "korrektur-feld", cls: "unsichtbar", readonly: true, "aria-hidden": "true" }));
-    $("korrektur-feld").value = korrekturen.map(function (k) { return k.satz; }).join("\n");
-    $("korrektur-stand").textContent = "";
+    korrekturen.forEach(function (k) { ul.appendChild(el("li", { "data-regel": k.regel || "", text: k.satz })); });
+    neu.forEach(function (k) {
+      ul.appendChild(el("li", { cls: "k-neu-zeile", text: "„" + k.titel + "“ neu schreiben, nach deinem Auftrag an der Karte." }));
+    });
+    var n = ziele.length;
+    $("korrektur-titel").textContent = n > 1 ? n + " Bausteine brauchen eine Korrektur" : n === 1 ? "Ein Baustein braucht eine Korrektur"
+      : "Die Einheit braucht eine Korrektur";
+    $("korrektur-zeile").textContent = "„Korrektur anfordern“ kopiert die Bitte für den Chat" + (korrekturen.length + neu.length > 1
+      ? " (alle Punkte zusammen)" : "") + ". Füge sie in deinen Chat ein und die Antwort des Chats hier unten.";
+    $("korrektur-antwort").hidden = !korrektur.offen;
+    standKarte($("korrektur-ergebnis"), korrektur.stand, korrektur.art);
+    if (!korrektur.text && !neu.length) korrektur.text = korrekturen.map(function (k) { return k.satz; }).join("\n");
+    $("korrektur-feld").value = korrektur.text;
+    $("korrektur-kopieren").disabled = !korrektur.text;
+  }
+  // Jede Korrekturbitte als Ereignis in der Kursmappe (keine Inhalte): Version, Chat, Typ, Regel, Runde je Einheit
+  function korrekturVermerken() {
+    var liste = Z.mappe.korrekturen = Z.mappe.korrekturen || [], tag = einheitTag();
+    var runde = 1 + liste.filter(function (x) { return (x.einheit || "") === tag; }).reduce(function (m, x) { return Math.max(m, x.runde || 0); }, 0);
+    var basis = { version: (katalog && katalog.version) || "", chat: (chatInfo(Z.mappe.chat) || {}).text || "", runde: runde };
+    if (tag) basis.einheit = tag;
+    korrekturen.forEach(function (k) {
+      liste.push(Object.assign({ typ: (pruefBaustein(k.baustein) || {}).typ || "", regel: k.regel || "" }, basis));
+    });
+    neuBeauftragt().forEach(function (k) { liste.push(Object.assign({ typ: k.typ, regel: "neu.auftrag" }, basis)); });
+    autosave(); rueckmeldungFuellen();
   }
   $("korrektur-kopieren").onclick = function () {
-    kopieren($("korrektur-feld").value, $("korrektur-feld"), $("korrektur-stand"), "Kopiert. Füge die Sätze in deinen Chat ein und die Antwort dann oben ins Feld.");
+    if (!korrektur.text) return;
+    korrektur.offen = true; korrektur.stand = ""; korrektur.art = "";
+    $("korrektur-antwort").hidden = false; standKarte($("korrektur-ergebnis"), "");
+    korrekturVermerken();
+    kopieren(korrektur.text, $("korrektur-feld"), $("korrektur-stand"), "Kopiert. Füge sie in deinen Chat ein und die Antwort des Chats hier unten.",
+      function () { $("korrektur-eingabe").focus({ preventScroll: true }); });
   };
+  function zurKorrektur() {
+    var b = $("korrektur");
+    if (b.hidden) return;
+    b.scrollIntoView({ behavior: "smooth", block: "start" });
+    $("korrektur-kopieren").focus({ preventScroll: true });
+  }
+  async function korrekturEinsetzen() {
+    var text = $("korrektur-eingabe").value;
+    if (!text.trim()) return;
+    var eigen = eigenerText(text);
+    if (eigen) { korrektur.stand = EIGEN[eigen]; korrektur.art = "fehler"; standKarte($("korrektur-ergebnis"), korrektur.stand, "fehler"); return; }
+    try {
+      await km.bereit();
+      var ziele = korrekturZiele(), ohne = korrekturen.some(function (k) { return !k.baustein; });
+      var mo = await km.mappeFn("modus", [Z.mappe, text]);
+      if (mo.modus === "keine") {
+        korrektur.stand = "In der Antwort steht kein Baustein. Kopiere die ganze Antwort mit dem Kopierknopf des Chats."; korrektur.art = "fehler";
+        standKarte($("korrektur-ergebnis"), korrektur.stand, "fehler"); return;
+      }
+      var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, text, ziele.length === 1 ? ziele[0] : null, true]);
+      var ids = r.ersetzt.concat(r.eingefuegt);
+      if (!ids.length && ohne && mo.modus === "ersetzen") {
+        await km.stand((await km.mappeFn("antwort", [text])).kursdatei);     // ganze Kursdatei ohne passende ids
+        ids = Z.pruefung.bausteine.map(function (b) { return b.id; });
+      } else if (!ids.length) {
+        korrektur.stand = r.fehler.join(" ") || "Kein Baustein der Antwort passte zu einer Karte."; korrektur.art = "fehler";
+        standKarte($("korrektur-ergebnis"), korrektur.stand, "fehler"); return;
+      } else await km.stand(r.kurs_md);
+      Z.mappe.bausteine.forEach(function (k) { if (ids.indexOf(k.id) >= 0) k.neu = false; });
+      Z.mappe.durchsicht = false;
+      if (schritt() !== 5) { Z.mappe.schritt = 5; auf = {}; }
+      await auswertung();
+      $("korrektur-eingabe").value = "";
+      var rot = fehlerZahl(), satz = "Eingesetzt: " + ids.length + (ids.length === 1 ? " Baustein" : " Bausteine") + ".";
+      if (!rot && !neuBeauftragt().length) {
+        korrektur = { text: "", offen: false, stand: "", art: "" };
+        standKarte($("eingabe-stand"), satz + " Alle Bausteine sind in Ordnung; sieh sie durch und geh dann weiter.", "ok");
+        status("Korrektur eingesetzt", "ok");
+      } else {
+        korrektur.stand = satz + " Noch " + (rot === 1 ? "ein Fehler" : rot + " Fehler") + "; die Bitte oben ist neu, kopiere sie noch einmal."
+          + (r.fehler.length ? " " + r.fehler.join(" ") : "");
+        korrektur.art = "fehler"; korrektur.text = "";
+      }
+      zeichne(); geaendert(); korrekturSpaeter(0);
+      var f = !$("korrektur").hidden ? $("korrektur-kopieren") : $("weiter-5");
+      if (f && !f.hidden) f.focus({ preventScroll: true });
+    } catch (e) { zeigeFehler(e); }
+  }
+  var korrekturEingabeTimer = null;
+  $("korrektur-eingabe").addEventListener("input", function (ev) {
+    clearTimeout(korrekturEingabeTimer);
+    korrekturEingabeTimer = setTimeout(korrekturEinsetzen, ev.inputType === "insertFromPaste" ? 30 : 500);
+  });
+  $("korrektur-uebernehmen").onclick = function () { clearTimeout(korrekturEingabeTimer); korrekturEinsetzen(); };
 
   // ---------------------------------------------------------------- Lösungen gegenprüfen (neuer Chat, Blindlösung)
   $("gegen-kopieren").onclick = function () {
@@ -1970,8 +2084,15 @@ window.km = km;
     var m = Z.mappe || {}, e = m.einheit || {}, c = chatInfo(m.chat);
     return ["Rückmeldung zu Kursmühle " + ((katalog && katalog.version) || ""), "",
       "Chat: " + (c ? c.text : "–"), "Fach: " + (angaben.fach || "–"), "Jahrgangsstufe: " + (e.jahrgang || angaben.jahrgang || "–"),
-      "Vorlage: " + (e.vorlage || "–") + (m.zweig ? " (" + ZWEIG_TEXT[m.zweig] + ")" : ""), "",
+      "Vorlage: " + (e.vorlage || "–") + (m.zweig ? " (" + ZWEIG_TEXT[m.zweig] + ")" : ""), korrekturZeile(m), "",
       "Wo hat es gestockt?", "", "", "Was hättest du anders gewollt?", "", "", "Nutzt du es nächste Woche wieder?", "", ""].join("\n");
+  }
+  // „Korrekturen: 2 · mindest.quiz, zeit.annahme · Chat: ByLKI“ (AP13.3, aus den Ereignissen der Kursmappe)
+  function korrekturZeile(m) {
+    var k = (m && m.korrekturen) || [];
+    var regeln = k.map(function (x) { return x.regel; }).filter(function (r, i, a) { return r && a.indexOf(r) === i; });
+    var chats = k.map(function (x) { return x.chat; }).filter(function (c, i, a) { return c && a.indexOf(c) === i; });
+    return "Korrekturen: " + k.length + (regeln.length ? " · " + regeln.join(", ") : "") + (chats.length ? " · Chat: " + chats.join(", ") : "");
   }
   var rmBearbeitet = false;
   function rueckmeldungFuellen() { if (!rmBearbeitet) $("rm-text").value = rueckmeldungText(); }
@@ -1991,6 +2112,19 @@ window.km = km;
   $("rm-adresse-kopieren").onclick = function () {
     kopieren("kursmuehle@pm.me", $("rm-adresse-feld"), $("rm-stand"), "Adresse kopiert.");
   };
+
+  // ---------------------------------------------------------------- Hell und dunkel (AP13.3, wie die Landingpage)
+  function schemaZeigen() {
+    var d = document.documentElement.dataset.theme === "dark";
+    $("schema").textContent = d ? "Hell" : "Dunkel";        // die Beschriftung nennt, wohin der Klick führt
+  }
+  $("schema").onclick = function () {
+    var d = document.documentElement.dataset.theme !== "dark";
+    if (d) document.documentElement.dataset.theme = "dark"; else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem("kursmuehle-schema", d ? "dunkel" : "hell"); } catch (e) { /* ohne Speicher: nur diese Seite */ }
+    schemaZeigen();
+  };
+  schemaZeigen();
 
   rueckmeldungFuellen();
   zeichne();

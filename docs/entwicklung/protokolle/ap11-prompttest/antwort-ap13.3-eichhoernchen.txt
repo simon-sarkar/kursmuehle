@@ -1,0 +1,107 @@
+```markdown
+# Drehbuch v1 · Das Eichhörnchen · 45 min
+Angenommen: Kursformat Themen untereinander
+Angenommen: Designvorlage Schlicht
+Angenommen: Übungen erscheinen als eigene Aktivitäten
+Angenommen: Kein Abschlusstest
+Angenommen: Alles sofort sichtbar
+Offen: Das Eichhörnchen hält keinen Winterschlaf und bleibt bei schlechtem Wetter im Kobel; der Lesetext vereinfacht das Winterverhalten. Bitte für die Klasse prüfen.
+
+## Das Eichhörnchen · 45 min
+
+### Textfeld: Ein Eichhörnchen im Park · 3 min
+id: b1
+Vorspann: Mara sitzt im Park auf einer Bank und sieht ein Eichhörnchen.
+
+Das Tier rennt einen Stamm hinauf, springt auf einen dünnen Ast und landet auf dem nächsten Baum. Mara staunt, dass es nicht abstürzt.
+
+Kasten: Was vermutest du?
+  Woran liegt es, dass das Eichhörnchen so sicher klettert?
+
+Hervorhebung: Wie lebt das Eichhörnchen auf seinem Baum?
+
+### Seite: Körper, Nahrung und Kobel · 15 min
+id: b2
+abschluss: ansehen
+Überschrift: Der Körper
+
+Das Eichhörnchen hat an jeder Pfote spitze **Krallen**. Sie haken sich in die Rinde ein.
+
+Beispiel: Krallen am Stamm
+  Ein Eichhörnchen läuft den Stamm hinauf. Die Krallen halten es an der Rinde fest.
+
+Der Schwanz ist buschig. Im Sprung steuert er das Tier wie ein Ruder.
+
+Vorn im Mund hat das Eichhörnchen vier **Nagezähne**. Sie sind scharf und wachsen nach.
+
+Beispiel: Nagezähne an der Nuss
+  Eine Haselnuss hat eine harte Schale. Das Eichhörnchen nagt sie mit den Nagezähnen auf.
+
+MC: Ein Eichhörnchen rennt an einem rauen Stamm hoch. Womit hält es sich fest?
+- ✔ Mit den Krallen → Die Krallen sind spitz und haken sich in die Rinde ein.
+- Mit dem Schwanz → Der Schwanz steuert im Sprung, er hält das Tier aber nicht am Stamm fest.
+- Mit den Nagezähnen → Die Nagezähne dienen zum Nagen und nicht zum Festhalten.
+
+Überschrift: Die Nahrung
+
+Das Eichhörnchen frisst Nüsse, Eicheln, Samen, Beeren und Knospen.
+
+Im Herbst legt es einen **Vorrat** an. Es vergräbt Nüsse und Eicheln an vielen Stellen im Boden.
+
+Beispiel: Eichel unter der Eiche
+  Ein Eichhörnchen scharrt ein Loch, legt eine Eichel hinein und deckt sie zu.
+
+Im Winter gräbt es den Vorrat wieder aus.
+
+RF: Im Oktober vergräbt ein Eichhörnchen jeden Tag ein paar Nüsse an verschiedenen Stellen. Es legt damit einen Vorrat an. ✔ → richtig: Es sammelt jetzt für den Winter, wenn wenig Futter zu finden ist. → falsch: Doch, vergrabene Nüsse sind der Vorrat für den Winter.
+
+Überschrift: Der Kobel
+
+Das Eichhörnchen wohnt in einem **Kobel**. Das ist ein rundes Nest aus Zweigen, Moos und Blättern. Es sitzt hoch im Baum, meist in einer Astgabel. Der Eingang liegt an der Seite.
+
+Beispiel: Der Kobel bei Sturm
+  Es stürmt. Das Eichhörnchen sitzt im Kobel. Die dichte Wand hält Regen und Wind ab.
+
+RF: Mara findet im Gras einer Wiese ein rundes Nest aus Halmen. Es ist ein Kobel. ✘ → richtig: Ein Kobel sitzt hoch im Baum und nicht am Boden. → falsch: Nein, ein Kobel ist ein Nest aus Zweigen, Moos und Blättern hoch im Baum.
+
+Merke: Körper, Nahrung und Kobel des Eichhörnchens passen zum Leben auf Bäumen. Es klettert und springt sicher, knackt Nüsse, legt einen Vorrat an und schläft geschützt.
+
+Überschrift: Zwei Fälle
+
+Beispiel: Der Sprung im Park
+  Ein Eichhörnchen springt von Baum zu Baum. Der Schwanz steuert den Sprung. Die Krallen packen den Ast bei der Landung. Der Körper passt zum Springen.
+
+Beispiel: Ein Wintertag
+  Es liegt Schnee, und nur wenige Samen hängen an den Bäumen. Das Eichhörnchen gräbt Eicheln aus seinem Vorrat aus. Danach geht es in den warmen Kobel zurück. Nahrung und Kobel helfen ihm durch den Winter.
+
+### Zuordnen: Merkmale des Eichhörnchens sortieren · 9 min
+id: b3
+zonen: Körper | Nahrung | Kobel
+- Spitze Krallen an den Pfoten → Körper
+- Vier scharfe Nagezähne → Körper
+- Haselnüsse und Eicheln → Nahrung
+- Nüsse im Herbst vergraben → Nahrung
+- Rundes Nest in der Astgabel → Kobel
+- Wände aus Moos und Zweigen → Kobel
+
+### Quiz: Neue Fälle vom Eichhörnchen · 5 min
+id: b4
+bestehen: 2 von 3
+1. MC: Nach einem Regenschauer sitzt ein Eichhörnchen trocken in seinem Nest. Warum bleibt es trocken?
+- ✔ Die dichte Wand und das Dach des Kobels halten den Regen ab → Der Kobel ist aus Zweigen, Moos und Blättern dicht gebaut.
+- Das Nest liegt tief unter der Erde → Ein Kobel sitzt hoch im Baum und nicht unter der Erde.
+- Die Nagezähne halten den Regen ab → Die Nagezähne sind zum Nagen da und schützen nicht vor Regen.
+2. RF: Ben sieht im Herbst, wie ein Eichhörnchen Nüsse vergräbt. Er meint, das sei der Vorrat für den Sommer. ✘ → richtig: Der Vorrat ist für den Winter, wenn wenig Futter zu finden ist. → falsch: Nein, im Sommer gibt es genug Futter, der Vorrat ist für den Winter.
+3. Einsetzen: Im Wald knackt ein Eichhörnchen eine Nuss und springt davon. Setze die Wörter ein.
+Die harte Schale öffnet es mit den *Nagezähnen*. Im Sprung steuert der *Schwanz*. Sein Nest hoch im Baum heißt *Kobel*.
+
+### Seite: Hefteintrag zum Eichhörnchen · 13 min
+id: b5
+abschluss: ansehen
+Merke: Körper, Nahrung und **Kobel** des Eichhörnchens passen zum Leben auf Bäumen.
+- **Krallen** und Schwanz helfen beim Klettern und Springen.
+- Mit den **Nagezähnen** knackt es Nüsse.
+Merke: Im Herbst legt es einen **Vorrat** an, im **Kobel** schläft es geschützt.
+Beispiel: Ein Fall im Garten
+  Am Futterhaus im Garten knackt ein Eichhörnchen Sonnenblumenkerne mit den Nagezähnen.
+```

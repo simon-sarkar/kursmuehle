@@ -89,7 +89,7 @@ sind Fehler, keine Vermutungen.
 | `Link`, `Video` | URL (eingebettet) | eine Zeile mit `https://…` |
 | `Lesebuch` | Interactive Book | `Seite: Titel`, darunter Textbausteine, `Bild:` und Fragen (§5) |
 | `Quiz` | Question Set | nummerierte Fragen (§5): MC, RF, Einsetzen, Markieren, Lückentext |
-| `Zuordnen` | Drag and Drop | `- Element → Zone`; ohne Zone = Ablenker, der liegen bleiben muss; dann sagt die Aufgabe (`titel:`), dass ein Element zu keiner Zone passt |
+| `Zuordnen` | Drag and Drop | `- Element → Zone` (der letzte Pfeil trennt die Zone); ohne Zone = Ablenker, der liegen bleiben muss; dann sagt die Aufgabe (`titel:`), dass ein Element zu keiner Zone passt |
 | `Lernkarten` | Dialog Cards | `- Vorderseite → Rückseite · Bild: x.png · Tipp: …` |
 | `Geschichte` | Branching Scenario | `Szene`, `Frage`, `Ende` (§6) |
 | `Lückentext` | Fill in the Blanks | `aufgabe:` plus Absätze mit `*Lücke/Alternative:Tipp*` |
@@ -140,7 +140,8 @@ nicht sicher. Der Generator setzt einfache LaTeX-Formeln in Klartext um und meld
 | `Kacheln: Überschrift` + `- 🔍 Titel · #Farbe · ausgearbeitet\|exemplarisch` | Kacheln der Themenfelder, vier je Reihe |
 | `Themenfeld: Leitkompetenz \| Anmerkung` + `- Lerneinheit` | Leitkompetenz links, Lerneinheiten rechts |
 
-Eingerückt heißt: zwei Leerzeichen. Ein Kasten ohne eingerückten Inhalt ist ein Fehler. Emojis in Fahrplan, Kacheln und
+Eingerückt heißt: zwei Leerzeichen. Ein Kasten ohne Inhalt ist ein Fehler; stehen die Zeilen darunter nicht eingerückt,
+nimmt der Generator sie bis zur nächsten Leerzeile als Inhalt und meldet einen Hinweis. Emojis in Fahrplan, Kacheln und
 Überblick erscheinen nur, wenn der Steckbrief `emoji_marker: true` setzt.
 
 Wahl je Textsorte: Erklärung = Vorspann, Überschriften, kurze Absätze, Begriffstabelle; Fall = `Beispiel:`-Kasten;
@@ -166,7 +167,8 @@ MC (Titel): Frage?                                         oder als Liste, mit R
 - ✔ Antwort → Rückmeldung, wenn gewählt
 - Antwort → Rückmeldung
 RF: Aussage ✔|✘ → richtig: Rückmeldung → falsch: Rückmeldung   (optional; „richtig“ erscheint, wenn die Lernenden richtig antworten, „falsch“ bei falscher Antwort)
-Einsetzen (Titel): Aufgabe                                  Drag the Words; Text darunter, eine Zeile je Zeile
+Einsetzen (Titel): Aufgabe                                  Drag the Words; Text darunter, eine Zeile je Zeile;
+                                                           ein Situationssatz steht vorn in derselben Zeile
 Wand: *Buchse* → *Router*
 Markieren (Titel): Aufgabe                                  Mark the Words; Text darunter
 Mein *Nordvia* *X3* lädt *nicht*.

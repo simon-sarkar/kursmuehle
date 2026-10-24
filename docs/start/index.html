@@ -6,6 +6,10 @@
 <title>Kursmühle – Mahlwerk</title>
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 <link rel="stylesheet" href="ansicht.css">
+<script>
+// AP13.3: dasselbe Farbschema wie die Landingpage (localStorage „kursmuehle-schema“), vor dem Zeichnen; hell ist Standard
+(function () { try { if (localStorage.getItem("kursmuehle-schema") === "dunkel") document.documentElement.dataset.theme = "dark"; } catch (e) {} })();
+</script>
 </head>
 <body data-muster="locker" data-schritt="1">
 <header class="kopf">
@@ -17,6 +21,7 @@
     <label for="datei-oeffnen" class="kopf-link">Einheit öffnen</label>
     <button type="button" id="speichern" class="kopf-link" disabled hidden>Einheit speichern</button>
     <button type="button" id="neue-einheit" class="kopf-link" hidden>Neue Einheit</button>
+    <button type="button" id="schema" class="kopf-link" title="Farbschema wechseln">Dunkel</button>
     <button type="button" id="schliessen" class="kopf-x" aria-label="Einheit schließen" title="Einheit schließen" hidden>×</button>
   </div>
 </header>
@@ -138,7 +143,6 @@
         <div id="text-art" class="text-art" role="radiogroup" aria-label="Welcher Text">
           <label><input type="radio" name="text-art" value="einheit" checked> Diese Einheit</label>
           <label id="art-leer-l" hidden><input type="radio" name="text-art" value="leer"> Alle leeren Bausteine</label>
-          <label id="art-baustein-l" hidden><input type="radio" name="text-art" value="baustein"> <span id="art-baustein-text">Nur dieser Baustein</span></label>
         </div>
         <div id="teil-wahl" class="teil-wahl" role="group" aria-label="Teil" hidden></div>
         <p id="chat-zeile" class="leise"></p>
@@ -179,16 +183,31 @@
         </div>
         <label for="eingabe" class="unsichtbar">Antwort des Chats</label>
         <textarea id="eingabe" rows="6" spellcheck="false" placeholder="Hier einfügen (Strg+V oder lange drücken)"></textarea>
-        <p id="eingabe-stand" class="stand" role="status" aria-live="polite"></p>
+        <div class="kopieren"><button type="button" id="eingabe-uebernehmen" class="knopf">Antwort übernehmen</button></div>
+        <p id="eingabe-stand" class="stand-karte" role="status" aria-live="polite" hidden></p>
+      </div>
+      <!-- AP13.3: gestückelter Text – Fortschritt, rote Karten erst nach dem letzten Teil -->
+      <div id="teil-stand" class="teil-stand" role="status" hidden>
+        <p id="teil-stand-text"></p>
+        <button type="button" id="teil-weiter" class="knopf haupt">Teil 2 kopieren</button>
+        <p id="teil-kopiert" class="stand" aria-live="polite"></p>
+      </div>
+      <!-- AP13.3: ein Korrekturweg – alle Sätze und neu beauftragten Bausteine, ein Text, eine Antwort, Einsetzen nach id: -->
+      <div id="korrektur" class="korrektur" hidden>
+        <h3 id="korrektur-titel" class="unterkopf">Korrektur</h3>
+        <ul id="korrektur-liste" class="korrektur-liste"></ul>
+        <p id="korrektur-zeile" class="leise"></p>
+        <button type="button" id="korrektur-kopieren" class="knopf haupt">Korrektur anfordern</button>
+        <p id="korrektur-stand" class="stand" role="status" aria-live="polite"></p>
+        <textarea id="korrektur-feld" class="unsichtbar" readonly aria-hidden="true" tabindex="-1"></textarea>
+        <div id="korrektur-antwort" class="korrektur-antwort" hidden>
+          <label for="korrektur-eingabe" class="feld">Antwort des Chats auf die Korrektur</label>
+          <textarea id="korrektur-eingabe" rows="5" spellcheck="false" placeholder="Antwort hier einfügen"></textarea>
+          <div class="kopieren"><button type="button" id="korrektur-uebernehmen" class="knopf">Antwort übernehmen</button></div>
+          <p id="korrektur-ergebnis" class="stand-karte" role="status" aria-live="polite" hidden></p>
+        </div>
       </div>
       <div id="karten-ort-5" class="karten-ort"></div>
-      <!-- Sammelblock für mehrere rote Karten (AP13.1: unter der Kartenliste; die Seite erkennt die Bausteine an der id) -->
-      <div id="korrektur" class="korrektur" hidden>
-        <p id="korrektur-zeile" class="leise"></p>
-        <ul id="korrektur-liste" class="korrektur-liste"></ul>
-        <button type="button" id="korrektur-kopieren" class="knopf">Alle Sätze kopieren</button>
-        <p id="korrektur-stand" class="stand" role="status" aria-live="polite"></p>
-      </div>
       <button type="button" id="weiter-5" class="knopf haupt" hidden>Weiter</button>
     </div>
   </section>
@@ -200,6 +219,8 @@
     <div class="s-inhalt">
       <p class="leise">Such zu jedem Bild ein freies Foto, zeichne es oder lass es von einem Bildgenerator erzeugen. Nimm
         nur Bilder, an denen du die Rechte hast.</p>
+      <p class="leise">Bildgeneratoren schreiben Wörter im Bild oft falsch. Hat ein Bild viele Beschriftungen, lass es mit
+        nummerierten Pfeilen erzeugen und schreib die Beschriftungen in die Bildunterschrift.</p>
       <ol id="bilder-liste" class="bilder-liste"></ol>
       <textarea id="bild-feld" class="unsichtbar" readonly aria-hidden="true" tabindex="-1"></textarea>
       <button type="button" id="weiter-bilder" class="knopf haupt">Weiter</button>

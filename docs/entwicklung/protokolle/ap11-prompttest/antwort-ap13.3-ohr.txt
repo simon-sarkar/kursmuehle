@@ -1,0 +1,120 @@
+```markdown
+# Drehbuch v1 · Das Ohr · 45 min
+Angenommen: Kursformat Themen untereinander
+Angenommen: Designvorlage Schlicht
+Angenommen: Übungen erscheinen als eigene Aktivitäten
+Angenommen: Kein Abschlusstest
+Angenommen: Alles sofort sichtbar
+Bildwunsch: ohr-querschnitt.png | Schematischer Querschnitt durch das Ohr mit Außenohr, Mittelohr und Innenohr und einem Pfeil für den Weg des Schalls.
+Bildprompt: ohr-querschnitt.png | Schematischer Querschnitt durch ein menschliches Ohr, flache Vektorillustration mit klaren Linien auf hellem Hintergrund, Seitenverhältnis 4:3. Außenohr, Mittelohr und Innenohr in drei unterscheidbaren Farbtönen (hellblau, hellgelb, hellgrün). Ein geschwungener Pfeil führt vom Eingang des Gehörgangs bis zum Hörnerv. Sechs nummerierte Pfeile, keine Wörter im Bild: Pfeil 1 auf die Ohrmuschel, Pfeil 2 auf den Gehörgang, Pfeil 3 auf das Trommelfell, Pfeil 4 auf die Gehörknöchelchen, Pfeil 5 auf die Hörschnecke, Pfeil 6 auf den Hörnerv. Die Legende steht in der Bildunterschrift.
+Bildwunsch: mittelohr.png | Vergrößerter Ausschnitt des Mittelohrs mit Trommelfell, Hammer, Amboss und Steigbügel.
+Bildprompt: mittelohr.png | Vergrößerter Ausschnitt des Mittelohrs, flache Vektorillustration mit klaren Linien auf hellem Hintergrund, Seitenverhältnis 4:3. Links das Trommelfell als gespannte dünne Haut, daran anschließend die drei Gehörknöchelchen als Kette bis zur Öffnung der Hörschnecke rechts. Kleine Pfeile zeigen die Richtung der Schwingung von links nach rechts. Beschriftungen: ‚Trommelfell‘: Pfeil auf die dünne Haut links, ‚Hammer‘: Pfeil auf das erste Knöchelchen, ‚Amboss‘: Pfeil auf das mittlere Knöchelchen, ‚Steigbügel‘: Pfeil auf das letzte Knöchelchen.
+Bildwunsch: hoerschnecke.png | Aufgerollte Hörschnecke mit vergrößertem Ausschnitt, in dem Haarsinneszellen und Hörnerv zu sehen sind.
+Bildprompt: hoerschnecke.png | Aufgerollte Hörschnecke wie ein Schneckenhaus, daneben ein vergrößerter Ausschnitt mit einer Reihe von Haarsinneszellen, deren feine Härchen sich in Flüssigkeit biegen, darunter eine Nervenfaser. Flache Vektorillustration mit klaren Linien auf hellem Hintergrund, Seitenverhältnis 4:3. Beschriftungen: ‚Steigbügel‘: Pfeil auf das Knöchelchen an der Öffnung der Schnecke, ‚Flüssigkeit‘: Pfeil auf das Innere des Gangs, ‚Haarsinneszellen‘: Pfeil auf die Zellen mit Härchen im Ausschnitt, ‚Hörnerv‘: Pfeil auf die Nervenfaser.
+Offen: Die Tiefe (Haarsinneszellen, Hebelwirkung der Gehörknöchelchen) ist für eine 7. Klasse gewählt; bitte mit Lehrplan und eingeführtem Schulbuch abgleichen.
+Offen: Ohrtrompete, Gleichgewichtsorgan sowie hohe und tiefe Töne kommen nicht vor; stehen sie im Lehrplan der Jahrgangsstufe, fehlt dafür die Zeit.
+Offen: Das Trommelfell wird als Ende des Außenohrs beschrieben; manche Bücher rechnen es zum Mittelohr. In der Zuordnung kommt es deshalb nicht vor.
+
+## Das Ohr · 45 min
+
+### Textfeld: Piepsen im Ohr nach dem Konzert · 3 min
+id: b1
+Vorspann: Jonas stand beim Konzert direkt neben der Box. Am Abend piepst es in seinem Ohr, und die Stimmen seiner Familie klingen dumpf.
+Am nächsten Morgen hört er wieder normal.
+Kasten: Denk kurz nach
+  Was im Ohr könnte bei dem lauten Ton besonders stark belastet worden sein? Schreib deine Vermutung auf.
+Hervorhebung: Welchen Weg nimmt ein Ton von der Box bis in dein Gehirn?
+
+### Seite: Bau des Ohrs und Weg des Schalls · 16 min
+id: b2
+Vorspann: Das Piepsen nach dem Konzert hat seine Ursache tief im Ohr, weit hinter dem Teil, den du von außen siehst.
+Überschrift: Schall und die drei Bereiche des Ohrs
+**Schall** entsteht, wenn etwas schwingt. Die Membran einer Box zittert, die Luft davor wird im Takt zusammengedrückt und wieder gelockert, und diese Schwingung läuft durch den Raum bis zu deinem Kopf. Dein Ohr verarbeitet sie in drei Bereichen nacheinander, dem **Außenohr**, dem **Mittelohr** und dem **Innenohr**. Von außen siehst du nur einen kleinen Teil des Außenohrs.
+Bild: ohr-querschnitt.png | Schematischer Querschnitt durch das Ohr mit Außenohr, Mittelohr und Innenohr; ein Pfeil führt vom Gehörgang zur Hörschnecke und zum Hörnerv, sechs Teile sind nummeriert. | 1 Ohrmuschel, 2 Gehörgang, 3 Trommelfell, 4 Gehörknöchelchen, 5 Hörschnecke, 6 Hörnerv. Der Pfeil zeigt den Weg des Schalls.
+Überschrift: Das Außenohr fängt den Schall auf
+Zum Außenohr gehören die **Ohrmuschel** und der **Gehörgang**. Die Ohrmuschel ist der Teil, den du seitlich am Kopf siehst. Sie wirkt wie ein Trichter, der Schall einfängt und in den Gehörgang lenkt. Der Gehörgang ist ein Gang von etwa drei Zentimetern Länge. Er endet am **Trommelfell**, einer dünnen, gespannten Haut. Trifft Schall auf diese Haut, schwingt sie mit.
+Beispiel: Salz auf Folie
+  Spannst du Frischhaltefolie über eine Schüssel und streust Salz darauf, springen die Körner, wenn du daneben laut klatschst. Die Folie schwingt wie das Trommelfell.
+Kasten: Anwenden
+  Warum verstehst du eine leise Stimme besser, wenn du die Hand hinter die Ohrmuschel hältst? Schreib eine Erklärung in einem Satz auf.
+Hinweis: Lösung
+  Die Hand vergrößert die Fläche, die Schall auffängt, und lenkt mehr davon in den Gehörgang.
+Überschrift: Das Mittelohr überträgt und verstärkt
+Hinter dem Trommelfell liegt das Mittelohr, ein kleiner Raum voller Luft. In ihm sitzen die **Gehörknöchelchen**, die kleinsten Knochen des Körpers. Sie heißen **Hammer**, **Amboss** und **Steigbügel**. Der Hammer liegt am Trommelfell, der Steigbügel grenzt an das Innenohr. Schwingt das Trommelfell, stößt der Hammer den Amboss an, und der Amboss gibt den Stoß an den Steigbügel weiter.
+Die Kette arbeitet wie ein Hebel und verstärkt die Schwingung. Das ist nötig, weil das Innenohr mit Flüssigkeit gefüllt ist und sich Flüssigkeit schwerer anstoßen lässt als Luft.
+Beispiel: Luft und Wasser
+  Ein leichter Luftzug bewegt ein Blatt Papier. Um das Wasser in einer vollen Wanne ins Schwappen zu bringen, brauchst du einen kräftigeren Stoß.
+Bild: mittelohr.png | Vergrößerter Ausschnitt des Mittelohrs: Das Trommelfell links, daran anschließend Hammer, Amboss und Steigbügel als Kette bis zur Hörschnecke; Pfeile zeigen die Schwingung nach rechts. | Die Gehörknöchelchen geben die Schwingung des Trommelfells an die Hörschnecke weiter.
+Kasten: Anwenden
+  Mara sagt: „Die Gehörknöchelchen hören den Schall.“ Was antwortest du ihr? Schreib einen Satz auf.
+Hinweis: Lösung
+  Die Gehörknöchelchen hören nicht. Sie übertragen die Schwingung des Trommelfells und verstärken sie.
+Überschrift: Das Innenohr macht aus Schwingungen Signale
+Das Innenohr liegt tief im Schädelknochen. Zu ihm gehört die **Hörschnecke**, ein aufgerollter Gang, der mit Flüssigkeit gefüllt ist und an ein Schneckenhaus erinnert. Stößt der Steigbügel an die Hörschnecke, gerät die Flüssigkeit darin in Schwingung.
+In der Hörschnecke sitzen viele Tausend **Haarsinneszellen** mit feinen Härchen. Die Flüssigkeit biegt diese Härchen hin und her, ähnlich wie Algen in einer Strömung. Dabei entstehen in den Zellen elektrische Signale. Der **Hörnerv** leitet diese Signale zum Gehirn. Erst im Gehirn entsteht der Höreindruck, denn es deutet die Signale als Ton, Klang oder Stimme.
+Bild: hoerschnecke.png | Aufgerollte Hörschnecke mit vergrößertem Ausschnitt, in dem Haarsinneszellen mit Härchen in Flüssigkeit und eine Nervenfaser des Hörnervs zu sehen sind. | In der Hörschnecke biegen sich die Härchen der Haarsinneszellen in der schwingenden Flüssigkeit.
+Merke: Der Schall läuft vom Außenohr (Ohrmuschel, Gehörgang) über das Trommelfell ins Mittelohr (Gehörknöchelchen) und von dort ins Innenohr. In der Hörschnecke wandeln Haarsinneszellen die Schwingung in elektrische Signale um, und der Hörnerv leitet sie zum Gehirn.
+Überschrift: Der Weg des Schalls an zwei Fällen
+Der Weg lässt sich Schritt für Schritt verfolgen, bei einem gesunden Ohr und bei einem Ohr mit einer Störung.
+Schritte: Der Ton einer Box erreicht Jonas
+1. Die Membran der Box schwingt und bringt die Luft in Schwingung.
+2. Die Ohrmuschel fängt den Schall auf und lenkt ihn in den Gehörgang.
+3. Am Ende des Gehörgangs setzt der Schall das Trommelfell in Schwingung.
+4. Hammer, Amboss und Steigbügel geben die Schwingung weiter und verstärken sie.
+5. Der Steigbügel stößt die Flüssigkeit in der Hörschnecke an.
+6. Die Haarsinneszellen biegen ihre Härchen und bilden elektrische Signale.
+7. Der Hörnerv leitet die Signale zum Gehirn, das sie als Ton deutet.
+Sehr laute Musik kann die Haarsinneszellen überlasten. Das Piepsen nach dem Konzert kann ein Warnzeichen sein, denn zerstörte Haarsinneszellen wachsen beim Menschen nicht nach.
+Schritte: Der Weg bei Opa Karl mit Ohrenschmalz-Pfropf
+1. Die Ohrmuschel fängt den Schall wie gewohnt auf.
+2. Im Gehörgang sitzt ein Pfropf aus Ohrenschmalz und lässt nur wenig Schall durch.
+3. Das Trommelfell schwingt deshalb schwächer.
+4. Gehörknöchelchen, Hörschnecke und Hörnerv arbeiten normal, bekommen aber nur eine schwache Schwingung.
+5. Das Gehirn erhält schwächere Signale, und Opa Karl hört leise und dumpf.
+Der Fehler lag im Außenohr, Mittelohr und Innenohr waren gesund. Nachdem der Arzt den Pfropf entfernt hat, hört Opa Karl wieder wie zuvor.
+
+### Quiz: Fragen zum Weg des Schalls · 7 min
+id: b2-2
+bestehen: 3 von 5
+1. MC: Ayla hört im Treppenhaus jemanden von unten rufen. Wo im Ohr entstehen die elektrischen Signale, die ihr Gehirn als Ruf deutet?
+- ✔ In den Haarsinneszellen der Hörschnecke → Richtig, denn dort biegen sich die Härchen in der schwingenden Flüssigkeit und lösen elektrische Signale aus.
+- Im Trommelfell am Ende des Gehörgangs → Das Trommelfell schwingt nur mit und bildet keine elektrischen Signale.
+- In den Gehörknöchelchen im Mittelohr → Sie übertragen und verstärken die Schwingung, Signale bilden sie nicht.
+- In der Ohrmuschel am Rand des Kopfes → Die Ohrmuschel fängt den Schall nur auf und lenkt ihn in den Gehörgang.
+2. RF: Samir fragt sich nach einem lauten Konzert, ob Schäden an den Haarsinneszellen heilen. Sie wachsen beim Menschen nach. ✘ → richtig: Das stimmt nicht, denn zerstörte Haarsinneszellen wachsen beim Menschen nicht nach, ein bleibender Hörschaden ist möglich. → falsch: Das ist richtig erkannt, denn zerstörte Haarsinneszellen wachsen beim Menschen nicht nach, ein Hörschaden kann bleiben.
+3. MC: Seit einem Unfall hört Ben auf dem linken Ohr nichts mehr, obwohl der Arzt Ohrmuschel, Gehörgang, Trommelfell und Gehörknöchelchen unverletzt findet. Wo liegt der Schaden wahrscheinlich?
+- ✔ In der Hörschnecke oder im Hörnerv → Richtig, denn der Schall kommt unverletzt bis zum Innenohr, wird dort aber nicht mehr in Signale umgewandelt oder zum Gehirn geleitet.
+- Im Mittelohr, weil dort der Schall gehört wird → Das Mittelohr überträgt und verstärkt den Schall nur, und die Gehörknöchelchen hat der Arzt unverletzt gefunden.
+- Im Gehörgang, weil dort der Schall eintritt → Der Gehörgang leitet den Schall nur zum Trommelfell weiter, und der Arzt hat ihn unverletzt gefunden.
+- Im Trommelfell, weil es Signale erzeugt → Das Trommelfell schwingt nur mit, Signale entstehen erst in den Haarsinneszellen.
+4. RF: Emma zeichnet den Weg des Schalls im Ohr so: erst das Trommelfell, dann die Gehörknöchelchen, dann die Hörschnecke. ✔ → richtig: Die Reihenfolge stimmt, denn das Trommelfell schwingt zuerst, die Gehörknöchelchen geben die Schwingung weiter, und in der Hörschnecke entstehen die Signale. → falsch: Doch, die Reihenfolge stimmt, denn das Trommelfell schwingt zuerst, die Gehörknöchelchen geben die Schwingung weiter, und erst in der Hörschnecke entstehen Signale.
+5. Einsetzen: Jule baut ein Modell der Gehörknöchelchen und legt sie in die richtige Reihenfolge; setze die Namen ein.
+Vom Trommelfell aus läuft die Schwingung zuerst zum *Hammer*, dann zum *Amboss* und zuletzt zum *Steigbügel*, der an der Hörschnecke anliegt.
+
+### Zuordnen: Teile des Ohrs den Bereichen zuordnen · 3 min
+id: b3
+zonen: Außenohr | Mittelohr | Innenohr
+titel: Ordne jeden Teil dem Bereich zu, in dem er liegt.
+- Ohrmuschel → Außenohr
+- Hammer → Mittelohr
+- Hörschnecke → Innenohr
+- Gehörgang → Außenohr
+- Steigbügel → Mittelohr
+- Haarsinneszellen → Innenohr
+- Amboss → Mittelohr
+
+### Lückentext: Schall bei gerissenem Trommelfell · 5 min
+id: b4
+aufgabe: Setze die Teile des Ohrs ein.
+Emil ist beim Sprung ins Wasser mit dem Ohr aufgeschlagen, und sein linkes Trommelfell ist gerissen. Die *Ohrmuschel* fängt den Schall noch auf, und er läuft durch den *Gehörgang*. Am Trommelfell kommt die Schwingung nur noch schwach an, deshalb bewegen sich die *Gehörknöchelchen:Hammer, Amboss und Steigbügel* kaum. Die *Hörschnecke/Gehörschnecke* mit den *Haarsinneszellen* arbeitet normal. Weil die Schwingung schon am Trommelfell geschwächt ist, hört Emil auf diesem Ohr leiser, obwohl das *Innenohr* gesund ist.
+
+### Seite: Hefteintrag zum Weg des Schalls · 11 min
+id: b5
+Überschrift: Das Ohr und der Weg des Schalls
+Merke: Der **Schall** läuft durch **Außenohr**, **Mittelohr** und **Innenohr** zum Gehirn.
+Merke: Im Außenohr fangen die **Ohrmuschel** und der **Gehörgang** den Schall auf, das **Trommelfell** schwingt mit.
+Merke: Im Mittelohr übertragen und verstärken die **Gehörknöchelchen** (Hammer, Amboss, Steigbügel) die Schwingung.
+Merke: Im Innenohr wandeln die **Haarsinneszellen** der **Hörschnecke** die Schwingung in elektrische Signale um, der **Hörnerv** leitet sie zum Gehirn.
+Beispiel: Mittelohrentzündung
+  Mia hört nach einer Erkältung auf einem Ohr leiser. Hinter ihrem Trommelfell drückt Flüssigkeit, die Gehörknöchelchen schwingen schlecht. Das Innenohr ist gesund, nur die Übertragung im Mittelohr ist gestört.
+```

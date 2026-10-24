@@ -251,3 +251,37 @@ Was die Läufe gezeigt haben und was daraufhin geändert ist:
 Nicht geprüft: die Läufe A und B nach den Korrekturen (die Unterschiede betreffen den Hefteintrag, die Zeitregel und die
 Bildsätze); ein dienstlicher Chat (ByLKI, fobizz, AIS-Chat, MUCGPT) mit dem neuen Text; ein Urteil des Autors zum
 Inhalt. Die Läufe sind vier Einzelläufe eines Modells.
+
+## AP13.3: Vorlage fachneutral (24.10.2026)
+
+Prompttest nach §4 von `AP13.3.md`: drei Aufträge aus dem zweiten Testtag des Autors, je ein frischer Subagent der
+Sonnet-Klasse, der nur den Text bekam und wie im Chat antwortete. Vorlage Einführung, Typ automatisch, Zeit durch das
+Modell, 45 Minuten, Text für ByLKI aus `scripts/tests/prompttest.py` (dieselbe Funktion wie die Mühle). Ausgewertet mit
+`prompttest.py --antworten` (Prüfung wie die Seite, `api.pruefe` mit Kursmappe und `kopiert`) und von Hand gelesen.
+Texte und Antworten in `ap11-prompttest/` (`text-ap13.3-*.txt`, `antwort-ap13.3-*.txt`). Kriterium: in Biologie und HSU
+keine Rechnung, kein Maßstab, keine Formel.
+
+| Lauf | Auftrag | Text | Bausteine (Typen) | Minuten (Überschriften / gerechnet) | Korrekturen | Rechnung, Maßstab, Formel |
+|---|---|---|---|---|---|---|
+| M9 | Satz des Pythagoras, Mathematik 9, Mittelschule | 12,5 KB | 7 (Textfeld, Seite, Quiz b2-2, Zuordnen, Quiz, Lückentext b4-2, Seite) | 45 / 52 | 0 | gehört zum Thema |
+| B7 | Das Ohr, Biologie 7, Auftrag „2-3 Bilder, Weg des Schalls“ | 12,4 KB | 6 (Textfeld, Seite, Quiz, Zuordnen, Lückentext, Seite) | 45 / 43 | 0 | keine |
+| H2 | Das Eichhörnchen, HSU 2, Grundschule | 12,5 KB | 5 (Textfeld, Seite, Zuordnen, Quiz, Seite) | 45 / 38 | 1 (`format.frage`) | keine |
+
+- Kriterium erfüllt: Biologie 7 und HSU 2 ohne Rechnung, Maßstab oder Formel (Muster in `prompttest.py` und beim
+  Lesen); keine Hebelregel, keine Kräfte in Millinewton, kein Messen und Teilen. Mathematik 9 rechnet wie verlangt
+  (zwei Beispiele mit Zwischenschritten, eine Aufgabe mit Rundung).
+- Einstieg: in allen drei Läufen 3 Minuten. Im Vorlauf (unten) schrieben zwei von drei Läufen 1 Minute, obwohl der Text
+  „3 bis 5 Minuten“ sagte; seitdem steht „3 bis 5 min“ auch in der Zeile des Einstiegs in der Bausteinliste.
+- Bilder: B7 hat drei Bilder in einem Lesetext (Auftrag schlägt Bildregel), je Bild `Bildwunsch:` und `Bildprompt:`,
+  der Querschnitt mit nummerierten Pfeilen und der Legende in der Bildunterschrift. H2 hat kein Bild.
+- Namen: erfundene Vornamen; kein Name aus dem Gespräch.
+- H2, die eine Korrektur: Das Modell wählte für „Lesetext mit Fragen“ den Typ Seite und schrieb Fragen hinein (Seite
+  kennt keine Fragen). Ursache Text: Teilschritt 2 sagte „zwischendurch Fragen“. Jetzt: „Fragen … als Quiz direkt nach
+  der Seite (id mit -2)“; nach diesem Lauf geändert und nicht erneut geprüft.
+- Vorlauf (`*-vorlauf-*.txt`): Das Testskript baute die Mappe zunächst falsch (die ausgeschaltete Karte „Der Fall vom
+  Anfang“ stand im Text), deshalb verworfen. Ergebnisse dort: M9 zwei Korrekturen (Hefteintrag 71 von 80 Wörtern, Quiz
+  der Vertiefung mit zwei Fragen), B7 und H2 ohne Korrektur, Einstieg 1, 1 und 2 Minuten; Bio und HSU auch dort ohne
+  Rechnung.
+
+Nicht geprüft: ein dienstlicher Chat mit dem neuen Text; die Texte nach den Änderungen aus dem Gutachten und dem
+Teilschritt-Satz; Teil 2 eines gestückelten Textes mit einem Modell. Es sind drei Einzelläufe eines Modells.
