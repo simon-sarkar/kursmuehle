@@ -363,6 +363,19 @@
   });
   zeige();
 })();
+
+// Platzhalter in Schritt 1: bei jedem Laden ein anderes Paar aus Thema und Jahrgangsstufe (Autor 24.10.2026).
+(function () {
+  var paare = [["Bruchrechnen", 6], ["Satz des Pythagoras", 9], ["Das Ohr", 7], ["Photosynthese", 8],
+    ["Die Französische Revolution", 8], ["Wetter und Klima", 5], ["Der Wasserkreislauf", 4], ["Nomen und Verben", 3],
+    ["Simple past", 6], ["Prozentrechnung", 7], ["Das Eichhörnchen", 2], ["Der einfache Stromkreis", 5],
+    ["Lineare Funktionen", 8], ["Eine Bewerbung schreiben", 9], ["Die mittelalterliche Stadt", 7], ["Aufbau der Zelle", 9],
+    ["Die Lunge", 7], ["Netzwerke und IP-Adressen", 9], ["Säuren und Basen", 9], ["Die Uhr lesen", 2]];
+  var p = paare[Math.floor(Math.random() * paare.length)];
+  var t = document.getElementById("f-thema"), j = document.getElementById("f-jahrgang");
+  if (t && !t.value) t.placeholder = "zum Beispiel " + p[0];
+  if (j && !j.value) j.placeholder = String(p[1]);
+})();
 </script>
 </body>
 </html>
