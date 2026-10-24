@@ -360,7 +360,18 @@ def lauf(browser, basis, breite, katalog, tmp, name, hinweise):
        and page.locator("#aus-farbe .aus-kachel").count() == 6, f"{wo}: Aussehen: drei Vorlagen, zwei Formate, sechs Farben, mit Miniatur")
     for feld, wert in (("vorlage", "kacheln"), ("format", "kacheln"), ("farbe", "grün")):
         page.click(f".aus-kachel[data-feld={feld}][data-wert='{wert}']")
-    warte(page, "km.zustand.steckbrief_text.includes('#15803D') && km.zustand.steckbrief_text.includes('format: kacheln')", timeout=60000)
+        # je Klick warten, bis die Kachel gewählt ist: Firefox verliert sonst gelegentlich den Steckbrief (leer) bei drei
+        # schnellen Klicks hintereinander (CI 24.10.2026, main e297dff und 3e27cdb); Ursache offen, siehe AP13.3
+        page.wait_for_function("([f, w]) => document.querySelector(`.aus-kachel[data-feld=${f}][data-wert='${w}']`).getAttribute('aria-checked') === 'true'",
+                               arg=[feld, wert], timeout=30000)
+    try:
+        warte(page, "km.zustand.steckbrief_text.includes('#15803D') && km.zustand.steckbrief_text.includes('format: kacheln')", timeout=20000)
+    except Exception:
+        print("Steckbrief nach den Kachel-Klicks nicht geschrieben, Klicks werden wiederholt (Firefox-Wettlauf)")
+        for feld, wert in (("vorlage", "kacheln"), ("format", "kacheln"), ("farbe", "grün")):
+            page.click(f".aus-kachel[data-feld={feld}][data-wert='{wert}']")
+            page.wait_for_timeout(300)
+        warte(page, "km.zustand.steckbrief_text.includes('#15803D') && km.zustand.steckbrief_text.includes('format: kacheln')", timeout=60000)
     sb = api.steckbrief_lesen(page.evaluate("km.zustand.steckbrief_text"))
     ok(sb["kurs"]["design"]["vorlage"] == "kacheln" and sb["kurs"]["format"] == "kacheln" and sb["kurs"]["farbe"] == "#15803D"
        and page.get_attribute(".aus-kachel[data-feld=farbe][data-wert='grün']", "aria-checked") == "true",
