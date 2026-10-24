@@ -7,10 +7,15 @@ Fehler, der keine ausgelöst hat) aus einem echten Durchlauf. Keine Inhalte, kei
 
 | Datum | Version | Chat | Fach · Jgst | Baustein | Regel | Runde | Ursache | Maßnahme |
 |---|---|---|---|---|---|---|---|---|
-| 24.10. | 2.0.0-b3 | (offen) | Biologie 7, „Das Ohr“, Einführung, Ich steuere | b4 Quiz | format.frage (Frage begann mit Situationssatz, `Einsetzen:` erst in der nächsten Zeile) | 1 | Text/Parser | Text: „die Zeile beginnt mit `1. Einsetzen:`, die Situation steht in derselben Zeile“; Parser: einleitenden Satz vor `Einsetzen:` annehmen |
-| 24.10. | 2.0.0-b3 | (offen) | dito | b4 Quiz | mindest.quiz (2 statt 3 Fragen) | 2 | Text | Teilschritt „mit Eingabe und einem Fall“ legt zwei Aufgaben nahe und widerspricht dem Mindestmaß; Teilschritte dürfen keine Anzahl implizieren |
-| 24.10. | 2.0.0-b3 | (offen) | dito | b3-3 (ergänzt) | typ.unbekannt („Sicherung“ als Typ) | 3 | Text | Phasenfolge „Einstieg, Erarbeitung, Übung, Sicherung“ im Text wurde als Typ gelesen; Text: „die Phase steht nie in der Überschrift, der Typ kommt aus der Liste“; Parser könnte Phasennamen als Typ mit Hinweis ablehnen (tut er) |
-| 24.10. | 2.0.0-b3 | (offen) | dito | b4 | „Baustein neu beauftragen“: Antwort (`id: b4`) landete in b3-3; Teil 2 des Einheitstexts listete b3-3 danach mit dem Titel von b4 und ohne Teilschritt, Teil 2 lieferte ein zweites Quiz | – | Bug Mühle (Datei geprüft: 6 Bausteine in der Reihenfolge Einstieg, Lesetext, Lückentext, Zuordnen, Hefteintrag, Quiz; das ergänzte Quiz b3-2 fehlt, das Kraft-Quiz steht hinter dem Hefteintrag) | reproduzieren: Korrekturschleife für b3-3 offen, dann „neu beauftragen“ an b4; Einsetzen muss nach `id:` der Antwort gehen, nicht nach der offenen Schleife; Teil-2-Liste nur Bausteine ohne Inhalt |
+| 24.10. | 2.0.0-b3 | ByLKI, Gemini 3.8 Flash | Biologie 7, „Das Ohr“, Einführung, Ich steuere | b4 Quiz | format.frage (Frage begann mit Situationssatz, `Einsetzen:` erst in der nächsten Zeile) | 1 | Text/Parser | Text: „die Zeile beginnt mit `1. Einsetzen:`, die Situation steht in derselben Zeile“; Parser: einleitenden Satz vor `Einsetzen:` annehmen |
+| 24.10. | 2.0.0-b3 | dito | dito | b4 Quiz | mindest.quiz (2 statt 3 Fragen) | 2 | Text | Teilschritt „mit Eingabe und einem Fall“ legt zwei Aufgaben nahe und widerspricht dem Mindestmaß; Teilschritte dürfen keine Anzahl implizieren |
+| 24.10. | 2.0.0-b3 | dito | dito | b3-3 (ergänzt) | typ.unbekannt („Sicherung“ als Typ) | 3 | Text | Phasenfolge „Einstieg, Erarbeitung, Übung, Sicherung“ im Text wurde als Typ gelesen; Text: „die Phase steht nie in der Überschrift, der Typ kommt aus der Liste“; Parser könnte Phasennamen als Typ mit Hinweis ablehnen (tut er) |
+| 24.10. | 2.0.0-b3 | dito | dito | b4 | „Baustein neu beauftragen“: Antwort (`id: b4`) landete in b3-3; Teil 2 des Einheitstexts listete b3-3 danach mit dem Titel von b4 und ohne Teilschritt, Teil 2 lieferte ein zweites Quiz | – | Bug Mühle (Datei geprüft: 6 Bausteine in der Reihenfolge Einstieg, Lesetext, Lückentext, Zuordnen, Hefteintrag, Quiz; das ergänzte Quiz b3-2 fehlt, das Kraft-Quiz steht hinter dem Hefteintrag) | reproduzieren: Korrekturschleife für b3-3 offen, dann „neu beauftragen“ an b4; Einsetzen muss nach `id:` der Antwort gehen, nicht nach der offenen Schleife; Teil-2-Liste nur Bausteine ohne Inhalt |
+| 24.10. | 2.0.0-b3 | ByLKI, GPT 5.6 tera | HSU 2, „Das Eichhörnchen“, Einführung, als zweite Einheit angehängt | b6, b7, b7-2, b8, b9, b9-2 | angabe.unbekannt (`phase: …` unter jeder Überschrift) | 1 je Baustein, 6 | Text/Parser | Die Liste nennt „Phase Einstieg“, das Format sagt „Angaben als schlüssel: wert“, das Modell schrieb beides zusammen. Parser: `phase:` annehmen und ignorieren (wie `Angenommen:`); Text: „Phase nicht in die Datei“ |
+| 24.10. | 2.0.0-b3 | dito | dito | b6 | website.element (`website: textfeld` am Textfeld statt am Abschnitt) | 2 | Text/Parser | Die vorgegebene Zeile `Angenommen:` nennt die Angabe mit Schlüssel; Parser: am Element dulden, wenn gleich dem Abschnitt |
+| 24.10. | 2.0.0-b3 | dito | dito | b8 Zuordnen | zone.unbekannt (Element enthielt selbst „→“: „16 cm → 4 cm → Zone“) | 1 | Text | „kein → im Element“ in die Formatzeile; Parser: letztes „→“ trennt die Zone |
+| 24.10. | 2.0.0-b3 | dito | dito | b10 Seite | hinweis.leer (Inhalt nach `Hinweis:` nicht eingerückt) | 1 | Modell | Parser könnte die folgende Zeile als Inhalt nehmen, wenn sie nicht selbst ein Baustein ist |
+| 24.10. | 2.0.0-b3 | dito | dito | Stückelung | Teil 1 von 2 wurde zu Teil 2 von 3 und Teil 3 von 3; Teil 2 listete die zwei noch leeren Bausteine der ERSTEN Einheit (Ohr) und die vier schon geschriebenen der zweiten; das Modell schrieb sie alle neu, jeder Teil für sich mit 45 Minuten (Hefteintrag 28 min, Lückentext 8 min) | – | Bug Mühle + Text | Teil-Liste aus der ursprünglichen Kartenliste der laufenden Einheit, nie aus der Mappe; fremde Einheiten nie in den Text; Teilzahl beim Kopieren einfrieren; Text: „die Minuten aller Teile zusammen ergeben 45“, je Teil den Anteil nennen |
 
 ## Befunde ohne Korrekturbitte (Inhalt), 24.10., „Das Ohr“
 
@@ -34,3 +39,10 @@ Fehler, der keine ausgelöst hat) aus einem echten Durchlauf. Keine Inhalte, kei
   die Regel schlagen oder die Seite den Konflikt zeigen.
 - Das Modell benutzte in einem Fall den Vornamen des Autors als erfundene Person; ob Zufall oder Profilwissen des
   Chats, ist offen. Text: „keine Namen aus dem Gespräch oder Profil“.
+
+## Befunde ohne Korrekturbitte (Inhalt), 24.10., „Das Eichhörnchen“ (Jahrgangsstufe 2)
+
+- Dieselbe Prägung durch die Vorlage: aus „Regel anwenden, Ergebnis geht nicht auf, runden“ wurde für Siebenjährige
+  ein Maßstab 4 : 1 mit Messen und Teilen; das gehört nicht in eine Einführung zum Eichhörnchen in Jahrgangsstufe 2.
+- Das Modell hielt das Format sonst gut ein (Rückmeldungen mit Grund, Du-Form, keine Floskeln); bei sauberem Parser
+  wären von neun Korrekturbitten zwei geblieben.
