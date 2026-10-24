@@ -228,18 +228,28 @@ var km = (function () {
 })();
 window.km = km;
 
-// ---------------------------------------------------------------- Baustein-Ansicht (index.html)
+// ---------------------------------------------------------------- Schrittfolge (index.html, AP13)
+// Sieben Schritte untereinander; `mappe.schritt` ist der erreichte Schritt, davor stehen erledigte Schritte als eine
+// aufklappbare Zeile. Zweig „mach“ setzt Vorlage und Bausteine still, Zweig „steuer“ zeigt Vorlagen, Karten mit
+// Aufträgen und „Mehr einstellen“; beide arbeiten auf derselben Kursdatei. Herkunft je Feld: Lehrkraft oder Chat.
 (function () {
-  if (!document.getElementById("ansicht")) return;
+  if (!document.getElementById("schritt-5")) return;
   var $ = function (id) { return document.getElementById(id); };
   var Z = km.zustand;
-  var katalog = null, angaben = {}, entwurf = null, rueckgaengig = null;
+  var katalog = null, angaben = {}, rueckgaengig = null, auf = {}, chatWahlOffen = false;
   var autosaveTimer = null, kennzahlTimer = null, eingabeTimer = null, textTimer = null, hinweiseAlle = false;
-  var texte = { teile: [], art: "einheit", teil: 0, laeuft: 0 }, fragenListe = [], korrekturen = [], letzteAntwort = null;
+  var texte = { teile: [], art: "einheit", teil: 0, laeuft: 0, kopiert: {} }, fragenListe = [], korrekturen = [], letzteAntwort = null;
   var infoboxAus = false;
-  var KEIN_INHALT = "Noch kein Inhalt. Füge die Antwort des Chats ein.";
+  var schreibKette = Promise.resolve();
+  var KEIN_INHALT = "Noch kein Inhalt. Füge in Schritt 5 die Antwort des Chats ein.";
   var MAX_KANTE = 1600;                           // Bilder werden beim Hochladen auf diese lange Kante verkleinert
-  var KOPIERT = "Jetzt in deinen Chat einfügen, die Antwort hier unten einfügen.";
+  var KOPIERT = "Jetzt in deinen Chat einfügen, die Antwort dann in Schritt 5 einfügen.";
+  var STANDARD_FARBE = "#1D5FD1";                 // Akzent der Designvorlagen ohne eigene Farbe (gen/html.py HUE)
+  var FARBEN = { blau: "#1D5FD1", "grün": "#15803D", rot: "#BE123C", orange: "#B45309", lila: "#6D28D9" };   // gen/kursdatei.py
+  var AUS_FORMATE = ["themen", "kacheln"];        // Kursformate im Schritt Aussehen; alle unter „Mehr einstellen“
+  var ZWEIG_TEXT = { mach: "Mach du", steuer: "Ich steuere" };
+  var AUTO = "automatisch";                       // Typ, den das Modell aus Titel und Auftrag wählt (AP13)
+  var gespeichert = false;                        // Kursdatei seit der letzten Änderung gespeichert?
   Z.texte = texte;
 
   // ---- kleine Helfer
@@ -260,14 +270,14 @@ window.km = km;
     return d.toDateString() === heute.toDateString() ? "um " + zeit(t) : "am " + d.toLocaleDateString("de-DE") + " um " + zeit(t);
   }
   function typInfo(typ) { return katalog && katalog.typen.filter(function (x) { return x.typ === typ; })[0]; }
-  function formularname(typ) { var t = typInfo(typ); return t ? t.formularname : typ; }
+  function formularname(typ) { if (typ === AUTO) return "Typ automatisch"; var t = typInfo(typ); return t ? t.formularname : typ; }
+  // wie gen/prompt.py zeit_selbst(): ohne Schlüssel (Kursdatei vor 2.0.0-b1) gelten die Soll-Minuten
+  function zeitSelbst() { return !!Z.mappe && Z.mappe.zeit_selbst !== false; }
   function mitMinuten(typ) { var t = typInfo(typ); return !t || t.minuten !== false; }
   function chatInfo(wert) { return katalog && katalog.chats.filter(function (c) { return c.wert === wert; })[0]; }
-  function zeige(bildschirm) {
-    ["start", "vorlage-wahl", "ansicht"].forEach(function (id) { $(id).hidden = id !== bildschirm; });
-    document.body.dataset.bildschirm = bildschirm;
-    window.scrollTo(0, 0);
-    if (bildschirm === "ansicht") Array.prototype.forEach.call(document.querySelectorAll(".k-auftrag"), hoehe);
+  function oberText(feld, wert) {
+    var w = katalog && katalog.oberflaeche[feld].filter(function (x) { return x.wert === wert; })[0];
+    return w ? w.text : (wert || "");
   }
   function download(u8, name, typ) {
     var blob = new Blob([u8], { type: typ || "application/octet-stream" });
@@ -283,12 +293,17 @@ window.km = km;
   function fehlerText(e) { return (e && e.message) || String(e); }
   function hoehe(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + 2 + "px"; }   // Auftragsfeld wächst mit
   function kb(n) { return n < 1024 ? n + " Bytes" : (Math.round(n / 102.4) / 10).toString().replace(".", ",") + " KB"; }
+  function zweig() { return (Z.mappe && Z.mappe.zweig) || ""; }
+  function schritt() { return Z.mappe ? (Z.mappe.schritt || 2) : 1; }
+  function inhalt() { return !!(Z.kurs_md && Z.kurs_md.trim()); }
+  function fehlerZahl() { return Z.pruefung ? Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler"; }).length : 0; }
 
   // Kopieren nur in der Geste (Safari): der Text liegt schon fertig im Feld; ohne Zwischenablage markieren und execCommand
-  function kopieren(text, feld, stand, satz) {
+  function kopieren(text, feld, stand, satz, fertigCb) {
     function fertig(ok) {
       stand.textContent = ok ? satz : "Kopieren ging nicht. Öffne „Text ansehen“, markiere den Text und kopiere ihn.";
       stand.className = "stand " + (ok ? "ok" : "fehler");
+      if (ok && fertigCb) fertigCb();
     }
     function rueckfall() {
       var ok = false;
@@ -309,7 +324,7 @@ window.km = km;
   km.setStatus(function () { if (!Z.geladen) status("Wird vorbereitet …", "lauf"); });
   status("Wird vorbereitet …", "lauf");
   km.bereit().then(function () {
-    status("Bereit zum Erstellen", "ok");
+    status("Bereit", "ok");
     knoepfe();
     if (Z.mappe) neuPruefen().catch(zeigeFehler);
   }).catch(function () {
@@ -323,17 +338,19 @@ window.km = km;
     testfassung(k.version);
     vorlagenZeigen();
     auswahlFuellen();
-    if (Z.mappe) zeichne();
+    zeichne();
   }).catch(function () { status("katalog.json fehlt; python3 scripts/web_bundle.py ausführen", "fehler"); });
 
-  // Zeile „Testfassung“ über der Seite, solange die Version ein Suffix trägt (Version aus CHANGELOG.md beim Bündeln)
+  // Zeile über der Seite, solange die Version ein Suffix trägt (Version aus CHANGELOG.md beim Bündeln): -b Beta, -a Testfassung
   function testfassung(version) {
     var p = $("testfassung");
     p.hidden = !(version && version.indexOf("-") > 0);
     if (p.hidden) return;
     p.innerHTML = "";
-    p.appendChild(document.createTextNode("Testfassung " + version + " · Rückmeldung an "));
-    p.appendChild(el("a", { href: "mailto:kursmuehle@pm.me", text: "kursmuehle@pm.me" }));
+    p.appendChild(document.createTextNode((/-b/.test(version) ? "Beta " : "Testfassung ") + version + " · Rückmeldung an "));
+    var b = el("button", { type: "button", cls: "textlink", text: "kursmuehle@pm.me" });
+    b.onclick = rueckmeldungOeffnen;
+    p.appendChild(b);
   }
 
   function auswahlFuellen() {
@@ -359,9 +376,9 @@ window.km = km;
       chat.appendChild(og);
       knoepfe_.appendChild(reihe);
     });
-    var neu = $("neu-typ"); neu.innerHTML = "";
-    katalog.typen.filter(function (t) { return ["Badge", "Unterabschnitt", "Banner"].indexOf(t.typ) < 0; })
-      .forEach(function (t) { neu.appendChild(el("option", { value: t.typ, text: t.formularname })); });
+    var neu = $("neu-typ"), auswahl = typAuswahl(AUTO, "");
+    neu.innerHTML = auswahl.innerHTML;
+    neu.value = AUTO;
     var phasen = $("phasen"), gesehen = {};
     phasen.innerHTML = "";
     katalog.vorlagen.forEach(function (v) { v.phasen.forEach(function (p) {
@@ -369,10 +386,96 @@ window.km = km;
     }); });
   }
 
-  // ---------------------------------------------------------------- Start
+  // ---------------------------------------------------------------- Schritte zeichnen
+  function fazit(n) {
+    var e = (Z.mappe && Z.mappe.einheit) || {};
+    if (n === 1) return [e.thema, e.jahrgang ? "Jahrgangsstufe " + e.jahrgang : "", e.minuten ? e.minuten + " Minuten" : ""].filter(Boolean).join(" · ");
+    if (n === 2) {
+      var z = ZWEIG_TEXT[zweig()] || "";
+      var n = Z.mappe.bausteine.filter(function (k) { return !k.aus; }).length;
+      return [z, e.vorlage, zweig() === "steuer" ? n + " Bausteine" : ""].filter(Boolean).join(" · ");
+    }
+    if (n === 3) return [oberText("vorlage", angaben.vorlage), oberText("format", angaben.format), oberText("farbe", angaben.farbe || "")].filter(Boolean).join(" · ");
+    if (n === 4) { var c = chatInfo(Z.mappe.chat); return c ? c.text + (Z.mappe.kopiert ? " · Text kopiert" : "") : ""; }
+    if (n === 5) {
+      var voll = Z.mappe.bausteine.filter(function (k) { return !k.geplant; }).length, f = fehlerZahl();
+      return voll ? voll + " Bausteine" + (f ? ", " + f + " Fehler" : ", geprüft") : "";
+    }
+    if (n === 6) return fragenListe.length ? fragenListe.length + " Fragen" + (Z.mappe.durchsicht ? " durchgesehen" : "") : "keine Fragen";
+    return "";
+  }
+
+  function zeichneSchritte() {
+    var s = schritt(), z = zweig();
+    document.body.dataset.schritt = String(s);
+    document.body.dataset.zweig = z;
+    document.body.dataset.bildschirm = Z.mappe ? "ansicht" : "start";
+    for (var n = 1; n <= 7; n++) {
+      var sec = $(n === 1 ? "start" : "schritt-" + n);
+      var stand = n < s ? "erledigt" : n === s ? "aktiv" : "zu";
+      // Schritt 4 bleibt offen, solange ein gestückelter Text noch nicht ganz kopiert ist
+      var teileOffen = n === 4 && s === 5 && texte.teile.length > 1 && Object.keys(texte.kopiert).length < texte.teile.length;
+      var offen = stand === "aktiv" || (stand === "erledigt" && (!!auf[n] || teileOffen));
+      sec.hidden = stand === "zu";
+      sec.dataset.stand = stand;
+      sec.classList.toggle("auf", offen);
+      var b = sec.querySelector(".s-zeile");
+      b.setAttribute("aria-expanded", String(offen));
+      b.disabled = stand !== "erledigt";
+      sec.querySelector(".s-fazit").textContent = stand === "erledigt" && Z.mappe ? fazit(n) : "";
+    }
+    // Zweig 2: Kacheln, darunter im Zweig „Ich steuere“ Vorlagen, Karten und „Mehr einstellen“
+    ["mach", "steuer"].forEach(function (w) { $("zweig-" + w).setAttribute("aria-pressed", String(z === w)); });
+    $("steuer-teil").hidden = z !== "steuer";
+    $("vorlagen").hidden = inhalt();
+    $("weiter-2").hidden = s > 2;
+    $("weiter-3").hidden = s > 3;
+    // Karten: im Zweig „Ich steuere“ unter Schritt 2, bis die erste Antwort da ist; danach unter Schritt 5 (beide Zweige)
+    var ort = inhalt() ? $("karten-ort-5") : $("karten-ort-2");
+    if ($("tafel-bausteine").parentNode !== ort) ort.appendChild($("tafel-bausteine"));
+    $("tafel-bausteine").hidden = !(inhalt() || z === "steuer");
+    $("karten").classList.toggle("kompakt", z !== "steuer");
+    $("hinzufuegen").hidden = z !== "steuer";
+    $("text-art").hidden = z !== "steuer";
+    $("modus").hidden = z !== "steuer";
+    document.querySelector(".spalte-rand").hidden = s < 5;
+    document.querySelector(".seite").classList.toggle("mit-rand", s >= 5);
+    $("weiter").hidden = !!Z.mappe || !$("weiter").dataset.da;
+    $("weiter-5").hidden = !(s === 5 && inhalt() && !fehlerZahl());
+    $("weiter-5").textContent = fragenListe.length ? "Weiter zu den Fragen und Lösungen" : "Weiter zur Datei";
+    $("rueckmeldung").hidden = !(s >= 7 && Z.bau && Z.bau.mbz) && !$("rueckmeldung").dataset.offen;
+    $("speichern").hidden = !Z.mappe;
+    $("schliessen").hidden = !Z.mappe;
+  }
+
+  // Erledigte Zeile auf- und zuklappen
+  document.querySelector(".spalte-haupt").addEventListener("click", function (ev) {
+    var b = ev.target.closest(".s-zeile"); if (!b || b.disabled) return;
+    var n = parseInt(b.dataset.nr, 10);
+    auf[n] = !auf[n];
+    zeichneSchritte();
+    if (auf[n]) Array.prototype.forEach.call(document.querySelectorAll(".k-auftrag"), hoehe);
+  });
+
+  function gehe(n, fokus) {
+    if (!Z.mappe) return;
+    Z.mappe.schritt = n;
+    auf = {};
+    zeichne();
+    autosave();
+    var sec = $(n === 1 ? "start" : "schritt-" + n);
+    if (sec && !sec.hidden) {
+      sec.scrollIntoView({ block: "start" });
+      var f = fokus ? $(fokus) : sec.querySelector(".s-inhalt button:not([hidden]):not(:disabled), .s-inhalt input, .s-inhalt textarea");
+      if (f) f.focus({ preventScroll: true });
+    }
+  }
+
+  // ---------------------------------------------------------------- 1 Worum geht es?
   function weiterAnzeigen() {
     km.autosaveLesen().then(function (r) {
-      $("weiter").hidden = !r;
+      $("weiter").dataset.da = r ? "1" : "";
+      $("weiter").hidden = !r || !!Z.mappe;
       if (!r) return;
       $("weiter-knopf").textContent = "Weiter mit „" + (r.titel || r.dateiname) + "“";
       $("weiter-zeit").textContent = "Zuletzt gesichert " + datumZeit(r.zeit);
@@ -382,45 +485,52 @@ window.km = km;
     }).catch(function () { $("weiter").hidden = true; });
   }
   weiterAnzeigen();
+  if (/[?&]weiter=1/.test(location.search)) {           // Startseite „Weiter mit deiner Einheit“
+    km.autosaveLesen().then(function (r) { if (r) oeffne(async function () { await km.mappeAusBytes(r.zip, null); }); }).catch(function () {});
+  }
 
   $("start-form").onsubmit = function (ev) {
     ev.preventDefault();
     var thema = $("f-thema").value.trim();
     if (!thema) { $("f-thema").focus(); return; }
-    entwurf = { thema: thema, jahrgang: $("f-jahrgang").value.trim(), minuten: parseInt($("f-minuten").value, 10) || 45 };
-    $("vorlage-thema").textContent = thema + " · Jahrgangsstufe " + (entwurf.jahrgang || "offen") + " · " + entwurf.minuten + " Minuten";
-    zeige("vorlage-wahl");
+    var e = { thema: thema, jahrgang: $("f-jahrgang").value.trim(), minuten: parseInt($("f-minuten").value, 10) || 45 };
+    if (!katalog) return;
+    if (!Z.mappe) { einheitAnlegen(e, katalog.vorlagen[0]); return; }
+    if (Z.mappe.anhaengen && !Z.mappe.bausteine.some(function (k) { return k.einheit === Z.mappe.anhaengen; })) {
+      einheitAnhaengen(e); return;
+    }
+    // Schritt 1 nachträglich geändert: Angaben übernehmen; ohne Inhalt die Bausteine der Vorlage neu rechnen
+    Z.mappe.einheit = Object.assign({}, Z.mappe.einheit || {}, e);
+    if (!Z.mappe.anhaengen) Z.mappe.titel = thema;
+    var v = vorlageNach(Z.mappe.einheit.vorlage);
+    if (v && !inhalt() && Z.mappe.bausteine.every(function (k) { return k.geplant; })) karteVorlage(v);
+    angaben.thema = thema; angaben.jahrgang = e.jahrgang; angaben.minuten = e.minuten;
+    Z.mappe.schritt = Math.max(schritt(), 2);
+    auf = {};
+    zeichne();
+    angabenSchreiben(Z.mappe.anhaengen ? { jahrgang: e.jahrgang } : { thema: thema, jahrgang: e.jahrgang, minuten: e.minuten });
   };
-  $("vorlage-zurueck").onclick = function () { zeige("start"); };
 
-  function vorlagenZeigen() {
-    var box = $("vorlagen"); box.innerHTML = "";
-    katalog.vorlagen.forEach(function (v, i) {
-      var b = el("button", { type: "button", cls: "vorlage", "data-vorlage": i }, [
-        el("span", { cls: "vorlage-name", text: v.name }), el("span", { cls: "vorlage-zeile", text: v.zeile }),
-        el("span", { cls: "vorlage-phasen", text: v.phasen.map(function (p) { return p.phase; }).join(" · ") })]);
-      b.onclick = function () { einheitAnlegen(v); };
-      box.appendChild(b);
-    });
-  }
+  function vorlageNach(name) { return katalog && katalog.vorlagen.filter(function (v) { return v.name === name; })[0]; }
 
   // Bausteinliste aus einer Einheitsvorlage: Phasen mit Typ-Vorschlag und Soll-Minuten. Bis 45 Minuten skaliert alles;
-  // darüber wachsen nur die dehnbaren Phasen (Erarbeitung, Übung), Einstieg und Sicherung bleiben.
-  function vorlageKarten(v, minuten) {
+  // darüber wachsen nur die dehnbaren Phasen (Erarbeitung, Übung), Einstieg und Sicherung bleiben. `ab` = erste Nummer.
+  function vorlageKarten(v, minuten, ab) {
     var faktor = Math.min(1, minuten / 45), dehnAnteil = 0, fest = 0;
     v.phasen.forEach(function (p) { if (p.dehnbar) dehnAnteil += p.anteil; else fest += p.anteil / 100 * 45 * faktor; });
-    var rest = Math.max(0, minuten - fest), karten = [], n = 0;
+    var rest = Math.max(0, minuten - fest), karten = [], n = (ab || 1) - 1;
     v.phasen.forEach(function (p) {
       var phMin = p.dehnbar ? rest * p.anteil / dehnAnteil : p.anteil / 100 * 45 * faktor;
       p.bausteine.forEach(function (b, k) {
-        var schritt = b.indexOf(" | ") >= 0 ? b.slice(b.indexOf(" | ") + 3).trim() : "";   // Teilschritt für den Chat
-        var kopf = schritt ? b.slice(0, b.indexOf(" | ")) : b;
+        var schritt_ = b.indexOf(" | ") >= 0 ? b.slice(b.indexOf(" | ") + 3).trim() : "";   // Teilschritt für den Chat
+        var kopf = schritt_ ? b.slice(0, b.indexOf(" | ")) : b;
         var teile = kopf.split(":"), typ = teile[0].trim();
         var titel = teile.length > 1 ? teile.slice(1).join(":").trim() : (p.bausteine.length > 1 ? p.phase + " " + (k + 1) : p.phase);
         n += 1;
         var karte = { id: "b" + n, typ: typ, titel: titel, abschnitt: null, minuten: null, auftrag: "", phase: p.phase,
           soll: Math.max(1, Math.round(phMin / p.bausteine.length)), geplant: true, neu: false, _dehnbar: !!p.dehnbar };
-        if (schritt) karte.schritt = schritt;
+        if (schritt_) karte.schritt = schritt_;
+        if (p.optional) karte.aus = true;           // optionale Phase: Karte da, aber ausgeschaltet
         karten.push(karte);
       });
     });
@@ -431,34 +541,65 @@ window.km = km;
     return karten;
   }
 
+  // Karten der Vorlage setzen (nur ohne Inhalt); Aufträge bleiben an gleicher Nummer stehen
+  function karteVorlage(v) {
+    var e = Z.mappe.einheit, alt = {};
+    Z.mappe.bausteine.forEach(function (k) { if (k.auftrag) alt[k.id] = k.auftrag; });
+    Z.mappe.bausteine = vorlageKarten(v, e.minuten || 45);
+    Z.mappe.bausteine.forEach(function (k) { if (alt[k.id]) k.auftrag = alt[k.id]; });
+    e.vorlage = v.name;
+  }
+
   async function steckbriefAnlegen() {
-    var o = katalog.oberflaeche, e = (Z.mappe && Z.mappe.einheit) || entwurf || {};
+    var o = katalog.oberflaeche, e = (Z.mappe && Z.mappe.einheit) || {};
     Z.steckbrief_text = await km.mappeFn("angaben_schreiben", ["", {
       thema: e.thema || "", jahrgang: e.jahrgang || "", minuten: e.minuten || "", fach: "",
       format: o.format[0].wert, vorlage: o.vorlage[0].wert, farbe: o.farbe[0].wert, website: o.website[0].wert,
       abschluss: o.abschluss[0].wert, portionierung: o.portionierung[0].wert }]);
   }
 
-  function einheitAnlegen(v) {
-    var e = { thema: entwurf.thema, jahrgang: entwurf.jahrgang, minuten: entwurf.minuten, vorlage: v.name };
-    Z.mappe = km.neueMappe(entwurf.thema, e, vorlageKarten(v, entwurf.minuten));
+  function einheitAnlegen(e, v) {
+    e.vorlage = v.name;
+    Z.mappe = km.neueMappe(e.thema, e, vorlageKarten(v, e.minuten));
+    Z.mappe.schritt = 2;
+    Z.mappe.zeit_selbst = false;                   // Standard: das Modell verteilt die Minuten
     Z.kurs_md = ""; Z.steckbrief_text = ""; Z.assets = {}; Z.pruefung = null; Z.kennzahlen = null; Z.bau = null; Z.beispiel = null;
-    angaben = { thema: e.thema, jahrgang: e.jahrgang, minuten: e.minuten };
+    angaben = { thema: e.thema, jahrgang: e.jahrgang, minuten: e.minuten, vorlage: "schlicht", format: "themen", farbe: "" };
     neuStart();
-    zeige("ansicht");
-    zeichne();
-    if (Z.geladen) steckbriefAnlegen().then(neuPruefen).catch(zeigeFehler);
+    gehe(2, "zweig-mach");
+    if (Z.geladen) neuPruefen().catch(zeigeFehler);
   }
 
-  // Zustand der Ansicht beim Wechsel der Kursdatei zurücksetzen
+  // Nächste Einheit: geplante Karten hinten an, mit neuen Nummern und dem Teil „e<n>“ (Nachlieferung beim Bau)
+  function einheitAnhaengen(e) {
+    var ids = {}, n = 1;
+    Z.mappe.bausteine.forEach(function (k) { ids[k.id] = 1; });
+    while (ids["b" + n]) n += 1;
+    var alteEinheit = Z.mappe.einheit || {};
+    var v = vorlageNach(alteEinheit.vorlage) || katalog.vorlagen[0];
+    e.vorlage = v.name;
+    var karten = vorlageKarten(v, e.minuten, n);
+    karten.forEach(function (k) { k.einheit = Z.mappe.anhaengen; });
+    Z.mappe.bausteine = Z.mappe.bausteine.concat(karten);
+    Z.mappe.einheit = e;
+    Z.mappe.durchsicht = false; delete Z.mappe.kopiert;
+    Z.bau = null;
+    neuStart();
+    document.querySelector("input[name=text-art][value=leer]").checked = true;
+    texte.art = "leer";
+    gehe(2, zweig() ? "weiter-2" : "zweig-mach");
+    if (Z.geladen) neuPruefen().catch(zeigeFehler);
+  }
+
+  // Zustand der Ansicht beim Wechsel der Kursdatei oder Einheit zurücksetzen
   function neuStart() {
     clearTimeout(kennzahlTimer); clearTimeout(textTimer); clearTimeout(eingabeTimer);
-    texte.teile = []; texte.teil = 0; texte.art = "einheit"; fragenListe = []; korrekturen = []; letzteAntwort = null;
+    texte.teile = []; texte.teil = 0; texte.art = "einheit"; texte.kopiert = {}; fragenListe = []; korrekturen = []; letzteAntwort = null;
+    chatWahlOffen = false; auf = {};
     $("chat-text-feld").value = ""; $("gegen-text-feld").value = ""; $("gegen-antwort").value = "";
     $("gegen-ergebnis").innerHTML = ""; $("gegen-stand").textContent = ""; $("kopiert").textContent = "";
-    $("eingabe-stand").textContent = ""; $("infobox").hidden = true;
+    $("eingabe-stand").textContent = ""; $("infobox").hidden = true; $("importiert-stand").hidden = true;
     document.querySelector("input[name=text-art][value=einheit]").checked = true;
-    reiter("bausteine");
   }
 
   async function oeffne(laden, text) {
@@ -466,11 +607,17 @@ window.km = km;
     try {
       await km.bereit();
       await laden();
-      entwurf = null;
       neuStart();
       await neuPruefen();
-      zeige("ansicht");
-      status("Bereit zum Erstellen", "ok");
+      // Kursdatei ohne Schrittangabe (1.x-Ordner, ältere Kursdatei): Zweig „Ich steuere“, Schritt aus dem Stand
+      if (!Z.mappe.zweig) Z.mappe.zweig = "steuer";
+      if (!Z.mappe.schritt) {
+        Z.mappe.schritt = !inhalt() ? (Z.mappe.chat ? 4 : 2) : fehlerZahl() ? 5
+          : fragenListe.length && !Z.mappe.durchsicht ? 6 : 7;
+      }
+      zeichne();
+      gehe(Z.mappe.schritt);
+      status("Bereit", "ok");
     } catch (e) { zeigeFehler(e); }
   }
   function zeigeFehler(e) { status("Das hat nicht geklappt: " + fehlerText(e), "fehler"); }
@@ -503,12 +650,138 @@ window.km = km;
   $("datei-oeffnen").onchange = dateiWahl;
   $("ordner-oeffnen").onchange = dateiWahl;
 
+  // ---------------------------------------------------------------- 2 Mach du / Ich steuere
+  document.querySelector(".zweige").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-zweig]"); if (!b || !Z.mappe) return;
+    Z.mappe.zweig = b.dataset.zweig;
+    if (b.dataset.zweig === "mach") {
+      if (schritt() <= 2) gehe(3); else { zeichne(); geaendert(); }
+    } else {
+      if (schritt() <= 2) { zeichne(); geaendert(); var k = $("vorlagen").querySelector("button"); if (k && !inhalt()) k.focus({ preventScroll: true }); }
+      else { auf[2] = true; zeichne(); geaendert(); }
+    }
+  });
+  $("weiter-2").onclick = function () { gehe(3); };
+
+  function vorlagenZeigen() {
+    var box = $("vorlagen"); box.innerHTML = "";
+    katalog.vorlagen.forEach(function (v, i) {
+      var b = el("button", { type: "button", cls: "vorlage", "data-vorlage": i, "aria-pressed": "false" }, [
+        el("span", { cls: "vorlage-name", text: v.name }), el("span", { cls: "vorlage-zeile", text: v.zeile }),
+        el("span", { cls: "vorlage-phasen", text: v.phasen.map(function (p) { return p.phase; }).join(" · ") })]);
+      b.onclick = function () {
+        if (!Z.mappe || inhalt()) return;
+        karteVorlage(v);
+        zeichne(); geaendert();
+      };
+      box.appendChild(b);
+    });
+  }
+
+  // ---------------------------------------------------------------- 3 Aussehen (Kacheln mit Miniatur)
+  function mischen(hex, anteil) {      // Akzent auf Weiß getönt (wie gen/html.py tint)
+    var h = hex.replace("#", ""), r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    var m = function (c) { return Math.round(255 - (255 - c) * anteil); };
+    return "rgb(" + m(r) + "," + m(g) + "," + m(b) + ")";
+  }
+  function akzent() { return FARBEN[angaben.farbe] || STANDARD_FARBE; }
+  // Miniaturen nach den Token der Designvorlagen in gen/html.py (Rundung, Kartenform), nur Formen, kein Text
+  function miniVorlage(wert, hue) {
+    var r = { schlicht: 3, kacheln: 6, magazin: 0 }[wert], s = '<svg viewBox="0 0 120 76" aria-hidden="true" focusable="false">'
+      + '<rect width="120" height="76" fill="#fff"/>'
+      + '<rect x="8" y="7" width="104" height="15" rx="' + r + '" fill="' + hue + '"/>'
+      + '<rect x="8" y="27" width="56" height="4" rx="1" fill="#0B1220"/>';
+    [8, 63].forEach(function (x) {
+      if (wert === "schlicht") s += '<rect x="' + x + '" y="37" width="49" height="31" rx="3" fill="#fff" stroke="#D5DAE3"/>';
+      else if (wert === "kacheln") s += '<rect x="' + x + '" y="37" width="49" height="31" rx="6" fill="' + mischen(hue, 0.16) + '"/>';
+      else s += '<rect x="' + x + '" y="37" width="49" height="1.6" fill="#17171A"/>';
+      var ix = wert === "magazin" ? x : x + 5;
+      s += '<rect x="' + ix + '" y="44" width="30" height="3" rx="1" fill="#5B6475"/><rect x="' + ix + '" y="51" width="38" height="3" rx="1" fill="#C3C8D2"/>'
+        + '<rect x="' + ix + '" y="57" width="26" height="3" rx="1" fill="#C3C8D2"/>';
+    });
+    return s + "</svg>";
+  }
+  function miniFormat(wert, hue) {
+    var s = '<svg viewBox="0 0 120 76" aria-hidden="true" focusable="false"><rect width="120" height="76" fill="#fff"/>';
+    if (wert === "kacheln") {
+      for (var i = 0; i < 6; i++) {
+        var x = 8 + (i % 3) * 35, y = 8 + Math.floor(i / 3) * 31;
+        s += '<rect x="' + x + '" y="' + y + '" width="32" height="28" rx="4" fill="' + mischen(hue, 0.18) + '"/>'
+          + '<rect x="' + (x + 5) + '" y="' + (y + 19) + '" width="18" height="3" rx="1" fill="#0B1220"/>';
+      }
+    } else {
+      [8, 30, 52].forEach(function (y, i) {
+        s += '<rect x="8" y="' + y + '" width="104" height="17" rx="3" fill="' + (i ? "#F2F4F7" : mischen(hue, 0.18)) + '"/>'
+          + '<rect x="14" y="' + (y + 7) + '" width="' + (46 - i * 8) + '" height="3" rx="1" fill="#0B1220"/>';
+      });
+    }
+    return s + "</svg>";
+  }
+  function kachel(gruppe, wert, text, mini, gewaehlt) {
+    var b = el("button", { type: "button", cls: "aus-kachel", role: "radio", "aria-checked": String(gewaehlt), "data-feld": gruppe, "data-wert": wert });
+    var m = el("span", { cls: "aus-mini" }); m.innerHTML = mini;      // eigenes SVG, keine Eingabe
+    b.appendChild(m);
+    b.appendChild(el("span", { cls: "aus-name", text: text }));
+    return b;
+  }
+  function zeichneAussehen() {
+    if (!katalog) return;
+    var o = katalog.oberflaeche, hue = akzent();
+    var v = $("aus-vorlage"); v.innerHTML = "";
+    o.vorlage.forEach(function (w) { v.appendChild(kachel("vorlage", w.wert, w.text, miniVorlage(w.wert, hue), (angaben.vorlage || "schlicht") === w.wert)); });
+    var f = $("aus-format"); f.innerHTML = "";
+    o.format.filter(function (w) { return AUS_FORMATE.indexOf(w.wert) >= 0; }).forEach(function (w) {
+      f.appendChild(kachel("format", w.wert, w.text, miniFormat(w.wert, hue), (angaben.format || "themen") === w.wert));
+    });
+    var c = $("aus-farbe"); c.innerHTML = "";
+    o.farbe.forEach(function (w) {
+      var hex = FARBEN[w.wert] || STANDARD_FARBE;
+      c.appendChild(kachel("farbe", w.wert, w.text, '<svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><circle cx="20" cy="20" r="16" fill="'
+        + hex + '"/>' + (w.wert ? "" : '<circle cx="20" cy="20" r="7" fill="#fff"/>') + "</svg>", (angaben.farbe || "") === w.wert));
+    });
+  }
+  $("schritt-3").addEventListener("click", function (ev) {
+    var b = ev.target.closest(".aus-kachel"); if (!b || !Z.mappe) return;
+    var a = {}; a[b.dataset.feld] = b.dataset.wert;
+    angaben[b.dataset.feld] = b.dataset.wert;
+    zeichneAussehen(); felderFuellen();
+    var neu = $("schritt-3").querySelector('.aus-kachel[data-feld="' + b.dataset.feld + '"][data-wert="' + b.dataset.wert + '"]');
+    if (neu) neu.focus({ preventScroll: true });
+    angabenSchreiben(a, true);
+  });
+  $("weiter-3").onclick = function () { if (Z.mappe) { Z.mappe.aussehen = true; gehe(4); } };
+
+  // Schreiben nacheinander: schnelle Klicks auf mehrere Kacheln und das erste Anlegen dürfen sich den Steckbrief nicht
+  // überschreiben; neuPruefen liest die Angaben erst, wenn die Kette leer ist
+  function steckbriefSicher() {
+    schreibKette = schreibKette.then(async function () { if (Z.mappe && !Z.steckbrief_text) await steckbriefAnlegen(); })
+      .catch(zeigeFehler);
+    return schreibKette;
+  }
+  function angabenSchreiben(a, mitStand) {
+    schreibKette = schreibKette.then(function () { return angabenSchreibenJetzt(a, mitStand); });
+    return schreibKette;
+  }
+  async function angabenSchreibenJetzt(a, mitStand) {
+    try {
+      await km.bereit();
+      if (!Z.steckbrief_text) await steckbriefAnlegen();
+      Z.steckbrief_text = await km.mappeFn("angaben_schreiben", [Z.steckbrief_text, a]);
+      Object.assign(angaben, a);
+      if (mitStand) await km.stand(Z.kurs_md);
+      zeichneAussehen(); zeichneSchritte();
+      geaendert();
+    } catch (e) { zeigeFehler(e); }
+  }
+
   // ---------------------------------------------------------------- Prüfen und Zeichnen
   async function neuPruefen() {
     if (!Z.geladen) { zeichne(); return; }
-    if (Z.mappe && !Z.steckbrief_text) await steckbriefAnlegen();
+    await steckbriefSicher();
     await km.stand(Z.kurs_md);
-    angaben = await km.mappeFn("angaben_lesen", [Z.steckbrief_text]);
+    for (var kette = null; kette !== schreibKette;) { kette = schreibKette; await kette; }
+    var gelesen = await km.mappeFn("angaben_lesen", [Z.steckbrief_text]);
+    if (kette === schreibKette) angaben = gelesen;    // sonst kam inzwischen ein Klick; dessen Werte gelten
     await auswertung();
     zeichne();
     autosave();
@@ -547,26 +820,28 @@ window.km = km;
     }, 700);
   }
 
-  function geaendert() { kennzahlenSpaeter(); autosave(); Z.bau = null; knoepfe(); textSpaeter(); }
+  function geaendert() { gespeichert = false; kennzahlenSpaeter(); autosave(); Z.bau = null; knoepfe(); textSpaeter(); }
 
   function zeichne() {
-    if (!Z.mappe) return;
-    var e = Z.mappe.einheit || {};
-    var thema = e.thema || angaben.thema || Z.mappe.titel || "Ohne Titel";
-    $("titel").textContent = thema;
-    var teile = [];
-    var jg = e.jahrgang || angaben.jahrgang, min = e.minuten || angaben.minuten;
-    if (jg) teile.push("Jahrgangsstufe " + jg);
-    if (min) teile.push(min + " Minuten");
-    if (e.vorlage) teile.push(e.vorlage);
-    $("unterzeile").textContent = teile.join(" · ");
+    zeichneSchritte();
+    if (!Z.mappe || !katalog) { knoepfe(); return; }
     felderFuellen();
+    Array.prototype.forEach.call(document.querySelectorAll(".vorlage"), function (b) {
+      b.setAttribute("aria-pressed", String(katalog.vorlagen[b.dataset.vorlage].name === (Z.mappe.einheit || {}).vorlage));
+    });
+    var v = (Z.mappe.einheit || {}).vorlage;
+    $("vorlage-zeile").textContent = inhalt() ? "Aufbau: " + (v || "aus der Kursdatei") + ". Der Aufbau lässt sich wählen, solange noch kein Inhalt da ist."
+      : "Wähle den Aufbau; die Bausteine darunter folgen ihm.";
+    zeichneAussehen();
     zeichneKarten();
     zeichneDiagnosen();
     zeichneChat();
     zeichneKorrektur();
     zeichneFragen();
+    zeichneWiederherstellen();
+    rueckmeldungFuellen();
     knoepfe();
+    zeichneSchritte();
   }
 
   function felderFuellen() {
@@ -575,14 +850,16 @@ window.km = km;
       "a-minuten": e.minuten || angaben.minuten || "", "a-fach": angaben.fach || "", "a-schulart": angaben.schulart || "",
       "a-format": angaben.format, "a-vorlage": angaben.vorlage, "a-farbe": angaben.farbe, "a-website": angaben.website,
       "a-abschluss": angaben.abschluss, "a-portionierung": angaben.portionierung, "a-chat": Z.mappe.chat || "",
-      "a-material": Z.mappe.material || "" };
+      "a-material": Z.mappe.material || "", "f-thema": e.thema || "", "f-jahrgang": e.jahrgang || "", "f-minuten": e.minuten || 45 };
+    if (Z.mappe.anhaengen && !Z.mappe.bausteine.some(function (k) { return k.einheit === Z.mappe.anhaengen; })) {
+      werte["f-thema"] = undefined; werte["f-minuten"] = undefined;    // nächste Einheit: Felder gehören der Lehrkraft
+    }
     Object.keys(werte).forEach(function (id) {
       var f = $(id);
       if (document.activeElement === f || werte[id] === undefined) return;
       f.value = werte[id];
       if (f.tagName === "SELECT" && f.selectedIndex < 0) f.selectedIndex = 0;
     });
-    $("a-zeitplanung").checked = !!Z.mappe.zeitplanung;
     var c = chatInfo(Z.mappe.chat);
     $("material-grenze").textContent = !c ? "" : c.eingabe_kb
       ? c.text + " nahm im Test " + c.eingabe_kb + " KB Text an; der Text für den Chat hat mit deinem Material etwa " + kb(textGroesse()) + "."
@@ -617,13 +894,49 @@ window.km = km;
   }
 
   function pruefBaustein(id) { return Z.pruefung ? Z.pruefung.bausteine.filter(function (b) { return b.id === id; })[0] : null; }
+  // Herkunft des Titels: geplante Karten und umbenannte Titel von der Lehrkraft, sonst vom Chat
+  function titelHerkunft(k) { return k.geplant || (k.herkunft && k.herkunft.titel === "lehrkraft") ? "lehrkraft" : "chat"; }
+
+  // Auswahl des Typs: zuerst „automatisch“, dann Gruppen nach Rolle (katalog.yaml `typgruppen`), Rest unter „Weitere“
+  function typAuswahl(wert, label) {
+    var s = el("select", { cls: "k-typ", "aria-label": label });
+    s.appendChild(el("option", { value: AUTO, text: "Automatisch (der Chat wählt)", selected: wert === AUTO }));
+    var gesehen = {};
+    (katalog.typgruppen || []).forEach(function (g) {
+      var og = el("optgroup", { label: g.name });
+      g.typen.forEach(function (t) { gesehen[t] = 1; og.appendChild(el("option", { value: t, text: formularname(t), selected: t === wert })); });
+      s.appendChild(og);
+    });
+    var rest = katalog.typen.filter(function (t) { return !gesehen[t.typ] && ["Badge", "Unterabschnitt", "Banner"].indexOf(t.typ) < 0; });
+    if (rest.length) {
+      var og = el("optgroup", { label: "Weitere" });
+      rest.forEach(function (t) { og.appendChild(el("option", { value: t.typ, text: t.formularname, selected: t.typ === wert })); });
+      s.appendChild(og);
+    }
+    return s;
+  }
+  // „+“ zwischen den Karten: fügt an dieser Stelle eine Karte mit Typ „automatisch“ ein
+  function plus(pos) {
+    return el("li", { cls: "k-zwischen" }, [el("button", { type: "button", cls: "k-plus", "data-pos": pos,
+      "aria-label": "Baustein an Stelle " + (pos + 1) + " einfügen", title: "Baustein hier einfügen", text: "+" })]);
+  }
+  function isOptional(k) {
+    var v = vorlageNach((Z.mappe.einheit || {}).vorlage);
+    return !!(v && v.phasen.some(function (p) { return p.optional && p.phase === k.phase; }));
+  }
+  function neueId() {
+    var ids = {}, n = 1;
+    Z.mappe.bausteine.forEach(function (k) { ids[k.id] = 1; });
+    while (ids["b" + n]) n += 1;
+    return "b" + n;
+  }
 
   function zeichneKarten() {
     var ol = $("karten"); ol.innerHTML = "";
-    var liste = Z.mappe.bausteine, letzter = null;
+    var liste = Z.mappe.bausteine, letzter = null, steuer = zweig() === "steuer";
     var abschnitte = liste.filter(function (k) { return k.abschnitt; }).map(function (k) { return k.abschnitt; });
     var mehrere = abschnitte.some(function (a) { return a !== abschnitte[0]; });
-    var zeitplanung = !!Z.mappe.zeitplanung;
+    var zeitplanung = zeitSelbst() && steuer;
     var zeitInfo = (Z.kennzahlen && Z.kennzahlen.zeit) || {};
     liste.forEach(function (k, i) {
       var abschnitt = mehrere && k.abschnitt && k.abschnitt !== letzter ? el("p", { cls: "k-abschnitt", text: "Abschnitt " + k.abschnitt }) : null;
@@ -632,10 +945,9 @@ window.km = km;
       var st = k.geplant ? "leer" : (b ? b.status : "leer");
       var stText = { ok: "Geprüft", warnung: "Hinweis", fehler: "Fehler", leer: "Noch ohne Inhalt" }[st];
       var minuten = mitMinuten(k.typ);
-      var typFeld = k.geplant
-        ? el("select", { cls: "k-typ", "aria-label": "Typ von Baustein " + (i + 1) }, (katalog ? katalog.typen : []).filter(function (t) {
-            return ["Badge", "Unterabschnitt"].indexOf(t.typ) < 0; }).map(function (t) {
-            return el("option", { value: t.typ, text: t.formularname, selected: t.typ === k.typ }); }))
+      // Typ: „Ich steuere“ native Auswahl nach Rolle, „Mach du“ eine Beschriftung (Klick wechselt den Zweig)
+      var typFeld = k.geplant && steuer ? typAuswahl(k.typ, "Typ von Baustein " + (i + 1))
+        : !steuer ? el("button", { type: "button", cls: "k-typ k-typ-mach", "data-aktion": "steuern", title: "Ändern in „Ich steuere“", text: formularname(k.typ) })
         : el("span", { cls: "k-typ", text: formularname(k.typ) });
       var diag = el("ul", { cls: "k-diagnosen" });
       if (Z.pruefung && !k.geplant) {
@@ -646,14 +958,14 @@ window.km = km;
       // Ist-Minuten aus dem Inhalt (Rolle und Jahrgang); Zeitfelder und die Lücke nur mit „Zeitplanung anzeigen“
       var z = zeitInfo[k.id], ist = null;
       if (minuten && z && z.gerechnet) {
-        ist = el("span", { cls: "k-ist", text: "gerechnet " + z.gerechnet + " min" });
+        ist = el("span", { cls: "k-ist geschaetzt", text: "gerechnet " + z.gerechnet + " min" });
         if (z.abweichung && zeitplanung) diag.appendChild(el("li", { cls: "hinweis k-luecke", text: z.text }));
-      } else if (minuten && b && b.minuten) ist = el("span", { cls: "k-ist", text: "im Inhalt " + b.minuten + " min" });
+      } else if (minuten && b && b.minuten) ist = el("span", { cls: "k-ist geschaetzt", text: "im Inhalt " + b.minuten + " min" });
       var korrektur = korrekturen.filter(function (x) { return x.baustein === k.id; });
-      var inhalt = null;
+      var inhaltEl = null;
       if (b && !k.geplant) {
-        var pre = el("pre", { cls: "k-text" }); pre.textContent = b.text;    // nur Text, nie HTML aus der Chat-Antwort
-        inhalt = el("details", { cls: "k-inhalt" }, [el("summary", { text: "Inhalt ansehen" }), pre]);
+        var pre = el("pre", { cls: "k-text von-chat" }); pre.textContent = b.text;    // nur Text, nie HTML aus der Chat-Antwort
+        inhaltEl = el("details", { cls: "k-inhalt" }, [el("summary", { text: "Inhalt ansehen" }), pre]);
       }
       // Bild hochladen an jeder Karte, deren Inhalt ein Bild nennt; ohne Bild bleibt der Platzhalter mit Hinweis
       var namen = b && !k.geplant ? bildnamen(b.text) : [];
@@ -662,46 +974,69 @@ window.km = km;
         return el("label", { cls: "knopf klein-knopf" + (da ? " da" : "") }, [(da ? "Bild „" + name + "“ ersetzen" : "Bild „" + name + "“ hochladen"),
           el("input", { type: "file", cls: "unsichtbar k-bild", accept: "image/png,image/jpeg", "data-datei": name })]);
       })) : null;
-      var li = el("li", { cls: "karte status-" + st + (k.neu ? " neu" : "") + (minuten ? "" : " struktur"), "data-id": k.id, id: "karte-" + k.id }, [
+      var herkunft = titelHerkunft(k);
+      if (k.aus && !steuer) return;                  // ausgeschaltete Karte: nur in „Ich steuere“ sichtbar
+      if (steuer && k.geplant) ol.appendChild(plus(i));
+      var li = el("li", { cls: "karte status-" + st + (k.neu ? " neu" : "") + (minuten ? "" : " struktur") + (k.aus ? " aus" : ""), "data-id": k.id, id: "karte-" + k.id }, [
         abschnitt,
         el("div", { cls: "k-kopf" }, [
           el("span", { cls: "k-nr", text: String(i + 1) }), typFeld,
           el("span", { cls: "k-status", title: stText }, [el("span", { cls: "punkt", "aria-hidden": "true" }), stText])]),
-        el("input", { cls: "k-titel", type: "text", value: k.titel, "aria-label": "Titel von Baustein " + (i + 1) }),
+        el("input", { cls: "k-titel von-" + herkunft, "data-herkunft": herkunft, type: "text", value: k.titel, readonly: !steuer,
+          "aria-label": "Titel von Baustein " + (i + 1) + (herkunft === "chat" ? " (vom Chat)" : " (von dir)") }),
         minuten && zeitplanung ? el("div", { cls: "k-felder" }, [
           el("label", { cls: "k-phase-l" }, ["Phase ", el("input", { cls: "k-phase", type: "text", list: "phasen", value: k.phase || "" })]),
           el("label", { cls: "k-soll-l" }, ["Soll ", el("input", { cls: "k-soll", type: "number", min: "0", max: "300", inputmode: "numeric",
             value: k.soll === null || k.soll === undefined ? "" : k.soll }), " min"]), ist]) : null,
-        el("label", { cls: "k-auftrag-l" }, [el("span", { cls: "unsichtbar", text: "Auftrag für Baustein " + (i + 1) }),
-          el("textarea", { cls: "k-auftrag", rows: "1", placeholder: "Was soll hinein? Ein Satz genügt (optional)" })]),
+        k.geplant && steuer && (k.aus || isOptional(k)) ? el("label", { cls: "schalter k-an-l" }, [el("input", { type: "checkbox", cls: "k-an", checked: !k.aus }),
+          k.aus ? "Freiwillig, ausgeschaltet: einschalten" : "Freiwillig: verwenden"]) : null,
+        steuer && !k.aus ? el("label", { cls: "k-auftrag-l" }, [el("span", { cls: "unsichtbar", text: "Auftrag für Baustein " + (i + 1) }),
+          el("textarea", { cls: "k-auftrag von-lehrkraft", rows: "1", placeholder: "Was soll hinein? Ein Satz genügt (optional)" })]) : null,
         diag,
         korrektur.length ? el("div", { cls: "k-korrektur" }, [
           el("button", { type: "button", cls: "klein k-satz", "data-aktion": "satz", text: "Satz für den Chat kopieren" }),
           el("span", { cls: "k-satz-stand stand", role: "status" })]) : null,
-        hochladen, inhalt,
-        el("div", { cls: "k-aktionen" }, [
+        hochladen, inhaltEl,
+        steuer ? el("div", { cls: "k-aktionen" }, [
           el("button", { type: "button", cls: "k-hoch klein", "data-aktion": "hoch", "aria-label": "Baustein " + (i + 1) + " nach oben", disabled: i === 0, text: "↑" }),
           el("button", { type: "button", cls: "k-runter klein", "data-aktion": "runter", "aria-label": "Baustein " + (i + 1) + " nach unten", disabled: i === liste.length - 1, text: "↓" }),
           k.geplant ? null : el("button", { type: "button", cls: "k-neu klein", "data-aktion": "neu", "aria-pressed": k.neu ? "true" : "false",
             text: k.neu ? "Wird neu beauftragt" : "Diesen Baustein neu beauftragen" }),
-          el("button", { type: "button", cls: "k-loeschen klein", "data-aktion": "loeschen", text: "Löschen" })])]);
-      li.querySelector(".k-auftrag").value = k.auftrag || "";
+          el("button", { type: "button", cls: "k-loeschen klein", "data-aktion": "loeschen", text: "Löschen" })]) : null]);
+      var auftrag = li.querySelector(".k-auftrag");
+      if (auftrag) auftrag.value = k.auftrag || "";
       ol.appendChild(li);
     });
-    if (!$("ansicht").hidden) Array.prototype.forEach.call(ol.querySelectorAll(".k-auftrag"), hoehe);
+    if (steuer && liste.length && liste[liste.length - 1].geplant) ol.appendChild(plus(liste.length));
+    if (!$("tafel-bausteine").hidden) Array.prototype.forEach.call(ol.querySelectorAll(".k-auftrag"), hoehe);
     $("karten-leer").hidden = liste.length > 0;
+    $("zeit-selbst").checked = zeitSelbst();
+    $("zeit-schalter").hidden = !steuer;
   }
 
   function zeichneDiagnosen() {
     var k = Z.kennzahlen;
     var setze = function (id, wert, warn) { var e = $(id); e.textContent = wert; e.parentNode.classList.toggle("warn", !!warn); };
     if (!k) {
-      ["kz-minuten", "kz-folge", "kz-mc", "kz-rueckmeldung"].forEach(function (id) { setze(id, "–"); });
+      ["kz-minuten", "kz-folge", "kz-mc", "kz-rueckmeldung"].forEach(function (id) { setze(id, "–"); $(id).parentNode.hidden = false; });
+      $("kz-zahl-z").hidden = true;
       $("hinweise").innerHTML = ""; $("hinweise-mehr").hidden = true;
       return;
     }
-    var m = k.minuten;
-    setze("kz-minuten", m.soll ? m.ist + " von " + m.soll : String(m.ist), m.soll && (m.ist > m.soll * 1.1 || m.ist < m.soll * 0.9));
+    var m = k.minuten, vorher = !k.inhalt;
+    // vor der ersten Antwort gibt es keine Ist-Minuten: nur „45 Minuten geplant“ und die Zahl der Bausteine
+    $("kz-minuten-t").textContent = vorher ? "Geplant" : "Minuten";
+    $("kz-zahl-z").hidden = !vorher;
+    ["kz-folge", "kz-mc", "kz-rueckmeldung"].forEach(function (id) { $(id).parentNode.hidden = vorher; });
+    $("kz-zahl").textContent = String(k.bausteine);
+    if (vorher) {
+      var e = $("kz-minuten"); e.innerHTML = ""; e.parentNode.classList.remove("warn");
+      e.appendChild(document.createTextNode((m.soll || "–") + " Minuten"));
+    } else {
+      var d = $("kz-minuten"); d.innerHTML = ""; d.parentNode.classList.toggle("warn", !!(m.soll && (m.ist > m.soll * 1.1 || m.ist < m.soll * 0.9)));
+      d.appendChild(el("span", { cls: "geschaetzt", text: String(m.ist) }));
+      if (m.soll) d.appendChild(document.createTextNode(" von " + m.soll + " geplant"));
+    }
     setze("kz-folge", (k.folge.length ? k.folge.join(" → ") : "–") + (k.folge_brueche ? " (" + k.folge_brueche + " Schritt" + (k.folge_brueche > 1 ? "e" : "") + " zurück)" : ""), k.folge_brueche > 0);
     var f = k.fragen;
     setze("kz-mc", f.fragen ? k.mc_anteil + " % von " + f.fragen + " Fragen" : "keine Fragen", f.fragen && k.mc_anteil > 50);
@@ -723,46 +1058,34 @@ window.km = km;
     zuKarte(z.dataset.ziel);
   };
   function zuKarte(id) {
-    reiter("bausteine");
+    var ort = $("tafel-bausteine").closest(".schritt");
+    if (ort && ort.dataset.stand === "erledigt" && !ort.classList.contains("auf")) { auf[ort.dataset.nr] = true; zeichneSchritte(); }
     var karte = $("karte-" + id);
     if (karte) { karte.scrollIntoView({ behavior: "smooth", block: "center" }); karte.querySelector(".k-titel").focus({ preventScroll: true }); }
   }
 
   function knoepfe() {
-    var fehler = Z.pruefung ? Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler"; }).length : 0;
-    var inhalt = !!(Z.kurs_md && Z.kurs_md.trim());
+    var fehler = fehlerZahl(), voll = inhalt();
     // Fragen und Lösungen einmal ansehen (oder bewusst überspringen), bevor die Datei entsteht (Plan §10)
     var durchsicht = !fragenListe.length || !!(Z.mappe && Z.mappe.durchsicht);
-    $("erstellen").disabled = !Z.geladen || !inhalt || fehler > 0 || !durchsicht;
+    $("erstellen").disabled = !Z.geladen || !voll || fehler > 0 || !durchsicht;
     $("herunterladen").hidden = !(Z.bau && Z.bau.mbz);
-    $("durchsicht").hidden = !(Z.geladen && inhalt && !fehler && !durchsicht);
+    $("erstellen").hidden = !!(Z.bau && Z.bau.mbz);         // fertig: nur noch Herunterladen; jede Änderung macht ihn wieder sichtbar
+    $("glossar-laden").hidden = !(Z.bau && Z.bau.mbz && Z.bau.glossare && Z.bau.glossare.length);
     var t = "";
     if (!Z.geladen) t = "Wird vorbereitet …";
-    else if (!inhalt) t = KEIN_INHALT;
-    else if (fehler) t = fehler + " Fehler in den Bausteinen. Die rot markierten Karten zeigen, wo.";
-    else if (!durchsicht) t = "Sieh vorher die " + fragenListe.length + " Fragen und ihre Lösungen durch.";
-    else if (Z.bau && Z.bau.mbz) t = "Die Datei ist fertig (" + Math.round(Z.bau.mbz.length / 1024) + " KB).";
+    else if (!voll) t = KEIN_INHALT;
+    else if (fehler) t = fehler + " Fehler in den Bausteinen. Die rot markierten Karten in Schritt 5 zeigen, wo.";
+    else if (!durchsicht) t = "Sieh vorher in Schritt 6 die " + fragenListe.length + " Fragen und ihre Lösungen durch.";
+    else if (Z.bau && Z.bau.mbz) t = "Die Datei ist fertig (" + Math.round(Z.bau.mbz.length / 1024) + " KB)" + (Z.bau.nachlieferung ? ", nur die neue Einheit." : ".");
     else if (Z.bau && !Z.bau.mbz) t = "Das Erstellen ist an einem Fehler gescheitert: " + ((Z.bau.diagnosen || []).filter(function (d) { return d.stufe === "fehler"; }).map(function (d) { return d.text; })[0] || "");
     $("erstellen-stand").textContent = t;
     $("speichern").disabled = !Z.geladen || !Z.mappe;
-    // Gegenprüfen nach dem ersten grünen Stand
-    $("gegenpruefen").hidden = !(inhalt && !fehler && fragenListe.length);
+    $("wiederherstellen").hidden = !(Z.bau && Z.bau.mbz);
+    $("weiter-5").hidden = !(schritt() === 5 && voll && !fehler);
   }
 
-  // ---------------------------------------------------------------- Reiter: Bausteine, Fragen und Lösungen
-  function reiter(name) {
-    var fragen = name === "fragen";
-    $("reiter-bausteine").setAttribute("aria-selected", String(!fragen));
-    $("reiter-fragen").setAttribute("aria-selected", String(fragen));
-    $("tafel-bausteine").hidden = fragen;
-    $("tafel-fragen").hidden = !fragen;
-    if (fragen && Z.mappe && fragenListe.length && !Z.mappe.durchsicht) { Z.mappe.durchsicht = true; geaendert(); }
-  }
-  $("reiter-bausteine").onclick = function () { reiter("bausteine"); };
-  $("reiter-fragen").onclick = function () { reiter("fragen"); };
-  $("durchsicht-oeffnen").onclick = function () { reiter("fragen"); $("reiter-fragen").focus(); window.scrollTo(0, $("reiter-fragen").offsetTop - 20); };
-  $("ohne-durchsicht").onclick = function () { if (Z.mappe) { Z.mappe.durchsicht = true; geaendert(); $("erstellen").focus(); } };
-
+  // ---------------------------------------------------------------- 6 Fragen und Lösungen
   var BUCHST = "ABCDEFGHIJ";
   function zeichneFragen() {
     var ol = $("fragen-liste"); ol.innerHTML = "";
@@ -784,13 +1107,24 @@ window.km = km;
     });
   }
   $("fragen-liste").onclick = function (ev) { var z = ev.target.closest("[data-ziel]"); if (z) zuKarte(z.dataset.ziel); };
+  function durchgesehen() { if (Z.mappe) { Z.mappe.durchsicht = true; geaendert(); gehe(7, "erstellen"); } }
+  $("durchsicht-ok").onclick = durchgesehen;
+  $("ohne-durchsicht").onclick = durchgesehen;
+  $("weiter-5").onclick = function () {
+    if (!Z.mappe) return;
+    if (fragenListe.length && !Z.mappe.durchsicht) gehe(6, "durchsicht-ok"); else gehe(7, "erstellen");
+  };
 
-  // ---------------------------------------------------------------- Text für den Chat
+  // ---------------------------------------------------------------- 4 Text für den Chat
   function markiert() { return Z.mappe ? Z.mappe.bausteine.filter(function (k) { return k.neu; }) : []; }
+  function textArt() {
+    if (zweig() !== "steuer") return Z.mappe && Z.mappe.anhaengen ? "leer" : "einheit";
+    return (document.querySelector("input[name=text-art]:checked") || {}).value || "einheit";
+  }
 
   function zeichneChat() {
     var gewaehlt = !!(Z.mappe && Z.mappe.chat && chatInfo(Z.mappe.chat));
-    $("chat-wahl").hidden = gewaehlt;
+    $("chat-wahl").hidden = gewaehlt && !chatWahlOffen;
     $("chat-text").hidden = !gewaehlt;
     if (!gewaehlt) return;
     var c = chatInfo(Z.mappe.chat), m = markiert();
@@ -806,13 +1140,15 @@ window.km = km;
     var tw = $("teil-wahl"); tw.innerHTML = "";
     tw.hidden = texte.teile.length < 2;
     texte.teile.forEach(function (_, i) {
-      tw.appendChild(el("button", { type: "button", cls: "klein teil-knopf", "data-teil": i, "aria-pressed": i === texte.teil ? "true" : "false", text: "Teil " + (i + 1) }));
+      tw.appendChild(el("button", { type: "button", cls: "klein teil-knopf", "data-teil": i, "aria-pressed": i === texte.teil ? "true" : "false",
+        text: "Teil " + (i + 1) + (texte.kopiert[i] ? " (kopiert)" : "") }));
     });
     var t = texte.teile[texte.teil] || "";
-    $("chat-zeile").textContent = !t ? (Z.geladen ? "" : "Der Text entsteht, sobald die Seite bereit ist.")
-      : "Für " + c.text + (texte.teile.length > 1 ? ", Teil " + (texte.teil + 1) + " von " + texte.teile.length : "") + " · " + kb(new Blob([t]).size);
+    $("chat-zeile").textContent = !t ? (Z.geladen ? "Der Text entsteht …" : "Der Text entsteht, sobald die Seite bereit ist.")
+      : "Für " + c.text + (texte.teile.length > 1 ? ", Teil " + (texte.teil + 1) + " von " + texte.teile.length + ". Kopiere die Teile nacheinander in denselben Chat." : "") + " · " + kb(new Blob([t]).size);
     if ($("chat-text-feld").value !== t) $("chat-text-feld").value = t;
     $("text-kopieren").disabled = !t;
+    $("text-kopieren").textContent = texte.teile.length > 1 ? "Teil " + (texte.teil + 1) + " kopieren" : "Text kopieren";
   }
 
   function textSpaeter(ms) {
@@ -822,7 +1158,7 @@ window.km = km;
   async function texteErzeugen() {
     if (!Z.geladen || !Z.mappe || !Z.mappe.chat) { if (Z.mappe) zeichneChat(); return; }
     var nr = ++texte.laeuft;
-    var art = (document.querySelector("input[name=text-art]:checked") || {}).value || "einheit";
+    var art = textArt();
     var m = markiert();
     if (art === "baustein" && !m.length) art = "einheit";
     try {
@@ -833,7 +1169,7 @@ window.km = km;
         teile = (await km.prompt("einheit", [Z.mappe, Z.steckbrief_text, null, null, art === "leer"])).teile;
       }
       if (nr !== texte.laeuft) return;           // ein neuerer Lauf ist schon unterwegs
-      if (art !== texte.art || teile.length !== texte.teile.length) texte.teil = 0;
+      if (art !== texte.art || teile.length !== texte.teile.length) { texte.teil = 0; texte.kopiert = {}; }
       texte.art = art; texte.teile = teile;
       if (texte.teil >= teile.length) texte.teil = 0;
       zeichneChat();
@@ -844,13 +1180,11 @@ window.km = km;
   $("chat-knoepfe").addEventListener("click", function (ev) {
     var b = ev.target.closest("[data-chat]"); if (!b || !Z.mappe) return;
     Z.mappe.chat = b.dataset.chat;
-    zeichneChat(); zeichneKarten(); geaendert(); textSpaeter(0);
+    chatWahlOffen = false;
+    zeichneChat(); geaendert(); textSpaeter(0); zeichneSchritte();
     setTimeout(function () { var k = $("text-kopieren"); if (k) k.focus({ preventScroll: true }); }, 0);
   });
-  $("chat-aendern").onclick = function () {
-    $("mehr").open = true;
-    $("a-chat").focus();
-  };
+  $("chat-aendern").onclick = function () { chatWahlOffen = true; zeichneChat(); var k = $("chat-knoepfe").querySelector("button"); if (k) k.focus(); };
   Array.prototype.forEach.call(document.querySelectorAll("input[name=text-art]"), function (r) {
     r.addEventListener("change", function () { $("kopiert").textContent = ""; textSpaeter(0); });
   });
@@ -859,16 +1193,30 @@ window.km = km;
     texte.teil = parseInt(b.dataset.teil, 10); $("kopiert").textContent = ""; zeichneChat();
   });
 
+  // Text kopiert: Schritt 5 erscheint; bei gestückeltem Text springt die Auswahl auf den nächsten Teil
+  function textKopiert() {
+    texte.kopiert[texte.teil] = true;
+    if (!Z.mappe) return;
+    Z.mappe.kopiert = true;
+    var naechster = texte.teile.length > 1 ? texte.teile.findIndex(function (_, i) { return !texte.kopiert[i]; }) : -1;
+    if (schritt() < 5) { Z.mappe.schritt = 5; auf = {}; }
+    zeichne(); autosave();
+    if (naechster >= 0) {
+      texte.teil = naechster; zeichneChat();
+      $("kopiert").textContent = "Teil " + (naechster) + " kopiert. Füge ihn in den Chat ein; danach kommt Teil " + (naechster + 1) + ".";
+    }
+  }
+  function textKopieren() { kopieren($("chat-text-feld").value, $("chat-text-feld"), $("kopiert"), KOPIERT, textKopiert); }
   // Vor dem ersten Kopieren einmal die Infobox (Rechte am Material, Nutzungsbedingungen des Chats)
   $("text-kopieren").onclick = function () {
     if (!infoboxAus) { $("infobox").hidden = false; $("infobox-ok").focus(); return; }
-    kopieren($("chat-text-feld").value, $("chat-text-feld"), $("kopiert"), KOPIERT);
+    textKopieren();
   };
   $("infobox-ok").onclick = function () {
     $("infobox").hidden = true;
     if ($("infobox-nie").checked) { infoboxAus = true; km.einstellung("infobox_aus", true).catch(function () {}); }
     else infoboxAus = true;                      // in dieser Sitzung nicht noch einmal
-    kopieren($("chat-text-feld").value, $("chat-text-feld"), $("kopiert"), KOPIERT);
+    textKopieren();
   };
 
   // ---------------------------------------------------------------- Karten bearbeiten
@@ -887,7 +1235,7 @@ window.km = km;
   // Titel übernehmen: bei change (Fokus verlässt das Feld) und bei Enter; Safari löst bei Enter kein change aus
   var umbenennenLaeuft = {};
   async function titelUebernehmen(feld) {
-    var k = karteVon(feld); if (!k || umbenennenLaeuft[k.id]) return;
+    var k = karteVon(feld); if (!k || umbenennenLaeuft[k.id] || feld.readOnly) return;
     var titel = feld.value.replace(/\s+/g, " ").trim();
     if (!titel || titel === k.titel) { feld.value = k.titel; return; }
     if (k.geplant) { k.titel = titel; geaendert(); return; }
@@ -895,6 +1243,7 @@ window.km = km;
     try {
       await km.bereit();
       var md = await km.mappeFn("umbenennen", [Z.kurs_md, k.id, titel]);
+      k.titel = titel; k.herkunft = { titel: "lehrkraft" };      // bleibt, bis der Chat den Titel ersetzt
       await km.stand(md);
       await auswertung();
       zeichne(); geaendert();
@@ -905,6 +1254,7 @@ window.km = km;
   $("karten").addEventListener("change", async function (ev) {
     var k = karteVon(ev.target); if (!k) return;
     if (ev.target.classList.contains("k-typ")) { k.typ = ev.target.value; zeichneKarten(); geaendert(); return; }
+    if (ev.target.classList.contains("k-an")) { if (ev.target.checked) delete k.aus; else k.aus = true; zeichneKarten(); geaendert(); return; }
     if (ev.target.classList.contains("k-titel")) { titelUebernehmen(ev.target); return; }
     if (ev.target.classList.contains("k-bild")) {
       var f = ev.target.files && ev.target.files[0], name = ev.target.dataset.datei;
@@ -924,7 +1274,18 @@ window.km = km;
   });
 
   $("karten").addEventListener("click", async function (ev) {
+    var p = ev.target.closest(".k-plus");
+    if (p) {
+      var pos = parseInt(p.dataset.pos, 10), id = neueId();
+      Z.mappe.bausteine.splice(pos, 0, { id: id, typ: AUTO, titel: "Neuer Baustein", abschnitt: null, minuten: null, auftrag: "",
+        phase: (Z.mappe.bausteine[Math.max(0, pos - 1)] || {}).phase || "", soll: null, geplant: true, neu: false });
+      zeichne(); geaendert();
+      var a = document.querySelector("#karte-" + CSS.escape(id) + " .k-auftrag");
+      if (a) a.focus();
+      return;
+    }
     var knopf = ev.target.closest("button[data-aktion]"); if (!knopf) return;
+    if (knopf.dataset.aktion === "steuern") { Z.mappe.zweig = "steuer"; auf[2] = schritt() > 2; zeichne(); geaendert(); return; }
     var k = karteVon(knopf); if (!k) return;
     var liste = Z.mappe.bausteine, i = liste.indexOf(k), a = knopf.dataset.aktion;
     try {
@@ -975,14 +1336,51 @@ window.km = km;
   };
 
   $("neu-hinzufuegen").onclick = function () {
-    var typ = $("neu-typ").value, ids = {}, n = 1;
-    Z.mappe.bausteine.forEach(function (k) { ids[k.id] = 1; });
-    while (ids["b" + n]) n += 1;
-    Z.mappe.bausteine.push({ id: "b" + n, typ: typ, titel: formularname(typ), abschnitt: null, minuten: null, auftrag: "",
+    var typ = $("neu-typ").value, id = neueId();
+    Z.mappe.bausteine.push({ id: id, typ: typ, titel: typ === AUTO ? "Neuer Baustein" : formularname(typ), abschnitt: null, minuten: null, auftrag: "",
       phase: "", soll: null, geplant: true, neu: false });
     zeichne(); geaendert();
-    var neu = $("karte-b" + n);
+    var neu = $("karte-" + id);
     if (neu) { neu.scrollIntoView({ block: "center" }); neu.querySelector(".k-titel").focus({ preventScroll: true }); }
+  };
+
+  $("zeit-selbst").addEventListener("change", function () {
+    if (!Z.mappe) return;
+    Z.mappe.zeit_selbst = $("zeit-selbst").checked;
+    zeichneKarten(); geaendert();
+  });
+
+  // ---------------------------------------------------------------- Verwerfen: gesicherte Einheit, offene Einheit
+  var verwerfenAktion = null;
+  function frage(text, aktion) {
+    verwerfenAktion = aktion;
+    $("verwerfen-text").textContent = text;
+    $("verwerfen-frage").hidden = false;
+    $("verwerfen-nein").focus();
+  }
+  $("verwerfen-nein").onclick = function () { $("verwerfen-frage").hidden = true; verwerfenAktion = null; };
+  $("verwerfen-ja").onclick = async function () {
+    $("verwerfen-frage").hidden = true;
+    var a = verwerfenAktion; verwerfenAktion = null;
+    if (a) { try { await a(); } catch (e) { zeigeFehler(e); } }
+  };
+  $("weiter-weg").onclick = function () {
+    var titel = $("weiter-knopf").textContent.replace(/^Weiter mit /, "");
+    frage("Einheit " + titel + " verwerfen? Sie ist nicht als Kursdatei gespeichert.", async function () {
+      await km.autosaveLoeschen();
+      $("weiter").dataset.da = ""; $("weiter").hidden = true;
+      $("f-thema").focus();
+    });
+  };
+  $("schliessen").onclick = function () {
+    var titel = (Z.mappe && ((Z.mappe.einheit && Z.mappe.einheit.thema) || Z.mappe.titel)) || "";
+    frage("Einheit „" + titel + "“ schließen? " + (gespeichert ? "Die Kursdatei hast du gespeichert; die Sicherung im Browser wird gelöscht."
+      : "Was nicht als Kursdatei gespeichert ist, geht verloren."), async function () {
+      clearTimeout(autosaveTimer);
+      await km.autosaveLoeschen();
+      leeren();
+      weiterAnzeigen();
+    });
   };
 
   // ---------------------------------------------------------------- Kursangaben („Mehr einstellen“)
@@ -991,12 +1389,6 @@ window.km = km;
     "a-portionierung": "portionierung" };
   $("mehr").addEventListener("change", async function (ev) {
     if (!Z.mappe) return;
-    if (ev.target.id === "a-zeitplanung") {
-      Z.mappe.zeitplanung = ev.target.checked;
-      if (!Z.mappe.zeitplanung) delete Z.mappe.zeitplanung;
-      zeichneKarten(); geaendert();
-      return;
-    }
     if (ev.target.id === "a-chat") {
       Z.mappe.chat = ev.target.value || null;
       if (!Z.mappe.chat) delete Z.mappe.chat;
@@ -1012,13 +1404,8 @@ window.km = km;
     }
     angaben[feld] = wert;
     zeichne();
-    try {
-      await km.bereit();
-      var a = {}; a[feld] = wert;
-      Z.steckbrief_text = await km.mappeFn("angaben_schreiben", [Z.steckbrief_text, a]);
-      if (feld === "farbe" || feld === "vorlage") await km.stand(Z.kurs_md);
-      geaendert();
-    } catch (e) { zeigeFehler(e); }
+    var a = {}; a[feld] = wert;
+    angabenSchreiben(a, feld === "farbe" || feld === "vorlage");
   });
   $("a-material").addEventListener("input", function () {
     if (!Z.mappe) return;
@@ -1026,7 +1413,7 @@ window.km = km;
     geaendert();
   });
 
-  // ---------------------------------------------------------------- Antwort des Chats
+  // ---------------------------------------------------------------- 5 Antwort des Chats
   function gewaehlterModus() { return (document.querySelector("input[name=modus]:checked") || {}).value || "ersetzen"; }
   function setzeModus(m) { var r = document.querySelector("input[name=modus][value=" + m + "]"); if (r) r.checked = true; }
   var MODUS_TEXT = { ersetzen: "Einheit ersetzt", baustein: "nur diese Bausteine ersetzt", anhaengen: "als weitere Einheit angehängt" };
@@ -1048,9 +1435,11 @@ window.km = km;
       if (r.fehler.length) meldung = " " + r.fehler.join(" ");
       return { ok: true, n: ids.length, ids: ids, text: meldung };
     }
-    if (modus === "anhaengen") neu = await km.mappeFn("anhaengen", [Z.kurs_md, text]);
+    // nächste Einheit: hinten an, jeder Abschnitt mit `teil: e<n>` (Nachlieferung)
+    if (modus === "anhaengen") neu = await km.mappeFn("anhaengen", [Z.kurs_md, text, Z.mappe.anhaengen || null]);
     else neu = (await km.mappeFn("antwort", [text])).kursdatei;
     var pr = await km.stand(neu);
+    if (modus === "anhaengen" && Z.mappe.anhaengen) delete Z.mappe.anhaengen;
     return { ok: true, n: pr.bausteine.length, text: "" };
   }
 
@@ -1069,7 +1458,9 @@ window.km = km;
           $("eingabe-stand").className = "stand fehler";
           return;
         }
-        modus = mo.modus;
+        // nächste Einheit, die noch ohne Inhalt ist: anhängen statt in die erste Einheit einsetzen
+        var neueOffen = Z.mappe.anhaengen && Z.mappe.bausteine.some(function (k) { return k.einheit === Z.mappe.anhaengen && k.geplant; });
+        modus = neueOffen ? "anhaengen" : mo.modus;
         setzeModus(modus);
         letzteAntwort = { text: text, vorher: { mappe: JSON.parse(JSON.stringify(Z.mappe)), kurs_md: Z.kurs_md } };
       }
@@ -1081,13 +1472,15 @@ window.km = km;
         return;
       }
       Z.mappe.durchsicht = false;
+      if (schritt() > 5 || schritt() < 5) { Z.mappe.schritt = 5; auf = {}; }      // neuer Inhalt: ab Schritt 5 neu durchsehen
       await auswertung();
       zeichne(); geaendert();
       // im Modus „nur Baustein“ zählen nur die eingesetzten Bausteine, sonst alle
       var rot = Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler" && (!e.ids || e.ids.indexOf(b.id) >= 0); }).length;
       $("eingabe").value = "";
       $("eingabe-stand").textContent = "Übernommen (" + MODUS_TEXT[modus] + "): " + e.n + (e.n === 1 ? " Baustein" : " Bausteine")
-        + (rot ? ", davon " + rot + " mit Fehler (rot markiert)." : ".") + e.text;
+        + (rot ? ", davon " + rot + " mit Fehler (rot markiert). Bitte den Chat mit dem Satz an der Karte um Korrektur und füge die Antwort hier ein."
+          : ". Sieh die Bausteine durch und geh dann weiter.") + e.text;
       $("eingabe-stand").className = "stand " + (rot ? "fehler" : "ok");
     } catch (err) { zeigeFehler(err); }
   }
@@ -1146,39 +1539,141 @@ window.km = km;
   }
   $("gegen-ergebnis").onclick = function (ev) { var z = ev.target.closest("[data-ziel]"); if (z) zuKarte(z.dataset.ziel); };
 
-  // ---------------------------------------------------------------- Datei für die Lernplattform, Kursdatei
+  // ---------------------------------------------------------------- 7 Datei, Wiederherstellen, nächste Einheit
+  // Einheiten der Kursdatei: „e1“ = erste (ohne teil:), dazu die Teile e2, e3 … der angehängten Einheiten
+  function einheitenImKurs() {
+    var out = ["e1"], re = /^teil:\s*(e\d+)\s*$/gm, m;
+    while ((m = re.exec(Z.kurs_md || ""))) if (out.indexOf(m[1]) < 0) out.push(m[1]);
+    return out;
+  }
+  // Nachlieferung, wenn schon eine Einheit importiert ist und neue dazukamen; sonst der ganze Kurs als neuer Kurs
+  function nachlieferung() {
+    var imp = (Z.mappe && Z.mappe.importiert) || [];
+    if (!imp.length) return [];
+    return einheitenImKurs().filter(function (e) { return e !== "e1" && imp.indexOf(e) < 0; });
+  }
+
+  function zeichneWiederherstellen() {
+    var ol = $("wh-schritte"); ol.innerHTML = "";
+    var delta = Z.bau && Z.bau.nachlieferung;
+    var glossar = Z.pruefung && Z.pruefung.bausteine.some(function (b) { return b.typ === "Glossar"; });
+    var badge = angaben.abschluss === "test und abzeichen" || (Z.pruefung && Z.pruefung.bausteine.some(function (b) { return b.typ === "Badge"; }));
+    var schritte = [
+      "Öffne deinen Kurs auf der ByCS-Lernplattform: Mehr → Kurs wiederherstellen. Zieh die Datei in das Feld „Datei“ und klicke „Wiederherstellen“, dann „Weiter“.",
+      delta ? "Ziel: „In diesen Kurs wiederherstellen“ mit „Zusammenführen“. Die neue Einheit kommt hinten an; was schon im Kurs ist, bleibt."
+        : "Ziel: „Als neuen Kurs wiederherstellen“ und eine Kategorie wählen. Für einen leeren Kurs, den du schon hast: „In diesen Kurs wiederherstellen“ mit „Zusammenführen“.",
+      "„Einstellungen“: Weiter. „Schema“: Soll ein bestehender Kurs das Kursformat " + (oberText("format", angaben.format) || "") + " bekommen, stell „Kurseinstellungen überschreiben“ auf „Ja“. Dann „Wiederherstellen“.",
+      glossar ? "Glossar: Öffne das Glossar im Kurs, Mehr → Einträge importieren, und wähle die Datei mit den Glossar-Einträgen (Knopf oben)."
+        : "Sieh die Kursseite einmal so an, wie sie deine Klasse sieht (Rolle wechseln → Schüler/in).",
+      badge ? "Abzeichen: Mehr → Badges, das Abzeichen öffnen und „Zugriff aktivieren“." : "Prüfe Kursbild und Banner; fehlt ein Bild, steht dort ein Platzhalter."];
+    schritte.forEach(function (s) { ol.appendChild(el("li", { text: s })); });
+    var imp = (Z.mappe && Z.mappe.importiert) || [];
+    var alle = einheitenImKurs().every(function (e) { return imp.indexOf(e) >= 0; });
+    $("importiert-frage").hidden = !!(Z.mappe && alle);
+    $("importiert-stand").hidden = !(Z.mappe && alle);
+    $("importiert-stand").textContent = "Vermerkt. Die nächste Einheit wird als Nachlieferung erstellt und mit „Zusammenführen“ eingespielt.";
+  }
+
   $("erstellen").onclick = async function () {
     $("erstellen").disabled = true;
     $("erstellen-stand").textContent = "Wird erstellt …";
     try {
-      await km.baue(km.bauOptionen || {});
+      var neu = nachlieferung(), opt = Object.assign({}, km.bauOptionen || {});
+      if (neu.length) opt.optionen = Object.assign({}, opt.optionen || {}, { delta: neu.join(",") });
+      await km.baue(opt);
+      if (Z.bau) Z.bau.nachlieferung = neu.length ? neu : null;
       // Name beim Herunterladen: <Kurstitel>_<Datum>.mbz (wie die Kursdatei); in der Sicherung bleibt der Name des Generators
-      if (Z.bau && Z.bau.mbz) Z.bau.downloadName = (await km.mappeFn("dateiname", [Z.mappe, heute()])).replace(/\.kursmappe\.zip$/, ".mbz");
-      knoepfe();
+      if (Z.bau && Z.bau.mbz) Z.bau.downloadName = (await km.mappeFn("dateiname", [Z.mappe, heute()])).replace(/\.kursmappe\.zip$/, neu.length ? "_nachlieferung.mbz" : ".mbz");
+      zeichneWiederherstellen(); knoepfe(); zeichneSchritte(); rueckmeldungFuellen();
       if (Z.bau && Z.bau.mbz) $("herunterladen").focus();
     } catch (e) { zeigeFehler(e); knoepfe(); }
   };
   $("herunterladen").onclick = function () {
     var b = Z.bau; if (b && b.mbz) download(b.mbz, b.downloadName || b.dateiname, "application/vnd.moodle.backup");
   };
+  $("glossar-laden").onclick = function () {
+    var g = Z.bau && Z.bau.glossare;
+    (g || []).forEach(function (x) { download(new TextEncoder().encode(x[1]), x[0], "application/xml"); });
+  };
+  $("importiert-ja").onclick = function () {
+    if (!Z.mappe) return;
+    var imp = Z.mappe.importiert || [];
+    einheitenImKurs().forEach(function (e) { if (imp.indexOf(e) < 0) imp.push(e); });
+    Z.mappe.importiert = imp;
+    zeichneWiederherstellen(); autosave();
+    $("naechste-einheit").focus();
+  };
+  $("naechste-einheit").onclick = function () {
+    if (!Z.mappe) return;
+    var n = (Z.mappe.einheiten || einheitenImKurs().length) + 1;
+    Z.mappe.einheiten = n;
+    Z.mappe.anhaengen = "e" + n;
+    Z.bau = null;
+    $("f-thema").value = ""; $("f-minuten").value = (Z.mappe.einheit && Z.mappe.einheit.minuten) || 45;
+    gehe(1, "f-thema");
+    $("s1-titel").textContent = "Worum geht es in der nächsten Einheit?";
+  };
   $("speichern").onclick = async function () {
     try {
       var m = await km.mappeSchreiben();
       download(m.zip, m.dateiname, "application/zip");
       $("autosave-stand").textContent = "Kursdatei gespeichert um " + zeit(Date.now());
+      gespeichert = true;
       autosave();
+      // Speichern schließt den laufenden Schritt ab, wenn er fertig ist (Befund des Autors): die Liste klappt zu,
+      // der nächste Schritt erscheint
+      var s = schritt();
+      if (s === 2 && zweig()) gehe(3);
+      else if (s === 3) { Z.mappe.aussehen = true; gehe(4); }
+      else if (s === 4 && Z.mappe.kopiert) gehe(5);
+      else { auf = {}; zeichneSchritte(); }
     } catch (e) { zeigeFehler(e); }
   };
   $("neue-einheit").onclick = async function () {
     clearTimeout(autosaveTimer);
     if (Z.geladen && Z.mappe) { try { await km.autosaveSchreiben(); } catch (e) { /* Hinweis steht schon unter der Kursdatei */ } }
-    Z.mappe = null; Z.kurs_md = ""; Z.steckbrief_text = ""; Z.assets = {}; Z.pruefung = null; Z.kennzahlen = null; Z.bau = null;
-    entwurf = null; rueckgaengig = null; $("rueckgaengig").hidden = true;
-    neuStart();
-    $("f-thema").value = "";
-    zeige("start");
+    leeren();
     weiterAnzeigen();
   };
+  function leeren() {
+    Z.mappe = null; Z.kurs_md = ""; Z.steckbrief_text = ""; Z.assets = {}; Z.pruefung = null; Z.kennzahlen = null; Z.bau = null;
+    rueckgaengig = null; $("rueckgaengig").hidden = true; angaben = {};
+    neuStart();
+    $("f-thema").value = ""; $("f-jahrgang").value = ""; $("f-minuten").value = 45;
+    $("s1-titel").textContent = "Worum geht es?";
+    gespeichert = false;
+    zeichne();
+    window.scrollTo(0, 0);
+  }
 
-  zeige("start");
+  // ---------------------------------------------------------------- Rückmeldung (Adresse und Text zum Kopieren)
+  // Der Text nennt Version, Chat, Fach, Jahrgangsstufe, Vorlage und Weg; keine Inhalte der Einheit, kein Thema, keine Namen
+  function rueckmeldungText() {
+    var m = Z.mappe || {}, e = m.einheit || {}, c = chatInfo(m.chat);
+    return ["Rückmeldung zu Kursmühle " + ((katalog && katalog.version) || ""), "",
+      "Chat: " + (c ? c.text : "–"), "Fach: " + (angaben.fach || "–"), "Jahrgangsstufe: " + (e.jahrgang || angaben.jahrgang || "–"),
+      "Vorlage: " + (e.vorlage || "–") + (m.zweig ? " (" + ZWEIG_TEXT[m.zweig] + ")" : ""), "",
+      "Wo hat es gestockt?", "", "", "Was hättest du anders gewollt?", "", "", "Nutzt du es nächste Woche wieder?", "", ""].join("\n");
+  }
+  var rmBearbeitet = false;
+  function rueckmeldungFuellen() { if (!rmBearbeitet) $("rm-text").value = rueckmeldungText(); }
+  $("rm-text").addEventListener("input", function () { rmBearbeitet = true; });
+  function rueckmeldungOeffnen() {
+    $("rueckmeldung").dataset.offen = "1";
+    rueckmeldungFuellen();
+    zeichneSchritte();
+    $("rueckmeldung").scrollIntoView({ block: "start" });
+    $("rm-text-kopieren").focus({ preventScroll: true });
+  }
+  $("rueckmeldung-auf").onclick = rueckmeldungOeffnen;
+  $("fuss-rueckmeldung").onclick = rueckmeldungOeffnen;
+  $("rm-text-kopieren").onclick = function () {
+    kopieren($("rm-text").value, $("rm-text"), $("rm-stand"), "Kopiert. Füge den Text in eine Mail an kursmuehle@pm.me ein und ergänze die drei Antworten.");
+  };
+  $("rm-adresse-kopieren").onclick = function () {
+    kopieren("kursmuehle@pm.me", $("rm-adresse-feld"), $("rm-stand"), "Adresse kopiert.");
+  };
+
+  rueckmeldungFuellen();
+  zeichne();
 })();

@@ -146,26 +146,15 @@
    "phasen": [
     {
      "phase": "Einstieg",
-     "anteil": 8,
+     "anteil": 17,
      "rolle": "einstieg",
+     "zusammen": [
+      "Einstieg",
+      "Hinführung",
+      "Zielangabe"
+     ],
      "bausteine": [
-      "Textfeld"
-     ]
-    },
-    {
-     "phase": "Hinführung",
-     "anteil": 7,
-     "rolle": "einstieg",
-     "bausteine": [
-      "Textfeld"
-     ]
-    },
-    {
-     "phase": "Zielangabe",
-     "anteil": 2,
-     "rolle": "rahmen",
-     "bausteine": [
-      "Textfeld"
+      "Textfeld: Einstieg | Ein Text: Fall oder Frage aus dem Alltag, Hinführung zum Thema und das Ziel der Stunde in einem Satz."
      ]
     },
     {
@@ -174,9 +163,7 @@
      "rolle": "lesen",
      "dehnbar": true,
      "bausteine": [
-      "Seite: Erarbeitung 1 | Neue Begriffe einführen, jeden an einer Skizze oder einem Beispiel; noch keine Regel.",
-      "Zuordnen: Erarbeitung 2 | Die neuen Begriffe an Beispielen markieren oder benennen; nur, was Erarbeitung 1 eingeführt hat.",
-      "Seite: Erarbeitung 3 | Die Regel oder den Satz herleiten, im Merke-Kasten festhalten und an zwei durchgerechneten Beispielen mit Zwischenschritten zeigen."
+      "automatisch: Lesetext mit Fragen | Aufbau dieser einen Seite: neue Begriffe einführen, jeden an einer Skizze oder einem Beispiel; die Begriffe an Beispielen benennen lassen (Fragen dazwischen); dann die Regel oder den Satz herleiten, im Merke-Kasten festhalten und an zwei durchgerechneten Beispielen mit Zwischenschritten zeigen."
      ]
     },
     {
@@ -185,8 +172,8 @@
      "rolle": "üben",
      "dehnbar": true,
      "bausteine": [
-      "Zuordnen: Übung leicht | Die Regel anwenden, leichte Fälle.",
-      "Quiz: Übung mit Eingabe | Die Regel anwenden, mit Eingabe und einem Fall; ein Ergebnis geht nicht auf und wird gerundet."
+      "automatisch: Übung zum Zuordnen | Die Regel an leichten Fällen erkennen.",
+      "automatisch: Übung mit Eingabe | Die Regel anwenden, mit Eingabe und einem Fall; ein Ergebnis geht nicht auf und wird gerundet."
      ]
     },
     {
@@ -194,8 +181,7 @@
      "anteil": 13,
      "rolle": "sichern",
      "bausteine": [
-      "Seite: Hefteintrag | Hefteintrag zum Abschreiben: Begriffe, Regel, ein Beispiel.",
-      "Quiz: Abschlussquiz"
+      "Seite: Hefteintrag | Hefteintrag zum Abschreiben: Begriffe, Regel, ein Beispiel."
      ]
     },
     {
@@ -204,7 +190,7 @@
      "rolle": "sichern",
      "optional": true,
      "bausteine": [
-      "Quiz: Der Fall vom Anfang | Den Fall aus dem Einstieg mit der Regel lösen."
+      "automatisch: Der Fall vom Anfang | Den Fall aus dem Einstieg mit der Regel lösen."
      ]
     }
    ]
@@ -218,7 +204,7 @@
      "anteil": 10,
      "rolle": "einstieg",
      "bausteine": [
-      "Zuordnen"
+      "automatisch: Aufwärmen | Kurze Aufgaben zum Vorwissen."
      ]
     },
     {
@@ -226,7 +212,7 @@
      "anteil": 10,
      "rolle": "lesen",
      "bausteine": [
-      "Seite"
+      "automatisch: Kurz erinnern | Regel und ein Beispiel in wenigen Sätzen."
      ]
     },
     {
@@ -235,9 +221,8 @@
      "rolle": "üben",
      "dehnbar": true,
      "bausteine": [
-      "Quiz: Stufe 1",
-      "Lückentext: Stufe 2",
-      "Quiz: Stufe 3"
+      "automatisch: Stufe 1 | Erkennen, leichte Fälle.",
+      "automatisch: Stufe 2 | Anwenden auf Fälle, mit Eingabe."
      ]
     },
     {
@@ -245,7 +230,7 @@
      "anteil": 15,
      "rolle": "sichern",
      "bausteine": [
-      "Quiz: Abschlussquiz"
+      "automatisch: Selbstkontrolle | Gemischte Aufgaben mit Lösung."
      ]
     },
     {
@@ -254,7 +239,7 @@
      "rolle": "sichern",
      "optional": true,
      "bausteine": [
-      "Geschichte: Neuer Fall"
+      "automatisch: Neuer Fall | Ein Fall, der vorher nicht vorkam."
      ]
     }
    ]
@@ -277,7 +262,7 @@
      "rolle": "lesen",
      "dehnbar": true,
      "bausteine": [
-      "Buch"
+      "automatisch: Erinnern | Das Wichtigste je Teilthema knapp."
      ]
     },
     {
@@ -286,8 +271,7 @@
      "rolle": "üben",
      "dehnbar": true,
      "bausteine": [
-      "Quiz: Teilthema 1",
-      "Quiz: Teilthema 2"
+      "automatisch: Teilthemen üben | Aufgaben je Teilthema."
      ]
     },
     {
@@ -318,7 +302,7 @@
      "anteil": 10,
      "rolle": "einstieg",
      "bausteine": [
-      "Textfeld"
+      "Textfeld: Einstieg"
      ]
     },
     {
@@ -327,7 +311,7 @@
      "rolle": "lesen",
      "dehnbar": true,
      "bausteine": [
-      "Seite"
+      "automatisch: Lesetext aus deinem Material"
      ]
     },
     {
@@ -336,8 +320,8 @@
      "rolle": "üben",
      "dehnbar": true,
      "bausteine": [
-      "Zuordnen: Übung 1",
-      "Quiz: Übung 2"
+      "automatisch: Übung 1",
+      "automatisch: Übung 2"
      ]
     },
     {
@@ -345,8 +329,7 @@
      "anteil": 20,
      "rolle": "sichern",
      "bausteine": [
-      "Seite: Hefteintrag",
-      "Quiz: Abschlussquiz"
+      "Seite: Hefteintrag"
      ]
     },
     {
@@ -355,7 +338,7 @@
      "rolle": "sichern",
      "optional": true,
      "bausteine": [
-      "Quiz: Anwendung"
+      "automatisch: Anwendung"
      ]
     }
    ]
@@ -572,5 +555,53 @@
    "bilder": false
   }
  ],
- "version": "2.0.0-a4"
+ "typgruppen": [
+  {
+   "name": "Lesen",
+   "typen": [
+    "Textfeld",
+    "Seite",
+    "Lesebuch",
+    "Video",
+    "Link"
+   ]
+  },
+  {
+   "name": "Üben",
+   "typen": [
+    "Quiz",
+    "Zuordnen",
+    "Lernkarten",
+    "Lückentext",
+    "Geschichte",
+    "Umfrage"
+   ]
+  },
+  {
+   "name": "Sichern und bewerten",
+   "typen": [
+    "Test",
+    "Aufgabe",
+    "Abstimmung",
+    "Forum"
+   ]
+  },
+  {
+   "name": "Material und Struktur",
+   "typen": [
+    "Datei",
+    "Verzeichnis",
+    "Buch",
+    "Glossar",
+    "Überblick"
+   ]
+  }
+ ],
+ "automatisch": [
+  "Textfeld",
+  "Seite",
+  "Quiz",
+  "Zuordnen"
+ ],
+ "version": "2.0.0-b1"
 }
