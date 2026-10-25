@@ -3,6 +3,11 @@
 ## Unveröffentlicht
 
 - Das Design Grundschule trägt kein Dreieck mehr: der Import seiner letzten offenen CSS-Eigenschaft ist geprüft.
+- Ist eine genaue Zahl von Bildern gewählt, verlangt der Text für den Chat genau so viele, und die Prüfung meldet, wenn welche fehlen.
+- Schritt 6 beginnt mit der Wahl, wie du die Lösungen prüfst: mit deiner KI, in einem neuen Chat oder selbst; nur dieser Teil klappt auf.
+- Beim Gegenprüfen steht je Abweichung die Lösung der Kursdatei neben der Antwort des Chats, mit drei Wegen: Aufgabe korrigieren lassen, „Meine Lösung gilt“, „Übergehen“; weiter geht es, wenn alle entschieden sind.
+- Korrekturen aus Schritt 6 gehen als eine Bitte je Baustein in das Gespräch der Einheit; Entscheidungen zu unveränderten Bausteinen bleiben danach stehen.
+- Zeilen „Rückmeldung …“ unter einem Lückentext oder einer Einsetzen-Aufgabe sind ein Fehler mit Korrekturbitte statt zusätzlicher Lücken; der Text für den Chat sagt, dass der Tipp in die Lücke gehört.
 
 ## 2.0.0-b9 – 2026-10-25 (AP13.7, AP13.8, AP13.9: Produktstand für den Erstnutzer-Test)
 

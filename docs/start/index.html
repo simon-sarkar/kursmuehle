@@ -328,39 +328,64 @@
     </div>
   </section>
 
-  <!-- 6 Fragen und Lösungen -->
+  <!-- 6 Fragen und Lösungen: erst der Weg (Kacheln), dann nur dessen Teil (AP13.5g) -->
   <section id="schritt-6" class="schritt" data-nr="6" aria-labelledby="s6-titel" hidden>
     <h2 class="s-kopf"><button type="button" class="s-zeile" data-nr="6"><span class="s-nr">6</span>
       <span class="s-titel" id="s6-titel">Fragen und Lösungen durchsehen</span><span class="s-fazit"></span></button></h2>
     <div class="s-inhalt">
-      <p id="fragen-zeile" class="leise"></p>
-      <ol id="fragen-liste" class="fragen-liste"></ol>
-      <div class="durchsicht">
-        <button type="button" id="durchsicht-ok" class="knopf haupt">Lösungen stimmen, weiter</button>
-        <button type="button" id="ohne-durchsicht" class="textlink">Ohne Durchsicht weiter</button>
+      <p id="durchsicht-satz" class="leise"></p>
+      <div id="durchsicht-wahl" class="kacheln-wahl durchsicht-wahl" role="radiogroup" aria-labelledby="durchsicht-satz">
+        <button type="button" id="weg-ki" class="aus-kachel" role="radio" aria-checked="false" data-weg="ki" hidden>
+          <span class="aus-name">Mit meiner KI prüfen</span>
+          <span class="aus-zeile">Deine KI löst die Aufgaben in einem neuen Gespräch, ohne die Lösungen zu sehen.</span></button>
+        <button type="button" id="weg-chat" class="aus-kachel" role="radio" aria-checked="false" data-weg="chat">
+          <span class="aus-name">In einem neuen Chat prüfen</span>
+          <span class="aus-zeile">Du kopierst die Aufgaben in einen neuen Chat und fügst seine Antwort hier ein.</span></button>
+        <button type="button" id="weg-selbst" class="aus-kachel" role="radio" aria-checked="false" data-weg="selbst">
+          <span class="aus-name">Ich prüfe selbst</span>
+          <span class="aus-zeile">Du liest jede Frage mit ihrer Lösung.</span></button>
       </div>
-      <details id="gegenpruefen" class="gegenpruefen">
-        <summary>Lösungen von einem zweiten Chat gegenprüfen lassen (freiwillig)</summary>
-        <p class="leise">Ein neuer Chat löst die Aufgaben, ohne die Lösungen zu sehen. Du siehst danach nur, wo er anders antwortet.</p>
+      <div id="weg-selbst-teil" hidden>
+        <p id="fragen-zeile" class="leise"></p>
+        <ol id="fragen-liste" class="fragen-liste"></ol>
+      </div>
+      <div id="gegenpruefen" class="gegenpruefen" hidden>
         <div id="gegen-ki" class="kopieren" hidden>
-          <button type="button" id="gegen-senden" class="knopf haupt">Lösungen von meiner KI gegenprüfen lassen</button>
+          <button type="button" id="gegen-senden" class="knopf haupt">Aufgaben an meine KI senden</button>
         </div>
-        <div class="kopieren">
-          <button type="button" id="gegen-kopieren" class="knopf">Aufgaben für einen neuen Chat kopieren</button>
+        <div id="gegen-chat" hidden>
+          <div class="kopieren">
+            <button type="button" id="gegen-kopieren" class="knopf haupt">Aufgaben für einen neuen Chat kopieren</button>
+          </div>
+          <p id="gegen-kopiert" class="stand" role="status" aria-live="polite"></p>
+          <details class="text-ansehen">
+            <summary>Text ansehen und selbst markieren</summary>
+            <textarea id="gegen-text-feld" rows="10" readonly spellcheck="false" aria-label="Aufgaben für einen neuen Chat"></textarea>
+          </details>
         </div>
-        <p id="gegen-kopiert" class="stand" role="status" aria-live="polite"></p>
-        <details class="text-ansehen">
-          <summary>Text ansehen und selbst markieren</summary>
-          <textarea id="gegen-text-feld" rows="10" readonly spellcheck="false" aria-label="Aufgaben für einen neuen Chat"></textarea>
-        </details>
         <div id="gegen-einfuegen">
           <label for="gegen-antwort" class="feld">Antwort des neuen Chats</label>
           <textarea id="gegen-antwort" rows="4" spellcheck="false" placeholder="Hier einfügen"></textarea>
         </div>
         <p id="gegen-ki-stand" class="stand-karte" role="status" aria-live="polite" hidden></p>
         <p id="gegen-stand" class="stand" role="status" aria-live="polite"></p>
+        <!-- je Abweichung: Aufgabe, Lösung laut Kursdatei, Antwort des Chats, drei Wege -->
         <ul id="gegen-ergebnis" class="gegen-ergebnis"></ul>
-      </details>
+        <div id="gegen-korrektur-teil" class="kopieren" hidden>
+          <button type="button" id="gegen-korrektur" class="knopf">Korrekturen kopieren</button>
+          <p id="gegen-korrektur-stand" class="stand" role="status" aria-live="polite"></p>
+          <p id="gegen-korrektur-ki" class="stand-karte" role="status" aria-live="polite" hidden></p>
+          <textarea id="gegen-korrektur-feld" class="unsichtbar" readonly aria-hidden="true" tabindex="-1"></textarea>
+        </div>
+        <details id="gegen-gleich" class="gegen-gleich" hidden>
+          <summary id="gegen-gleich-titel"></summary>
+          <ul id="gegen-gleich-liste"></ul>
+        </details>
+      </div>
+      <div class="durchsicht">
+        <button type="button" id="durchsicht-ok" class="knopf haupt">Lösungen stimmen, weiter</button>
+        <button type="button" id="ohne-durchsicht" class="textlink">Ohne Durchsicht weiter</button>
+      </div>
     </div>
   </section>
 
