@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- Testphase mit Code: Aufträge, bei denen die KI länger als 100 Sekunden schreibt, kommen an statt mit „524“ abzubrechen (Worker neu ausrollen).
+
 ## 2.0.0-b10 – 2026-10-25 (AP13.5g: Befunde des Erstnutzer-Tests)
 
 - Die Startseite nennt keine Schulart mehr als Grenze; eine Zielgruppe wie „Elternabend“ steht unter „Erweitert“, das Feld Jahrgangsstufe nimmt nur Zahlen.
