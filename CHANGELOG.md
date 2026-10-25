@@ -1,5 +1,12 @@
 # Changelog
 
+## Unveröffentlicht (AP13.5c: Anordnung, Standardfarben, Skala der Designs)
+
+- Die Designs unterscheiden sich in der Anordnung: Titel über, auf oder unter dem Bannerbild, Bild links, rechts, oben oder klein neben dem Text, Ablauf als Kacheln, Liste, Spalte oder ein Satz, Übungskopf in vier Formen.
+- Jedes Design hat eine eigene Standardfarbe und eine eigene Schriftgröße; Grundschule setzt größere Schrift und Knöpfe mit mindestens 48 px.
+- Magazin trägt Schwarz mit Rot, Freundlich Blau mit warmem Pastell und runde Knöpfe.
+- Einheiten mit Freundlich oder Magazin sehen nach dem nächsten Bau anders aus als bisher; Sachlich bleibt unverändert.
+
 ## 2.0.0-b7 – 2026-10-25 (AP13.5: Designfamilien, Feinheiten, Vorschau; AP13.5b: dritter Weg „Ich gebe die Richtung“; AP14: eigene KI direkt verbinden)
 
 - Schritt 3 bietet elf Designs statt drei Vorlagen: Sachlich, Freundlich, Magazin, Grundschule, Verspielt, Modern, Klassisch, Natur, Druck, Dunkel und „Ohne Vorlage“.

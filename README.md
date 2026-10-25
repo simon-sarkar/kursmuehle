@@ -21,7 +21,7 @@ und einzelne Chats antworten noch in einer Form, die die Seite nicht lesen kann.
 | Kann | Noch nicht |
 |---|---|
 | Kursformate Themen, Kacheln, Wochen, Ein-Themen, Komprimierte Abschnitte, Einzelaktivität | Lernlandkarte, Mimo |
-| Seiten und Textfelder mit Überschriften, Schritten, Tabellen, Kästen, Merksätzen und Bildern in elf Designs mit eigener Farbe, Dichte und Kastenform | Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool |
+| Seiten und Textfelder mit Überschriften, Schritten, Tabellen, Kästen, Merksätzen und Bildern in elf Designs mit eigener Anordnung, Farbe, Dichte und Kastenform | Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool |
 | Test (Multiple Choice, Wahr/Falsch, Kurzantwort), Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar | Weitere Fragetypen im Test, Zeitlimits, Forum-Diskussionen |
 | H5P-Inhalte: Interactive Book, Branching Scenario, Question Set, Drag and Drop, Lückentext, Lernkarten und weitere | Weitere H5P-Typen wie Interactive Video oder Image Hotspots |
 | Übungen als Website in einem Abschnitt oder als Block im Textfeld: Quiz, Zuordnen, Lückentext, Markieren, Lernkarten, Geschichte, mit Rückmeldung zur ganzen Übung | Bewertung und Abschluss je Übung in der Website, eigene Spiele und Simulationen |

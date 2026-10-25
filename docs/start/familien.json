@@ -14,7 +14,7 @@
    "text": "Freundlich",
    "zeile": "Getönte Flächen, runde Ecken, viel Luft.",
    "probe": [],
-   "akzent": "#1D5FD1",
+   "akzent": "#2563EB",
    "akzent_fest": false
   },
   {
@@ -22,7 +22,7 @@
    "text": "Magazin",
    "zeile": "Linien statt Flächen, große Überschriften.",
    "probe": [],
-   "akzent": "#1D5FD1",
+   "akzent": "#111111",
    "akzent_fest": false
   },
   {
@@ -30,9 +30,10 @@
    "text": "Grundschule",
    "zeile": "Große Schrift, runde Formen, zwei warme Farben.",
    "probe": [
-    "font-family"
+    "font-family",
+    "overflow-wrap"
    ],
-   "akzent": "#1D5FD1",
+   "akzent": "#E07A1F",
    "akzent_fest": false
   },
   {
@@ -42,7 +43,7 @@
    "probe": [
     "font-family"
    ],
-   "akzent": "#1D5FD1",
+   "akzent": "#7C3AED",
    "akzent_fest": false
   },
   {
@@ -50,7 +51,7 @@
    "text": "Modern",
    "zeile": "Viel Weißraum, feine Linien, große Überschriften.",
    "probe": [],
-   "akzent": "#1D5FD1",
+   "akzent": "#0F766E",
    "akzent_fest": false
   },
   {
@@ -61,7 +62,7 @@
     "font-family",
     "font-variant"
    ],
-   "akzent": "#1D5FD1",
+   "akzent": "#7F1D1D",
    "akzent_fest": false
   },
   {
@@ -87,7 +88,7 @@
    "text": "Dunkel",
    "zeile": "Dunkle Karten auf der hellen Plattform.",
    "probe": [],
-   "akzent": "#1D5FD1",
+   "akzent": "#2DD4BF",
    "akzent_fest": false
   },
   {

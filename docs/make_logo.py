@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Erzeugt Logo, Wortmarke, Banner und Badges der Kursmühle als SVG. Aufruf: python3 docs/make_logo.py"""
-import math, os
+import math, os, re
 
 FG, BG, AC = "#2a2a2a", "#f3e9d8", "#d9a441"
 FONT = "Segoe UI, Helvetica Neue, Arial, sans-serif"
@@ -150,7 +150,9 @@ def badge(left, right, lw, rw, rightfill=AC, rightfg=FG):
 
 
 if __name__ == "__main__":
-    version = open(os.path.join(HERE, "..", "CHANGELOG.md"), encoding="utf-8").read().split("## ", 2)[1].split(" ")[0]
+    # erste Versionsüberschrift; „## Unveröffentlicht“ davor zählt nicht
+    version = re.search(r"^## (\d\S*)", open(os.path.join(HERE, "..", "CHANGELOG.md"), encoding="utf-8").read(),
+                        re.M).group(1)
     files = {
         "logo.svg": icon(BG, FG, AC),          # dunkles Quadrat, helle Mühle (Hauptfassung, wie im Banner)
         "logo-light.svg": icon(FG, BG, AC, gap=4),  # Creme-Quadrat, dunkle Mühle (für dunkle Flächen), schmalerer Rand
