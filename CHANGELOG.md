@@ -9,6 +9,7 @@
 - Schritt 3 bietet alle fünf Kursformate; „Wochen“ fragt nach dem Kursbeginn.
 - Ein kleines Dreieck markiert Designs und Formate, deren Import auf der Plattform noch nicht geprüft ist.
 - Die Feinheiten sind kürzer: Farbe, Dichte und Kästen ohne Erklärtext, vorgewählt ist jeweils der Standard des Designs.
+- Eine Zeile `abschluss: ansehen` unter einem Textfeld führt nicht mehr zu einer Korrekturbitte.
 
 ## 2.0.0-b8 – 2026-10-25 (AP13.5c: Anordnung, Standardfarben, Skala der Designs; AP13.6: LehrplanPLUS für Grund- und Mittelschule; AP14b: Testcode)
 
