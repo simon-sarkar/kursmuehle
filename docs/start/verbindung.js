@@ -126,7 +126,10 @@
         text: "So geht es" });
     hilfe.onclick = function () { S.verbindenOffen = !S.verbindenOffen; zeichne();
       if (S.verbindenOffen) $("verbinden-code").focus({ preventScroll: true }); };
-    k.after(el("span", { cls: "leise ki-zustand", id: "ki-zustand" }), hilfe);
+    // „Trennen“ sichtbar neben der Kachel, sobald eine Verbindung gemerkt ist (sonst nur im zugeklappten Feld)
+    var trennen = el("button", { type: "button", cls: "textlink", id: "ki-trennen", text: "Trennen", hidden: "" });
+    trennen.onclick = function () { V.trennen(); S.verbindenOffen = false; zeichne(); $("verbinden-stand").textContent = "Getrennt."; };
+    k.after(el("span", { cls: "leise ki-zustand", id: "ki-zustand" }), hilfe, trennen);
     zeichne();
   }
   // Solange die eigene KI schreibt, verschwinden Einfügefeld und „Antwort übernehmen“ des betroffenen Schritts; sie
@@ -156,6 +159,7 @@
     if ($("ki-hilfe")) $("ki-hilfe").setAttribute("aria-expanded", String(S.verbindenOffen));
     $("verbinden").hidden = !S.verbindenOffen;
     $("verbinden-trennen").hidden = !V.gemerkt;
+    if ($("ki-trennen")) $("ki-trennen").hidden = !V.gemerkt;
     if (V.gemerkt && V.gemerkt.port && !$("verbinden-port").value) $("verbinden-port").value = V.gemerkt.port;
     testHinweis();
     if (S.zeichneChat) S.zeichneChat();

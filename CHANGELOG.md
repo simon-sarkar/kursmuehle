@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- „Eigene KI“: neben der Kachel steht „Trennen“, sobald eine Verbindung gemerkt ist.
 - Die Wörterzählung des Hefteintrags schneidet Paare wie „play → played“ nicht mehr ab; nur Rückmeldungen hinter Antworten zählen nicht.
 - Testphase mit Code: Aufträge, bei denen die KI länger als 100 Sekunden schreibt, kommen an statt mit „524“ abzubrechen (Worker neu ausrollen).
 
