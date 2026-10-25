@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht (AP13.5d: Schritt 3 mit mitlaufender Vorschau; AP13.5e: Charakter je Design)
+## Unveröffentlicht (AP13.5d: Schritt 3 mit mitlaufender Vorschau; AP13.5e: Charakter je Design; AP13.5f: eigene KI im Lauf, Lehrplan-Haken, Schriften)
 
 - Die Vorschau des gewählten Designs läuft beim Scrollen mit: auf breiten Bildschirmen rechts, sonst als Leiste am unteren Rand, die ein Tippen aufklappt.
 - Die Vorschau zeigt Inhalt, auch wenn du Schritt 3 erreichst, bevor die Mühle fertig geladen ist.
@@ -12,10 +12,20 @@
 - Eine Zeile `abschluss: ansehen` unter einem Textfeld führt nicht mehr zu einer Korrekturbitte.
 - Sieben Designs haben ein eigenes Motiv: Kreide, Aquarell, Pinselstrich, Punkte, Papierkante, Schrägschnitt, Doppellinie; Druck ein feines Raster im Kasten.
 - Ohne Bild aus dem Chat werden Banner, Kursbild und Kachelbilder eine Fläche im Design, der Banner mit dem Kurstitel in der Titelschrift; ein hochgeladenes Bild ersetzt sie.
-- Jedes dieser Designs setzt Titel, Kicker und Überschriften in einer eigenen Schrift (Fredoka, Patrick Hand, Space Grotesk, Bodoni Moda, Alegreya, Bebas Neue, Sora); der Fließtext bleibt in der Schrift der Plattform.
+- Jedes dieser Designs setzt Titel, Kicker und Überschriften in einer eigenen Schrift (Lexend, Kalam, Outfit, Source Serif 4, Alegreya, Bebas Neue, Sora); der Fließtext bleibt in der Schrift der Plattform.
 - Merksatz, Hinweis und Aufgabe tragen ein kleines Zeichen des Designs (Stern, Sprechblase, Blatt, Punkt, Ornament, Balken, Ring); Grundschule und Verspielt färben jede Kastenart in einem eigenen Pastellton.
 - Der Text für den Chat sagt bei diesen Designs, dass kein Kursbild nötig ist, und nennt den Bildstil in einem Satz.
 - Einheiten mit Magazin, Grundschule, Verspielt, Modern, Klassisch, Natur, Druck oder Dunkel sehen nach dem nächsten Bau anders aus; Sachlich, Freundlich und „Ohne Vorlage“ bleiben unverändert.
+- Klassisch hat leicht gerundete Kästen und Schrittnummern in der Textfarbe; die Sätze unter den Design-Kacheln passen in zwei Zeilen.
+- Schrift und SVG-Bilder der Designs haben den Import auf der Plattform bestanden; das Dreieck „Importprobe steht aus“ bleibt nur bei Grundschule.
+- Solange deine eigene KI schreibt, dreht sich daneben die Mühle, Einfügefeld und „Antwort übernehmen“ sind ausgeblendet und „An meine KI senden“ ist ausgegraut; beim Erstellen der Datei dreht sie sich ebenfalls.
+- Mit verbundener KI lässt du die Lösungen in einem neuen Gespräch gegenprüfen; Kopieren in einen neuen Chat bleibt als zweiter Weg.
+- Im Schritt Bilder zeigt jede Zeile das hochgeladene Bild; ein Klick auf „Passt“ ersetzt die drei Prüfkästchen.
+- Der Erklärblock zu den Farben am Rand entfällt; ein Satz dazu steht im Hinweis zu Schritt 5.
+- Im Fach-Feld finden Kürzel wie „NT“, „HSU“ oder „Sp“ das Fach; Treffer nur am Anfang eines Wortes.
+- Der Haken heißt „Lehrplanbezug Grund- und Mittelschulen Bayern“, ist zuerst aus und merkt sich deine letzte Wahl; gesetzt öffnet er den Lehrplan sofort, bis zur Wahl eines Lernbereichs steht ein gelber Hinweis darunter und am Rand.
+- Das Fazit von Schritt 1 nennt den Lernbereich; bei „Mach du“ ist der passendste Lernbereich schon gewählt.
+- Einfache Sprache für die Grundschule richtet sich nach Jahrgangsstufe oder Schulart, auch ohne Lehrplanbezug.
 
 ## 2.0.0-b8 – 2026-10-25 (AP13.5c: Anordnung, Standardfarben, Skala der Designs; AP13.6: LehrplanPLUS für Grund- und Mittelschule; AP14b: Testcode)
 

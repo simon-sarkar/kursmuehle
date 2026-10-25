@@ -4,7 +4,7 @@
   {
    "name": "sachlich",
    "text": "Sachlich",
-   "zeile": "Wie ein Lehrbuch, ruhig und klar.",
+   "zeile": "Ruhig und klar wie ein Lehrbuch.",
    "probe": [],
    "akzent": "#1D5FD1",
    "akzent_fest": false,
@@ -14,7 +14,7 @@
   {
    "name": "freundlich",
    "text": "Freundlich",
-   "zeile": "Getönte Flächen, runde Ecken, viel Luft.",
+   "zeile": "Getönte Flächen, runde Ecken.",
    "probe": [],
    "akzent": "#2563EB",
    "akzent_fest": false,
@@ -24,12 +24,8 @@
   {
    "name": "magazin",
    "text": "Magazin",
-   "zeile": "Linien statt Flächen, große Überschriften.",
-   "probe": [
-    "font-family",
-    "font-face",
-    "svg-bild"
-   ],
+   "zeile": "Große Titel über feinen Linien.",
+   "probe": [],
    "akzent": "#111111",
    "akzent_fest": false,
    "kasten_form": "linie_oben",
@@ -38,12 +34,9 @@
   {
    "name": "grundschule",
    "text": "Grundschule",
-   "zeile": "Große Schrift, runde Formen, zwei warme Farben.",
+   "zeile": "Große Schrift, runde Formen.",
    "probe": [
-    "font-family",
-    "overflow-wrap",
-    "font-face",
-    "svg-bild"
+    "overflow-wrap"
    ],
    "akzent": "#E07A1F",
    "akzent_fest": false,
@@ -53,12 +46,8 @@
   {
    "name": "verspielt",
    "text": "Verspielt",
-   "zeile": "Sticker und Handlinien, für Unter- und Mittelstufe.",
-   "probe": [
-    "font-family",
-    "font-face",
-    "svg-bild"
-   ],
+   "zeile": "Sticker und Handlinien.",
+   "probe": [],
    "akzent": "#7C3AED",
    "akzent_fest": false,
    "kasten_form": "gestrichelt",
@@ -67,12 +56,8 @@
   {
    "name": "modern",
    "text": "Modern",
-   "zeile": "Viel Weißraum, feine Linien, große Überschriften.",
-   "probe": [
-    "font-family",
-    "font-face",
-    "svg-bild"
-   ],
+   "zeile": "Viel Weißraum, feine Linien.",
+   "probe": [],
    "akzent": "#0F766E",
    "akzent_fest": false,
    "kasten_form": "offen",
@@ -81,27 +66,18 @@
   {
    "name": "klassisch",
    "text": "Klassisch",
-   "zeile": "Serifenschrift, nummerierte Überschriften.",
-   "probe": [
-    "font-family",
-    "font-variant",
-    "font-face",
-    "svg-bild"
-   ],
+   "zeile": "Serifen und nummerierte Titel.",
+   "probe": [],
    "akzent": "#7F1D1D",
    "akzent_fest": false,
    "kasten_form": "einzug",
-   "kasten_r": 0
+   "kasten_r": 3
   },
   {
    "name": "natur",
    "text": "Natur",
-   "zeile": "Papier und Erdtöne, ruhig und warm.",
-   "probe": [
-    "font-family",
-    "font-face",
-    "svg-bild"
-   ],
+   "zeile": "Ruhige Papier- und Erdtöne.",
+   "probe": [],
    "akzent": "#3F7D4E",
    "akzent_fest": false,
    "kasten_form": "papier",
@@ -111,9 +87,7 @@
    "name": "druck",
    "text": "Druck",
    "zeile": "ohne Farbe, für Papier",
-   "probe": [
-    "svg-bild"
-   ],
+   "probe": [],
    "akzent": "#000000",
    "akzent_fest": true,
    "kasten_form": "rahmen_dick",
@@ -122,12 +96,8 @@
   {
    "name": "dunkel",
    "text": "Dunkel",
-   "zeile": "Dunkle Karten auf der hellen Plattform.",
-   "probe": [
-    "font-family",
-    "font-face",
-    "svg-bild"
-   ],
+   "zeile": "Dunkle Karten auf heller Seite.",
+   "probe": [],
    "akzent": "#2DD4BF",
    "akzent_fest": false,
    "kasten_form": "balken",
@@ -136,7 +106,7 @@
   {
    "name": "ohne",
    "text": "Ohne Vorlage",
-   "zeile": "so, wie die Lernplattform es zeigt",
+   "zeile": "wie die Lernplattform es zeigt",
    "probe": [],
    "akzent": "#444444",
    "akzent_fest": true,

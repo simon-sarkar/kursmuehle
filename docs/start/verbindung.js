@@ -103,7 +103,7 @@
   if (!document.getElementById("schritt-5")) return;
   var S = km.seite, $ = S.$, Z = S.Z, el = S.el;
   S.verbindenOffen = false;
-  S.kiLaeuft = false;
+  S.kiLaeuft = false;                        // während eines Auftrags: das Feld, in das die Antwort kommt
   S.kopierStatt = false;                     // „Stattdessen kopieren“: Knöpfe zurück auf Kopieren, Chat bleibt
   S.anKiAktiv = function () { return !!Z.mappe && Z.mappe.chat === "eigene" && !S.kopierStatt; };
   S.kiName = V.name;
@@ -127,6 +127,15 @@
     k.after(el("span", { cls: "leise ki-zustand", id: "ki-zustand" }), hilfe);
     zeichne();
   }
+  // Solange die eigene KI schreibt, verschwinden Einfügefeld und „Antwort übernehmen“ des betroffenen Schritts; sie
+  // kommen mit der Antwort, der Fehlerzeile oder „Stattdessen kopieren“ zurück
+  var FELDER = { eingabe: ["eingabe", "eingabe-knopf"], korrektur: ["korrektur-einfuegen"], gegen: ["gegen-einfuegen"] };
+  function felder() {
+    Object.keys(FELDER).forEach(function (k) {
+      FELDER[k].forEach(function (id) { if ($(id)) $(id).hidden = S.kiLaeuft === k; });
+    });
+  }
+  // (vor dem ersten zeichne(): kachelErgaenzen() läuft gleich, und in WebKit stehen die Kacheln dann schon)
   // „Eigene KI“ gewählt: mit gespeichertem Code nach dem Stand fragen, sonst „So geht es“ öffnen; jeder Wechsel
   // beschriftet Teil- und Korrekturknopf neu
   $("chat-knoepfe").addEventListener("click", function (ev) {
@@ -150,6 +159,8 @@
     if (S.zeichneChat) S.zeichneChat();
     if (S.zeichneTeile) S.zeichneTeile();
     if (S.zeichneKorrektur) S.zeichneKorrektur();
+    if (S.zeichneGegen) S.zeichneGegen();
+    felder();
   }
   S.verbindungZeichnen = zeichne;
   // Mühle von der Brücke selbst ausgeliefert (http://127.0.0.1:48127/start/): ihr Port ist der Standard
@@ -247,15 +258,17 @@
       $("verbinden-code").focus({ preventScroll: true });
       return false;
     }
+    S.kiLaeuft = o.feld || "auftrag";
     if (o.vorher) o.vorher();
-    S.kiLaeuft = true;
+    zeichne();
     var t0 = Date.now();
-    function tick() { o.stand("Deine KI schreibt … " + dauer(Date.now() - t0), ""); }
+    function tick() { o.stand("Deine KI schreibt … " + dauer(Date.now() - t0), "laeuft"); }
     tick();
     var uhr = setInterval(tick, 1000);
     try {
       var antwort = await V.senden(text, { einheit: o.einheit, neu: o.neu });
       clearInterval(uhr); o.stand("", ""); S.kiLaeuft = false;
+      zeichne();
       await o.fertig(antwort);
       return true;
     } catch (e) {

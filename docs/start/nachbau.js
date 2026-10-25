@@ -36,6 +36,7 @@
       ol.appendChild(el("li", { cls: "frage" }, [kopf, el("p", { cls: "f-frage", text: (f.art === "rf" ?
           "Richtig oder falsch: " : "") + f.frage }), optionen, loesung]));
     });
+    zeichneGegen();
   }
   $("fragen-liste").onclick = function (ev) { var z = ev.target.closest("[data-ziel]"); if (z) zuKarte(z.dataset.ziel);
       };
@@ -55,6 +56,20 @@
   $("gegen-kopieren").onclick = function () {
     kopieren($("gegen-text-feld").value, $("gegen-text-feld"), $("gegen-kopiert"),
         "Jetzt in einen neuen Chat einfügen, die Antwort hier unten einfügen.");
+  };
+  // Eigene KI verbunden: ein neues Gespräch löst die Aufgaben blind; die Antwort landet im Feld wie eingefügt
+  function zeichneGegen() {
+    var ki = !!(S.anKiAktiv && S.anKiAktiv());
+    $("gegen-ki").hidden = !ki;
+    $("gegen-senden").disabled = !$("gegen-text-feld").value || S.kiBesetzt();
+  }
+  $("gegen-senden").onclick = function () {
+    var text = $("gegen-text-feld").value;
+    if (!text) return;
+    S.anKi(text, { einheit: "gegen:" + S.einheitTag(), neu: true, ort: $("gegen-ki-stand"), feld: "gegen",
+      stand: function (x, art) { S.standKarte($("gegen-ki-stand"), x, art); },
+      fertig: function (antwort) { $("gegen-antwort").value = antwort; clearTimeout(gegenTimer); return gegenpruefen(); }
+    });
   };
   var gegenTimer = null;
   $("gegen-antwort").addEventListener("input", function () {
@@ -256,6 +271,6 @@
     zeichne();
   }
   Object.assign(S, { leeren: leeren, rueckmeldungFuellen: rueckmeldungFuellen, rueckmeldungOeffnen: rueckmeldungOeffnen,
-    zeichneFragen: zeichneFragen, zeichneWiederherstellen: zeichneWiederherstellen });
+    zeichneFragen: zeichneFragen, zeichneGegen: zeichneGegen, zeichneWiederherstellen: zeichneWiederherstellen });
   starten();
 })();

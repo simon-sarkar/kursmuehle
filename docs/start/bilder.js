@@ -1,4 +1,4 @@
-/* Kursmühle – Bilder: Hochladen mit Verkleinern, Schritt Bilder mit Prüffragen. */
+/* Kursmühle – Bilder: Hochladen mit Verkleinern, Schritt Bilder mit Vorschau und „Passt“. */
 "use strict";
 
 (function () {
@@ -49,17 +49,34 @@
     } catch (e) { zeigeFehler(e); }
   }
 
+  // „Passt“ geklickt = true; Kursmappen von vor AP13.5f tragen je Bild eine Liste mit Haken
   function bildGeprueft(datei) {
-    var p = (Z.mappe.bildpruefung || {})[datei] || [];
-    return S.katalog.oberflaeche.bild_pruefung.every(function (_, j) { return p[j] === true; });
+    var p = (Z.mappe.bildpruefung || {})[datei];
+    return p === true || (Array.isArray(p) && p.length > 0 && p.every(function (x) { return x === true; }));
+  }
+  // Vorschau aus den Bytes im Speicher; eine Adresse je Bilddatei, neu, wenn das Bild ersetzt wird
+  var vorschauen = {};
+  function vorschauUrl(datei) {
+    var bytes = Z.assets[datei], v = vorschauen[datei];
+    if (v && v.bytes === bytes) return v.url;
+    if (v) URL.revokeObjectURL(v.url);
+    var url = URL.createObjectURL(new Blob([bytes], { type: bytes[0] === 0x89 ? "image/png" : "image/jpeg" }));
+    vorschauen[datei] = { bytes: bytes, url: url };
+    return url;
+  }
+  function vorschau(datei) {
+    var url = vorschauUrl(datei);
+    return el("a", { cls: "bild-vorschau", href: url, target: "_blank", rel: "noopener",
+        title: S.katalog.oberflaeche.bild_pruefung, "aria-label": "Bild „" + datei + "“ in voller Größe öffnen" },
+      [el("img", { src: url, alt: "", style: "display: block; max-width: min(240px, 100%); max-height: 240px; " +
+          "margin-top: 10px; border: 1px solid var(--linie); cursor: zoom-in;" })]);
   }
   function zeichneBilder() {
-    var ol = $("bilder-liste"), w = bildwuensche(), fragen = S.katalog.oberflaeche.bild_pruefung;
+    var ol = $("bilder-liste"), w = bildwuensche();
     ol.innerHTML = "";
     var fehlen = 0;
     w.forEach(function (b, i) {
       var da = !!(b.datei && Z.assets[b.datei]), geprueft = da && bildGeprueft(b.datei);
-      var haken = (Z.mappe.bildpruefung || {})[b.datei] || [];
       if (b.datei && !da) fehlen += 1;
       var nr = b.baustein ? Z.mappe.bausteine.findIndex(function (k) { return k.id === b.baustein; }) + 1 : 0;
       var text = function (art, titel, inhalt, knopf) {
@@ -78,12 +95,9 @@
             da ? (geprueft ? "da" : "da, ungeprüft") : "fehlt"])]),
         text("wunsch", "Was zu sehen ist", b.wunsch, "Beschreibung kopieren"),
         text("prompt", "Auftrag für einen Bildgenerator", b.prompt, "Auftrag kopieren"),
-        b.datei ? el("fieldset", { cls: "bild-pruefung" }, [el("legend", { text: "Vor dem Hochladen ansehen" })].concat(
-          fragen.map(function (f, j) {
-            return el("label", { cls: "bild-frage" }, [el("input", { type: "checkbox", cls: "bild-haken",
-                "data-datei": b.datei,
-              "data-nr": j, checked: haken[j] === true }), f]);
-          }))) : null,
+        da ? el("div", { cls: "kopieren bild-pruefung" }, [vorschau(b.datei),
+          el("button", { type: "button", cls: "knopf klein-knopf bild-passt", "data-datei": b.datei,
+              "aria-pressed": String(geprueft), text: "Passt" })]) : null,
         b.datei ? el("div", { cls: "bild-ablage", "data-datei": b.datei }, [
           el("span", { text: "Bild hierher ziehen oder" }),
           el("label", { cls: "knopf klein-knopf" }, [da ? "Bild ersetzen" : "Bild hochladen",
@@ -102,6 +116,15 @@
     $("bilder-stand").className = "stand " + (fehlen ? "" : "ok");
   }
   $("bilder-liste").addEventListener("click", function (ev) {
+    var passt = ev.target.closest(".bild-passt");
+    if (passt) {
+      var p = Z.mappe.bildpruefung = Z.mappe.bildpruefung || {}, d = passt.dataset.datei;
+      if (bildGeprueft(d)) delete p[d]; else p[d] = true;
+      zeichneBilder(); geaendert();
+      var neu = $("bilder-liste").querySelector(".bild-passt[data-datei='" + CSS.escape(d) + "']");
+      if (neu) neu.focus({ preventScroll: true });
+      return;
+    }
     var b = ev.target.closest(".bild-kopieren"); if (!b) return;
     var w = bildwuensche()[parseInt(b.dataset.nr, 10)]; if (!w) return;
     var t = b.dataset.art === "wunsch" ? w.wunsch : w.prompt;
@@ -112,13 +135,6 @@
           "es." : "Kopiert. Füge den Auftrag in einen Bildgenerator ein.");
   });
   $("bilder-liste").addEventListener("change", function (ev) {
-    if (ev.target.classList.contains("bild-haken")) {
-      var p = Z.mappe.bildpruefung = Z.mappe.bildpruefung || {}, d = ev.target.dataset.datei;
-      p[d] = S.katalog.oberflaeche.bild_pruefung.map(function (_, j) { return (p[d] || [])[j] === true; });
-      p[d][parseInt(ev.target.dataset.nr, 10)] = ev.target.checked;
-      zeichneBilder(); geaendert();
-      return;
-    }
     if (!ev.target.classList.contains("bild-datei")) return;
     var f = ev.target.files && ev.target.files[0], name = ev.target.dataset.datei;
     ev.target.value = "";

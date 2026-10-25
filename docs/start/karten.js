@@ -352,7 +352,11 @@
     else if (Z.bau && !Z.bau.mbz) t = "Die Datei ließ sich nicht erstellen: " + ((Z.bau.diagnosen || [])
         .filter(function (d) { return d.stufe === "fehler"; }).map(function (d) { return d.text; })[0] || "");
     else if (!Z.geladen) t = "Wird vorbereitet …";
-    $("erstellen-stand").textContent = t;
+    // beim Bauen dreht sich die Mühle neben dem Satz (wie bei „Deine KI schreibt …“)
+    var es = $("erstellen-stand");
+    if (S.bauLaeuft && es.querySelector(".muehle-warten")) es.querySelector(".laeuft-text").textContent = t;
+    else if (S.bauLaeuft) { es.textContent = ""; es.append(S.wartezeichen(), el("span", { cls: "laeuft-text", text: t })); }
+    else es.textContent = t;
     $("speichern").disabled = !Z.geladen || !Z.mappe;
     $("wiederherstellen").hidden = !(Z.bau && Z.bau.mbz);
     $("weiter-5").hidden = !(schritt() === 5 && voll && !fehler && !teileOffen());
@@ -524,7 +528,7 @@
         var t = await korrekturText();
         S.korrektur.text = t;
         $("korrektur-feld").value = t;
-        $("korrektur-kopieren").disabled = !t;
+        $("korrektur-kopieren").disabled = !t || S.kiBesetzt();
       } catch (e) { zeigeFehler(e); }
     }, ms === undefined ? 400 : ms);
   }
@@ -554,7 +558,7 @@
     if (!S.korrektur.text && !neu.length) S.korrektur.text = S.korrekturen.map(function (k) { return k.satz; })
         .join("\n");
     $("korrektur-feld").value = S.korrektur.text;
-    $("korrektur-kopieren").disabled = !S.korrektur.text;
+    $("korrektur-kopieren").disabled = !S.korrektur.text || S.kiBesetzt();
   }
   // Jede Korrekturbitte als Ereignis in der Kursmappe (keine Inhalte): Version, Chat, Typ, Regel, Runde je Einheit
   function korrekturVermerken() {
@@ -576,7 +580,7 @@
     $("korrektur-antwort").hidden = false; S.standKarte($("korrektur-ergebnis"), "");
     // eigene KI: dieselbe Bitte ins Gespräch der Einheit, die Antwort durch korrekturEinsetzen wie eingefügt
     if (S.anKiAktiv && S.anKiAktiv()) return S.anKi(S.korrektur.text, { einheit: einheitTag(), neu: false,
-      ort: $("korrektur-ergebnis"), vorher: korrekturVermerken,
+      ort: $("korrektur-ergebnis"), feld: "korrektur", vorher: korrekturVermerken,
       stand: function (x, art) { S.korrektur.stand = x; S.korrektur.art = art; S.standKarte($("korrektur-ergebnis"), x,
           art); },
       fertig: function (antwort) { $("korrektur-eingabe").value = antwort; return korrekturEinsetzen(); } });

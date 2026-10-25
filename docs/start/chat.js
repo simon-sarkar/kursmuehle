@@ -11,6 +11,7 @@
       teileOffen = S.teileOffen, texte = S.texte, zeichne = S.zeichne, zeichneSchritte = S.zeichneSchritte,
       zeigeFehler = S.zeigeFehler, zweig = S.zweig;
   function ki() { return !!(S.anKiAktiv && S.anKiAktiv()); }     // „Eigene KI“ verbunden: senden statt kopieren
+  function besetzt() { return ki() && !!S.kiLaeuft; }             // ein Auftrag an die eigene KI läuft: Knöpfe grau
   function textGroesse() { return texte.teile.length ? new Blob([texte.teile[0]]).size : 0; }
 
   function textArt() {
@@ -52,7 +53,8 @@
             ". Je Teil: in dasselbe Gespräch einfügen, die Antwort in Schritt " + nrVon(5) +
           " übernehmen, dann der nächste Teil.") : "") + " · " + kb(new Blob([t]).size);
     if ($("chat-text-feld").value !== t) $("chat-text-feld").value = t;
-    $("text-kopieren").disabled = !t;
+    $("text-kopieren").disabled = !t || besetzt();
+    $("eingabe-satz").hidden = ki();
     $("text-kopieren").textContent = texte.teile.length > 1 ? "Teil " + (texte.teil + 1) +
         (ki() ? " an meine KI senden" : " kopieren") : ki() ? "An meine KI senden" : "Text kopieren";
     $("infobox-ok").textContent = ki() ? "Verstanden, Text senden" : "Verstanden, Text kopieren";
@@ -160,7 +162,7 @@
     var i = n === undefined ? texte.teil : n, t = texte.teile[i];
     if (!t) return;
     texte.teil = i;
-    S.anKi(t, { einheit: einheitTag(), neu: i === 0, ort: $("eingabe-stand"),
+    S.anKi(t, { einheit: einheitTag(), neu: i === 0, ort: $("eingabe-stand"), feld: "eingabe",
       vorher: function () { textKopiert(true); },
       stand: function (x, art) { standKarte($("eingabe-stand"), x, art); },
       fertig: async function (antwort) {
@@ -217,10 +219,38 @@
     return { ok: true, n: pr.bausteine.length, text: "" };
   }
 
-  // Meldung unter einem Einfügefeld als Karte mit Rahmen: eine Zeile wird übersehen
+  // Meldung unter einem Einfügefeld als Karte mit Rahmen: eine Zeile wird übersehen. `laeuft`: die Mühle dreht sich
+  // daneben, der Satz pulsiert; beim nächsten Tick bleibt das Wartezeichen stehen (sonst beginnt die Drehung neu)
   function standKarte(e, text, art) {
-    e.hidden = !text; e.textContent = text || "";
+    e.hidden = !text;
     e.className = "stand-karte" + (art ? " " + art : "");
+    var w = e.querySelector(".laeuft-text");
+    if (art === "laeuft" && text && w) { w.textContent = text; return; }
+    e.textContent = "";
+    if (art === "laeuft" && text) { e.append(wartezeichen(), el("span", { cls: "laeuft-text", text: text })); return; }
+    e.textContent = text || "";
+  }
+  // Wartezeichen (AP13.5d §5a): Flügel der Mühle aus logo.svg, einfarbig in --leise, eine Umdrehung in 6 s; die Regeln
+  // stehen hier, weil nur diese Oberfläche sie braucht
+  var MUEHLE = '<svg viewBox="20 -10 216 216" width="20" height="20" focusable="false"><g fill="currentColor">' +
+      [45, 135, 225, 315].map(function (w) { return '<path transform="rotate(' + w + ' 128 98)" ' +
+          'd="M121,58 L135,58 L143,2 Q128,-10 113,2 Z"/>'; }).join("") +
+      '<circle cx="128" cy="98" r="44"/></g><circle cx="128" cy="98" r="12" style="fill: var(--flaeche)"/></svg>';
+  function wartezeichen() {
+    if (!document.getElementById("stil-warten")) {
+      document.head.appendChild(el("style", { id: "stil-warten", text: [
+        ".muehle-warten { display: inline-block; width: 20px; height: 20px; margin-right: 8px; vertical-align: -4px;",
+        "  color: var(--leise); }",
+        ".muehle-warten svg { display: block; animation: km-muehle 6s linear infinite; }",
+        ".laeuft-text { animation: km-puls 2s ease-in-out infinite alternate; }",
+        "@keyframes km-muehle { to { transform: rotate(360deg); } }",
+        "@keyframes km-puls { from { opacity: 1; } to { opacity: 0.6; } }",
+        "@media (prefers-reduced-motion: reduce) { .muehle-warten svg, .laeuft-text { animation: none; } }"
+      ].join("\n") }));
+    }
+    var s = el("span", { cls: "muehle-warten", "aria-hidden": "true" });
+    s.innerHTML = MUEHLE;
+    return s;
   }
   // Antwort ohne Bausteine: die ersten drei Meldungen mit Zeile und Zitat, dazu als Satz für den Chat
   function mitCode(text) {
@@ -247,9 +277,9 @@
     feld.value = d.satz;
     var stand = el("p", { cls: "stand", role: "status" });
     var knopf = el("button", { type: "button", cls: "knopf diagnose-kopieren", text: ki() ? "Satz an meine KI senden" :
-        "Satz für den Chat kopieren" });
+        "Satz für den Chat kopieren", disabled: besetzt() });
     knopf.onclick = function () {
-      if (ki()) return S.anKi(d.satz, { einheit: einheitTag(), neu: false, ort: box,
+      if (ki()) return S.anKi(d.satz, { einheit: einheitTag(), neu: false, ort: box, feld: "eingabe",
         stand: function (x, art) { standKarte($("eingabe-stand"), x, art); },
         fertig: function (antwort) { $("eingabe").value = antwort; return eingabeUebernehmen(null); } });
       kopieren(d.satz, feld, stand, "Kopiert. Füge ihn in deinen Chat ein und die Antwort hier ein."); };
@@ -305,7 +335,7 @@
       + " eingefügt, jetzt Teil " + (n + 1) + (ki() ? " an deine KI." : " kopieren.");
     var bereitText = texte.teile.length === st.ids.length && !!texte.teile[n];
     $("teil-weiter").textContent = "Teil " + (n + 1) + (ki() ? " an meine KI senden" : " kopieren");
-    $("teil-weiter").disabled = !bereitText;
+    $("teil-weiter").disabled = !bereitText || besetzt();
   }
   $("teil-weiter").onclick = function () {
     var n = naechsterTeil();
@@ -392,7 +422,7 @@
   Array.prototype.forEach.call(document.querySelectorAll("input[name=modus]"), function (r) {
     r.addEventListener("change", function () { if (S.letzteAntwort && r.checked) eingabeUebernehmen(r.value); });
   });
-  Object.assign(S, { EIGEN: EIGEN, diagnoseKarte: diagnoseKarte, eigenerText: eigenerText,
+  Object.assign(S, { EIGEN: EIGEN, kiBesetzt: besetzt, wartezeichen: wartezeichen, diagnoseKarte: diagnoseKarte, eigenerText: eigenerText,
     eingabeUebernehmen: eingabeUebernehmen, standKarte: standKarte,
     textGroesse: textGroesse, textSpaeter: textSpaeter, zeichneChat: zeichneChat, zeichnePlanung: zeichnePlanung,
     zeichneTeile: zeichneTeile });

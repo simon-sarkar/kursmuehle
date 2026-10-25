@@ -269,7 +269,7 @@
       <span class="s-titel" id="s5-titel">Antwort des Chats einfügen</span><span class="s-fazit"></span></button></h2>
     <div class="s-inhalt">
       <div class="einfuegen">
-        <p class="leise">Kopiere die ganze Antwort mit dem Kopierknopf des Chats und füge sie hier ein.</p>
+        <p id="eingabe-satz" class="leise">Kopiere die ganze Antwort mit dem Kopierknopf des Chats und füge sie hier ein.</p>
         <div id="modus" class="modus" role="radiogroup" aria-label="Wie die Antwort eingesetzt wird">
           <label><input type="radio" name="modus" value="ersetzen" checked> Einheit ersetzen</label>
           <label><input type="radio" name="modus" value="baustein"> <span id="modus-baustein-text">Nur Baustein ersetzen</span></label>
@@ -277,7 +277,7 @@
         </div>
         <label for="eingabe" class="unsichtbar">Antwort des Chats</label>
         <textarea id="eingabe" rows="6" spellcheck="false" placeholder="Hier einfügen (Strg+V oder lange drücken)"></textarea>
-        <div class="kopieren"><button type="button" id="eingabe-uebernehmen" class="knopf">Antwort übernehmen</button></div>
+        <div id="eingabe-knopf" class="kopieren"><button type="button" id="eingabe-uebernehmen" class="knopf">Antwort übernehmen</button></div>
         <p id="eingabe-stand" class="stand-karte" role="status" aria-live="polite" hidden></p>
         <!-- die Antwort ergab keinen Baustein: die ersten drei Meldungen mit Zeile und Zitat, Satz für den Chat -->
         <div id="eingabe-diagnose" class="stand-karte fehler diagnose-karte" role="status" hidden></div>
@@ -297,9 +297,11 @@
         <p id="korrektur-stand" class="stand" role="status" aria-live="polite"></p>
         <textarea id="korrektur-feld" class="unsichtbar" readonly aria-hidden="true" tabindex="-1"></textarea>
         <div id="korrektur-antwort" class="korrektur-antwort" hidden>
-          <label for="korrektur-eingabe" class="feld">Antwort des Chats auf die Korrektur</label>
-          <textarea id="korrektur-eingabe" rows="5" spellcheck="false" placeholder="Antwort hier einfügen"></textarea>
-          <div class="kopieren"><button type="button" id="korrektur-uebernehmen" class="knopf">Antwort übernehmen</button></div>
+          <div id="korrektur-einfuegen">
+            <label for="korrektur-eingabe" class="feld">Antwort des Chats auf die Korrektur</label>
+            <textarea id="korrektur-eingabe" rows="5" spellcheck="false" placeholder="Antwort hier einfügen"></textarea>
+            <div class="kopieren"><button type="button" id="korrektur-uebernehmen" class="knopf">Antwort übernehmen</button></div>
+          </div>
           <p id="korrektur-ergebnis" class="stand-karte" role="status" aria-live="polite" hidden></p>
           <div id="korrektur-diagnose" class="stand-karte fehler diagnose-karte" role="status" hidden></div>
         </div>
@@ -340,6 +342,9 @@
       <details id="gegenpruefen" class="gegenpruefen">
         <summary>Lösungen von einem zweiten Chat gegenprüfen lassen (freiwillig)</summary>
         <p class="leise">Ein neuer Chat löst die Aufgaben, ohne die Lösungen zu sehen. Du siehst danach nur, wo er anders antwortet.</p>
+        <div id="gegen-ki" class="kopieren" hidden>
+          <button type="button" id="gegen-senden" class="knopf haupt">Lösungen von meiner KI gegenprüfen lassen</button>
+        </div>
         <div class="kopieren">
           <button type="button" id="gegen-kopieren" class="knopf">Aufgaben für einen neuen Chat kopieren</button>
         </div>
@@ -348,8 +353,11 @@
           <summary>Text ansehen und selbst markieren</summary>
           <textarea id="gegen-text-feld" rows="10" readonly spellcheck="false" aria-label="Aufgaben für einen neuen Chat"></textarea>
         </details>
-        <label for="gegen-antwort" class="feld">Antwort des neuen Chats</label>
-        <textarea id="gegen-antwort" rows="4" spellcheck="false" placeholder="Hier einfügen"></textarea>
+        <div id="gegen-einfuegen">
+          <label for="gegen-antwort" class="feld">Antwort des neuen Chats</label>
+          <textarea id="gegen-antwort" rows="4" spellcheck="false" placeholder="Hier einfügen"></textarea>
+        </div>
+        <p id="gegen-ki-stand" class="stand-karte" role="status" aria-live="polite" hidden></p>
         <p id="gegen-stand" class="stand" role="status" aria-live="polite"></p>
         <ul id="gegen-ergebnis" class="gegen-ergebnis"></ul>
       </details>
@@ -408,11 +416,6 @@
     </dl>
     <ul id="hinweise" class="hinweise"></ul>
     <button type="button" id="hinweise-mehr" class="textlink" hidden></button>
-  </div>
-  <div id="legende" class="legende rand-block" aria-label="Herkunft der Texte">
-    <p><span class="farbe-lehrkraft" aria-hidden="true"></span>von dir: Aufträge, Material, deine Titel</p>
-    <p><span class="farbe-chat" aria-hidden="true"></span>vom Chat: Inhalte der Bausteine</p>
-    <p class="leise">Schräg gesetzte Zahlen sind geschätzt (vom Chat oder von der Seite gerechnet). Im fertigen Kurs erscheint davon nichts.</p>
   </div>
  </aside>
 
