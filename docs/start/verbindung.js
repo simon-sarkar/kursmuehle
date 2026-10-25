@@ -1,12 +1,17 @@
 /* Kursmühle – Verbindung zur eigenen KI (AP14): die Seite gibt den Text an die Brücke (docs/bruecke.py) auf diesem
-   Rechner und holt die Antwort dort ab. Port und Code liegen in localStorage; ohne Eintrag ruft die Seite 127.0.0.1 nie. */
+   Rechner und holt die Antwort dort ab. Port und Code liegen in localStorage; ohne Eintrag ruft die Seite 127.0.0.1 nie.
+   Testphase (AP14b): ein Code, der mit `muehle-` beginnt, geht an die Kursmühle-KI (tools/worker/) statt an die Brücke;
+   gespeichert wird dann {adresse, code}. Gesetzt im Feld „Code“ oder über `#code=muehle-…` in der Adresse. */
 "use strict";
 
 (function () {
   var SCHLUESSEL = "kursmuehle-verbindung", PORT = 48127;
+  var TESTADRESSE = window.KM_TESTADRESSE || "https://ki.kursmuehle.de";   // KM_TESTADRESSE nur in Tests
+  var TESTCODE = /^muehle-[a-z0-9-]{4,40}$/;
   var TEXT = {
     netz: "Deine KI antwortet nicht; läuft das Programm noch?",
     code: "Der Code stimmt nicht; er steht dort, wo das Programm läuft.",
+    testcode: "Der Testcode stimmt nicht.",
     gesperrt: "Fünfmal ein falscher Code; in einer Minute geht es wieder.",
     zeit: "Deine KI hat nach 10 Minuten nicht geantwortet; läuft das Programm noch?"
   };
@@ -22,7 +27,10 @@
     catch (e) { /* ohne localStorage gilt die Verbindung nur bis zum Neuladen */ }
     V.gemerkt = v;
   }
-  function fehler(art) { var e = new Error(TEXT[art] || art); e.art = art; return e; }
+  function fehler(art) {
+    var t = art === "code" && V.istTest() ? TEXT.testcode : TEXT[art];
+    var e = new Error(t || art); e.art = art; return e;
+  }
   function warte(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
   async function rufen(methode, pfad, daten) {
@@ -31,13 +39,13 @@
     var r, kopf = { authorization: "Bearer " + v.code };
     if (daten) kopf["content-type"] = "application/json";
     try {
-      r = await fetch("http://127.0.0.1:" + v.port + pfad, { method: methode, cache: "no-store", headers: kopf,
+      r = await fetch((v.adresse || "http://127.0.0.1:" + v.port) + pfad, { method: methode, cache: "no-store", headers: kopf,
           body: daten ? JSON.stringify(daten) : undefined });
     } catch (e) { throw fehler("netz"); }
     if (r.status === 401) throw fehler("code");
-    if (r.status === 429) throw fehler("gesperrt");
     if (r.status === 204) return null;
     var d = await r.json().catch(function () { return {}; });
+    if (r.status === 429 && !d.kontingent) throw fehler("gesperrt");   // Kontingent der Testphase: Meldung wie Anbieter
     if (r.status === 404) throw fehler("weg");
     if (!r.ok) { var e = new Error(d.fehler || TEXT.netz); e.art = "anbieter"; throw e; }
     return d;
@@ -49,8 +57,10 @@
     finally { zeichne(); }
     return V.info;
   };
+  V.istTest = function () { return !!(V.gemerkt && V.gemerkt.adresse); };
   V.verbinden = async function (code, port) {
-    speichern({ port: parseInt(port, 10) || PORT, code: String(code).trim() });
+    code = String(code).trim();
+    speichern(TESTCODE.test(code) ? { adresse: TESTADRESSE, code: code } : { port: parseInt(port, 10) || PORT, code: code });
     gespraeche = {};
     try { return await V.status(); }
     catch (e) { if (e.art === "code") speichern(null); throw e; }
@@ -84,6 +94,7 @@
   };
   V.name = function () {
     if (!V.info) return "Eigene KI";
+    if (V.info.modus === "test") return "Kursmühle-KI (Test)";
     return "Eigene KI (" + (V.info.modus === "agent" ? "Agent" : V.info.modell || "Schlüssel") + ")";
   };
   V.gemerkt = gespeichert();
@@ -98,6 +109,7 @@
   S.kiName = V.name;
 
   function zustandText() {
+    if (V.info && V.info.modus === "test") return "verbunden · Kursmühle-KI (Testphase)";
     if (V.info) return "verbunden · " + (V.info.modus === "agent" ? "Agent" + (V.info.bereit ? "" :
         " (holt gerade nichts ab)") : V.info.modell);
     if (V.fehler === "code") return "Code stimmt nicht";
@@ -133,7 +145,8 @@
     if ($("ki-hilfe")) $("ki-hilfe").setAttribute("aria-expanded", String(S.verbindenOffen));
     $("verbinden").hidden = !S.verbindenOffen;
     $("verbinden-trennen").hidden = !V.gemerkt;
-    if (V.gemerkt && !$("verbinden-port").value) $("verbinden-port").value = V.gemerkt.port;
+    if (V.gemerkt && V.gemerkt.port && !$("verbinden-port").value) $("verbinden-port").value = V.gemerkt.port;
+    testHinweis();
     if (S.zeichneChat) S.zeichneChat();
     if (S.zeichneTeile) S.zeichneTeile();
     if (S.zeichneKorrektur) S.zeichneKorrektur();
@@ -141,17 +154,53 @@
   S.verbindungZeichnen = zeichne;
   // Mühle von der Brücke selbst ausgeliefert (http://127.0.0.1:48127/start/): ihr Port ist der Standard
   var eigenerPort = /^(127\.0\.0\.1|localhost)$/.test(location.hostname) && location.port ? location.port : PORT;
-  $("verbinden-port").value = V.gemerkt ? V.gemerkt.port : eigenerPort;
+  $("verbinden-port").value = V.gemerkt && V.gemerkt.port ? V.gemerkt.port : eigenerPort;
+
+  // Testphase: Zeile zum Datenschutz unter der Chat-Auswahl, nur verbunden mit Testcode; steht neben #chat-wahl, damit
+  // sie auch nach der Wahl sichtbar bleibt
+  function testHinweis() {
+    var h = $("ki-test-hinweis"), zeigen = !!(V.info && V.info.modus === "test");
+    if (!h && !zeigen) return;
+    if (!h) {
+      h = el("p", { cls: "leise", id: "ki-test-hinweis",
+          text: "Testbetrieb: Aufträge laufen über Anthropic (USA); keine personenbezogenen Daten eingeben." });
+      $("chat-wahl").after(h);
+    }
+    h.hidden = !zeigen;
+  }
+  // `#code=muehle-…`: Testcode still speichern, Fragment aus der Adresszeile nehmen, beim ersten Erreichen von Schritt 4
+  // „Eigene KI“ wählen (auch wenn die Einheit schon einen anderen Chat hat; der Link sagt, was gemeint ist)
+  var vorwahl = false;
+  (function fragmentLesen() {
+    var h = new URLSearchParams((location.hash || "").replace(/^#/, "")), code = (h.get("code") || "").trim().toLowerCase();
+    if (!h.has("code")) return;
+    h.delete("code");
+    var rest = h.toString();
+    history.replaceState(history.state, "", location.pathname + location.search + (rest ? "#" + rest : ""));
+    if (!TESTCODE.test(code)) return;
+    speichern({ adresse: TESTADRESSE, code: code });
+    gespraeche = {};
+    vorwahl = true;
+  })();
+  var zeichneChat = S.zeichneChat;
+  S.zeichneChat = function () {
+    if (vorwahl && Z.mappe && document.body.dataset.schritt === "4") {
+      var b = document.querySelector("#chat-knoepfe [data-chat=eigene]");
+      if (b) { vorwahl = false; setTimeout(function () { b.click(); }, 0); }
+    }
+    return zeichneChat.apply(this, arguments);
+  };
 
   $("verbinden-satz-kopieren").onclick = function () {
     S.kopieren($("verbinden-satz").textContent, $("verbinden-satz-feld"), $("verbinden-stand"),
         "Kopiert. Gib den Satz deinem Programm; es nennt dir dann einen Code.");
   };
   $("verbinden-los").onclick = async function () {
-    var code = $("verbinden-code").value.replace(/\D/g, "");
+    var roh = $("verbinden-code").value.trim().toLowerCase();
+    var code = TESTCODE.test(roh) ? roh : roh.replace(/\D/g, "");
     var stand = $("verbinden-stand");
     stand.className = "stand";
-    if (code.length !== 6) { stand.textContent = "Der Code hat sechs Ziffern."; stand.classList.add("fehler"); return; }
+    if (!TESTCODE.test(code) && code.length !== 6) { stand.textContent = "Der Code hat sechs Ziffern."; stand.classList.add("fehler"); return; }
     stand.textContent = "Verbinde …";
     try {
       await V.verbinden(code, $("verbinden-port").value);

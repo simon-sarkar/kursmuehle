@@ -104,11 +104,19 @@ Angebot ihres Betreibers.</p>
 
 <h2>Datenschutz</h2>
 <p>Die Mühle läuft in deinem Browser. Sie schickt nichts, was du eingibst, an kursmuehle.de; es gibt dort keinen
-Server, der Eingaben annimmt. Sie setzt keine Cookies und hat kein Tracking. Die Seiten laden nichts von anderen
-Adressen, außer bei deiner eigenen KI.</p>
+Server, der Eingaben annimmt (Ausnahme: der Testbetrieb mit Code, unten). Sie setzt keine Cookies und hat kein
+Tracking. Die Seiten laden nichts von anderen Adressen, außer bei deiner eigenen KI und im Testbetrieb.</p>
 <p>Verbindest du deine eigene KI, geht der Auftrag von deinem Rechner an den Anbieter, den du selbst eingerichtet hast,
 oder an dein eigenes Programm; Adresse und Code dafür liegen in deinem Browser. Die Seite ruft dazu ein Programm auf
 deinem Rechner auf (127.0.0.1), erst wenn du „Eigene KI“ verbunden hast.</p>
+<p><strong>Testbetrieb mit Code.</strong> Wer von mir einen Testcode bekommen hat, kann die Mühle während der
+Testphase über eine bereitgestellte KI laufen lassen. Der Auftrag geht dann von deinem Browser an ki.kursmuehle.de (ein
+Dienst bei Cloudflare, Inc., USA) und von dort an Anthropic (USA); die Kosten trage ich. Zweck ist allein, die Mühle
+mit Lehrkräften zu erproben; der Dienst endet mit der Testphase. Inhalte werden nicht protokolliert. Verlauf und
+Antwort liegen höchstens zwei Stunden im Zwischenspeicher des Dienstes, damit Teil 2 und Korrekturen den Zusammenhang
+haben, und verfallen dann. Gezählt werden die Aufträge je Code und Tag; nach falschen Codes wird die IP-Adresse eine
+Minute lang gesperrt. Anthropic verarbeitet die Aufträge nach seinen Bedingungen für die API. Gib im Testbetrieb keine
+personenbezogenen Daten ein.</p>
 <p>Damit eine angefangene Einheit nach dem Schließen des Tabs nicht verloren ist, sichert die Mühle sie im Speicher
 deines Browsers (IndexedDB). Dort bleibt sie, bis eine andere Einheit sie ersetzt, du sie mit „×“ verwirfst oder den
 Browserspeicher löschst; ich sehe davon nichts.</p>
@@ -128,6 +136,7 @@ von GitHub</a>). Auf diese Protokolle habe ich keinen Zugriff.</p>
     <tr><td>Kursdatei und Datei für die Lernplattform</td><td>als Download auf deinem Rechner</td></tr>
     <tr><td>Text für den Chat</td><td>in deiner Zwischenablage; nach dem Einfügen beim Anbieter des Chats</td></tr>
     <tr><td>Adresse und Code der eigenen KI</td><td>in deinem Browser; der Auftrag geht von deinem Rechner an den Anbieter oder das Programm, das du eingerichtet hast</td></tr>
+    <tr><td>Auftrag im Testbetrieb mit Code</td><td>höchstens zwei Stunden bei ki.kursmuehle.de (Cloudflare), dann gelöscht; bei Anthropic nach dessen Bedingungen</td></tr>
     <tr><td>Rückmeldung</td><td>bei mir, wenn du sie selbst per Mail schickst</td></tr>
     <tr><td>Abruf der Seite</td><td>in den Zugriffsprotokollen von GitHub</td></tr>
   </tbody>
