@@ -367,20 +367,6 @@
     "text": "Wochen"
    }
   ],
-  "vorlage": [
-   {
-    "wert": "schlicht",
-    "text": "Schlicht"
-   },
-   {
-    "wert": "kacheln",
-    "text": "Getönte Flächen"
-   },
-   {
-    "wert": "magazin",
-    "text": "Magazin"
-   }
-  ],
   "schulart": [
    {
     "wert": "",
@@ -415,10 +401,38 @@
     "text": "Berufliche Schule"
    }
   ],
+  "schwerpunkt": [
+   {
+    "wert": "begriffe",
+    "text": "Begriffe verstehen"
+   },
+   {
+    "wert": "verfahren",
+    "text": "Ein Verfahren können"
+   },
+   {
+    "wert": "faelle",
+    "text": "Fälle beurteilen"
+   }
+  ],
+  "sprache": [
+   {
+    "wert": "einfach",
+    "text": "Einfach"
+   },
+   {
+    "wert": "normal",
+    "text": "Normal"
+   },
+   {
+    "wert": "anspruchsvoll",
+    "text": "Anspruchsvoll"
+   }
+  ],
   "farbe": [
    {
     "wert": "",
-    "text": "Wie die Vorlage"
+    "text": "Wie die Familie"
    },
    {
     "wert": "blau",
@@ -682,5 +696,5 @@
   "Geschichte",
   "Lesebuch"
  ],
- "version": "2.0.0-b6"
+ "version": "2.0.0-b7"
 }

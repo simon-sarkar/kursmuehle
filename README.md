@@ -7,6 +7,9 @@ ByCS-Lernplattform. Die Seite erzeugt einen Auftrag für deinen KI-Chat; du füg
 Kurssicherung (.mbz) herunter, die du in deinem Kurs über „Wiederherstellen“ einspielst. Alles läuft im Browser unter
 [kursmuehle.de](https://kursmuehle.de/), installiert wird nichts.
 
+In Schritt 2 wählst du, wie viel du vorgibst: „Mach du“ legt den Aufbau selbst fest, „Ich gebe die Richtung“ nimmt Art,
+Schwerpunkt, Übungen und Sprache auf einer Karte an, „Ich steuere“ zeigt jeden Baustein mit Auftrag.
+
 ![Status: Beta](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
 
 **Stand: Beta.** Die Seite baut Kurssicherungen; die Aufträge für die Chats werden an echten Durchläufen verbessert,
@@ -18,7 +21,7 @@ und einzelne Chats antworten noch in einer Form, die die Seite nicht lesen kann.
 | Kann | Noch nicht |
 |---|---|
 | Kursformate Themen, Kacheln, Wochen, Ein-Themen, Komprimierte Abschnitte, Einzelaktivität | Lernlandkarte, Mimo |
-| Seiten und Textfelder mit Überschriften, Schritten, Tabellen, Kästen, Merksätzen und Bildern in drei Designvorlagen | Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool |
+| Seiten und Textfelder mit Überschriften, Schritten, Tabellen, Kästen, Merksätzen und Bildern in elf Designs mit eigener Farbe, Dichte und Kastenform | Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool |
 | Test (Multiple Choice, Wahr/Falsch, Kurzantwort), Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar | Weitere Fragetypen im Test, Zeitlimits, Forum-Diskussionen |
 | H5P-Inhalte: Interactive Book, Branching Scenario, Question Set, Drag and Drop, Lückentext, Lernkarten und weitere | Weitere H5P-Typen wie Interactive Video oder Image Hotspots |
 | Übungen als Website in einem Abschnitt oder als Block im Textfeld: Quiz, Zuordnen, Lückentext, Markieren, Lernkarten, Geschichte, mit Rückmeldung zur ganzen Übung | Bewertung und Abschluss je Übung in der Website, eigene Spiele und Simulationen |
@@ -38,7 +41,7 @@ soll die Beta zeigen.
       Abschnitt; Import auf der Plattform geprüft für Themen und Kacheln
 - [x] Die Seite im Browser: Schrittfolge, Antwort einfügen und prüfen, ein Satz für den Chat, wenn etwas fehlt, Bilder
       hochladen oder per Bildauftrag erzeugen, hell und dunkel
-- [ ] Mehr Einstellungen für das Aussehen des Kurses: Farben, Schrift, Kästen, Übungsblöcke, mit Vorschau
+- [x] Mehr Einstellungen für das Aussehen des Kurses: elf Designs, Farbe, Dichte, Kästen, Übungsblöcke, mit Vorschau
 - [ ] LehrplanPLUS: Lernbereich wählen, die Kompetenzerwartungen gehen in den Auftrag; zuerst Grund- und Mittelschule
 - [ ] 2.0 ohne Beta-Marke, nach Rückmeldungen von Lehrkräften
 - [x] Die eigene KI direkt anbinden, ohne Kopieren und Einfügen; der Schlüssel bleibt auf dem eigenen Rechner

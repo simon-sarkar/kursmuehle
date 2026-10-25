@@ -77,11 +77,15 @@
         <button type="button" id="zweig-mach" class="zweig" data-zweig="mach" aria-pressed="false">
           <span class="zweig-name">Mach du</span>
           <span class="zweig-zeile">Kursmühle legt den Aufbau der Einheit fest. Du wählst nur noch das Aussehen und den Chat.</span></button>
+        <button type="button" id="zweig-richtung" class="zweig" data-zweig="richtung" aria-pressed="false">
+          <span class="zweig-name">Ich gebe die Richtung</span>
+          <span class="zweig-zeile">Du gibst Art, Schwerpunkt, Übungen und Sprache vor. Den Aufbau legt Kursmühle fest.</span></button>
         <button type="button" id="zweig-steuer" class="zweig" data-zweig="steuer" aria-pressed="false">
           <span class="zweig-name">Ich steuere</span>
           <span class="zweig-zeile">Du wählst den Aufbau, schreibst Aufträge zu einzelnen Bausteinen und stellst mehr ein.</span></button>
       </div>
-      <!-- Kontext im Zweig „Mach du“, beide Felder freiwillig; dieselben Angaben wie unter „Mehr einstellen“ -->
+      <!-- Kontext in „Mach du“ und „Ich gebe die Richtung“, beide Felder freiwillig; dieselben Angaben wie unter
+           „Mehr einstellen“ -->
       <div id="mach-teil" class="mach-teil" hidden>
         <label class="feld feld-breit">Worum geht es genau? <span class="feld-zeile">freiwillig</span>
           <textarea id="m-kontext" class="von-lehrkraft" rows="3" maxlength="600" spellcheck="true"
@@ -89,6 +93,24 @@
         </label>
         <label class="feld">Fach <span class="feld-zeile">freiwillig</span>
           <input id="m-fach" type="text" maxlength="60" list="faecher-liste" autocomplete="off"></label>
+      </div>
+      <!-- AP13.5b: Eingabekarte „Ich gebe die Richtung“, alle Felder freiwillig; Material steht bei „Einheit aus eigenem
+           Material“ direkt unter dem Fach, sonst zuletzt -->
+      <div id="richtung-teil" class="richtung-teil" hidden>
+        <div id="r-material-feld" class="r-material-feld">
+          <label class="feld feld-breit">Dein Material (Stichpunkte, Heftaufschrieb) <span class="feld-zeile">freiwillig</span>
+            <textarea id="r-material" class="von-lehrkraft" rows="4" spellcheck="true"></textarea>
+            <span class="feld-zeile">Nur Material, an dem du die Rechte hast.</span>
+          </label>
+        </div>
+        <div class="aus-gruppe"><h3 class="unterkopf" id="r-art-t">Art der Einheit</h3>
+          <div id="r-art" class="kacheln-wahl breit" role="radiogroup" aria-labelledby="r-art-t"></div></div>
+        <div class="aus-gruppe"><h3 class="unterkopf" id="r-schwerpunkt-t">Schwerpunkt</h3>
+          <div id="r-schwerpunkt" class="kacheln-wahl text-wahl" role="group" aria-labelledby="r-schwerpunkt-t"></div></div>
+        <div class="aus-gruppe"><h3 class="unterkopf" id="r-uebungen-t">Übungen bevorzugt</h3>
+          <div id="r-uebungen" class="kacheln-wahl text-wahl" role="group" aria-labelledby="r-uebungen-t"></div></div>
+        <div class="aus-gruppe"><h3 class="unterkopf" id="r-sprache-t">Sprache</h3>
+          <div id="r-sprache" class="kacheln-wahl text-wahl" role="radiogroup" aria-labelledby="r-sprache-t"></div></div>
       </div>
       <div id="steuer-teil" class="steuer-teil" hidden>
         <h3 class="unterkopf">Aufbau der Einheit</h3>
@@ -109,8 +131,14 @@
             <label class="feld">Schulart <select id="a-schulart"></select></label>
             <label class="feld">Chat <select id="a-chat"></select></label>
             <label class="feld">Kursformat <select id="a-format"></select></label>
-            <label class="feld">Designvorlage <select id="a-vorlage"></select></label>
+            <label class="feld">Design <select id="a-familie"></select></label>
             <label class="feld">Farbe <select id="a-farbe"></select></label>
+            <label class="feld feld-klein">Eigene Farbe <input id="a-farbe-hex" type="text" maxlength="7"
+              placeholder="#1D5FD1" pattern="#[0-9A-Fa-f]{6}" autocomplete="off" spellcheck="false"></label>
+            <div class="feld feld-breit"><span id="a-schwerpunkt-t">Schwerpunkt</span>
+              <div id="a-schwerpunkt" class="kacheln-wahl text-wahl" role="group" aria-labelledby="a-schwerpunkt-t"></div></div>
+            <div class="feld feld-breit"><span id="a-sprache-t">Sprache</span>
+              <div id="a-sprache" class="kacheln-wahl text-wahl" role="radiogroup" aria-labelledby="a-sprache-t"></div></div>
             <label class="feld">Abschluss <select id="a-abschluss"></select></label>
             <label class="feld">Umfang <select id="a-portionierung"></select></label>
             <label class="feld feld-breit">Dein Material (Stichpunkte, Heftaufschrieb)
@@ -131,12 +159,25 @@
       <span class="s-titel" id="s3-titel">Wie soll der Kurs aussehen?</span><span class="s-fazit"></span></button></h2>
     <div class="s-inhalt">
       <div class="aussehen">
-        <div class="aus-gruppe"><h3 class="unterkopf" id="aus-vorlage-t">Designvorlage</h3>
-          <div id="aus-vorlage" class="kacheln-wahl" role="radiogroup" aria-labelledby="aus-vorlage-t"></div></div>
+        <div class="aus-gruppe"><h3 class="unterkopf" id="aus-familie-t">Design</h3>
+          <div id="aus-familie" class="kacheln-wahl familien" role="radiogroup" aria-labelledby="aus-familie-t"></div>
+          <details id="feinheiten" class="feinheiten">
+            <summary>Feinheiten <span id="feinheiten-text" class="leise"></span></summary>
+            <div class="feinheiten-inhalt">
+              <h4 class="unterkopf" id="aus-farbe-t">Farbe</h4>
+              <div id="aus-farbe" class="kacheln-wahl farben" role="radiogroup" aria-labelledby="aus-farbe-t"></div>
+              <label id="farbe-eigen-l" class="farbe-eigen" hidden>Eigene Farbe
+                <input id="farbe-eigen" type="color" value="#1d5fd1"></label>
+              <p id="farbe-fest" class="leise" hidden></p>
+              <h4 class="unterkopf" id="aus-dichte-t">Dichte</h4>
+              <div id="aus-dichte" class="kacheln-wahl schmal" role="radiogroup" aria-labelledby="aus-dichte-t"></div>
+              <h4 class="unterkopf" id="aus-kasten-t">Kästen</h4>
+              <div id="aus-kasten" class="kacheln-wahl schmal" role="radiogroup" aria-labelledby="aus-kasten-t"></div>
+              <div id="vorschau-gross" class="vorschau-gross" aria-label="Vorschau in Originalgröße"></div>
+            </div>
+          </details></div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="aus-format-t">Kursformat</h3>
           <div id="aus-format" class="kacheln-wahl" role="radiogroup" aria-labelledby="aus-format-t"></div></div>
-        <div class="aus-gruppe"><h3 class="unterkopf" id="aus-farbe-t">Farbe</h3>
-          <div id="aus-farbe" class="kacheln-wahl farben" role="radiogroup" aria-labelledby="aus-farbe-t"></div></div>
         <!-- Zahl der Bilder (Steckbrief kurs.bilder) und Darstellung der Übungen (kurs.website) -->
         <div class="aus-gruppe"><h3 class="unterkopf" id="aus-bilder-t">Bilder</h3>
           <div id="aus-bilder" class="kacheln-wahl bilder-wahl" role="radiogroup" aria-labelledby="aus-bilder-t"></div></div>

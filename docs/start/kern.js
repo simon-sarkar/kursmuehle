@@ -122,6 +122,13 @@ var km = (function () {
     return a.ergebnis;
   }
 
+  // Miniaturen der Designfamilien (AP13.5): ein Aufruf liefert alle Familien als {name: html}
+  async function designVorschau(hebel, familie) {
+    var a = await anfrage("design_vorschau", { hebel: hebel || {}, familie: familie || null });
+    messen("design_vorschau", familie || "alle", a);
+    return a.ergebnis;
+  }
+
   async function prompt(funktion, args) {
     var a = await anfrage("prompt", { funktion: funktion, args: args || [] });
     return a.ergebnis;
@@ -249,7 +256,7 @@ var km = (function () {
   }
 
   return { anfrage: anfrage, laden: laden, bereit: bereit, pruefe: pruefe, stand: stand, mappeFn: mappeFn,
-      prompt: prompt, baue: baue,
+      prompt: prompt, baue: baue, designVorschau: designVorschau,
     mappeAusBytes: mappeAusBytes, mappeAusDateien: mappeAusDateien, mappeSchreiben: mappeSchreiben,
     neueMappe: neueMappe, heap: heap, beenden: beenden, sha256: sha256, autosaveSchreiben: autosaveSchreiben,
     autosaveLesen: autosaveLesen, autosaveLoeschen: autosaveLoeschen, einstellung: einstellung, zustand: zustand,
@@ -289,10 +296,10 @@ window.km = km;
   var bildGroesse = {};                           // Datei -> „2,4 MB → 160 KB“ nach dem Hochladen
   var SCHRITTE = [1, 2, 3, 4, 5, 5.5, 6, 7];       // 5.5 = Bilder, nur mit Bildwünschen in der Antwort
   var KOPIERT = "Jetzt in deinen Chat einfügen, die Antwort dann in Schritt 5 einfügen.";
-  var STANDARD_FARBE = "#1D5FD1";                 // Akzent der Designvorlagen ohne eigene Farbe (gen/html.py HUE)
+  var STANDARD_FARBE = "#1D5FD1";                 // Akzent der Familien ohne eigene Farbe (familien.yaml)
   var FARBEN = { blau: "#1D5FD1", "grün": "#15803D", rot: "#BE123C", orange: "#B45309", lila: "#6D28D9" };
   var AUS_FORMATE = ["themen", "kacheln"];        // Kursformate im Schritt Aussehen; alle unter „Mehr einstellen“
-  var ZWEIG_TEXT = { mach: "Mach du", steuer: "Ich steuere" };
+  var ZWEIG_TEXT = { mach: "Mach du", richtung: "Ich gebe die Richtung", steuer: "Ich steuere" };
   var AUTO = "automatisch";                       // Typ, den das Modell aus Titel und Auftrag wählt
   S.gespeichert = false;
   Z.texte = texte;
@@ -324,6 +331,12 @@ window.km = km;
   function mitMinuten(typ) { var t = typInfo(typ); return !t || t.minuten !== false; }
   function chatInfo(wert) { return S.katalog && S.katalog.chats.filter(function (c) { return c.wert === wert; })[0]; }
   function oberText(feld, wert) {
+    if (feld === "familie" || feld === "dichte" || feld === "kasten") {
+      var f = S.familien && (feld === "familie" ? S.familien.familien.map(function (x) { return { wert: x.name, text: x.text }; })
+          : S.familien[feld]).filter(function (x) { return x.wert === wert; })[0];
+      return f ? f.text : (wert || "");
+    }
+    if (feld === "farbe" && /^#[0-9A-Fa-f]{6}$/.test(wert || "")) return "Eigene Farbe " + wert.toUpperCase();
     var w = S.katalog && S.katalog.oberflaeche[feld].filter(function (x) { return x.wert === wert; })[0];
     return w ? w.text : (wert || "");
   }
@@ -341,7 +354,8 @@ window.km = km;
   function fehlerText(e) { return (e && e.message) || String(e); }
   function hoehe(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + 2 + "px"; }
   function kb(n) { return n < 1024 ? n + " Bytes" : (Math.round(n / 102.4) / 10).toString().replace(".", ",") + " KB"; }
-  function zweig() { return (Z.mappe && Z.mappe.zweig) || ""; }
+  // ein unbekannter Zweig (neuere Mühle) gilt als „Ich steuere“ (AP13.5b)
+  function zweig() { var z = (Z.mappe && Z.mappe.zweig) || ""; return z && !ZWEIG_TEXT[z] ? "steuer" : z; }
   function schritt() { return Z.mappe ? (Z.mappe.schritt || 2) : 1; }
   function sektion(n) { return $(n === 1 ? "start" : n === 5.5 ? "schritt-bilder" : "schritt-" + n); }
   // laufende Einheit: „e2“ … beim Anhängen und danach, "" = die erste; Bilder, Rand und Text nur für sie
@@ -397,6 +411,7 @@ window.km = km;
     status("Wird vorbereitet …", "lauf");
     km.bereit().then(function () {
       if (!S.bauLaeuft) status("Bereit", "ok");
+      if (S.katalogDa) S.katalogDa.then(function () { if (S.miniaturen) S.miniaturen().catch(function () {}); });
       S.knoepfe();
       if (Z.mappe) neuPruefen().catch(zeigeFehler);
     }).catch(function () {
@@ -406,14 +421,18 @@ window.km = km;
     km.einstellung("infobox_aus").then(function (w) { S.infoboxAus = !!w; }).catch(function () {
         /* ohne IndexedDB */ });
     hinweiseLaden();
-    S.katalogDa = fetch("katalog.json", { cache: "no-cache" }).then(function (r) { return r.json(); })
-        .then(function (k) {
+    S.katalogDa = Promise.all([fetch("katalog.json", { cache: "no-cache" }).then(function (r) { return r.json(); }),
+        fetch("familien.json", { cache: "no-cache" }).then(function (r) { return r.json(); })])
+        .then(function (kf) {
+      var k = kf[0];
       S.katalog = k;
+      S.familien = kf[1];
       testfassung(k.version);
       S.vorlagenZeigen();
       auswahlFuellen();
       zeichne();
-    }).catch(function () { status("katalog.json fehlt; python3 scripts/web_bundle.py ausführen", "fehler"); });
+    }).catch(function () { status("katalog.json oder familien.json fehlt; python3 scripts/web_bundle.py ausführen",
+        "fehler"); });
   }
   // Hinweise an, bis die Lehrkraft sie ausschaltet; ein in einer anderen Einheit erledigter Schritt zeigt keinen mehr
   function hinweiseLaden() {
@@ -454,7 +473,8 @@ window.km = km;
 
   function auswahlFuellen() {
     var o = S.katalog.oberflaeche;
-    [["a-format", o.format], ["a-vorlage", o.vorlage], ["a-farbe", o.farbe],
+    [["a-format", o.format], ["a-familie", S.familien.familien.map(function (f) { return { wert: f.name, text: f.text };
+        })], ["a-farbe", o.farbe.concat([{ wert: "eigen", text: "Eigene Farbe" }])],
      ["a-abschluss", o.abschluss], ["a-portionierung", o.portionierung], ["a-schulart",
          o.schulart]].forEach(function (p) {
       var s = $(p[0]); s.innerHTML = "";
@@ -570,7 +590,9 @@ window.km = km;
       "a-minuten": e.minuten || S.angaben.minuten || "", "a-fach": S.angaben.fach || "",
           "a-schulart": S.angaben.schulart || "",
       "m-fach": S.angaben.fach || "", "a-kontext": S.angaben.kontext || "", "m-kontext": S.angaben.kontext || "",
-      "a-format": S.angaben.format, "a-vorlage": S.angaben.vorlage, "a-farbe": S.angaben.farbe,
+      "a-format": S.angaben.format, "a-familie": S.angaben.familie,
+      "a-farbe": /^#/.test(S.angaben.farbe || "") ? "eigen" : S.angaben.farbe,
+      "a-farbe-hex": /^#/.test(S.angaben.farbe || "") ? S.angaben.farbe : "",
       "a-abschluss": S.angaben.abschluss, "a-portionierung": S.angaben.portionierung, "a-chat": Z.mappe.chat || "",
       "a-material": Z.mappe.material || "", "f-thema": e.thema || "", "f-jahrgang": e.jahrgang || "",
           "f-minuten": e.minuten || 45 };

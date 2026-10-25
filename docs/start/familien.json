@@ -1,0 +1,134 @@
+{
+ "standard": "sachlich",
+ "familien": [
+  {
+   "name": "sachlich",
+   "text": "Sachlich",
+   "zeile": "Wie ein Lehrbuch, ruhig und klar.",
+   "probe": [],
+   "akzent": "#1D5FD1",
+   "akzent_fest": false
+  },
+  {
+   "name": "freundlich",
+   "text": "Freundlich",
+   "zeile": "Getönte Flächen, runde Ecken, viel Luft.",
+   "probe": [],
+   "akzent": "#1D5FD1",
+   "akzent_fest": false
+  },
+  {
+   "name": "magazin",
+   "text": "Magazin",
+   "zeile": "Linien statt Flächen, große Überschriften.",
+   "probe": [],
+   "akzent": "#1D5FD1",
+   "akzent_fest": false
+  },
+  {
+   "name": "grundschule",
+   "text": "Grundschule",
+   "zeile": "Große Schrift, runde Formen, zwei warme Farben.",
+   "probe": [
+    "font-family"
+   ],
+   "akzent": "#1D5FD1",
+   "akzent_fest": false
+  },
+  {
+   "name": "verspielt",
+   "text": "Verspielt",
+   "zeile": "Sticker und Handlinien, für Unter- und Mittelstufe.",
+   "probe": [
+    "font-family"
+   ],
+   "akzent": "#1D5FD1",
+   "akzent_fest": false
+  },
+  {
+   "name": "modern",
+   "text": "Modern",
+   "zeile": "Viel Weißraum, feine Linien, große Überschriften.",
+   "probe": [],
+   "akzent": "#1D5FD1",
+   "akzent_fest": false
+  },
+  {
+   "name": "klassisch",
+   "text": "Klassisch",
+   "zeile": "Serifenschrift, nummerierte Überschriften.",
+   "probe": [
+    "font-family",
+    "font-variant"
+   ],
+   "akzent": "#1D5FD1",
+   "akzent_fest": false
+  },
+  {
+   "name": "natur",
+   "text": "Natur",
+   "zeile": "Papier und Erdtöne, ruhig und warm.",
+   "probe": [
+    "font-family"
+   ],
+   "akzent": "#3F7D4E",
+   "akzent_fest": false
+  },
+  {
+   "name": "druck",
+   "text": "Druck",
+   "zeile": "ohne Farbe, für Papier",
+   "probe": [],
+   "akzent": "#000000",
+   "akzent_fest": true
+  },
+  {
+   "name": "dunkel",
+   "text": "Dunkel",
+   "zeile": "Dunkle Karten auf der hellen Plattform.",
+   "probe": [],
+   "akzent": "#1D5FD1",
+   "akzent_fest": false
+  },
+  {
+   "name": "ohne",
+   "text": "Ohne Vorlage",
+   "zeile": "so, wie die Lernplattform es zeigt",
+   "probe": [],
+   "akzent": "#444444",
+   "akzent_fest": true
+  }
+ ],
+ "dichte": [
+  {
+   "wert": "luftig",
+   "text": "Luftig"
+  },
+  {
+   "wert": "normal",
+   "text": "Normal"
+  },
+  {
+   "wert": "kompakt",
+   "text": "Kompakt"
+  }
+ ],
+ "kasten": [
+  {
+   "wert": "familie",
+   "text": "Wie die Familie"
+  },
+  {
+   "wert": "rund",
+   "text": "Rund"
+  },
+  {
+   "wert": "eckig",
+   "text": "Eckig"
+  },
+  {
+   "wert": "linie",
+   "text": "Linie"
+  }
+ ]
+}

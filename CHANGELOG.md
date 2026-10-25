@@ -1,7 +1,16 @@
 # Changelog
 
-## Unveröffentlicht (AP14: eigene KI direkt verbinden)
+## 2.0.0-b7 – 2026-10-25 (AP13.5: Designfamilien, Feinheiten, Vorschau; AP13.5b: dritter Weg „Ich gebe die Richtung“; AP14: eigene KI direkt verbinden)
 
+- Schritt 3 bietet elf Designs statt drei Vorlagen: Sachlich, Freundlich, Magazin, Grundschule, Verspielt, Modern, Klassisch, Natur, Druck, Dunkel und „Ohne Vorlage“.
+- Jede Kachel zeigt eine verkleinerte Vorschau, die mit demselben Generator gebaut ist wie der Kurs.
+- Unter „Feinheiten“ wählst du Farbe (auch eine eigene), Dichte und Kästen; dort steht die Vorschau in Originalgröße.
+- Sachlich, Freundlich und Magazin sehen aus wie bisher Schlicht, Getönte Flächen und Magazin; ältere Einheiten öffnen mit dem passenden Design.
+- Übungen auf der Kursseite und der Website-Modus folgen dem Design, auch dunkel und in Serifenschrift.
+- Druck und „Ohne Vorlage“ nutzen keine Akzentfarbe; „Ohne Vorlage“ überlässt die Gestaltung der Lernplattform.
+- Der Text für den Chat nennt einen Satz zum Bildstil des Designs, sonst nichts vom Aussehen.
+- Neuer Weg in Schritt 2, „Ich gebe die Richtung“: Art der Einheit, Schwerpunkt, bevorzugte Übungen, Sprache und Material auf einer Karte, ohne Bausteinliste.
+- Schwerpunkt, Übungen und Sprache stehen als Sätze im Text für den Chat; fehlt ein bevorzugter Übungstyp in der Antwort, sagt der Rand das gelb.
 - In Schritt 4 gibt es die Kachel „Eigene KI“: Die Mühle schickt den Text an ein Programm wie Claude Code oder Codex oder über einen eigenen Zugangsschlüssel (OpenAI, Anthropic, Mistral) oder Ollama, ohne Kopieren und Einfügen.
 - „So geht es“ an der Kachel nennt beide Wege; verbunden wird mit einem Code aus sechs Ziffern, die Kachel zeigt danach Modell oder Agent.
 - Mit „Eigene KI“ heißen die Knöpfe „An meine KI senden“; Teile gehen nacheinander ins selbe Gespräch, Antworten und Korrekturen setzt die Mühle selbst ein.

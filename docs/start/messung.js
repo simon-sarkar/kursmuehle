@@ -82,10 +82,18 @@
     try {
       var info = await km.laden();
       status("Bauen möglich · Pyodide " + info.pyodide + " · Python " + info.python + " · " + info.gesamt_ms + " ms", "ok");
-      $("pruefen").disabled = $("eingabe").disabled = false;
+      $("pruefen").disabled = $("eingabe").disabled = $("miniaturen").disabled = false;
       zeigeMessung();
       if (textEl.value.trim()) pruefeJetzt(textEl.value);
     } catch (e) { status("Laden fehlgeschlagen: " + e.message, "fehler"); $("laden").disabled = false; }
+  };
+
+  // AP13.5: elf Miniaturen in einem Aufruf (Ziel: unter 200 ms je Durchlauf); Dauer steht in der Messliste
+  $("miniaturen").onclick = async function () {
+    var t0 = performance.now();
+    var h = await km.designVorschau({ akzent: "grün", dichte: "normal", kasten: "familie" });
+    status(Object.keys(h).length + " Miniaturen in " + Math.round(performance.now() - t0) + " ms", "ok");
+    zeigeMessung();
   };
 
   $("pruefen").onclick = async function () {

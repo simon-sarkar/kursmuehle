@@ -10,6 +10,8 @@
  *           | mappe {funktion, args}  gen.mappe: verschiebe, entferne, umbenennen, kennzahlen, angaben_lesen,
  *             angaben_schreiben, geplant, planung, auffuellen, antwort, modus, einsetzen, anhaengen (Liste in PY_BRUECKE)
  *           | prompt {funktion, args}  gen.prompt: einheit, baustein, korrektur, fragen, fachcheck, vergleich
+ *           | design_vorschau {familie, hebel}  gen.api.design_vorschau: Miniatur einer Familie als HTML; ohne familie
+ *             alle Familien als {name: html} (AP13.5)
  * Bytes laufen als ArrayBuffer/Uint8Array (Assets: {name: Uint8Array}); die .mbz kommt als übertragener ArrayBuffer.
  * Klassischer Worker ohne ES-Module (läuft so auch aus einem Blob, Offline-Datei später). */
 "use strict";
@@ -99,6 +101,11 @@ var PY_BRUECKE = [
   "    if f not in _PROMPT:",
   "        raise ValueError('unbekannte Funktion ' + str(f))",
   "    return getattr(_P, f)(*(e.get('args') or []))",
+  "",
+  "def km_design_vorschau(e):",
+  "    if e.get('familie'):",
+  "        return api.design_vorschau(e.get('familie'), e.get('hebel'))",
+  "    return api.design_vorschauen(e.get('hebel'))",
   "",
   "def km_info():",
   "    return {'python': sys.version.split()[0], 'version': api.VERSION}",
@@ -197,6 +204,7 @@ self.onmessage = async function (ev) {
       else if (m.aktion === "stand") ergebnis = aufruf("km_stand", { text: m.text, assets: m.assets, steckbrief: m.steckbrief, mappe: m.mappe });
       else if (m.aktion === "mappe") ergebnis = aufruf("km_mappe", { funktion: m.funktion, args: m.args });
       else if (m.aktion === "prompt") ergebnis = aufruf("km_prompt", { funktion: m.funktion, args: m.args });
+      else if (m.aktion === "design_vorschau") ergebnis = aufruf("km_design_vorschau", { familie: m.familie, hebel: m.hebel });
       else if (m.aktion === "steckbrief_lesen") ergebnis = aufruf("km_steckbrief_lesen", { text: m.text });
       else if (m.aktion === "steckbrief_schreiben") ergebnis = aufruf("km_steckbrief_schreiben", { sb: m.sb });
       else throw new Error("unbekannte Aktion " + m.aktion);

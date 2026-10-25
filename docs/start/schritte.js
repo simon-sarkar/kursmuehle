@@ -21,10 +21,11 @@
     if (n === 2) {
       var z = ZWEIG_TEXT[zweig()] || "";
       var n = Z.mappe.bausteine.filter(function (k) { return !k.aus; }).length;
-      return [z, e.vorlage, zweig() === "steuer" ? n + " Bausteine" : ""].filter(Boolean).join(" · ");
+      return [z, e.vorlage, zweig() === "steuer" ? n + " Bausteine" : ""].concat(zweig() === "richtung" ?
+          richtungText() : []).filter(Boolean).join(" · ");
     }
-    if (n === 3) return [oberText("vorlage", S.angaben.vorlage), oberText("format", S.angaben.format), oberText("farbe",
-        S.angaben.farbe || ""),
+    if (n === 3) return [oberText("familie", S.angaben.familie || "sachlich"), feinheitenText(),
+      oberText("format", S.angaben.format),
       "Bilder: " + oberText("bilder", bilderWert()), oberText("website", S.angaben.website ||
           "textfeld")].filter(Boolean).join(" · ");
     if (n === 4) { var c = chatInfo(Z.mappe.chat); return c ? c.text + (Z.mappe.kopiert ? " · Text kopiert" : "") : "";
@@ -47,7 +48,8 @@
 
   // Hinweis unter der Überschrift des aktiven Schritts, höchstens zwei Sätze, nie blockierend
   function zeichneHinweis(sec, n, aktiv) {
-    var box = sec.querySelector(".s-hinweis"), text = S.hinweisTexte[String(n)];
+    var schluessel = n === 2 && zweig() === "richtung" && S.hinweisTexte["2-richtung"] ? "2-richtung" : String(n);
+    var box = sec.querySelector(".s-hinweis"), text = S.hinweisTexte[schluessel];
     var zeigen = aktiv && S.hinweiseGeladen && S.hinweise.an && !!text && S.hinweise.gesehen.indexOf(String(n)) < 0;
     if (!zeigen) { if (box) box.remove(); return; }
     if (!box) {
@@ -87,9 +89,12 @@
       zeichneHinweis(sec, n, stand === "aktiv");
     });
     $("hinweise-an").checked = S.hinweise.an;
-    ["mach", "steuer"].forEach(function (w) { $("zweig-" + w).setAttribute("aria-pressed", String(z === w)); });
+    ["mach", "richtung", "steuer"].forEach(function (w) { $("zweig-" + w).setAttribute("aria-pressed", String(z === w));
+        });
     $("steuer-teil").hidden = z !== "steuer";
-    $("mach-teil").hidden = z !== "mach";
+    $("mach-teil").hidden = z !== "mach" && z !== "richtung";
+    $("richtung-teil").hidden = z !== "richtung";
+    if (z === "richtung" || z === "steuer") zeichneRichtung();
     $("vorlagen").hidden = inhalt();
     $("weiter-2").hidden = s > 2 || !z;
     $("weiter-3").hidden = s > 3;
@@ -252,7 +257,7 @@
     var o = S.katalog.oberflaeche, e = (Z.mappe && Z.mappe.einheit) || {};
     Z.steckbrief_text = await km.mappeFn("angaben_schreiben", ["", {
       thema: e.thema || "", jahrgang: e.jahrgang || "", minuten: e.minuten || "", fach: "", bilder: bilderStandard(),
-      format: o.format[0].wert, vorlage: o.vorlage[0].wert, farbe: o.farbe[0].wert, website: o.website[0].wert,
+      format: o.format[0].wert, familie: S.familien.standard, farbe: o.farbe[0].wert, website: o.website[0].wert,
       abschluss: o.abschluss[0].wert, portionierung: o.portionierung[0].wert }]);
   }
 
@@ -263,8 +268,8 @@
     Z.mappe.zeit_selbst = false;                   // Standard: das Modell verteilt die Minuten
     Z.kurs_md = ""; Z.steckbrief_text = ""; Z.assets = {}; Z.pruefung = null; Z.kennzahlen = null; Z.bau = null;
         Z.beispiel = null;
-    S.angaben = { thema: e.thema, jahrgang: e.jahrgang, minuten: e.minuten, vorlage: "schlicht", format: "themen",
-        farbe: "" };
+    S.angaben = { thema: e.thema, jahrgang: e.jahrgang, minuten: e.minuten, familie: "sachlich", dichte: "normal",
+        kasten: "familie", format: "themen", farbe: "" };
     neuStart();
     gehe(2, "zweig-mach");
     if (Z.geladen) neuPruefen().catch(zeigeFehler);
@@ -364,8 +369,10 @@
   function nachZwei() { return Z.mappe && Z.mappe.anhaengen && Z.mappe.aussehen && chatInfo(Z.mappe.chat) ? 4 : 3; }
   document.querySelector(".zweige").addEventListener("click", function (ev) {
     var b = ev.target.closest("[data-zweig]"); if (!b || !Z.mappe) return;
+    var vorher = zweig();
     Z.mappe.zweig = b.dataset.zweig;
-    if (b.dataset.zweig === "mach") {
+    if (vorher === "richtung" && b.dataset.zweig === "steuer") typenUebernehmen();
+    if (b.dataset.zweig === "mach" || b.dataset.zweig === "richtung") {
       if (schritt() <= 2) { zeichne(); geaendert(); $("m-kontext").focus({ preventScroll: true }); }
       else { S.auf[2] = true; zeichne(); geaendert(); }
     } else {
@@ -375,6 +382,90 @@
     }
   });
   $("weiter-2").onclick = function () { gehe(nachZwei()); };
+
+  // AP13.5b: „Ich gebe die Richtung“ – Eingabekarte (Art, Schwerpunkt, Übungen, Sprache, Material)
+  var EIGENES = "Einheit aus eigenem Material";
+  function richtungText() {
+    var o = S.katalog.oberflaeche, a = S.angaben, t = [];
+    var text = function (feld, w) { var x = o[feld].filter(function (y) { return y.wert === w; })[0]; return x ? x.text : w; };
+    if ((a.schwerpunkt || []).length) t.push("Schwerpunkt: " + a.schwerpunkt.map(function (w) {
+        return text("schwerpunkt", w); }).join(", "));
+    if ((a.uebungstypen || []).length) t.push("Übungen: " + a.uebungstypen.join(", "));
+    if (a.sprache && a.sprache !== "normal") t.push("Sprache: " + text("sprache", a.sprache));
+    return t;
+  }
+  function textKacheln(box, feld, werte, gewaehlt, mehrfach) {
+    if (box.querySelectorAll(".aus-kachel").length !== werte.length) {
+      box.innerHTML = "";
+      werte.forEach(function (w) {
+        var b = el("button", { type: "button", cls: "aus-kachel", role: mehrfach ? "checkbox" : "radio",
+          "aria-checked": "false", "data-feld": feld, "data-wert": w.wert, "data-mehrfach": mehrfach ? "1" : null });
+        b.appendChild(el("span", { cls: "aus-name", text: w.text }));
+        if (w.zeile) b.appendChild(el("span", { cls: "aus-zeile", text: w.zeile }));
+        box.appendChild(b);
+      });
+    }
+    Array.prototype.forEach.call(box.querySelectorAll(".aus-kachel"), function (b) {
+      b.setAttribute("aria-checked", String(mehrfach ? gewaehlt.indexOf(b.dataset.wert) >= 0 : b.dataset.wert === gewaehlt));
+    });
+  }
+  function zeichneRichtung() {
+    if (!S.katalog || !Z.mappe) return;
+    var o = S.katalog.oberflaeche, a = S.angaben, e = Z.mappe.einheit || {};
+    var art = S.katalog.vorlagen.map(function (v) { return { wert: v.name, text: v.name, zeile: v.zeile }; });
+    var typen = S.katalog.automatisch.filter(function (t) { return t !== "Textfeld" && t !== "Seite"; })
+        .map(function (t) { return { wert: t, text: t }; });
+    textKacheln($("r-art"), "art", art, e.vorlage || S.katalog.vorlagen[0].name, false);
+    [["r-schwerpunkt", "a-schwerpunkt"]].forEach(function (ids) { ids.forEach(function (id) {
+      textKacheln($(id), "schwerpunkt", o.schwerpunkt, a.schwerpunkt || [], true); }); });
+    textKacheln($("r-uebungen"), "uebungstypen", typen, a.uebungstypen || [], true);
+    ["r-sprache", "a-sprache"].forEach(function (id) { textKacheln($(id), "sprache", o.sprache, a.sprache || "normal", false);
+        });
+    Array.prototype.forEach.call($("r-art").querySelectorAll(".aus-kachel"), function (b) { b.disabled = inhalt(); });
+    // Material: bei „Einheit aus eigenem Material“ als drittes Feld unter dem Fach, sonst zuletzt
+    var teil = $("richtung-teil"), feld = $("r-material-feld");
+    if ((e.vorlage === EIGENES) !== (teil.firstElementChild === feld)) {
+      if (e.vorlage === EIGENES) teil.insertBefore(feld, teil.firstElementChild); else teil.appendChild(feld);
+    }
+    if (document.activeElement !== $("r-material")) $("r-material").value = Z.mappe.material || "";
+  }
+  function richtungKlick(ev) {
+    var b = ev.target.closest(".aus-kachel"); if (!b || !Z.mappe || b.disabled) return;
+    var feld = b.dataset.feld, wert = b.dataset.wert, a = {};
+    if (feld === "art") {
+      var v = vorlageNach(wert);
+      if (v && !inhalt()) { karteVorlage(v); zeichne(); geaendert(); }
+      return;
+    }
+    if (b.dataset.mehrfach) {
+      var liste = (S.angaben[feld] || []).slice(), i = liste.indexOf(wert);
+      if (i >= 0) liste.splice(i, 1); else liste.push(wert);
+      // Reihenfolge wie die Kacheln (der erste bevorzugte Typ geht an die erste Übungskarte)
+      var reihe = Array.prototype.map.call(b.parentNode.querySelectorAll(".aus-kachel"), function (k) { return k.dataset.wert; });
+      wert = reihe.filter(function (w) { return liste.indexOf(w) >= 0; });
+    }
+    S.angaben[feld] = wert; a[feld] = wert;
+    zeichneRichtung(); zeichneSchritte();
+    angabenSchreiben(a);
+    S.textSpaeter();
+  }
+  ["richtung-teil", "a-schwerpunkt", "a-sprache"].forEach(function (id) { $(id).addEventListener("click", richtungKlick); });
+  $("r-material").addEventListener("input", function () {
+    if (!Z.mappe) return;
+    Z.mappe.material = $("r-material").value;
+    if (document.activeElement !== $("a-material")) $("a-material").value = Z.mappe.material;
+    geaendert();
+  });
+  // Wechsel „Ich gebe die Richtung“ → „Ich steuere“: die Übungskarten der Vorlage bekommen die bevorzugten Typen
+  function typenUebernehmen() {
+    var wunsch = S.angaben.uebungstypen || [], v = vorlageNach((Z.mappe.einheit || {}).vorlage);
+    if (!wunsch.length || !v || inhalt()) return;
+    var ueben = v.phasen.filter(function (p) { return p.rolle === "üben"; }).map(function (p) { return p.phase; });
+    var n = 0;
+    Z.mappe.bausteine.forEach(function (k) {
+      if (n < wunsch.length && k.typ === S.AUTO && ueben.indexOf(k.phase) >= 0 && !k.aus) { k.typ = wunsch[n]; n += 1; }
+    });
+  }
 
   function vorlagenZeigen() {
     var box = $("vorlagen"); box.innerHTML = "";
@@ -397,25 +488,79 @@
     var m = function (c) { return Math.round(255 - (255 - c) * anteil); };
     return "rgb(" + m(r) + "," + m(g) + "," + m(b) + ")";
   }
-  function akzent() { return FARBEN[S.angaben.farbe] || STANDARD_FARBE; }
-  // Miniaturen nach den Token der Designvorlagen in gen/html.py (Rundung, Kartenform), nur Formen, kein Text
-  function miniVorlage(wert, hue) {
-    var r = { schlicht: 3, kacheln: 6, magazin: 0 }[wert],
-        s = '<svg viewBox="0 0 120 76" aria-hidden="true" focusable="false">'
-      + '<rect width="120" height="76" fill="#fff"/>'
-      + '<rect x="8" y="7" width="104" height="15" rx="' + r + '" fill="' + hue + '"/>'
-      + '<rect x="8" y="27" width="56" height="4" rx="1" fill="#0B1220"/>';
-    [8, 63].forEach(function (x) {
-      if (wert === "schlicht") s += '<rect x="' + x +
-          '" y="37" width="49" height="31" rx="3" fill="#fff" stroke="#D5DAE3"/>';
-      else if (wert === "kacheln") s += '<rect x="' + x + '" y="37" width="49" height="31" rx="6" fill="' + mischen(hue,
-          0.16) + '"/>';
-      else s += '<rect x="' + x + '" y="37" width="49" height="1.6" fill="#17171A"/>';
-      var ix = wert === "magazin" ? x : x + 5;
-      s += '<rect x="' + ix + '" y="44" width="30" height="3" rx="1" fill="#5B6475"/><rect x="' + ix +
-          '" y="51" width="38" height="3" rx="1" fill="#C3C8D2"/>'
-        + '<rect x="' + ix + '" y="57" width="26" height="3" rx="1" fill="#C3C8D2"/>';
+  function familieInfo(name) {
+    return S.familien && S.familien.familien.filter(function (f) { return f.name === name; })[0];
+  }
+  function familieJetzt() { return S.angaben.familie || (S.familien && S.familien.standard) || "sachlich"; }
+  function akzent() {
+    var f = familieInfo(familieJetzt()), w = S.angaben.farbe || "";
+    if (f && f.akzent_fest) return f.akzent;
+    return /^#[0-9A-Fa-f]{6}$/.test(w) ? w : FARBEN[w] || (f ? f.akzent : STANDARD_FARBE);
+  }
+  // „Blau · normal · wie die Familie“: die Feinheiten als Text (zugeklappte Zeile und Fazit von Schritt 3)
+  function feinheitenText() {
+    var f = familieInfo(familieJetzt()), w = S.angaben.farbe || "";
+    var farbe = f && f.akzent_fest ? "ohne Farbe" : !w ? "Farbe wie die Familie"
+      : /^#/.test(w) ? "eigene Farbe " + w.toUpperCase() : oberText("farbe", w);
+    var klein = function (t) { return t.charAt(0).toLowerCase() + t.slice(1); };
+    return [farbe, klein(oberText("dichte", S.angaben.dichte || "normal")),
+      klein(oberText("kasten", S.angaben.kasten || "familie"))].join(" · ");
+  }
+  function hebel() {
+    return { akzent: S.angaben.farbe || "", dichte: S.angaben.dichte || "normal", kasten: S.angaben.kasten || "familie" };
+  }
+  // Kacheln der Familien: Name, Satz, Hinweis zur Importprobe; die Miniatur ist das HTML aus gen/api.design_vorschau
+  function zeichneFamilien() {
+    var box = $("aus-familie"), liste = S.familien.familien, gewaehlt = familieJetzt();
+    if (box.querySelectorAll(".aus-kachel").length !== liste.length) {
+      box.innerHTML = "";
+      liste.forEach(function (f) {
+        var b = el("button", { type: "button", cls: "aus-kachel", role: "radio", "aria-checked": "false",
+          "data-feld": "familie", "data-wert": f.name });
+        b.appendChild(el("span", { cls: "aus-mini" }, [el("span", { cls: "fam-mini" }, [el("span",
+          { cls: "fam-mini-innen" })])]));
+        b.appendChild(el("span", { cls: "fam-text" }, [el("span", { cls: "aus-name", text: f.text }),
+          el("span", { cls: "aus-zeile", text: f.zeile }),
+          f.probe.length ? el("span", { cls: "aus-probe", text: "Importprobe steht aus" }) : null]));
+        box.appendChild(b);
+      });
+    }
+    Array.prototype.forEach.call(box.querySelectorAll(".aus-kachel"), function (b) {
+      b.setAttribute("aria-checked", String(b.dataset.wert === gewaehlt));
     });
+    miniaturen().catch(function () { /* ohne Pyodide nur die Namen */ });
+  }
+  var vorschauStand = "";
+  async function miniaturen() {
+    if (!Z.geladen || !S.familien) return;
+    var h = hebel(), schluessel = JSON.stringify(h);
+    if (schluessel !== vorschauStand) {
+      vorschauStand = schluessel;
+      var html = await km.designVorschau(h);
+      if (vorschauStand !== schluessel) return;          // inzwischen neue Wahl
+      S.vorschau = html;
+      Array.prototype.forEach.call($("aus-familie").querySelectorAll(".aus-kachel"), function (b) {
+        b.querySelector(".fam-mini-innen").innerHTML = html[b.dataset.wert] || "";    // HTML aus dem Generator
+      });
+    }
+    var gross = S.vorschau && S.vorschau[familieJetzt()];
+    if (gross && $("vorschau-gross").dataset.familie !== familieJetzt() + schluessel) {
+      $("vorschau-gross").innerHTML = gross;
+      $("vorschau-gross").dataset.familie = familieJetzt() + schluessel;
+    }
+  }
+  function miniDichte(wert) {
+    var a = { luftig: 14, normal: 10, kompakt: 7 }[wert], s = '<svg viewBox="0 0 120 40" aria-hidden="true" ' +
+        'focusable="false"><rect width="120" height="40" fill="#fff"/>';
+    for (var i = 0; i < 3; i++) s += '<rect x="10" y="' + (6 + i * a) + '" width="' + (90 - i * 14) +
+        '" height="3" rx="1" fill="#5B6475"/>';
+    return s + "</svg>";
+  }
+  function miniKasten(wert) {
+    var s = '<svg viewBox="0 0 120 40" aria-hidden="true" focusable="false"><rect width="120" height="40" fill="#fff"/>';
+    if (wert === "linie") s += '<rect x="14" y="7" width="3" height="26" fill="#5B6475"/>';
+    else s += '<rect x="14" y="7" width="92" height="26" rx="' + ({ rund: 10, eckig: 0, familie: 4 }[wert]) +
+        '" fill="#EEF1F6" stroke="#5B6475"' + (wert === "familie" ? ' stroke-dasharray="3 3"' : '') + '/>';
     return s + "</svg>";
   }
   function miniFormat(wert, hue) {
@@ -462,14 +607,32 @@
   function zeichneAussehen() {
     if (!S.katalog) return;
     var o = S.katalog.oberflaeche, hue = akzent();
-    kachelGruppe($("aus-vorlage"), "vorlage", o.vorlage, function (w) { return miniVorlage(w, hue); },
-        S.angaben.vorlage || "schlicht");
+    if (S.familien) {
+      zeichneFamilien();
+      var fest = (familieInfo(familieJetzt()) || {}).akzent_fest, farbe = S.angaben.farbe || "";
+      kachelGruppe($("aus-dichte"), "dichte", S.familien.dichte, miniDichte, S.angaben.dichte || "normal");
+      kachelGruppe($("aus-kasten"), "kasten", S.familien.kasten, miniKasten, S.angaben.kasten || "familie");
+      $("feinheiten-text").textContent = feinheitenText();
+      $("farbe-eigen-l").hidden = !/^#/.test(farbe) || !!fest;
+      if (/^#[0-9A-Fa-f]{6}$/.test(farbe)) $("farbe-eigen").value = farbe.toLowerCase();
+      $("farbe-fest").hidden = !fest;
+      $("farbe-fest").textContent = fest ? oberText("familie", familieJetzt()) + " nutzt keine Akzentfarbe." : "";
+      $("aus-farbe").classList.toggle("aus-gesperrt", !!fest);
+      Array.prototype.forEach.call($("aus-farbe").querySelectorAll(".aus-kachel"), function (b) {
+        b.disabled = !!fest; });
+    }
     kachelGruppe($("aus-format"), "format", o.format.filter(function (w) { return AUS_FORMATE.indexOf(w.wert) >= 0; }),
       function (w) { return miniFormat(w, hue); }, S.angaben.format || "themen");
-    kachelGruppe($("aus-farbe"), "farbe", o.farbe, function (w) {
+    var famHue = (familieInfo(familieJetzt()) || {}).akzent || STANDARD_FARBE;
+    kachelGruppe($("aus-farbe"), "farbe", o.farbe.concat([{ wert: "eigen", text: "Eigene" }]), function (w) {
+      if (w === "eigen") return '<svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><circle cx="20" cy="20" ' +
+          'r="15" fill="' + (/^#/.test(S.angaben.farbe || "") ? S.angaben.farbe : "#fff") + '" stroke="#5B6475" ' +
+          'stroke-dasharray="3 3" stroke-width="2"/></svg>';
       return '<svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><circle cx="20" cy="20" r="16" fill="'
-        + (FARBEN[w] || STANDARD_FARBE) + '"/>' + (w ? "" : '<circle cx="20" cy="20" r="7" fill="#fff"/>') + "</svg>";
-    }, S.angaben.farbe || "");
+        + (FARBEN[w] || famHue) + '"/>' + (w ? "" : '<circle cx="20" cy="20" r="7" fill="#fff"/>') + "</svg>";
+    }, /^#/.test(S.angaben.farbe || "") ? "eigen" : S.angaben.farbe || "");
+    if (S.familien) Array.prototype.forEach.call($("aus-farbe").querySelectorAll(".aus-kachel"), function (b) {
+      b.disabled = !!(familieInfo(familieJetzt()) || {}).akzent_fest; });
     kachelGruppe($("aus-bilder"), "bilder", o.bilder, miniBilder, bilderWert());
     kachelGruppe($("aus-website"), "website", o.website, function (w) { return miniWebsite(w, hue); },
         S.angaben.website || "textfeld");
@@ -501,11 +664,21 @@
     return s + "</svg>";
   }
   $("schritt-3").addEventListener("click", function (ev) {
-    var b = ev.target.closest(".aus-kachel"); if (!b || !Z.mappe) return;
-    var a = {}; a[b.dataset.feld] = b.dataset.wert;
-    S.angaben[b.dataset.feld] = b.dataset.wert;
+    var b = ev.target.closest(".aus-kachel"); if (!b || !Z.mappe || b.disabled) return;
+    var a = {}, wert = b.dataset.wert;
+    if (b.dataset.feld === "farbe" && wert === "eigen") wert = $("farbe-eigen").value.toUpperCase();
+    a[b.dataset.feld] = wert;
+    S.angaben[b.dataset.feld] = wert;
     zeichneAussehen(); felderFuellen();
     angabenSchreiben(a, true);
+  });
+  // Farbfeld „Eigene“: schreibt farbe als #RRGGBB in den Steckbrief
+  $("farbe-eigen").addEventListener("change", function () {
+    if (!Z.mappe) return;
+    var w = $("farbe-eigen").value.toUpperCase();
+    S.angaben.farbe = w;
+    zeichneAussehen(); felderFuellen();
+    angabenSchreiben({ farbe: w }, true);
   });
   $("weiter-3").onclick = function () { if (Z.mappe) { Z.mappe.aussehen = true; gehe(4); } };
 
@@ -569,7 +742,7 @@
 
   var FELDER = { "a-thema": "thema", "a-jahrgang": "jahrgang", "a-minuten": "minuten", "a-fach": "fach",
       "a-schulart": "schulart",
-    "a-format": "format", "a-vorlage": "vorlage", "a-farbe": "farbe", "a-abschluss": "abschluss",
+    "a-format": "format", "a-familie": "familie", "a-farbe": "farbe", "a-farbe-hex": "farbe", "a-abschluss": "abschluss",
     "a-portionierung": "portionierung", "a-kontext": "kontext" };
   $("mehr").addEventListener("change", async function (ev) {
     if (!Z.mappe) return;
@@ -582,6 +755,11 @@
     var feld = FELDER[ev.target.id]; if (!feld) return;
     var wert = ev.target.value;
     if (feld === "minuten") wert = parseInt(wert, 10) || "";
+    if (ev.target.id === "a-farbe" && wert === "eigen") wert = ($("a-farbe-hex").value || $("farbe-eigen").value).toUpperCase();
+    if (ev.target.id === "a-farbe-hex") {
+      if (!/^#[0-9A-Fa-f]{6}$/.test(wert)) return;
+      wert = wert.toUpperCase();
+    }
     if (["thema", "jahrgang", "minuten"].indexOf(feld) >= 0) {
       Z.mappe.einheit = Object.assign({}, Z.mappe.einheit || {}); Z.mappe.einheit[feld] = wert;
       if (feld === "thema") Z.mappe.titel = wert;
@@ -589,7 +767,7 @@
     S.angaben[feld] = wert;
     zeichne();
     var a = {}; a[feld] = wert;
-    angabenSchreiben(a, feld === "farbe" || feld === "vorlage");
+    angabenSchreiben(a, feld === "farbe" || feld === "familie");
   });
   var kontextTimer = null, kontextOffen = {};
   function kontextSchreiben(feld, wert) {
@@ -620,7 +798,7 @@
     schemaZeigen();
   };
   Object.assign(S, { adresseLesen: adresseLesen, gehe: gehe, nachZwei: nachZwei, neuStart: neuStart,
-    schemaZeigen: schemaZeigen, steckbriefSicher: steckbriefSicher, vorlageNach: vorlageNach,
+    schemaZeigen: schemaZeigen, steckbriefSicher: steckbriefSicher, vorlageNach: vorlageNach, miniaturen: miniaturen,
     vorlagenZeigen: vorlagenZeigen, weiterAnzeigen: weiterAnzeigen, zeichneAussehen: zeichneAussehen,
     zeichneSchritte: zeichneSchritte, zeigeFehler: zeigeFehler });
 })();

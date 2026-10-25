@@ -1,9 +1,10 @@
 {
-"version": "2.0.0-b6",
+"version": "2.0.0-b7",
 "dateien": [
 "ansicht.css",
 "bilder.js",
 "chat.js",
+"familien.json",
 "generator.zip",
 "hinweise.json",
 "index.html",
