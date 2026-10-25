@@ -161,31 +161,41 @@
     <h2 class="s-kopf"><button type="button" class="s-zeile" data-nr="3"><span class="s-nr">3</span>
       <span class="s-titel" id="s3-titel">Wie soll der Kurs aussehen?</span><span class="s-fazit"></span></button></h2>
     <div class="s-inhalt">
+      <div class="aus-raster">
       <div class="aussehen">
         <div class="aus-gruppe"><h3 class="unterkopf" id="aus-familie-t">Design</h3>
-          <div id="aus-familie" class="kacheln-wahl familien" role="radiogroup" aria-labelledby="aus-familie-t"></div>
+          <div id="aus-familie" class="kacheln-wahl familien vierer" role="radiogroup" aria-labelledby="aus-familie-t"></div>
           <details id="feinheiten" class="feinheiten">
-            <summary>Feinheiten <span id="feinheiten-text" class="leise"></span></summary>
+            <summary>Feinheiten</summary>
             <div class="feinheiten-inhalt">
               <h4 class="unterkopf" id="aus-farbe-t">Farbe</h4>
-              <div id="aus-farbe" class="kacheln-wahl farben" role="radiogroup" aria-labelledby="aus-farbe-t"></div>
-              <label id="farbe-eigen-l" class="farbe-eigen" hidden>Eigene Farbe
-                <input id="farbe-eigen" type="color" value="#1d5fd1"></label>
+              <div class="farb-reihe">
+                <div id="aus-farbe" class="kacheln-wahl farben" role="radiogroup" aria-labelledby="aus-farbe-t"></div>
+                <label id="farbe-eigen-l" class="farbe-eigen" hidden><span class="unsichtbar">Eigene Farbe</span>
+                  <input id="farbe-eigen" type="color" value="#1d5fd1"></label></div>
               <p id="farbe-fest" class="leise" hidden></p>
               <h4 class="unterkopf" id="aus-dichte-t">Dichte</h4>
               <div id="aus-dichte" class="kacheln-wahl schmal" role="radiogroup" aria-labelledby="aus-dichte-t"></div>
               <h4 class="unterkopf" id="aus-kasten-t">Kästen</h4>
               <div id="aus-kasten" class="kacheln-wahl schmal" role="radiogroup" aria-labelledby="aus-kasten-t"></div>
-              <div id="vorschau-gross" class="vorschau-gross" aria-label="Vorschau in Originalgröße"></div>
             </div>
           </details></div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="aus-format-t">Kursformat</h3>
-          <div id="aus-format" class="kacheln-wahl" role="radiogroup" aria-labelledby="aus-format-t"></div></div>
+          <div id="aus-format" class="kacheln-wahl vierer" role="radiogroup" aria-labelledby="aus-format-t"></div>
+          <label id="start-l" class="feld feld-klein start-feld" hidden>Kursbeginn <input id="a-start" type="date"></label></div>
         <!-- Zahl der Bilder (Steckbrief kurs.bilder) und Darstellung der Übungen (kurs.website) -->
         <div class="aus-gruppe"><h3 class="unterkopf" id="aus-bilder-t">Bilder</h3>
           <div id="aus-bilder" class="kacheln-wahl bilder-wahl" role="radiogroup" aria-labelledby="aus-bilder-t"></div></div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="aus-website-t">Wie erscheinen Übungen?</h3>
           <div id="aus-website" class="kacheln-wahl breit" role="radiogroup" aria-labelledby="aus-website-t"></div></div>
+      </div>
+      <!-- Vorschau der gewählten Familie: ab 1100 px haftende Spalte rechts, darunter Leiste am unteren Rand -->
+      <aside id="vorschau-spalte" class="vorschau-spalte" aria-label="Vorschau">
+        <button type="button" id="vorschau-leiste" class="vorschau-leiste" aria-expanded="false">
+          <span class="vs-name"><span class="leise">Vorschau</span> <span id="vorschau-name"></span></span>
+          <span class="vs-auf" aria-hidden="true"></span></button>
+        <div id="vorschau-gross" class="vorschau-gross"><div class="vs-innen"></div></div>
+      </aside>
       </div>
       <button type="button" id="weiter-3" class="knopf haupt">Weiter</button>
     </div>

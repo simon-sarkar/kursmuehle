@@ -7,7 +7,9 @@
    "zeile": "Wie ein Lehrbuch, ruhig und klar.",
    "probe": [],
    "akzent": "#1D5FD1",
-   "akzent_fest": false
+   "akzent_fest": false,
+   "kasten_form": "balken",
+   "kasten_r": 8
   },
   {
    "name": "freundlich",
@@ -15,7 +17,9 @@
    "zeile": "Getönte Flächen, runde Ecken, viel Luft.",
    "probe": [],
    "akzent": "#2563EB",
-   "akzent_fest": false
+   "akzent_fest": false,
+   "kasten_form": "flaeche",
+   "kasten_r": 10
   },
   {
    "name": "magazin",
@@ -23,7 +27,9 @@
    "zeile": "Linien statt Flächen, große Überschriften.",
    "probe": [],
    "akzent": "#111111",
-   "akzent_fest": false
+   "akzent_fest": false,
+   "kasten_form": "linie_oben",
+   "kasten_r": 0
   },
   {
    "name": "grundschule",
@@ -34,7 +40,9 @@
     "overflow-wrap"
    ],
    "akzent": "#E07A1F",
-   "akzent_fest": false
+   "akzent_fest": false,
+   "kasten_form": "flaeche",
+   "kasten_r": 14
   },
   {
    "name": "verspielt",
@@ -44,7 +52,9 @@
     "font-family"
    ],
    "akzent": "#7C3AED",
-   "akzent_fest": false
+   "akzent_fest": false,
+   "kasten_form": "gestrichelt",
+   "kasten_r": 10
   },
   {
    "name": "modern",
@@ -52,7 +62,9 @@
    "zeile": "Viel Weißraum, feine Linien, große Überschriften.",
    "probe": [],
    "akzent": "#0F766E",
-   "akzent_fest": false
+   "akzent_fest": false,
+   "kasten_form": "offen",
+   "kasten_r": 2
   },
   {
    "name": "klassisch",
@@ -63,7 +75,9 @@
     "font-variant"
    ],
    "akzent": "#7F1D1D",
-   "akzent_fest": false
+   "akzent_fest": false,
+   "kasten_form": "einzug",
+   "kasten_r": 0
   },
   {
    "name": "natur",
@@ -73,7 +87,9 @@
     "font-family"
    ],
    "akzent": "#3F7D4E",
-   "akzent_fest": false
+   "akzent_fest": false,
+   "kasten_form": "papier",
+   "kasten_r": 6
   },
   {
    "name": "druck",
@@ -81,7 +97,9 @@
    "zeile": "ohne Farbe, für Papier",
    "probe": [],
    "akzent": "#000000",
-   "akzent_fest": true
+   "akzent_fest": true,
+   "kasten_form": "rahmen_dick",
+   "kasten_r": 0
   },
   {
    "name": "dunkel",
@@ -89,7 +107,9 @@
    "zeile": "Dunkle Karten auf der hellen Plattform.",
    "probe": [],
    "akzent": "#2DD4BF",
-   "akzent_fest": false
+   "akzent_fest": false,
+   "kasten_form": "balken",
+   "kasten_r": 8
   },
   {
    "name": "ohne",
@@ -97,7 +117,9 @@
    "zeile": "so, wie die Lernplattform es zeigt",
    "probe": [],
    "akzent": "#444444",
-   "akzent_fest": true
+   "akzent_fest": true,
+   "kasten_form": "zitat",
+   "kasten_r": 0
   }
  ],
  "dichte": [

@@ -1,5 +1,15 @@
 # Changelog
 
+## Unveröffentlicht (AP13.5d: Schritt 3 mit mitlaufender Vorschau)
+
+- Die Vorschau des gewählten Designs läuft beim Scrollen mit: auf breiten Bildschirmen rechts, sonst als Leiste am unteren Rand, die ein Tippen aufklappt.
+- Die Vorschau zeigt Inhalt, auch wenn du Schritt 3 erreichst, bevor die Mühle fertig geladen ist.
+- Wer vor dem Ende des Ladens weiterklickt, bekommt keine falsche Meldung „ließ sich nicht vollständig laden“ mehr.
+- Die Designs stehen als schlanke Kacheln mit Namen und einem Satz, vier je Reihe.
+- Schritt 3 bietet alle fünf Kursformate; „Wochen“ fragt nach dem Kursbeginn.
+- Ein kleines Dreieck markiert Designs und Formate, deren Import auf der Plattform noch nicht geprüft ist.
+- Die Feinheiten sind kürzer: Farbe, Dichte und Kästen ohne Erklärtext, vorgewählt ist jeweils der Standard des Designs.
+
 ## 2.0.0-b8 – 2026-10-25 (AP13.5c: Anordnung, Standardfarben, Skala der Designs; AP13.6: LehrplanPLUS für Grund- und Mittelschule; AP14b: Testcode)
 
 - Die Designs unterscheiden sich in der Anordnung: Titel über, auf oder unter dem Bannerbild, Bild links, rechts, oben oder klein neben dem Text, Ablauf als Kacheln, Liste, Spalte oder ein Satz, Übungskopf in vier Formen.

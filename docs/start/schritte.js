@@ -6,7 +6,7 @@
 (function () {
   if (!document.getElementById("schritt-5")) return;
   var S = km.seite;
-  var $ = S.$, AUS_FORMATE = S.AUS_FORMATE, FARBEN = S.FARBEN, SCHRITTE = S.SCHRITTE, STANDARD_FARBE = S.STANDARD_FARBE,
+  var $ = S.$, FARBEN = S.FARBEN, SCHRITTE = S.SCHRITTE, STANDARD_FARBE = S.STANDARD_FARBE,
       Z = S.Z, ZWEIG_TEXT = S.ZWEIG_TEXT, auswertung = S.auswertung, autosave = S.autosave,
       bilderStandard = S.bilderStandard, bilderWert = S.bilderWert, bildwuensche = S.bildwuensche,
       chatInfo = S.chatInfo, datumZeit = S.datumZeit, einheitTag = S.einheitTag, el = S.el, erledigtBis = S.erledigtBis,
@@ -498,19 +498,30 @@
     if (f && f.akzent_fest) return f.akzent;
     return /^#[0-9A-Fa-f]{6}$/.test(w) ? w : FARBEN[w] || (f ? f.akzent : STANDARD_FARBE);
   }
-  // „Blau · normal · wie die Familie“: die Feinheiten als Text (zugeklappte Zeile und Fazit von Schritt 3)
+  // „Grün · luftig“: nur die Feinheiten, die vom Standard der Familie abweichen (Fazit von Schritt 3)
   function feinheitenText() {
     var f = familieInfo(familieJetzt()), w = S.angaben.farbe || "";
-    var farbe = f && f.akzent_fest ? "ohne Farbe" : !w ? "Farbe wie die Familie"
-      : /^#/.test(w) ? "eigene Farbe " + w.toUpperCase() : oberText("farbe", w);
     var klein = function (t) { return t.charAt(0).toLowerCase() + t.slice(1); };
-    return [farbe, klein(oberText("dichte", S.angaben.dichte || "normal")),
-      klein(oberText("kasten", S.angaben.kasten || "familie"))].join(" · ");
+    var dichte = S.angaben.dichte || "normal", kasten = S.angaben.kasten || "familie";
+    return [f && f.akzent_fest || !w ? "" : /^#/.test(w) ? "eigene Farbe " + w.toUpperCase() : oberText("farbe", w),
+      dichte === "normal" ? "" : klein(oberText("dichte", dichte)),
+      kasten === "familie" ? "" : klein(oberText("kasten", kasten))].filter(Boolean).join(" · ");
   }
   function hebel() {
     return { akzent: S.angaben.farbe || "", dichte: S.angaben.dichte || "normal", kasten: S.angaben.kasten || "familie" };
   }
-  // Kacheln der Familien: Name, Satz, Hinweis zur Importprobe; die Miniatur ist das HTML aus gen/api.design_vorschau
+  // kleines Dreieck mit Tooltip: Importprobe der Familie oder Import des Formats steht aus
+  var PROBE_SVG = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1.5 15 14.5H1z" ' +
+      'fill="#FDE68A" stroke="#713F12" stroke-width="1.3" stroke-linejoin="round"/><rect x="7.3" y="5.6" width="1.4" ' +
+      'height="4.6" fill="#713F12"/><rect x="7.3" y="11.3" width="1.4" height="1.5" fill="#713F12"/></svg>';
+  function dreieck(text) {
+    var d = el("span", { cls: "aus-probe", role: "img", title: text, "aria-label": text });
+    d.innerHTML = PROBE_SVG;                                          // eigenes SVG, keine Eingabe
+    return d;
+  }
+  var FORMAT_PROBE = { einthemen: "Import auf der Plattform noch nicht geprüft",
+    wochen: "Import auf der Plattform noch nicht geprüft" }; // Stand der Importproben, s. Entwicklungsdoku
+  // Kacheln der Familien (AP13.5d): Name und ein Satz, ohne Miniatur; die Vorschau steht rechts oder in der Leiste
   function zeichneFamilien() {
     var box = $("aus-familie"), liste = S.familien.familien, gewaehlt = familieJetzt();
     if (box.querySelectorAll(".aus-kachel").length !== liste.length) {
@@ -518,38 +529,67 @@
       liste.forEach(function (f) {
         var b = el("button", { type: "button", cls: "aus-kachel", role: "radio", "aria-checked": "false",
           "data-feld": "familie", "data-wert": f.name });
-        b.appendChild(el("span", { cls: "aus-mini" }, [el("span", { cls: "fam-mini" }, [el("span",
-          { cls: "fam-mini-innen" })])]));
-        b.appendChild(el("span", { cls: "fam-text" }, [el("span", { cls: "aus-name", text: f.text }),
-          el("span", { cls: "aus-zeile", text: f.zeile }),
-          f.probe.length ? el("span", { cls: "aus-probe", text: "Importprobe steht aus" }) : null]));
+        b.appendChild(el("span", { cls: "aus-name" }, [el("span", { text: f.text }),
+          f.probe.length ? dreieck("Importprobe steht aus") : null]));
+        b.appendChild(el("span", { cls: "aus-zeile", text: f.zeile }));
         box.appendChild(b);
       });
     }
     Array.prototype.forEach.call(box.querySelectorAll(".aus-kachel"), function (b) {
       b.setAttribute("aria-checked", String(b.dataset.wert === gewaehlt));
     });
-    miniaturen().catch(function () { /* ohne Pyodide nur die Namen */ });
+    $("vorschau-name").textContent = (familieInfo(gewaehlt) || {}).text || "";
+    vorschauLaden();
   }
-  var vorschauStand = "";
-  async function miniaturen() {
-    if (!Z.geladen || !S.familien) return;
-    var h = hebel(), schluessel = JSON.stringify(h);
-    if (schluessel !== vorschauStand) {
-      vorschauStand = schluessel;
-      var html = await km.designVorschau(h);
-      if (vorschauStand !== schluessel) return;          // inzwischen neue Wahl
-      S.vorschau = html;
-      Array.prototype.forEach.call($("aus-familie").querySelectorAll(".aus-kachel"), function (b) {
-        b.querySelector(".fam-mini-innen").innerHTML = html[b.dataset.wert] || "";    // HTML aus dem Generator
-      });
+  // Vorschau der gewählten Familie (AP13.5d §1, §4): bei jedem Wechsel von Familie oder Feinheit ein Aufruf von
+  // gen/api.design_vorschau; gefüllt wird immer aus dem letzten Ergebnis, auch wenn Schritt 3 erst danach erscheint
+  var vorschauStand = "", vorschauFertig = "", vorschauHtml = "";
+  function vorschauFuellen() {
+    var innen = $("vorschau-gross").querySelector(".vs-innen");
+    if (!vorschauFertig) {
+      if (!innen.dataset.stand) innen.innerHTML = '<p class="leise vs-warte">Vorschau wird vorbereitet …</p>';
+      return;
     }
-    var gross = S.vorschau && S.vorschau[familieJetzt()];
-    if (gross && $("vorschau-gross").dataset.familie !== familieJetzt() + schluessel) {
-      $("vorschau-gross").innerHTML = gross;
-      $("vorschau-gross").dataset.familie = familieJetzt() + schluessel;
+    if (innen.dataset.stand !== vorschauFertig) {
+      innen.innerHTML = vorschauHtml;                                 // HTML aus dem Generator
+      innen.dataset.stand = vorschauFertig;
     }
+    vorschauMassstab();
   }
+  function vorschauLaden() {
+    vorschauFuellen();
+    if (!Z.geladen || !S.familien || !Z.mappe) return;
+    var fam = familieJetzt(), h = hebel(), schluessel = fam + JSON.stringify(h);
+    if (schluessel === vorschauStand) return;
+    vorschauStand = schluessel;
+    km.designVorschau(h, fam).then(function (html) {
+      if (vorschauStand !== schluessel) return;                       // inzwischen neue Wahl
+      vorschauHtml = html; vorschauFertig = schluessel;
+      vorschauFuellen();
+    }).catch(function (e) {
+      vorschauStand = "";
+      console.error("Vorschau der Familie", e);
+    });
+  }
+  // die Mini-Einheit ist 500 px breit (plus Rand); verkleinert auf die Breite der Spalte oder Leiste
+  function vorschauMassstab() {
+    var box = $("vorschau-gross"), innen = box.querySelector(".vs-innen");
+    if (!box.clientWidth || !innen.dataset.stand) return;
+    var s = Math.min(1, box.clientWidth / innen.offsetWidth);
+    innen.style.transform = s < 1 ? "scale(" + s.toFixed(4) + ")" : "";
+    innen.style.marginBottom = s < 1 ? -Math.floor(innen.offsetHeight * (1 - s)) + "px" : "";   // kein Leerraum beim Scrollen
+    box.style.setProperty("--vs-hoehe", Math.ceil(innen.offsetHeight * s) + "px");
+  }
+  // im nächsten Frame: der Maßstab ändert die Höhe der Box, sonst meldet WebKit eine ResizeObserver-Schleife als Seitenfehler
+  if (window.ResizeObserver) new ResizeObserver(function () { requestAnimationFrame(vorschauMassstab); }).observe($("vorschau-gross"));
+  else window.addEventListener("resize", vorschauMassstab);
+  // Leiste unter 1100 px: ein Tippen klappt auf, ein zweites zu
+  $("vorschau-leiste").onclick = function () {
+    var auf = !$("vorschau-spalte").classList.contains("offen");
+    $("vorschau-spalte").classList.toggle("offen", auf);
+    $("vorschau-leiste").setAttribute("aria-expanded", String(auf));
+    vorschauMassstab();
+  };
   function miniDichte(wert) {
     var a = { luftig: 14, normal: 10, kompakt: 7 }[wert], s = '<svg viewBox="0 0 120 40" aria-hidden="true" ' +
         'focusable="false"><rect width="120" height="40" fill="#fff"/>';
@@ -557,83 +597,136 @@
         '" height="3" rx="1" fill="#5B6475"/>';
     return s + "</svg>";
   }
+  // Kästen: rund, eckig, Linie; „familie“ zeichnet die Form der gewählten Familie (formen.kasten in familien.yaml)
   function miniKasten(wert) {
-    var s = '<svg viewBox="0 0 120 40" aria-hidden="true" focusable="false"><rect width="120" height="40" fill="#fff"/>';
-    if (wert === "linie") s += '<rect x="14" y="7" width="3" height="26" fill="#5B6475"/>';
-    else s += '<rect x="14" y="7" width="92" height="26" rx="' + ({ rund: 10, eckig: 0, familie: 4 }[wert]) +
-        '" fill="#EEF1F6" stroke="#5B6475"' + (wert === "familie" ? ' stroke-dasharray="3 3"' : '') + '/>';
-    return s + "</svg>";
+    var s = '<svg viewBox="0 0 120 40" aria-hidden="true" focusable="false"><rect width="120" height="40" fill="#fff"/>',
+        text = '<rect x="26" y="15" width="56" height="3" rx="1" fill="#5B6475"/><rect x="26" y="22" width="40" ' +
+        'height="3" rx="1" fill="#C3C8D2"/>';
+    var box = function (r, fill, stroke, extra) {
+      return '<rect x="14" y="7" width="92" height="26" rx="' + r + '" fill="' + fill + '"' +
+          (stroke ? ' stroke="#5B6475"' : '') + (extra || "") + '/>';
+    };
+    if (wert === "linie") return s + '<rect x="14" y="7" width="3" height="26" fill="#5B6475"/>' + text + "</svg>";
+    if (wert === "rund") return s + box(10, "#EEF1F6", true) + text + "</svg>";
+    if (wert === "eckig") return s + box(0, "#EEF1F6", true) + text + "</svg>";
+    var f = familieInfo(familieJetzt()) || {}, r = Math.min(f.kasten_r || 0, 12), form = f.kasten_form || "rahmen";
+    var teil = {
+      balken: box(r, "#EEF1F6") + '<rect x="14" y="7" width="4" height="26" fill="#5B6475"/>',
+      flaeche: box(r, "#E6EBF5"), papier: box(r, "#F4EFE4"),
+      linie_oben: box(r, "#fff") + '<rect x="14" y="7" width="92" height="2" fill="#5B6475"/>',
+      gestrichelt: box(r, "#fff", true, ' stroke-dasharray="4 3"'),
+      haarlinie: box(r, "#fff", true, ' stroke-width="0.6"'), rahmen: box(r, "#fff", true),
+      rahmen_dick: box(r, "#fff", true, ' stroke-width="2.4"'),
+      offen: '<rect x="14" y="31" width="92" height="1" fill="#C3C8D2"/>',
+      einzug: '<rect x="20" y="9" width="1.4" height="22" fill="#5B6475"/>',
+      links: '<rect x="14" y="7" width="3" height="26" fill="#5B6475"/>',
+      zitat: '<rect x="14" y="7" width="2" height="26" fill="#5B6475"/><text x="20" y="18" font-size="12" ' +
+          'fill="#5B6475">„</text>'
+    }[form] || box(r, "#fff", true);
+    return s + teil + text + "</svg>";
   }
   function miniFormat(wert, hue) {
     var s = '<svg viewBox="0 0 120 76" aria-hidden="true" focusable="false"><rect width="120" height="76" ' +
-        'fill="#fff"/>';
+        'fill="#fff"/>', zeile = function (y, b) {
+          return '<rect x="14" y="' + y + '" width="' + b + '" height="3" rx="1" fill="#0B1220"/>'; };
     if (wert === "kacheln") {
       for (var i = 0; i < 6; i++) {
         var x = 8 + (i % 3) * 35, y = 8 + Math.floor(i / 3) * 31;
         s += '<rect x="' + x + '" y="' + y + '" width="32" height="28" rx="4" fill="' + mischen(hue, 0.18) + '"/>'
           + '<rect x="' + (x + 5) + '" y="' + (y + 19) + '" width="18" height="3" rx="1" fill="#0B1220"/>';
       }
+    } else if (wert === "komprimiert") {          // Themen zum Aufklappen: zugeklappte Zeilen mit Pfeil
+      [8, 26, 44].forEach(function (y, i) {
+        s += '<rect x="8" y="' + y + '" width="104" height="14" rx="3" fill="#F2F4F7"/>' + zeile(y + 5, 50 - i * 8)
+          + '<path d="M100 ' + (y + 5) + 'l4 4 4-4" fill="none" stroke="' + hue + '" stroke-width="1.5"/>';
+      });
+      s += '<rect x="8" y="62" width="104" height="8" rx="2" fill="' + mischen(hue, 0.18) + '"/>';
+    } else if (wert === "einthemen") {            // ein Thema je Reiter
+      [8, 40, 72].forEach(function (x, i) {
+        s += '<rect x="' + x + '" y="8" width="30" height="12" rx="2" fill="' + (i ? "#F2F4F7" : mischen(hue, 0.3)) +
+            '"/>';
+      });
+      s += '<rect x="8" y="22" width="104" height="46" rx="3" fill="#fff" stroke="#E3E7EE"/>' + zeile(30, 56)
+        + '<rect x="14" y="38" width="80" height="3" rx="1" fill="#C3C8D2"/><rect x="14" y="45" width="70" ' +
+          'height="3" rx="1" fill="#C3C8D2"/>';
+    } else if (wert === "wochen") {               // Abschnitte mit Datumsbereich
+      [8, 30, 52].forEach(function (y, i) {
+        s += '<rect x="8" y="' + y + '" width="104" height="17" rx="3" fill="#F2F4F7"/><rect x="12" y="' + (y + 4) +
+            '" width="20" height="9" rx="2" fill="' + mischen(hue, 0.3) + '"/>' +
+            '<rect x="38" y="' + (y + 7) + '" width="' + (46 - i * 8) + '" height="3" rx="1" fill="#0B1220"/>';
+      });
     } else {
       [8, 30, 52].forEach(function (y, i) {
         s += '<rect x="8" y="' + y + '" width="104" height="17" rx="3" fill="' + (i ? "#F2F4F7" : mischen(hue, 0.18)) +
-            '"/>'
-          + '<rect x="14" y="' + (y + 7) + '" width="' + (46 - i * 8) + '" height="3" rx="1" fill="#0B1220"/>';
+            '"/>' + zeile(y + 7, 46 - i * 8);
       });
     }
     return s + "</svg>";
   }
-  function kachel(gruppe, wert, text, mini, gewaehlt, zeile) {
+  function kachel(gruppe, wert, text, mini, gewaehlt, zeile, probe) {
     var b = el("button", { type: "button", cls: "aus-kachel", role: "radio", "aria-checked": String(gewaehlt),
         "data-feld": gruppe, "data-wert": wert });
     var m = el("span", { cls: "aus-mini" }); m.innerHTML = mini;      // eigenes SVG, keine Eingabe
     b.appendChild(m);
-    b.appendChild(el("span", { cls: "aus-name", text: text }));
+    b.appendChild(el("span", { cls: "aus-name" }, [el("span", { cls: "aus-name-text", text: text }),
+      probe ? dreieck(probe) : null]));
     if (zeile) b.appendChild(el("span", { cls: "aus-zeile", text: zeile }));
     return b;
   }
   // Kacheln werden einmal gebaut und danach nur umgeschaltet: ein Neubau zwischen mousedown und mouseup schluckt in
-  // Firefox den Klick, der Steckbrief bliebe ohne die Wahl
+  // Firefox den Klick, der Steckbrief bliebe ohne die Wahl. w.label setzt eine Beschriftung nur für Vorleseprogramme
+  // (erste Kachel bei Farbe und Kästen, ohne sichtbaren Text)
   function kachelGruppe(box, gruppe, werte, mini, gewaehlt) {
     var alt = box.querySelectorAll(".aus-kachel");
     if (alt.length !== werte.length || werte.some(function (w, i) { return alt[i].dataset.wert !== w.wert; })) {
       box.innerHTML = "";
-      werte.forEach(function (w) { box.appendChild(kachel(gruppe, w.wert, w.text, "", false, w.zeile)); });
+      werte.forEach(function (w) { box.appendChild(kachel(gruppe, w.wert, w.text, "", false, w.zeile, w.probe)); });
     }
     Array.prototype.forEach.call(box.querySelectorAll(".aus-kachel"), function (b, i) {
       b.setAttribute("aria-checked", String(werte[i].wert === gewaehlt));
+      if (werte[i].label) b.setAttribute("aria-label", werte[i].label); else b.removeAttribute("aria-label");
+      var t = b.querySelector(".aus-name-text");
+      if (t && t.textContent !== werte[i].text) t.textContent = werte[i].text;
       var m = b.querySelector(".aus-mini"), svg = mini(werte[i].wert);
       if (m.dataset.svg !== svg) { m.innerHTML = svg; m.dataset.svg = svg; }      // eigenes SVG, keine Eingabe
     });
   }
   function zeichneAussehen() {
     if (!S.katalog) return;
-    var o = S.katalog.oberflaeche, hue = akzent();
+    var o = S.katalog.oberflaeche, hue = akzent(), fam = familieInfo(familieJetzt()) || {};
     if (S.familien) {
       zeichneFamilien();
-      var fest = (familieInfo(familieJetzt()) || {}).akzent_fest, farbe = S.angaben.farbe || "";
+      var fest = fam.akzent_fest, farbe = S.angaben.farbe || "";
       kachelGruppe($("aus-dichte"), "dichte", S.familien.dichte, miniDichte, S.angaben.dichte || "normal");
-      kachelGruppe($("aus-kasten"), "kasten", S.familien.kasten, miniKasten, S.angaben.kasten || "familie");
-      $("feinheiten-text").textContent = feinheitenText();
+      kachelGruppe($("aus-kasten"), "kasten", S.familien.kasten.map(function (w) {
+        return w.wert === "familie" ? { wert: w.wert, text: "", label: "Kästen wie " + (fam.text || "die Familie") } : w;
+      }), miniKasten, S.angaben.kasten || "familie");
       $("farbe-eigen-l").hidden = !/^#/.test(farbe) || !!fest;
       if (/^#[0-9A-Fa-f]{6}$/.test(farbe)) $("farbe-eigen").value = farbe.toLowerCase();
       $("farbe-fest").hidden = !fest;
       $("farbe-fest").textContent = fest ? oberText("familie", familieJetzt()) + " nutzt keine Akzentfarbe." : "";
       $("aus-farbe").classList.toggle("aus-gesperrt", !!fest);
-      Array.prototype.forEach.call($("aus-farbe").querySelectorAll(".aus-kachel"), function (b) {
-        b.disabled = !!fest; });
     }
-    kachelGruppe($("aus-format"), "format", o.format.filter(function (w) { return AUS_FORMATE.indexOf(w.wert) >= 0; }),
-      function (w) { return miniFormat(w, hue); }, S.angaben.format || "themen");
-    var famHue = (familieInfo(familieJetzt()) || {}).akzent || STANDARD_FARBE;
-    kachelGruppe($("aus-farbe"), "farbe", o.farbe.concat([{ wert: "eigen", text: "Eigene" }]), function (w) {
+    var format = S.angaben.format || "themen";
+    kachelGruppe($("aus-format"), "format", o.format.map(function (w) {
+      return { wert: w.wert, text: w.text, zeile: w.wert === "wochen" ? "braucht einen Kursbeginn" : "",
+        probe: FORMAT_PROBE[w.wert] };
+    }), function (w) { return miniFormat(w, hue); }, format);
+    $("start-l").hidden = format !== "wochen";
+    if (document.activeElement !== $("a-start")) $("a-start").value = S.angaben.start || "";
+    // Farbe (AP13.5d §3): erster Kreis = Farbe der Familie (Wert leer), dann fünf Namen, zuletzt „Eigene“
+    var famHue = fam.akzent || STANDARD_FARBE;
+    kachelGruppe($("aus-farbe"), "farbe", o.farbe.map(function (w) {
+      return w.wert ? w : { wert: "", text: "", label: "Farbe von " + (fam.text || "der Familie") };
+    }).concat([{ wert: "eigen", text: "Eigene" }]), function (w) {
       if (w === "eigen") return '<svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><circle cx="20" cy="20" ' +
           'r="15" fill="' + (/^#/.test(S.angaben.farbe || "") ? S.angaben.farbe : "#fff") + '" stroke="#5B6475" ' +
           'stroke-dasharray="3 3" stroke-width="2"/></svg>';
       return '<svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><circle cx="20" cy="20" r="16" fill="'
-        + (FARBEN[w] || famHue) + '"/>' + (w ? "" : '<circle cx="20" cy="20" r="7" fill="#fff"/>') + "</svg>";
+        + (FARBEN[w] || famHue) + '"/></svg>';
     }, /^#/.test(S.angaben.farbe || "") ? "eigen" : S.angaben.farbe || "");
     if (S.familien) Array.prototype.forEach.call($("aus-farbe").querySelectorAll(".aus-kachel"), function (b) {
-      b.disabled = !!(familieInfo(familieJetzt()) || {}).akzent_fest; });
+      b.disabled = !!fam.akzent_fest; });
     kachelGruppe($("aus-bilder"), "bilder", o.bilder, miniBilder, bilderWert());
     kachelGruppe($("aus-website"), "website", o.website, function (w) { return miniWebsite(w, hue); },
         S.angaben.website || "textfeld");
@@ -672,6 +765,15 @@
     S.angaben[b.dataset.feld] = wert;
     zeichneAussehen(); felderFuellen();
     angabenSchreiben(a, true);
+    if (b.dataset.feld === "format" && wert === "wochen" && !S.angaben.start) $("a-start").focus();
+  });
+  // Kursbeginn (Format Wochen): schreibt kurs.start als JJJJ-MM-TT; leer = Tag des Baus
+  $("a-start").addEventListener("change", function () {
+    if (!Z.mappe) return;
+    var w = $("a-start").value || "";
+    if (w && !/^\d{4}-\d{2}-\d{2}$/.test(w)) return;
+    S.angaben.start = w;
+    angabenSchreiben({ start: w }, false);
   });
   // Farbfeld „Eigene“: schreibt farbe als #RRGGBB in den Steckbrief
   $("farbe-eigen").addEventListener("change", function () {
@@ -799,7 +901,7 @@
     schemaZeigen();
   };
   Object.assign(S, { adresseLesen: adresseLesen, angabenSchreiben: angabenSchreiben, gehe: gehe, nachZwei: nachZwei, neuStart: neuStart,
-    schemaZeigen: schemaZeigen, steckbriefSicher: steckbriefSicher, vorlageNach: vorlageNach, miniaturen: miniaturen,
+    schemaZeigen: schemaZeigen, steckbriefSicher: steckbriefSicher, vorlageNach: vorlageNach, vorschauLaden: vorschauLaden,
     vorlagenZeigen: vorlagenZeigen, weiterAnzeigen: weiterAnzeigen, zeichneAussehen: zeichneAussehen,
     zeichneSchritte: zeichneSchritte, zeigeFehler: zeigeFehler });
 })();

@@ -122,7 +122,7 @@ var km = (function () {
     return a.ergebnis;
   }
 
-  // Miniaturen der Designfamilien (AP13.5): ein Aufruf liefert alle Familien als {name: html}
+  // Vorschau der Designfamilien (AP13.5): mit familie das HTML dieser Familie, ohne alle Familien als {name: html}
   async function designVorschau(hebel, familie) {
     var a = await anfrage("design_vorschau", { hebel: hebel || {}, familie: familie || null });
     messen("design_vorschau", familie || "alle", a);
@@ -299,7 +299,6 @@ window.km = km;
   var KOPIERT = "Jetzt in deinen Chat einfügen, die Antwort dann in Schritt 5 einfügen.";
   var STANDARD_FARBE = "#1D5FD1";                 // Akzent der Familien ohne eigene Farbe (familien.yaml)
   var FARBEN = { blau: "#1D5FD1", "grün": "#15803D", rot: "#BE123C", orange: "#B45309", lila: "#6D28D9" };
-  var AUS_FORMATE = ["themen", "kacheln"];        // Kursformate im Schritt Aussehen; alle unter „Mehr einstellen“
   var ZWEIG_TEXT = { mach: "Mach du", richtung: "Ich gebe die Richtung", steuer: "Ich steuere" };
   var AUTO = "automatisch";                       // Typ, den das Modell aus Titel und Auftrag wählt
   S.gespeichert = false;
@@ -412,10 +411,12 @@ window.km = km;
     status("Wird vorbereitet …", "lauf");
     km.bereit().then(function () {
       if (!S.bauLaeuft) status("Bereit", "ok");
-      if (S.katalogDa) S.katalogDa.then(function () { if (S.miniaturen) S.miniaturen().catch(function () {}); });
+      // Vorschau der gewählten Familie (AP13.5d §1): füllt sie, auch wenn Schritt 3 schon offen ist
+      if (S.katalogDa) S.katalogDa.then(function () { if (S.vorschauLaden) S.vorschauLaden(); });
       S.knoepfe();
-      if (Z.mappe) neuPruefen().catch(zeigeFehler);
-    }).catch(function () {
+      if (Z.mappe) neuPruefen().catch(function (e) { S.zeigeFehler(e); });
+    }).catch(function (e) {
+      console.error("Laden", e);
       status("Kursmühle ließ sich nicht vollständig laden. Speichere deine Einheit und versuch es später oder in "
         + "einem anderen Netz noch einmal.", "fehler");
     });
@@ -613,7 +614,7 @@ window.km = km;
           kb(S.textGroesse()) + "."
       : "Wie viel Text " + c.text + " annimmt, ist nicht gemessen. Halte das Material kurz.";
   }
-  Object.assign(S, { $: $, AUS_FORMATE: AUS_FORMATE, AUTO: AUTO, FARBEN: FARBEN, KOPIERT: KOPIERT, SCHRITTE: SCHRITTE,
+  Object.assign(S, { $: $, AUTO: AUTO, FARBEN: FARBEN, KOPIERT: KOPIERT, SCHRITTE: SCHRITTE,
     STANDARD_FARBE: STANDARD_FARBE, Z: Z, ZWEIG_TEXT: ZWEIG_TEXT, auswertung: auswertung, autosave: autosave,
     bildGroesse: bildGroesse, bilderStandard: bilderStandard, bilderWert: bilderWert, bildwuensche: bildwuensche,
     chatInfo: chatInfo, datumZeit: datumZeit, download: download, einheitTag: einheitTag, el: el,

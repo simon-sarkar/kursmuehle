@@ -202,7 +202,7 @@ select { appearance: auto; }
 .mehr summary { cursor: pointer; color: var(--link); font-weight: 600; padding: 6px 0; }
 .mehr-felder { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 12px 0 4px; }
 
-/* 3 Aussehen: Kacheln mit Miniatur */
+/* 3 Aussehen: Kacheln, Familien ohne Miniatur */
 .aus-gruppe .unterkopf { margin-top: 6px; }
 .aus-gruppe + .aus-gruppe { margin-top: 14px; }
 .kacheln-wahl { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -213,25 +213,69 @@ select { appearance: auto; }
 .aus-kachel > * { pointer-events: none; }        /* Klick trifft immer den Knopf (Firefox) */
 .aus-mini svg { display: block; width: 100%; height: auto; border-radius: 6px; box-shadow: 0 0 0 1px var(--linie); }
 .farben .aus-kachel { width: 104px; }
-/* Designfamilien (AP13.5): Miniatur aus dem Generator, 500 px breit, auf 160 × 100 verkleinert (nur Oberfläche) */
-.familien .aus-kachel { width: 176px; }
-.familien .aus-mini { flex: none; }
-.fam-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.fam-mini { display: block; position: relative; width: 160px; height: 100px; overflow: hidden; border-radius: 6px; box-shadow: 0 0 0 1px var(--linie);
-  background: #fff; color: #1d2125; font: 15px/1.5 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
-.fam-mini-innen { display: block; width: 500px; padding: 10px 12px; transform: scale(0.32); transform-origin: 0 0; }
-.aus-probe { align-self: flex-start; font-size: 0.75rem; font-weight: 600; line-height: 1.3; color: #713F12;
-  background: #FEF3C7; border-radius: 4px; padding: 1px 6px; }
-.schmal .aus-kachel { width: 128px; }
+/* Designfamilien und Kursformate (AP13.5d): vier je Reihe ab 900 px, zwei darunter, eine unter 480 px */
+.vierer { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.vierer .aus-kachel { width: auto; min-width: 0; }
+.vierer .aus-mini svg { max-width: 160px; margin: 0 auto; }
+.familien .aus-kachel { min-height: 72px; justify-content: center; gap: 3px; text-align: left; padding: 8px 10px; }
+.familien .aus-zeile { font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; }
+.aus-name { display: flex; align-items: center; justify-content: inherit; gap: 6px; }
+.aus-kachel .aus-name { justify-content: center; }
+.familien .aus-name { justify-content: flex-start; }
+.aus-kachel > .aus-name .aus-probe { pointer-events: auto; }   /* Tooltip am Dreieck */
+.aus-probe { display: inline-flex; flex: none; width: 15px; height: 15px; cursor: help; }
+.aus-probe svg { width: 15px; height: 15px; display: block; }
+/* Dichte und Kästen füllen die Reihe, zentriert, wenn Platz bleibt */
+.schmal { justify-content: center; }
+.schmal .aus-kachel { flex: 1 1 0; width: auto; min-width: 0; max-width: 180px; }
 .schmal .aus-mini svg { height: 40px; }
 .feinheiten { margin-top: 12px; }
 .feinheiten > summary { cursor: pointer; font-weight: 650; padding: 6px 0; }
-.feinheiten-inhalt { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 6px 0 4px; }
+.feinheiten-inhalt { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 6px 0 4px; }
+.feinheiten-inhalt .unterkopf { margin: 4px 0 0; }
+.farb-reihe { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.farben .aus-kachel { width: 64px; padding: 6px 4px; gap: 4px; }
+.farben .aus-name:empty { display: none; }
+.farben .aus-kachel .aus-name-text:empty { display: none; }
 .farbe-eigen { display: inline-flex; align-items: center; gap: 10px; }
 .farbe-eigen input { width: 48px; height: 32px; padding: 0; border: 1px solid var(--linie); background: none; }
-.vorschau-gross { min-width: 0; max-width: 100%; overflow-x: auto; }
+.start-feld { margin-top: 10px; max-width: 220px; }
+/* Vorschau der gewählten Familie (AP13.5d §4): die Mini-Einheit (500 px) verkleinert auf die Spalte (JS setzt den
+   Maßstab und --vs-hoehe); ab 1100 px zweite Spalte, die beim Scrollen stehen bleibt; darunter Leiste am unteren Rand */
+.aus-raster { display: block; }
+.vorschau-gross { min-width: 0; overflow: hidden; height: var(--vs-hoehe, auto); }
+.vs-innen { transform-origin: 0 0; }
+.vs-innen[data-stand] { width: 524px; }
+.vs-warte { margin: 0; padding: 12px; }
 .vorschau-gross .km-vorschau { background: #fff; color: #1d2125; padding: 12px; border-radius: 8px;
   box-shadow: 0 0 0 1px var(--linie); font: 15px/1.5 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+.vorschau-leiste { display: none; }
+.schritt:not([data-stand=aktiv]) .vorschau-spalte { display: none; }
+@media (min-width: 1100px) {
+  body[data-schritt="3"] .seite { max-width: 1180px; }
+  .aus-raster { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 0 24px; align-items: start; }
+  .vorschau-spalte { position: sticky; top: 12px; }
+}
+@media (max-width: 1099px) {
+  body[data-schritt="3"] .seite { padding-bottom: 120px; }
+  .vorschau-spalte { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; height: 96px; display: flex; flex-direction: column;
+    background: var(--flaeche); box-shadow: 0 -2px 12px var(--schatten), 0 -1px 0 var(--linie); }
+  .vorschau-spalte.offen { height: 60vh; }
+  .vorschau-leiste { display: flex; flex: none; align-items: center; gap: 10px; width: 100%; padding: 8px 16px 4px; border: 0; background: none;
+    font: inherit; font-weight: 650; color: var(--text); cursor: pointer; text-align: left; }
+  .vs-name { flex: 1 1 auto; min-width: 0; }
+  .vs-auf::after { content: "▴"; color: var(--leise); }
+  .vorschau-spalte.offen .vs-auf::after { content: "▾"; }
+  .vorschau-spalte .vorschau-gross { flex: 1 1 auto; height: auto; margin: 0 16px; overflow: hidden; pointer-events: none; }
+  .vorschau-spalte.offen .vorschau-gross { overflow-x: hidden; overflow-y: auto; pointer-events: auto; padding-bottom: 12px; max-width: 560px; }
+}
+@media (max-width: 899px) {
+  .vierer { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 479px) {
+  .vierer { grid-template-columns: minmax(0, 1fr); }
+}
 .bilder-wahl .aus-kachel { width: 104px; }
 .breit .aus-kachel { width: 230px; text-align: left; }
 .aus-zeile { font-size: 0.85rem; font-weight: 400; color: var(--leise); line-height: 1.35; }
@@ -239,7 +283,7 @@ select { appearance: auto; }
 .richtung-teil { margin-top: 10px; display: grid; gap: 12px; }
 .text-wahl .aus-kachel { width: auto; min-width: 104px; padding: 8px 14px; }
 .bilder-stufe { font-weight: 600; }
-.farben .aus-mini svg { width: 40px; margin: 0 auto; box-shadow: none; }
+.farben .aus-mini svg { width: 36px; margin: 0 auto; box-shadow: none; }
 
 /* 4 Text für den Chat */
 .chat-wahl > p:first-child { font-weight: 600; margin-bottom: 8px; }
@@ -498,9 +542,7 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
   .chat-gruppe-name { flex-basis: 100%; }
   .text-art label, .modus label { flex: 1 1 auto; }
   .aus-kachel { width: calc(50% - 5px); }
-  .farben .aus-kachel { width: calc(33.3% - 7px); }
-  .familien .aus-kachel { width: 100%; flex-direction: row; align-items: center; gap: 12px; }
-  .schmal .aus-kachel { width: calc(50% - 5px); }
+  .vierer .aus-kachel, .schmal .aus-kachel { width: auto; }
   .bilder-wahl .aus-kachel { width: calc(50% - 5px); }
   .breit .aus-kachel { width: 100%; }
   .kopf-links { margin-left: auto; }
