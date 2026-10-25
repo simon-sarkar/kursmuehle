@@ -6,7 +6,7 @@
 
 (function () {
   var SCHLUESSEL = "kursmuehle-verbindung", PORT = 48127;
-  var TESTADRESSE = window.KM_TESTADRESSE || "https://kursmuehle-ki.sarkarunterricht.workers.dev";   // bis die Zone kursmühle.de aktiv ist, dann ki.xn--kursmhle-n4a.de; KM_TESTADRESSE nur in Tests
+  var TESTADRESSE = window.KM_TESTADRESSE || "https://ki.xn--kursmhle-b6a.de";   // = ki.kursmühle.de (Cloudflare-Worker); KM_TESTADRESSE nur in Tests
   var TESTCODE = /^muehle-[a-z0-9-]{4,40}$/;
   var TEXT = {
     netz: "Deine KI antwortet nicht; läuft das Programm noch?",
