@@ -20,7 +20,8 @@
     var e = (Z.mappe && Z.mappe.einheit) || {};
     var ohneLp = S.angaben.lehrplanbezug === "nein";       // AP13.6: ohne Lehrplan heißt das Feld „Zielgruppe“
     var jg = ohneLp ? jahrgangZahl(e.jahrgang) : e.jahrgang;   // eine Zahl darin ist die Jahrgangsstufe
-    if (n === 1) return [e.thema, jg ? "Jahrgangsstufe " + jg : e.jahrgang ? "Zielgruppe: " + e.jahrgang : "",
+    if (n === 1) return [e.thema, zielgruppeAus(e.jahrgang) ? "Zielgruppe: " + zielgruppeAus(e.jahrgang) : jg ?
+      "Jahrgangsstufe " + jg : e.jahrgang ? "Zielgruppe: " + e.jahrgang : "",
       e.minuten ? e.minuten + " Minuten" : ""].filter(Boolean).join(" · ");
     if (n === 2) {
       var z = ZWEIG_TEXT[zweig()] || "";
@@ -167,7 +168,7 @@
     var q = new URLSearchParams(location.search), h = new URLSearchParams((location.hash || "").replace(/^#/, ""));
     if (h.has("thema") || h.has("jahrgang") || h.has("minuten")) q = h;
     var weiter = q.get("weiter") === "1", thema = (q.get("thema") || "").trim().slice(0, 120);
-    var vor = q.has("thema") || q.has("jahrgang") || q.has("minuten");
+    var vor = q.has("thema") || q.has("jahrgang") || q.has("minuten"), jg = (q.get("jahrgang") || "").trim();
     if (weiter || vor) history.replaceState(history.state, "", location.pathname + (q === h ? "" : location.hash));
     if (weiter) {
       km.autosaveLesen().then(function (r) { if (r) oeffne(async function () { await km.mappeAusBytes(r.zip, null); });
@@ -177,7 +178,9 @@
     if (!vor) return;
     var min = parseInt(q.get("minuten"), 10);
     $("f-thema").value = thema;
-    $("f-jahrgang").value = (q.get("jahrgang") || "").trim().slice(0, 12);
+    if (zielgruppeAus(jg)) {                             // Text ohne Zahl: die Zielgruppe (c2)
+      $("f-zielgruppe").value = jg.slice(0, 40); $("erweitert").open = true; zielgruppeSperre("f");
+    } else $("f-jahrgang").value = jg.slice(0, 12);
     $("f-minuten").value = min >= 10 && min <= 300 ? min : 45;
     if (!thema) { $("f-thema").focus(); return; }
     S.katalogDa.then(function () { return km.autosaveLesen().catch(function () { return null; }); }).then(function (r) {
@@ -204,8 +207,8 @@
     if (art === "thema" && !w) return "Gib ein Thema ein.";
     if (art === "minuten" && w && !(/^\d+$/.test(w) && +w >= 10 && +w <= 300))
       return "Die Minuten liegen zwischen 10 und 300.";
-    if (art === "jahrgang" && w && /^Jahrgangsstufe/.test($(feld.id + "-t").textContent) && !jahrgangZahl(w))
-      return "Die Jahrgangsstufe ist eine Zahl von 1 bis 13.";
+    if (art === "jahrgang" && w && !jahrgangZahl(w)) return "Die Jahrgangsstufe ist eine Zahl von 1 bis 13.";
+    if (art === "zielgruppe" && /\d/.test(w)) return "Ohne Zahl; die Jahrgangsstufe gehört ins Feld oben.";
     return "";
   }
   function feldMeldung(feld, satz) {
@@ -248,12 +251,48 @@
   ["f-thema", "f-jahrgang", "f-minuten", "a-thema", "a-jahrgang", "a-minuten"].forEach(function (id) {
     $(id).addEventListener("input", function () { feldOk($(id)); });
   });
+  // c2: Zielgruppe statt Jahrgangsstufe. Ein Text ohne Zahl im Feld Jahrgangsstufe der Einheit ist die Zielgruppe; ist
+  // sie gefüllt, ist das Jahrgangsfeld leer und gesperrt (letzter Wert in `einheit.jahrgang_zuletzt`), lehrplan.js
+  // schaltet den Lehrplanbezug aus
+  function zielgruppeAus(w) { w = String(w || "").trim(); return w && !/\d/.test(w) ? w : ""; }
+  function zielgruppeSperre(o, nurAnzeige) {
+    var zg = $(o + "-zielgruppe").value.trim(), j = $(o + "-jahrgang"), e = (Z.mappe && Z.mappe.einheit) || {};
+    if (nurAnzeige) {                                   // felderFuellen hat die Werte schon gesetzt
+      if (zg && zielgruppeAus(e.jahrgang)) j.dataset.zuletzt = e.jahrgang_zuletzt || "";
+      else if (!zg && j.value.trim()) j.dataset.zuletzt = j.value.trim();
+      if (o === "f" && zg) $("erweitert").open = true;
+    } else if (zg && !j.disabled) {
+      if (j.value.trim()) j.dataset.zuletzt = j.value.trim();
+      j.value = ""; feldOk(j);
+    } else if (!zg && j.disabled) j.value = j.dataset.zuletzt || e.jahrgang_zuletzt || "";
+    if (zg && !j.disabled) { j.dataset.platz = j.placeholder; j.placeholder = ""; }
+    else if (!zg && j.disabled) j.placeholder = j.dataset.platz || "";
+    j.disabled = !!zg;
+    $(o + "-jahrgang-zeile").hidden = !zg;
+  }
+  ["f", "a"].forEach(function (o) {
+    $(o + "-zielgruppe").addEventListener("input", function () {
+      var f = $(o + "-zielgruppe"), satz = feldSatz(f);
+      if (satz) feldMeldung(f, satz); else feldOk(f);
+      zielgruppeSperre(o);
+    });
+  });
+  S.zielgruppeSperre = zielgruppeSperre;
+  document.head.appendChild(el("style", { id: "stil-zielgruppe", text: [
+    ".start-form { align-items: start; }",           /* die Zeile unter der Jahrgangsstufe schiebt nichts */
+    ".erweitert { grid-column: 1 / -1; }",
+    ".erweitert summary { cursor: pointer; color: var(--link); font-weight: 600; padding: 2px 0; width: max-content; }",
+    ".erweitert .feld { max-width: 24rem; padding-top: 8px; }",
+    ".feld input:disabled { opacity: 0.55; cursor: not-allowed; }"
+  ].join("\n") }));
 
   $("start-form").onsubmit = function (ev) { ev.preventDefault(); startAbsenden(); };
   function startAbsenden() {
     var thema = $("f-thema").value.trim();
-    if (!felderPruefen(["f-thema", "f-jahrgang", "f-minuten"])) return;
-    var e = { thema: thema, jahrgang: $("f-jahrgang").value.trim(), minuten: parseInt($("f-minuten").value, 10) || 45 };
+    if (!felderPruefen(["f-thema", "f-jahrgang", "f-minuten", "f-zielgruppe"])) return;
+    var zg = $("f-zielgruppe").value.trim();
+    var e = { thema: thema, jahrgang: zg || $("f-jahrgang").value.trim(), minuten: parseInt($("f-minuten").value, 10) || 45 };
+    if (zg) e.jahrgang_zuletzt = $("f-jahrgang").dataset.zuletzt || ((Z.mappe && Z.mappe.einheit) || {}).jahrgang_zuletzt || "";
     if (!S.katalog) return;
     if (!Z.mappe) { einheitAnlegen(e, S.katalog.vorlagen[0]); return; }
     if (Z.mappe.anhaengen && !Z.mappe.bausteine.some(function (k) { return k.einheit === Z.mappe.anhaengen; })) {
@@ -903,7 +942,8 @@
     });
   };
 
-  var FELDER = { "a-thema": "thema", "a-jahrgang": "jahrgang", "a-minuten": "minuten", "a-fach": "fach",
+  var FELDER = { "a-thema": "thema", "a-jahrgang": "jahrgang", "a-zielgruppe": "jahrgang", "a-minuten": "minuten",
+      "a-fach": "fach",
       "a-schulart": "schulart",
     "a-format": "format", "a-familie": "familie", "a-farbe": "farbe", "a-farbe-hex": "farbe", "a-abschluss": "abschluss",
     "a-portionierung": "portionierung", "a-kontext": "kontext" };
@@ -916,8 +956,9 @@
       return;
     }
     var feld = FELDER[ev.target.id]; if (!feld) return;
-    if (/^a-(thema|jahrgang|minuten)$/.test(ev.target.id) && !felderPruefen([ev.target.id])) return;
+    if (/^a-(thema|jahrgang|minuten|zielgruppe)$/.test(ev.target.id) && !felderPruefen([ev.target.id])) return;
     var wert = ev.target.value;
+    if (ev.target.id === "a-zielgruppe") wert = wert.trim() || $("a-jahrgang").value.trim();   // leer: Jahrgang gilt
     if (feld === "minuten") wert = parseInt(wert, 10) || "";
     if (ev.target.id === "a-farbe" && wert === "eigen") wert = ($("a-farbe-hex").value || $("farbe-eigen").value).toUpperCase();
     if (ev.target.id === "a-farbe-hex") {
@@ -926,6 +967,8 @@
     }
     if (["thema", "jahrgang", "minuten"].indexOf(feld) >= 0) {
       Z.mappe.einheit = Object.assign({}, Z.mappe.einheit || {}); Z.mappe.einheit[feld] = wert;
+      if (ev.target.id === "a-zielgruppe" && zielgruppeAus(wert))
+        Z.mappe.einheit.jahrgang_zuletzt = $("a-jahrgang").dataset.zuletzt || Z.mappe.einheit.jahrgang_zuletzt || "";
       if (feld === "thema") Z.mappe.titel = wert;
     }
     S.angaben[feld] = wert;

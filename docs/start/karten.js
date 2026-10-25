@@ -606,7 +606,8 @@
     korrekturVermerken();
     kopieren(S.korrektur.text, $("korrektur-feld"), $("korrektur-stand"),
         "Kopiert. Füge sie in deinen Chat ein und die Antwort des Chats hier unten.",
-      function () { $("korrektur-eingabe").focus({ preventScroll: true }); });
+      function () { km.kurzmeldung($("korrektur-kopieren"), "Text kopiert");
+        $("korrektur-eingabe").focus({ preventScroll: true }); });
   };
   function zurKorrektur() {
     var b = $("korrektur");

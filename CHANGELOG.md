@@ -8,6 +8,11 @@
 - Beim Gegenprüfen steht je Abweichung die Lösung der Kursdatei neben der Antwort des Chats, mit drei Wegen: Aufgabe korrigieren lassen, „Meine Lösung gilt“, „Übergehen“; weiter geht es, wenn alle entschieden sind.
 - Korrekturen aus Schritt 6 gehen als eine Bitte je Baustein in das Gespräch der Einheit; Entscheidungen zu unveränderten Bausteinen bleiben danach stehen.
 - Zeilen „Rückmeldung …“ unter einem Lückentext oder einer Einsetzen-Aufgabe sind ein Fehler mit Korrekturbitte statt zusätzlicher Lücken; der Text für den Chat sagt, dass der Tipp in die Lücke gehört.
+- Die Startseite nennt keine Schulart mehr als Grenze; eine Zielgruppe wie „Elternabend“ steht unter „Erweitert“, das Feld Jahrgangsstufe nimmt nur Zahlen.
+- Angehakte Lernbereiche zeigen „Noch nicht übernommen“ und gelten auch, wenn du den Schritt ohne „Übernehmen“ verlässt.
+- Nach dem Kopieren erscheint kurz „Text kopiert“; das Einfügefeld klappt nach dem Übernehmen zu, „Noch einmal einfügen“ öffnet es wieder.
+- Bildkarten nennen das Format aus dem Prompt, schneiden ein abweichendes Bild auf Wunsch zu und klappen nach „Passt“ zu; bei ByLKI steht ein Satz zum kleinen Bildguthaben.
+- Die Startseite zeigt Schritt 3 als Bild; der Datenschutz-Abschnitt sagt jede Angabe einmal.
 
 ## 2.0.0-b9 – 2026-10-25 (AP13.7, AP13.8, AP13.9: Produktstand für den Erstnutzer-Test)
 

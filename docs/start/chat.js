@@ -136,6 +136,7 @@
 
   function textKopiert(gesendet) {
     var kopierterTeil = texte.teil + 1;
+    eingabeZu(false);                              // neuer Text: das Einfügefeld gehört wieder dazu
     texte.kopiert[texte.teil] = true;
     if (!Z.mappe) return;
     Z.mappe.kopiert = true;
@@ -233,7 +234,8 @@
   }
   function textKopieren() {
     if (ki()) return textSenden();
-    kopieren($("chat-text-feld").value, $("chat-text-feld"), $("kopiert"), KOPIERT, textKopiert);
+    kopieren($("chat-text-feld").value, $("chat-text-feld"), $("kopiert"), KOPIERT, function () {
+      textKopiert(); km.kurzmeldung($("text-kopieren"), "Text kopiert"); });
   }
   // Vor dem ersten Kopieren einmal die Infobox (Rechte am Material, Nutzungsbedingungen des Chats)
   $("text-kopieren").onclick = function () {
@@ -307,6 +309,14 @@
     }
     var s = el("span", { cls: "muehle-warten", "aria-hidden": "true" });
     s.innerHTML = MUEHLE;
+    return s;
+  }
+  // c5: dieselbe Mühle ohne Drehung, 16 px, für km.kurzmeldung
+  function muehleSymbol() {
+    var s = el("span", { cls: "muehle-symbol", "aria-hidden": "true" });
+    s.innerHTML = MUEHLE.replace(/width="20" height="20"/, 'width="16" height="16"');
+    s.firstChild.style.display = "block";
+    s.style.color = "var(--leise)";
     return s;
   }
   // Antwort ohne Bausteine: die ersten drei Meldungen mit Zeile und Zitat, dazu als Satz für den Chat
@@ -471,6 +481,7 @@
         $("teil-weiter").focus({ preventScroll: true });
         return;
       }
+      if (!ki()) eingabeZu(true);                   // c6: fertig eingefügt, das Feld klappt zu
       var rot = Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler" && (!e.ids ||
           e.ids.indexOf(b.id) >= 0); }).length;
       var aussen = Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler" && !d.baustein; }).length;
@@ -492,6 +503,19 @@
     clearTimeout(S.eingabeTimer);
     S.eingabeTimer = setTimeout(function () { eingabeUebernehmen(null); }, 30);
   });
+  // c6: nach dem Übernehmen klappt das Einfügefeld zu (Klasse `zu`, nicht `hidden`: verbindung.js setzt `hidden` auf
+  // #eingabe); Meldung und Korrektur bleiben, „Noch einmal einfügen“ klappt es wieder auf
+  function eingabeZu(zu) {
+    if (!document.getElementById("stil-eingabe-zu")) {
+      document.head.appendChild(el("style", { id: "stil-eingabe-zu", text: [
+        "#eingabe-bereich.zu { display: none; }",
+        "#eingabe-nochmal { display: block; margin-top: 6px; }"
+      ].join("\n") }));
+    }
+    $("eingabe-bereich").classList.toggle("zu", zu);
+    $("eingabe-nochmal").hidden = !zu;
+  }
+  $("eingabe-nochmal").onclick = function () { eingabeZu(false); $("eingabe").focus(); };
   // Knopf zusätzlich zur Automatik: nach dem Einfügen fehlt sonst etwas zum Klicken
   $("eingabe-uebernehmen").onclick = function () { clearTimeout(S.eingabeTimer); eingabeUebernehmen(null); };
   // Anderen Modus gewählt: die letzte Antwort vom Stand davor aus neu einsetzen
@@ -499,7 +523,7 @@
     r.addEventListener("change", function () { if (S.letzteAntwort && r.checked) eingabeUebernehmen(r.value); });
   });
   Object.assign(S, { EIGEN: EIGEN, kiBesetzt: besetzt, wartezeichen: wartezeichen, diagnoseKarte: diagnoseKarte, eigenerText: eigenerText,
-    eingabeUebernehmen: eingabeUebernehmen, standKarte: standKarte,
+    eingabeUebernehmen: eingabeUebernehmen, eingabeZu: eingabeZu, muehleSymbol: muehleSymbol, standKarte: standKarte,
     textGroesse: textGroesse, textSpaeter: textSpaeter, zeichneChat: zeichneChat, zeichnePlanung: zeichnePlanung,
     zeichneTeile: zeichneTeile });
 })();

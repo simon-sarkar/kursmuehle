@@ -405,6 +405,37 @@ window.km = km;
     } catch (e) { rueckfall(); }
   }
 
+  // c5: kurze Meldung unter einem Knopf („Text kopiert“): Mühle ohne Drehung (S.muehleSymbol aus chat.js) und Text,
+  // 1,5 s, dann ausgeblendet; die Statuszeile darunter bleibt. Hat das Kopieren den Schritt zugeklappt, steht sie an
+  // dessen Kopfzeile
+  km.kurzmeldung = function (knopf, text) {
+    if (!knopf) return null;
+    var id = knopf.id, sec = knopf.closest(".schritt");
+    if (!knopf.offsetParent && sec) knopf = sec.querySelector(".s-zeile");
+    if (!knopf || !knopf.offsetParent) return null;
+    if (!document.getElementById("stil-kurzmeldung")) {
+      document.head.appendChild(el("style", { id: "stil-kurzmeldung", text: [
+        ".kurzmeldung { position: absolute; z-index: 5; display: inline-flex; align-items: center; gap: 6px;",
+        "  padding: 4px 10px 4px 8px; border-radius: 999px; background: var(--flaeche); color: var(--text);",
+        "  box-shadow: 0 0 0 1px var(--linie), 0 2px 8px rgba(0, 0, 0, 0.12); font-size: 0.85rem; white-space: nowrap;",
+        "  pointer-events: none; transition: opacity 0.3s ease; }",
+        ".kurzmeldung.weg { opacity: 0; }",
+        "@media (prefers-reduced-motion: reduce) { .kurzmeldung { transition: none; } }"
+      ].join("\n") }));
+    }
+    var alt = document.querySelector(".kurzmeldung[data-zu='" + id + "']");
+    if (alt) alt.remove();
+    var m = el("span", { cls: "kurzmeldung", role: "status", "aria-live": "polite", "data-zu": id });
+    if (S.muehleSymbol) m.appendChild(S.muehleSymbol());
+    m.appendChild(document.createTextNode(text));
+    m.style.left = knopf.offsetLeft + "px";
+    m.style.top = (knopf.offsetTop + knopf.offsetHeight + 6) + "px";
+    knopf.offsetParent.appendChild(m);
+    var ruhig = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setTimeout(function () { m.classList.add("weg"); setTimeout(function () { m.remove(); }, ruhig ? 0 : 300); }, 1500);
+    return m;
+  };
+
   // Statuszeile statt Ladebalken; läuft erst, wenn alle Skripte der Seite da sind (sonst fehlen ihre Funktionen)
   function ladenStarten() {
     km.setStatus(function () { if (!Z.geladen) status("Wird vorbereitet …", "lauf"); });
@@ -589,7 +620,10 @@ window.km = km;
 
   function felderFuellen() {
     var e = Z.mappe.einheit || {};
-    var werte = { "a-thema": e.thema || S.angaben.thema || "", "a-jahrgang": e.jahrgang || S.angaben.jahrgang || "",
+    // c2: Zahl ins Jahrgangsfeld, Text ohne Zahl ins Zielgruppenfeld
+    var jgA = String(e.jahrgang || S.angaben.jahrgang || ""), jgF = String(e.jahrgang || "");
+    var zgA = /\d/.test(jgA) ? "" : jgA.trim(), zgF = /\d/.test(jgF) ? "" : jgF.trim();
+    var werte = { "a-thema": e.thema || S.angaben.thema || "", "a-jahrgang": zgA ? "" : jgA, "a-zielgruppe": zgA,
       "a-minuten": e.minuten || S.angaben.minuten || "", "a-fach": S.angaben.fach || "",
           "a-schulart": S.angaben.schulart || "",
       "m-fach": S.angaben.fach || "", "a-kontext": S.angaben.kontext || "", "m-kontext": S.angaben.kontext || "",
@@ -597,8 +631,8 @@ window.km = km;
       "a-farbe": /^#/.test(S.angaben.farbe || "") ? "eigen" : S.angaben.farbe,
       "a-farbe-hex": /^#/.test(S.angaben.farbe || "") ? S.angaben.farbe : "",
       "a-abschluss": S.angaben.abschluss, "a-portionierung": S.angaben.portionierung, "a-chat": Z.mappe.chat || "",
-      "a-material": Z.mappe.material || "", "f-thema": e.thema || "", "f-jahrgang": e.jahrgang || "",
-          "f-minuten": e.minuten || 45 };
+      "a-material": Z.mappe.material || "", "f-thema": e.thema || "", "f-jahrgang": zgF ? "" : jgF,
+          "f-zielgruppe": zgF, "f-minuten": e.minuten || 45 };
     if (Z.mappe.anhaengen && !Z.mappe.bausteine.some(function (k) { return k.einheit === Z.mappe.anhaengen; })) {
       werte["f-thema"] = undefined; werte["f-minuten"] = undefined;    // nächste Einheit: Felder gehören der Lehrkraft
     }
@@ -608,6 +642,7 @@ window.km = km;
       f.value = werte[id];
       if (f.tagName === "SELECT" && f.selectedIndex < 0) f.selectedIndex = 0;
     });
+    if (S.zielgruppeSperre) { S.zielgruppeSperre("f", true); S.zielgruppeSperre("a", true); }
     var c = chatInfo(Z.mappe.chat);
     $("material-grenze").textContent = !c ? "" : c.eingabe_kb
       ? c.text + " nahm im Test " + c.eingabe_kb + " KB Text an; der Text für den Chat hat mit deinem Material etwa " +

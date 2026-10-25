@@ -137,6 +137,8 @@
   figure img { display: block; width: 100%; height: auto; border-radius: 10px;
                box-shadow: 0 0 0 1px var(--linie); }
   figcaption { font-size: .92rem; color: var(--leise); margin-top: 12px; max-width: 60ch; }
+  .ergebnis .aussehen-bild { grid-column: 1 / -1; }   /* volle Breite unter dem Textblock, Maßstab 0,9 */
+  @media (max-width: 819px) { .ergebnis .aussehen-bild { order: 3; max-width: 420px; width: 100%; justify-self: center; } }
   h2 { font-size: 1.45rem; line-height: 1.2; margin: 0 0 22px; letter-spacing: -.01em; }
   p + h2 { margin-top: 36px; }
   ol.ablauf { list-style: none; counter-reset: s; padding: 0; margin: 0 0 32px; }
@@ -196,7 +198,7 @@
   <path d="M158.7,120.3 L155.7,124.0 L162.2,134.4 L152.1,141.8 L144.2,132.4 L139.7,134.1 L135.1,135.3 L134.3,147.6 L121.7,147.6 L120.9,135.3 L116.3,134.1 L111.8,132.4 L103.9,141.8 L93.8,134.4 L100.3,124.0 L97.3,120.3 L94.7,116.3 L82.8,119.3 L78.9,107.4 L90.3,102.8 L90.0,98.0 L90.3,93.2 L78.9,88.6 L82.8,76.7 L94.7,79.7 L97.3,75.7 L100.3,72.0 L93.8,61.6 L103.9,54.2 L111.8,63.6 L116.3,61.9 L120.9,60.7 L121.7,48.4 L134.3,48.4 L135.1,60.7 L139.7,61.9 L144.2,63.6 L152.1,54.2 L162.2,61.6 L155.7,72.0 L158.7,75.7 L161.3,79.7 L173.2,76.7 L177.1,88.6 L165.7,93.2 L166.0,98.0 L165.7,102.8 L177.1,107.4 L173.2,119.3 L161.3,116.3 Z" class="l-m l-k"/></g>
   <circle cx="128" cy="98" r="22" class="l-g"/>
   <circle cx="128" cy="98" r="9" class="l-a"/></svg><!-- /logo --></template>
-      <p class="vorsatz">Aus deinem Thema wird eine Einheit für die ByCS-Lernplattform, für Grund- und Mittelschule. Die Mühle
+      <p class="vorsatz">Aus deinem Thema wird eine Einheit für die ByCS-Lernplattform. Die Mühle
       kostet nichts und läuft in deinem Browser; den Inhalt schreibt ein KI-Chat.</p>
     </div>
     <div class="start">
@@ -226,7 +228,8 @@
     <div>
       <h2 id="ablauf-titel">Was herauskommt</h2>
       <p>Die Einheit enthält Lesetexte und Übungen mit Rückmeldung, wenn du willst im Kachelformat. Auf Wunsch nennt die Mühle dem
-      Chat Ziele aus dem LehrplanPLUS der Grund- und Mittelschule; das Aussehen wählst du aus elf Designs.</p>
+      Chat Ziele aus dem LehrplanPLUS, der ihr für Grund- und Mittelschule vorliegt; das Aussehen wählst du aus elf
+      Designs.</p>
       <h2>So läuft es</h2>
       <ol class="ablauf">
         <li>Du gibst Thema, Jahrgangsstufe und Minuten ein und klickst auf „Weiter“.</li>
@@ -245,6 +248,14 @@
       <p class="chats">In den automatischen Tests klappt es meist ohne Korrekturbitte, in echten Chats noch nicht
       immer.</p>
     </div>
+    <!-- Bild: python3 scripts/tests/test_landing.py --bilder docs (Schritt 3 der Mühle, Natur und Grün) -->
+    <figure class="aussehen-bild">
+      <picture>
+        <source media="(max-width: 819px)" srcset="landing-aussehen-schmal.png" width="1170" height="2532">
+        <img src="landing-aussehen.png" alt="Schritt 3 der Mühle: Kacheln mit den Namen der elf Designs, Natur ist gewählt; darunter Farbkreise, Grün ist gewählt; rechts die Vorschau einer Einheit mit Überschrift, Merkkasten und einer kurzen Übung." width="1132" height="469" loading="lazy">
+      </picture>
+      <figcaption>Schritt 3: Design, Farbe und die Vorschau der Einheit.</figcaption>
+    </figure>
   </div>
 </section>
 
@@ -262,13 +273,9 @@
     </ul>
     <p>Kursmühle ist mein privates, nicht kommerzielles Projekt und kein Angebot der ByCS-Lernplattform.
     Rückmeldungen an kursmuehle@pm.me.</p>
-    <p class="leise">Schreib keine Namen von Schülerinnen und Schülern in Thema, Material oder Aufträge.</p>
     <!-- Datenschutz: derselbe Wortlaut in impressum.html (test_landing.py vergleicht) -->
-    <p class="leise datenschutz">Kopierst du den Text für den Chat, bekommt der Chat nur diesen Text; von deinen
-    Eingaben sehe ich nichts. Mit eigener KI geht der Text von deinem Rechner an deren Anbieter oder Programm.</p>
-    <p class="leise datenschutz">Habe ich dich zum Test eingeladen, kann der Text über meinen Dienst ki.kursmühle.de an
-    einen KI-Anbieter gehen; der Dienst hält Text und Antwort höchstens zwei Stunden nach der letzten Anfrage bereit und
-    protokolliert keine Inhalte.</p>
+    <p class="leise datenschutz">Deine Eingaben bleiben in deinem Browser. Der KI-Chat bekommt nur den Text, den du kopierst; eine eigene KI oder, in
+    der Testphase, mein Dienst ki.kursmühle.de bekommt ihn direkt. Gib keine Namen von Schülerinnen und Schülern ein.</p>
   </div>
 </footer>
 

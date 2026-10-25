@@ -126,6 +126,7 @@
     diff_sport: "Differenzierter Sport" };
   var ZU_VIELE = "Das sind zu viele Ziele für einen Auftrag; hake weniger an.";
   var FEHLT = "Noch kein Lernbereich gewählt – der Text für den Chat enthält dann keine Kompetenzerwartungen";
+  var NICHT_UEBERNOMMEN = "Noch nicht übernommen – klicke auf „Übernehmen“";
   var MERKEN = "kursmuehle-lehrplan";       // letzte Wahl des Hakens: „ja“ oder „nein“ (fehlt = aus)
   function gemerkt() { try { return localStorage.getItem(MERKEN) === "ja"; } catch (e) { return false; } }
   function merken(an) { try { localStorage.setItem(MERKEN, an ? "ja" : "nein"); } catch (e) { /* nur diese Seite */ } }
@@ -152,6 +153,9 @@
   function offen() { return !Z.steckbrief_text && !S.angaben.lehrplanbezug && !S.angaben.lehrplan; }
   function ortJetzt() { return S.zweig() === "steuer" ? "a" : "m"; }
   function jahrgangText() { var e = (Z.mappe && Z.mappe.einheit) || {}; return e.jahrgang || S.angaben.jahrgang || ""; }
+  // c2: Text ohne Zahl im Feld Jahrgangsstufe der Einheit ist die Zielgruppe (schritte.js zielgruppeSperre)
+  function zielgruppe() { var j = String(((Z.mappe && Z.mappe.einheit) || {}).jahrgang || "").trim();
+    return j && !/\d/.test(j) ? j : ""; }
   function zeichenName(eintrag, mitStufe) {
     var t = [];
     if (mitStufe) t.push("Jahrgangsstufe " + eintrag.jahrgangsstufen.join(", "));
@@ -169,6 +173,8 @@
         "data-lp": "bezug" }), " Lehrplanbezug Grund- und Mittelschulen Bayern"]),
       el("button", { type: "button", id: o + "-lehrplan-knopf", cls: "textlink lp-knopf", "data-lp": "oeffnen",
         text: "Aus dem Lehrplan" })]));
+    box.appendChild(el("p", { id: o + "-lehrplan-zg", cls: "feld-zeile lp-zg", hidden: "hidden",
+      text: "Mit Zielgruppe ohne Lehrplanbezug" }));
     // Fächer zur Eingabe im Fach-Feld (Kürzel und Wortanfänge), nur mit Haken; ohne Haken die Liste des Browsers
     box.insertBefore(el("p", { id: o + "-fach-treffer", cls: "lp-vorschlag lp-fach-treffer", hidden: "hidden" }),
         box.firstChild);
@@ -391,7 +397,8 @@
   function klick(ev) {
     var b = ev.target.closest("[data-lp]"); if (!b || !Z.mappe || b.tagName === "INPUT" || b.tagName === "SELECT") return;
     var ort = b.closest(".lehrplan-ort").id.charAt(0), was = b.dataset.lp;
-    if (was === "oeffnen") { if (P && P.ort === ort) { P = null; zeichnePicker(); } else oeffnen(ort); return; }
+    if (was === "oeffnen") { if (P && P.ort === ort) { if (!zuMitWahl()) { P = null; zeichnePicker(); } } else oeffnen(ort);
+        return; }
     if (was === "schliessen") { P = null; zeichnePicker(); $(ort + "-lehrplan-knopf").focus(); return; }
     if (was === "loesen") { schreiben({ lehrplan: null }); return; }
     if (was === "vorschlag") { vorschlagNehmen(parseInt(b.dataset.nr, 10)); return; }
@@ -427,6 +434,22 @@
       c.checked = c.dataset.lp === "lb" ? w.an : c.dataset.lp === "tb" ? wt.an : !!wt.ziele[c.dataset.z];
     });
     var u = feld.querySelector("[data-lp=uebernehmen]"); if (u) u.disabled = !gewaehlteZahl();
+    zeichneFehlt();
+  }
+  // c3: dieselbe gelbe Zeile sagt bei offenem Picker mit Haken „Noch nicht übernommen“, sonst ohne Lernbereich FEHLT
+  function zeichneFehlt() {
+    var fehlt = ausdruecklich() && !gewaehlt(), wahl = !!P && gewaehlteZahl() > 0;
+    ORTE.forEach(function (o) {
+      var p = $(o + "-lehrplan-fehlt"), offenHier = wahl && P.ort === o;
+      p.textContent = offenHier ? NICHT_UEBERNOMMEN : FEHLT;
+      p.hidden = !offenHier && !fehlt;
+    });
+  }
+  // c3: Picker mit Haken, aber ohne „Übernehmen“ geschlossen (Knopf, Haken aus, Schritt verlassen): die Haken gelten
+  function zuMitWahl() {
+    if (!P || !P.daten || !gewaehlteZahl()) return false;
+    uebernehmen(true);
+    return true;
   }
   function zuVielePruefen() {
     if (!Z.geladen || !P || !P.daten) return;
@@ -442,17 +465,18 @@
     var jg = stufe(jahrgangText());
     return lehrplanBauen(P.index, eintrag, P.daten, P.wahl, eintrag.jahrgangsstufen.indexOf(jg) >= 0 ? jg : null);
   }
-  function uebernehmen() {
+  function uebernehmen(still) {
     if (!P || !P.daten || !gewaehlteZahl()) return;
     var lp = aktuellerLehrplan(), ort = P.ort;
     P = null;
     zeichnePicker();
     schreiben({ fach: lp.fach, schulart: SCHULARTEN[lp.schulart], lehrplan: lp });
     S.felderFuellen();
-    $(ort + "-lehrplan-knopf").focus({ preventScroll: true });
+    if (!still) $(ort + "-lehrplan-knopf").focus({ preventScroll: true });
   }
   function hakenSetzen(an) {
     merken(an);
+    if (!an) zuMitWahl();
     P = null; zeichnePicker();
     var a = { lehrplanbezug: an ? "ja" : "nein" };
     if (!an) { a.lehrplan = null; S.angaben.lehrplan = null; }
@@ -512,6 +536,19 @@
   // ---------------------------------------------------------------- Zustand zeichnen (aus zeichne())
   function zeichneLehrplan() {
     if (!Z.mappe) { P = null; zeichnePicker(); return; }
+    if (P && S.schritt() !== 2) zuMitWahl();             // c3: Schritt verlassen
+    // c2: mit Zielgruppe kein Lehrplanbezug (direkt in den Steckbrief, die gemerkte Wahl bleibt); wird sie geleert,
+    // folgt der Haken wieder der gemerkten Wahl, ein vorher gewählter Lernbereich kommt nicht zurück
+    var zg = zielgruppe();
+    if (zg && (S.angaben.lehrplanbezug !== "nein" || S.angaben.lehrplan)) {
+      P = null; zeichnePicker();
+      var ohne = { lehrplanbezug: "nein", lehrplan: null };
+      Object.assign(S.angaben, ohne); S.angabenSchreiben(ohne); S.textSpaeter();
+    } else if (!zg && zgStand.zg && zgStand.mappe === Z.mappe) {
+      var wie = { lehrplanbezug: gemerkt() ? "ja" : "nein" };
+      Object.assign(S.angaben, wie); S.angabenSchreiben(wie); S.textSpaeter();
+    }
+    zgStand = { mappe: Z.mappe, zg: zg };
     if (offen()) {                                        // neue Einheit: die letzte Wahl, Standard aus
       var a = { lehrplanbezug: gemerkt() ? "ja" : "nein" };
       Object.assign(S.angaben, a);
@@ -520,11 +557,12 @@
     var an = bezug(), lp = an ? S.angaben.lehrplan : null, fehlt = ausdruecklich() && !gewaehlt();
     ORTE.forEach(function (o) {
       $(o + "-lehrplanbezug").checked = an;
+      $(o + "-lehrplanbezug").disabled = !!zg;
+      $(o + "-lehrplan-zg").hidden = !zg;
       $(o + "-lehrplan-knopf").hidden = !an || fehlt;     // ohne Wahl steht der Picker ohnehin offen
       var v = $(o + "-lehrplan-vermerk");
       v.hidden = !lp || !(lp.lernbereiche || []).length;
       if (!v.hidden) v.firstChild.textContent = vermerkText(lp);
-      $(o + "-lehrplan-fehlt").hidden = !fehlt;
       if (an) $(o + "-fach").removeAttribute("list"); else $(o + "-fach").setAttribute("list", "faecher-liste");
       if (!an) $(o + "-fach-treffer").hidden = true;
     });
@@ -533,22 +571,20 @@
     if (fehlt && !P) oeffnen(ortJetzt(), true);
     else if (fehlt && P.ort !== ortJetzt()) { P.ort = ortJetzt(); zeichnePicker(); }
     else if (!fehlt && P && P.auto) { P = null; zeichnePicker(); }
+    zeichneFehlt();
     fazitErgaenzen();
-    felderBeschriften(an);
     vorschlagSuchen();
   }
-  // ohne Haken heißt das Feld in Schritt 1 „Zielgruppe (optional)“ (dasselbe Feld, längerer Text erlaubt); vor der
-  // ersten Einheit nach der letzten Wahl
-  function felderBeschriften(an) {
-    [["f-jahrgang", "f-jahrgang-t"], ["a-jahrgang", "a-jahrgang-t"]].forEach(function (x) {
-      $(x[1]).textContent = an ? "Jahrgangsstufe" : "Zielgruppe (optional)";
-      $(x[0]).placeholder = an ? ($(x[0]).dataset.platz || $(x[0]).placeholder) : "z. B. Kollegium, Eltern, Jahrgangsstufe 7";
-      $(x[0]).maxLength = an ? 12 : 40;
-      $(x[0]).inputMode = an ? "numeric" : "text";
-    });
+  var zgStand = { mappe: null, zg: "" };
+  // c2: Einheit geschlossen oder neue Einheit: die Zielgruppe gehört zur alten Einheit
+  function zielgruppeLeeren() {
+    ["f", "a"].forEach(function (o) { $(o + "-zielgruppe").value = ""; $(o + "-jahrgang").dataset.zuletzt = "";
+      S.zielgruppeSperre(o); });
+    $("erweitert").open = false;
   }
-  ["f-jahrgang", "a-jahrgang"].forEach(function (id) { $(id).dataset.platz = $(id).placeholder; });
-  felderBeschriften(gemerkt());
+  var leerenAlt = S.leeren;
+  if (leerenAlt) S.leeren = function () { var r = leerenAlt.apply(this, arguments); zielgruppeLeeren(); return r; };
+  $("neue-einheit").addEventListener("click", zielgruppeLeeren);
 
   // Fazit von Schritt 1 mit dem Lernbereich oder „ohne Lernbereich“ (nur mit Haken). schritte.js schreibt das Fazit bei
   // jedem Zeichnen neu; die Ergänzung hängt sich an diesen Text, ohne schritte.js zu berühren

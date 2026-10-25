@@ -57,10 +57,18 @@
         </label>
         <label class="feld feld-klein"><span id="f-jahrgang-t">Jahrgangsstufe</span>
           <input id="f-jahrgang" type="text" inputmode="numeric" maxlength="12" placeholder="7">
+          <span id="f-jahrgang-zeile" class="feld-zeile" hidden>Zielgruppe gewählt</span>
         </label>
         <label class="feld feld-klein">Minuten
           <input id="f-minuten" type="number" min="10" max="300" step="5" value="45" inputmode="numeric">
         </label>
+        <!-- c2: Zielgruppe statt Jahrgangsstufe (Lehrerkonferenz, Elternabend), gilt dann ohne Lehrplanbezug -->
+        <details id="erweitert" class="erweitert">
+          <summary>Erweitert</summary>
+          <label class="feld">Zielgruppe statt Jahrgangsstufe <span class="feld-zeile">freiwillig</span>
+            <input id="f-zielgruppe" type="text" maxlength="40" placeholder="Lehrerkonferenz, Elternabend" autocomplete="off">
+          </label>
+        </details>
         <button type="submit" id="einheit-anlegen" class="knopf haupt">Weiter</button>
       </form>
       <p class="vorsatz">Alles bleibt in diesem Browser, nichts wird hochgeladen.</p>
@@ -100,7 +108,7 @@
            Material“ direkt unter dem Fach, sonst zuletzt -->
       <div id="richtung-teil" class="richtung-teil" hidden>
         <div id="r-material-feld" class="r-material-feld">
-          <label class="feld feld-breit">Dein Material (Stichpunkte, Heftaufschrieb) <span class="feld-zeile">freiwillig</span>
+          <label class="feld feld-breit">Dein Material (Stichpunkte, Hefteintrag) <span class="feld-zeile">freiwillig</span>
             <textarea id="r-material" class="von-lehrkraft" rows="4" spellcheck="true"></textarea>
             <span class="feld-zeile">Nur Material, an dem du die Rechte hast.</span>
           </label>
@@ -123,7 +131,10 @@
           <summary>Mehr einstellen</summary>
           <div class="mehr-felder">
             <label class="feld">Thema <input id="a-thema" type="text" maxlength="120"></label>
-            <label class="feld feld-klein"><span id="a-jahrgang-t">Jahrgangsstufe</span> <input id="a-jahrgang" type="text" maxlength="12"></label>
+            <label class="feld feld-klein"><span id="a-jahrgang-t">Jahrgangsstufe</span> <input id="a-jahrgang" type="text" inputmode="numeric" maxlength="12">
+              <span id="a-jahrgang-zeile" class="feld-zeile" hidden>Zielgruppe gewählt</span></label>
+            <label class="feld">Zielgruppe statt Jahrgangsstufe <input id="a-zielgruppe" type="text" maxlength="40"
+              placeholder="Lehrerkonferenz, Elternabend" autocomplete="off"></label>
             <label class="feld feld-klein">Minuten <input id="a-minuten" type="number" min="10" max="300" step="5"></label>
             <label class="feld">Fach <input id="a-fach" type="text" maxlength="60" list="faecher-liste" autocomplete="off"></label>
             <div id="a-lehrplan" class="lehrplan-ort feld-breit"></div>
@@ -144,7 +155,7 @@
               <div id="a-sprache" class="kacheln-wahl text-wahl" role="radiogroup" aria-labelledby="a-sprache-t"></div></div>
             <label class="feld">Abschluss <select id="a-abschluss"></select></label>
             <label class="feld">Umfang <select id="a-portionierung"></select></label>
-            <label class="feld feld-breit">Dein Material (Stichpunkte, Heftaufschrieb)
+            <label class="feld feld-breit">Dein Material (Stichpunkte, Hefteintrag)
               <textarea id="a-material" class="von-lehrkraft" rows="4" spellcheck="true"></textarea>
               <span class="feld-zeile">Nur Material, an dem du die Rechte hast.</span>
               <span id="material-grenze" class="feld-zeile"></span>
@@ -275,10 +286,13 @@
           <label><input type="radio" name="modus" value="baustein"> <span id="modus-baustein-text">Nur Baustein ersetzen</span></label>
           <label><input type="radio" name="modus" value="anhaengen"> Als weitere Einheit anhängen</label>
         </div>
-        <label for="eingabe" class="unsichtbar">Antwort des Chats</label>
-        <textarea id="eingabe" rows="6" spellcheck="false" placeholder="Hier einfügen (Strg+V oder lange drücken)"></textarea>
-        <div id="eingabe-knopf" class="kopieren"><button type="button" id="eingabe-uebernehmen" class="knopf">Antwort übernehmen</button></div>
+        <div id="eingabe-bereich">
+          <label for="eingabe" class="unsichtbar">Antwort des Chats</label>
+          <textarea id="eingabe" rows="6" spellcheck="false" placeholder="Hier einfügen (Strg+V oder lange drücken)"></textarea>
+          <div id="eingabe-knopf" class="kopieren"><button type="button" id="eingabe-uebernehmen" class="knopf">Antwort übernehmen</button></div>
+        </div>
         <p id="eingabe-stand" class="stand-karte" role="status" aria-live="polite" hidden></p>
+        <button type="button" id="eingabe-nochmal" class="textlink" hidden>Noch einmal einfügen</button>
         <!-- die Antwort ergab keinen Baustein: die ersten drei Meldungen mit Zeile und Zitat, Satz für den Chat -->
         <div id="eingabe-diagnose" class="stand-karte fehler diagnose-karte" role="status" hidden></div>
       </div>

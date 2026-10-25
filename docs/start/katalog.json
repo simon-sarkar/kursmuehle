@@ -558,7 +558,8 @@
    "codeblock": true,
    "teil_bausteine": 6,
    "eingabe_kb": null,
-   "bilder": false,
+   "bilder": true,
+   "bilder_hinweis": "Das Bildguthaben ist klein; ist es leer, meldet der Generator eine Inhaltswarnung, auch bei harmlosen Aufträgen. Dann ein anderer Generator oder morgen.",
    "aufwand": "Wähl in ByLKI das neueste Modell ohne Zusatz wie mini oder flash im Namen."
   },
   {
