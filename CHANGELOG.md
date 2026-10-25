@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht (AP13.5d: Schritt 3 mit mitlaufender Vorschau)
+## Unveröffentlicht (AP13.5d: Schritt 3 mit mitlaufender Vorschau; AP13.5e: Charakter je Design)
 
 - Die Vorschau des gewählten Designs läuft beim Scrollen mit: auf breiten Bildschirmen rechts, sonst als Leiste am unteren Rand, die ein Tippen aufklappt.
 - Die Vorschau zeigt Inhalt, auch wenn du Schritt 3 erreichst, bevor die Mühle fertig geladen ist.
@@ -10,6 +10,12 @@
 - Ein kleines Dreieck markiert Designs und Formate, deren Import auf der Plattform noch nicht geprüft ist.
 - Die Feinheiten sind kürzer: Farbe, Dichte und Kästen ohne Erklärtext, vorgewählt ist jeweils der Standard des Designs.
 - Eine Zeile `abschluss: ansehen` unter einem Textfeld führt nicht mehr zu einer Korrekturbitte.
+- Sieben Designs haben ein eigenes Motiv: Kreide, Aquarell, Pinselstrich, Punkte, Papierkante, Schrägschnitt, Doppellinie; Druck ein feines Raster im Kasten.
+- Ohne Bild aus dem Chat werden Banner, Kursbild und Kachelbilder eine Fläche im Design, der Banner mit dem Kurstitel in der Titelschrift; ein hochgeladenes Bild ersetzt sie.
+- Jedes dieser Designs setzt Titel, Kicker und Überschriften in einer eigenen Schrift (Fredoka, Patrick Hand, Space Grotesk, Bodoni Moda, Alegreya, Bebas Neue, Sora); der Fließtext bleibt in der Schrift der Plattform.
+- Merksatz, Hinweis und Aufgabe tragen ein kleines Zeichen des Designs (Stern, Sprechblase, Blatt, Punkt, Ornament, Balken, Ring); Grundschule und Verspielt färben jede Kastenart in einem eigenen Pastellton.
+- Der Text für den Chat sagt bei diesen Designs, dass kein Kursbild nötig ist, und nennt den Bildstil in einem Satz.
+- Einheiten mit Magazin, Grundschule, Verspielt, Modern, Klassisch, Natur, Druck oder Dunkel sehen nach dem nächsten Bau anders aus; Sachlich, Freundlich und „Ohne Vorlage“ bleiben unverändert.
 
 ## 2.0.0-b8 – 2026-10-25 (AP13.5c: Anordnung, Standardfarben, Skala der Designs; AP13.6: LehrplanPLUS für Grund- und Mittelschule; AP14b: Testcode)
 

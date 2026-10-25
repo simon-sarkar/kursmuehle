@@ -23,5 +23,14 @@ Die Lehrplantexte unter `docs/start/lehrplan/` (kursmuehle.de/start/lehrplan/) s
 Staatsinstituts für Schulqualität und Bildungsforschung (ISB), https://www.lehrplanplus.bayern.de; sie sind amtliche
 Werke und nicht Teil der CC-BY-NC-SA-Lizenz.
 
+Die Titelschriften unter `web/vendor/schriften/` (im Generator unter `templates/schriften/`) stehen unter der SIL Open
+Font License 1.1 (https://openfontlicense.org), nicht unter CC BY-NC-SA und nicht unter PolyForm: Fredoka (The Fredoka
+Project Authors), Patrick Hand (Patrick Wagesreiter), Space Grotesk (The Space Grotesk Project Authors), Bodoni Moda (The
+Bodoni Moda Project Authors), Alegreya (The Alegreya Project Authors), Bebas Neue (Dharma Type), Sora (The Sora Project
+Authors). Quelle: Google Fonts (fonts.google.com, Lizenztexte aus github.com/google/fonts); beschnitten auf Latin mit
+`tools/schriften/hole.py`, Lizenztext je Schrift als `OFL-<name>.txt` daneben. Keine der Schriften hat einen
+reservierten Namen. Kurse, in die der Generator eine Schrift einbettet, sind Dokumente im Sinn der OFL; die Schrift
+darf nicht einzeln verkauft werden.
+
 Mit einer `.mbz` erzeugte Kurse gehören der Lehrkraft, die sie gebaut hat;
 sie unterliegen keiner dieser Lizenzen.
