@@ -35,9 +35,7 @@
    "name": "grundschule",
    "text": "Grundschule",
    "zeile": "Große Schrift, runde Formen.",
-   "probe": [
-    "overflow-wrap"
-   ],
+   "probe": [],
    "akzent": "#E07A1F",
    "akzent_fest": false,
    "kasten_form": "flaeche",

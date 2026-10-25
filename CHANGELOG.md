@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- Das Design Grundschule trägt kein Dreieck mehr: der Import seiner letzten offenen CSS-Eigenschaft ist geprüft.
+
 ## 2.0.0-b9 – 2026-10-25 (AP13.7, AP13.8, AP13.9: Produktstand für den Erstnutzer-Test)
 
 - Die Vorschau des gewählten Designs läuft beim Scrollen mit: auf breiten Bildschirmen rechts, sonst als Leiste am unteren Rand, die ein Tippen aufklappt.
