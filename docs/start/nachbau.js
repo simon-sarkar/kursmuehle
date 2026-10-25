@@ -210,7 +210,7 @@
   function rueckmeldungText() {
     var m = Z.mappe || {}, e = m.einheit || {}, c = chatInfo(m.chat);
     return ["Rückmeldung zu Kursmühle " + ((S.katalog && S.katalog.version) || ""), "",
-      "Chat: " + (c ? c.text : "–"), "Fach: " + (S.angaben.fach || "–"), "Jahrgangsstufe: " + (e.jahrgang ||
+      "Chat: " + (c ? (m.chat === "eigene" && S.kiName ? S.kiName() : c.text) : "–"), "Fach: " + (S.angaben.fach || "–"), "Jahrgangsstufe: " + (e.jahrgang ||
           S.angaben.jahrgang || "–"),
       "Vorlage: " + (e.vorlage || "–") + (m.zweig ? " (" + ZWEIG_TEXT[m.zweig] + ")" : ""), korrekturZeile(m), "",
       "Wo hat es gestockt?", "", "", "Was hättest du anders gewollt?", "", "",

@@ -1,0 +1,224 @@
+/* Kursmühle – Verbindung zur eigenen KI (AP14): die Seite gibt den Text an die Brücke (docs/bruecke.py) auf diesem
+   Rechner und holt die Antwort dort ab. Port und Code liegen in localStorage; ohne Eintrag ruft die Seite 127.0.0.1 nie. */
+"use strict";
+
+(function () {
+  var SCHLUESSEL = "kursmuehle-verbindung", PORT = 48127;
+  var TEXT = {
+    netz: "Deine KI antwortet nicht; läuft das Programm noch?",
+    code: "Der Code stimmt nicht; er steht dort, wo das Programm läuft.",
+    gesperrt: "Fünfmal ein falscher Code; in einer Minute geht es wieder.",
+    zeit: "Deine KI hat nach 10 Minuten nicht geantwortet; läuft das Programm noch?"
+  };
+  var V = km.verbindung = { takt: 2000, grenze: 10 * 60 * 1000, info: null, fehler: null };
+  var gespraeche = {};                       // Einheit -> Gespräch bei der Brücke (nur im Speicher)
+
+  function gespeichert() {
+    try { var v = JSON.parse(localStorage.getItem(SCHLUESSEL) || "null"); return v && v.code ? v : null; }
+    catch (e) { return null; }
+  }
+  function speichern(v) {
+    try { if (v) localStorage.setItem(SCHLUESSEL, JSON.stringify(v)); else localStorage.removeItem(SCHLUESSEL); }
+    catch (e) { /* ohne localStorage gilt die Verbindung nur bis zum Neuladen */ }
+    V.gemerkt = v;
+  }
+  function fehler(art) { var e = new Error(TEXT[art] || art); e.art = art; return e; }
+  function warte(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  async function rufen(methode, pfad, daten) {
+    var v = V.gemerkt || gespeichert();
+    if (!v) throw fehler("code");
+    var r, kopf = { authorization: "Bearer " + v.code };
+    if (daten) kopf["content-type"] = "application/json";
+    try {
+      r = await fetch("http://127.0.0.1:" + v.port + pfad, { method: methode, cache: "no-store", headers: kopf,
+          body: daten ? JSON.stringify(daten) : undefined });
+    } catch (e) { throw fehler("netz"); }
+    if (r.status === 401) throw fehler("code");
+    if (r.status === 429) throw fehler("gesperrt");
+    if (r.status === 204) return null;
+    var d = await r.json().catch(function () { return {}; });
+    if (r.status === 404) throw fehler("weg");
+    if (!r.ok) { var e = new Error(d.fehler || TEXT.netz); e.art = "anbieter"; throw e; }
+    return d;
+  }
+
+  V.status = async function () {
+    try { V.info = await rufen("GET", "/status"); V.fehler = null; }
+    catch (e) { V.info = null; V.fehler = e.art; throw e; }
+    finally { zeichne(); }
+    return V.info;
+  };
+  V.verbinden = async function (code, port) {
+    speichern({ port: parseInt(port, 10) || PORT, code: String(code).trim() });
+    gespraeche = {};
+    try { return await V.status(); }
+    catch (e) { if (e.art === "code") speichern(null); throw e; }
+  };
+  V.gespraech = async function (einheit, neu) {
+    if (neu || !gespraeche[einheit]) gespraeche[einheit] = (await rufen("POST", "/gespraech", {})).gespraech;
+    return gespraeche[einheit];
+  };
+  // Auftrag senden und alle 2 s nach der Antwort fragen, höchstens 10 min; Teil 2 und Korrekturen im selben Gespräch
+  V.senden = async function (text, o) {
+    o = o || {};
+    var einheit = o.einheit || "", a;
+    try { a = await rufen("POST", "/auftrag", { gespraech: await V.gespraech(einheit, o.neu), text: text }); }
+    catch (e) {
+      if (e.art !== "weg") throw e;          // Brücke neu gestartet: neues Gespräch
+      a = await rufen("POST", "/auftrag", { gespraech: await V.gespraech(einheit, true), text: text });
+    }
+    for (var t0 = Date.now(); Date.now() - t0 < V.grenze;) {
+      var d = await rufen("GET", "/antwort/" + a.auftrag);
+      if (d && d.fehler) { var e = new Error(d.fehler); e.art = "anbieter"; throw e; }
+      if (d) return d.text;
+      await warte(V.takt);
+    }
+    throw fehler("zeit");
+  };
+  V.trennen = function () {
+    var alt = gespraeche; gespraeche = {};
+    Object.keys(alt).forEach(function (k) { rufen("DELETE", "/gespraech/" + alt[k]).catch(function () {}); });
+    speichern(null); V.info = null; V.fehler = null;
+    zeichne();
+  };
+  V.name = function () {
+    if (!V.info) return "Eigene KI";
+    return "Eigene KI (" + (V.info.modus === "agent" ? "Agent" : V.info.modell || "Schlüssel") + ")";
+  };
+  V.gemerkt = gespeichert();
+
+  // ---------------------------------------------------------------- Seite
+  if (!document.getElementById("schritt-5")) return;
+  var S = km.seite, $ = S.$, Z = S.Z, el = S.el;
+  S.verbindenOffen = false;
+  S.kiLaeuft = false;
+  S.kopierStatt = false;                     // „Stattdessen kopieren“: Knöpfe zurück auf Kopieren, Chat bleibt
+  S.anKiAktiv = function () { return !!Z.mappe && Z.mappe.chat === "eigene" && !S.kopierStatt; };
+  S.kiName = V.name;
+
+  function zustandText() {
+    if (V.info) return "verbunden · " + (V.info.modus === "agent" ? "Agent" + (V.info.bereit ? "" :
+        " (holt gerade nichts ab)") : V.info.modell);
+    if (V.fehler === "code") return "Code stimmt nicht";
+    if (V.fehler && V.gemerkt) return "nicht erreichbar";
+    return "nicht verbunden";
+  }
+  // Zustand neben der Kachel, Feld „So geht es“; die Kacheln baut kern.js neu, darum nach jedem Füllen ergänzen
+  function kachelErgaenzen() {
+    var k = document.querySelector("#chat-knoepfe [data-chat=eigene]");
+    if (!k || $("ki-zustand")) return;
+    var hilfe = el("button", { type: "button", cls: "textlink", id: "ki-hilfe", "aria-controls": "verbinden",
+        text: "So geht es" });
+    hilfe.onclick = function () { S.verbindenOffen = !S.verbindenOffen; zeichne();
+      if (S.verbindenOffen) $("verbinden-code").focus({ preventScroll: true }); };
+    k.after(el("span", { cls: "leise ki-zustand", id: "ki-zustand" }), hilfe);
+    zeichne();
+  }
+  // „Eigene KI“ gewählt: mit gespeichertem Code nach dem Stand fragen, sonst „So geht es“ öffnen; jeder Wechsel
+  // beschriftet Teil- und Korrekturknopf neu
+  $("chat-knoepfe").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-chat]"); if (!b) return;
+    if (b.dataset.chat === "eigene" && V.gemerkt) V.status().catch(function () {});
+    else if (b.dataset.chat === "eigene") S.verbindenOffen = true;
+    zeichne();
+  });
+  new MutationObserver(kachelErgaenzen).observe($("chat-knoepfe"), { childList: true });
+  kachelErgaenzen();
+
+  function zeichne() {
+    if (!$("verbinden")) return;
+    var z = $("ki-zustand");
+    if (z) z.textContent = zustandText();
+    if ($("ki-hilfe")) $("ki-hilfe").setAttribute("aria-expanded", String(S.verbindenOffen));
+    $("verbinden").hidden = !S.verbindenOffen;
+    $("verbinden-trennen").hidden = !V.gemerkt;
+    if (V.gemerkt && !$("verbinden-port").value) $("verbinden-port").value = V.gemerkt.port;
+    if (S.zeichneChat) S.zeichneChat();
+    if (S.zeichneTeile) S.zeichneTeile();
+    if (S.zeichneKorrektur) S.zeichneKorrektur();
+  }
+  S.verbindungZeichnen = zeichne;
+  // Mühle von der Brücke selbst ausgeliefert (http://127.0.0.1:48127/start/): ihr Port ist der Standard
+  var eigenerPort = /^(127\.0\.0\.1|localhost)$/.test(location.hostname) && location.port ? location.port : PORT;
+  $("verbinden-port").value = V.gemerkt ? V.gemerkt.port : eigenerPort;
+
+  $("verbinden-satz-kopieren").onclick = function () {
+    S.kopieren($("verbinden-satz").textContent, $("verbinden-satz-feld"), $("verbinden-stand"),
+        "Kopiert. Gib den Satz deinem Programm; es nennt dir dann einen Code.");
+  };
+  $("verbinden-los").onclick = async function () {
+    var code = $("verbinden-code").value.replace(/\D/g, "");
+    var stand = $("verbinden-stand");
+    stand.className = "stand";
+    if (code.length !== 6) { stand.textContent = "Der Code hat sechs Ziffern."; stand.classList.add("fehler"); return; }
+    stand.textContent = "Verbinde …";
+    try {
+      await V.verbinden(code, $("verbinden-port").value);
+      S.verbindenOffen = false; S.kopierStatt = false;
+      $("verbinden-code").value = "";
+      stand.textContent = "";
+      fehlerWeg();
+      zeichne();
+      var k = $("text-kopieren"); if (k && !k.closest("[hidden]")) k.focus({ preventScroll: true });
+    } catch (e) { stand.textContent = e.message; stand.classList.add("fehler"); }
+  };
+  $("verbinden-trennen").onclick = function () { V.trennen(); $("verbinden-stand").textContent = "Getrennt."; };
+  $("verbinden-code").addEventListener("keydown", function (ev) { if (ev.key === "Enter") $("verbinden-los").click(); });
+
+  // Fehlerzeile unter dem Feld, in das die Antwort gehört: „Erneut versuchen“ und „Stattdessen kopieren“
+  function fehlerWeg() { var f = $("ki-fehler"); if (f) f.remove(); }
+  function fehlerZeigen(ort, e, nochmal) {
+    fehlerWeg();
+    var knoepfe = [];
+    if (e.art === "code" || e.art === "gesperrt") { S.verbindenOffen = true; zeichne(); }
+    else {
+      var n = el("button", { type: "button", cls: "knopf", id: "ki-nochmal", text: "Erneut versuchen" });
+      n.onclick = function () { fehlerWeg(); nochmal(); };
+      knoepfe.push(n);
+    }
+    var k = el("button", { type: "button", cls: "textlink", id: "ki-kopieren", text: "Stattdessen kopieren" });
+    k.onclick = function () { S.kopierStatt = true; fehlerWeg(); S.zeichne(); zeichne(); };
+    knoepfe.push(k);
+    var box = el("div", { cls: "stand-karte fehler", id: "ki-fehler", role: "alert" },
+        [el("p", { text: e.message || TEXT.netz }), el("div", { cls: "kopieren" }, knoepfe)]);
+    ort.after(box);
+    box.querySelector("button").focus({ preventScroll: true });
+  }
+  function dauer(ms) { var s = Math.round(ms / 1000); return Math.floor(s / 60) + ":" + ("0" + s % 60).slice(-2); }
+
+  // Text an die eigene KI: „Deine KI schreibt …“ mit Dauer über o.stand, die Antwort an o.fertig (dasselbe Einsetzen
+  // wie beim Einfügen von Hand); ohne Verbindung öffnet sich „So geht es“
+  S.anKi = async function (text, o) {
+    if (S.kiLaeuft) return false;            // ein Auftrag zur Zeit; ein zweiter Klick schickt nichts doppelt
+    fehlerWeg();
+    if (!V.gemerkt) {
+      S.verbindenOffen = true; zeichne();
+      o.stand("Verbinde zuerst deine KI: unter „So geht es“ in Schritt 4 steht, wie.", "fehler");
+      $("verbinden-code").focus({ preventScroll: true });
+      return false;
+    }
+    if (o.vorher) o.vorher();
+    S.kiLaeuft = true;
+    var t0 = Date.now();
+    function tick() { o.stand("Deine KI schreibt … " + dauer(Date.now() - t0), ""); }
+    tick();
+    var uhr = setInterval(tick, 1000);
+    try {
+      var antwort = await V.senden(text, { einheit: o.einheit, neu: o.neu });
+      clearInterval(uhr); o.stand("", ""); S.kiLaeuft = false;
+      await o.fertig(antwort);
+      return true;
+    } catch (e) {
+      clearInterval(uhr); o.stand("", ""); S.kiLaeuft = false;
+      if (e.art !== "anbieter") V.fehler = e.art;
+      zeichne();
+      fehlerZeigen(o.ort, e, function () { S.anKi(text, o); });
+      return false;
+    }
+  };
+
+  // Gespeicherte Verbindung: einmal nach dem Stand fragen (sonst bleibt 127.0.0.1 unberührt)
+  if (V.gemerkt) V.status().catch(function () {});
+  zeichne();
+})();

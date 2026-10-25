@@ -1,5 +1,15 @@
 # Changelog
 
+## Unveröffentlicht (AP14: eigene KI direkt verbinden)
+
+- In Schritt 4 gibt es die Kachel „Eigene KI“: Die Mühle schickt den Text an ein Programm wie Claude Code oder Codex oder über einen eigenen Zugangsschlüssel (OpenAI, Anthropic, Mistral) oder Ollama, ohne Kopieren und Einfügen.
+- „So geht es“ an der Kachel nennt beide Wege; verbunden wird mit einem Code aus sechs Ziffern, die Kachel zeigt danach Modell oder Agent.
+- Mit „Eigene KI“ heißen die Knöpfe „An meine KI senden“; Teile gehen nacheinander ins selbe Gespräch, Antworten und Korrekturen setzt die Mühle selbst ein.
+- Antwortet die KI nicht, bietet die Mühle „Erneut versuchen“ und „Stattdessen kopieren“; Einfügen von Hand geht weiter überall.
+- Neu ist `bruecke.py` zum Herunterladen: Sie läuft nur auf dem eigenen Rechner, behält den Schlüssel dort und liefert die Mühle auch selbst unter `http://127.0.0.1:48127/start/` aus, in jedem Browser.
+- Für Programme wie Claude Code steht die Anleitung unter kursmuehle.de/verbinden.md.
+- Datenschutzhinweise in Impressum, README und Fußzeile sagen, wohin der Auftrag bei der eigenen KI geht.
+
 ## 2.0.0-b6 – 2026-10-24 (AP13.4b: Bild in jedem Baustein, Hinweis als Rückmeldung, kürzerer Text, Bilder beim Hochladen)
 
 - Eine `Bild:`-Zeile darf in jedem Baustein an jeder Stelle stehen, auch in Zuordnen und Quiz; in Übungen steht das Bild über der Übung oder in der Beschreibung der Aktivität.

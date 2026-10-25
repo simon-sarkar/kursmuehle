@@ -1,0 +1,33 @@
+{
+"version": "2.0.0-b6",
+"dateien": [
+"ansicht.css",
+"bilder.js",
+"chat.js",
+"generator.zip",
+"hinweise.json",
+"index.html",
+"karten.js",
+"katalog.json",
+"kern.js",
+"logo.svg",
+"messung.html",
+"messung.js",
+"muster-dicht-dunkel.svg",
+"muster-dicht.svg",
+"muster-locker-dunkel.svg",
+"muster-locker.svg",
+"nachbau.js",
+"schritte.js",
+"verbindung.js",
+"worker.js",
+"vendor/LIZENZEN.md",
+"vendor/pyodide/pyodide-lock.json",
+"vendor/pyodide/pyodide.asm.js",
+"vendor/pyodide/pyodide.asm.wasm",
+"vendor/pyodide/pyodide.js",
+"vendor/pyodide/python_stdlib.zip",
+"vendor/pyodide/pyyaml-6.0.2-cp312-cp312-pyodide_2024_0_wasm32.whl",
+"vendor/pyodide/tzdata-2024.1-py2.py3-none-any.whl"
+]
+}

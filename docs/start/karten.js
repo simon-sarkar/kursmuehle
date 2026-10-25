@@ -543,9 +543,12 @@
     $("korrektur-titel").textContent = n > 1 ? n + " Bausteine brauchen eine Korrektur" : n === 1 ?
         "Ein Baustein braucht eine Korrektur"
       : "Die Einheit braucht eine Korrektur";
-    $("korrektur-zeile").textContent = "„Korrektur anfordern“ kopiert die Bitte für den Chat" + (S.korrekturen.length +
-        neu.length > 1
-      ? " (alle Punkte zusammen)" : "") + ". Füge sie in deinen Chat ein und die Antwort des Chats hier unten.";
+    var ki = !!(S.anKiAktiv && S.anKiAktiv());
+    $("korrektur-zeile").textContent = (ki ? "„An meine KI senden“ schickt die Bitte an deine KI" :
+        "„Korrektur anfordern“ kopiert die Bitte für den Chat") + (S.korrekturen.length + neu.length > 1
+      ? " (alle Punkte zusammen)" : "") + (ki ? "; ihre Antwort setzt die Mühle ein." :
+        ". Füge sie in deinen Chat ein und die Antwort des Chats hier unten.");
+    $("korrektur-kopieren").textContent = ki ? "An meine KI senden" : "Korrektur anfordern";
     $("korrektur-antwort").hidden = !S.korrektur.offen;
     S.standKarte($("korrektur-ergebnis"), S.korrektur.stand, S.korrektur.art);
     if (!S.korrektur.text && !neu.length) S.korrektur.text = S.korrekturen.map(function (k) { return k.satz; })
@@ -571,6 +574,12 @@
     if (!S.korrektur.text) return;
     S.korrektur.offen = true; S.korrektur.stand = ""; S.korrektur.art = "";
     $("korrektur-antwort").hidden = false; S.standKarte($("korrektur-ergebnis"), "");
+    // eigene KI: dieselbe Bitte ins Gespräch der Einheit, die Antwort durch korrekturEinsetzen wie eingefügt
+    if (S.anKiAktiv && S.anKiAktiv()) return S.anKi(S.korrektur.text, { einheit: einheitTag(), neu: false,
+      ort: $("korrektur-ergebnis"), vorher: korrekturVermerken,
+      stand: function (x, art) { S.korrektur.stand = x; S.korrektur.art = art; S.standKarte($("korrektur-ergebnis"), x,
+          art); },
+      fertig: function (antwort) { $("korrektur-eingabe").value = antwort; return korrekturEinsetzen(); } });
     korrekturVermerken();
     kopieren(S.korrektur.text, $("korrektur-feld"), $("korrektur-stand"),
         "Kopiert. Füge sie in deinen Chat ein und die Antwort des Chats hier unten.",

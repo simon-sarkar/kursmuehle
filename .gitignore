@@ -8,6 +8,7 @@ dist/
 web/generator.zip
 web/messungen/
 web/katalog.json
+web/dateien.json
 web/logo.svg
 web/muster-locker.svg
 web/muster-dicht.svg

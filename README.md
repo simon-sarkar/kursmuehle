@@ -25,6 +25,7 @@ und einzelne Chats antworten noch in einer Form, die die Seite nicht lesen kann.
 | Feedback-Umfragen, Links und Videos, Badges, Kursbild, Abschlussverfolgung, Sichtbarkeit ab Datum | Gruppen, Termine, andere Zugriffsbedingungen |
 | Kursbanner und Kachelbilder, Zahl der Bilder je Einheit, Bilder in jedem Baustein, Bildwunsch mit Auftrag für einen Bildgenerator, eigene Bilder hochladen (verkleinert, mit Prüffragen) | Abschnitts- und Kachelbilder automatisch aus dem Material |
 | Einheit speichern und später weiterbauen, nächste Einheit anhängen, Nachlieferung zu einem bestehenden Kurs | Abbruch einer Antwort des Chats erkennen |
+| Eigene KI direkt anbinden: ein Programm wie Claude Code oder Codex, ein eigener Zugangsschlüssel (OpenAI, Anthropic, Mistral) oder Ollama; Teile und Korrekturen ohne Kopieren | Bilder über die Verbindung, Verbindung vom iPad oder aus dem Schulnetz |
 | Prüfung der Antwort vor dem Bau mit Sätzen, was im Chat zu korrigieren ist, und Auswegen, wenn der Chat dieselbe Antwort wiederholt | Fachliche Prüfung des Inhalts; die bleibt bei der Lehrkraft |
 
 Der Auftrag ist eingerichtet für ByLKI, fobizz, AIS-Chat, MUCGPT, ChatGPT, Claude und Gemini. Durchläufe gab es bisher
@@ -40,14 +41,17 @@ soll die Beta zeigen.
 - [ ] Mehr Einstellungen für das Aussehen des Kurses: Farben, Schrift, Kästen, Übungsblöcke, mit Vorschau
 - [ ] LehrplanPLUS: Lernbereich wählen, die Kompetenzerwartungen gehen in den Auftrag; zuerst Grund- und Mittelschule
 - [ ] 2.0 ohne Beta-Marke, nach Rückmeldungen von Lehrkräften
-- [ ] Die eigene KI direkt anbinden, ohne Kopieren und Einfügen; der Schlüssel bleibt auf dem eigenen Rechner
+- [x] Die eigene KI direkt anbinden, ohne Kopieren und Einfügen; der Schlüssel bleibt auf dem eigenen Rechner
+      ([so geht es](docs/verbinden.md))
 - [ ] Arbeitsblätter aus derselben Einheit, auf Papier und digital
 
 ## Datenschutz
 
-Die Seite lädt nichts von anderen Adressen nach und setzt keine Cookies. Was du eingibst, bleibt im Browser; die Seite
-sendet es nirgends hin. Was du in den Chat einfügst, verarbeitet dessen Anbieter; dafür gelten dessen Bedingungen und
-die Regeln deiner Schule. Gib in den Chat keine personenbezogenen Daten von Schülerinnen und Schülern.
+Die Seite lädt nichts von anderen Adressen nach, außer bei deiner eigenen KI, und setzt keine Cookies. Die Seite
+schickt nichts, was du eingibst, an kursmuehle.de; es gibt dort keinen Server, der Eingaben annimmt. Verbindest du
+deine eigene KI, geht der Auftrag von deinem Rechner an den Anbieter, den du selbst eingerichtet hast, oder an dein
+eigenes Programm; Adresse und Code dafür liegen in deinem Browser. Was du in den Chat einfügst oder an deine KI
+schickst, verarbeitet dessen Anbieter; dafür gelten dessen Bedingungen und die Regeln deiner Schule. Gib in den Chat keine personenbezogenen Daten von Schülerinnen und Schülern.
 
 ## Kachel fürs Schulportal
 

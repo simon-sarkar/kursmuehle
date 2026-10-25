@@ -460,7 +460,7 @@ window.km = km;
       var s = $(p[0]); s.innerHTML = "";
       p[1].forEach(function (w) { s.appendChild(el("option", { value: w.wert, text: w.text })); });
     });
-    var gruppen = { dienstlich: "Dienstlich", privat: "Privates Konto", anderer: "Anderer" };
+    var gruppen = S.katalog.chat_gruppen;
     var chat = $("a-chat"); chat.innerHTML = "";
     chat.appendChild(el("option", { value: "", text: "Noch nicht gewählt" }));
     var knoepfe_ = $("chat-knoepfe"); knoepfe_.innerHTML = "";

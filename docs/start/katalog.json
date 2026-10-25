@@ -606,6 +606,15 @@
    "bilder": true
   },
   {
+   "wert": "eigene",
+   "text": "Eigene KI",
+   "gruppe": "verbunden",
+   "codeblock": false,
+   "teil_bausteine": 6,
+   "eingabe_kb": null,
+   "bilder": false
+  },
+  {
    "wert": "anderer",
    "text": "Anderer Chat",
    "gruppe": "anderer",
@@ -615,6 +624,12 @@
    "bilder": false
   }
  ],
+ "chat_gruppen": {
+  "dienstlich": "Dienstlich",
+  "privat": "Privates Konto",
+  "anderer": "Anderer",
+  "verbunden": "Verbunden"
+ },
  "typgruppen": [
   {
    "name": "Lesen",

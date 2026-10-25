@@ -158,6 +158,27 @@
         <p id="chat-modell" class="leise">Wähle im Chat das stärkste Modell, das dir dort offensteht; kleine Modelle (Flash, Mini, Medium, Lite) halten das Format oft nicht ein und brauchen mehr Runden.</p>
         <p class="leise">Über private Konten entscheidet deine Schule.</p>
       </div>
+      <!-- Eigene KI (AP14): zwei Wege, Code, Port unter „mehr“; verbindung.js zeigt das Feld -->
+      <div id="verbinden" class="infobox verbinden" hidden>
+        <p><strong>Deine KI ist ein Programm wie Claude Code oder Codex:</strong> Gib ihm diesen Satz:
+          <em id="verbinden-satz">Lies https://kursmuehle.de/verbinden.md und verbinde dich mit der Kursmühle.</em>
+          Es nennt dir dann einen Code.</p>
+        <div class="kopieren"><button type="button" id="verbinden-satz-kopieren" class="knopf">Satz kopieren</button></div>
+        <textarea id="verbinden-satz-feld" class="unsichtbar" readonly aria-hidden="true" tabindex="-1">Lies https://kursmuehle.de/verbinden.md und verbinde dich mit der Kursmühle.</textarea>
+        <p><strong>Du hast einen Zugangsschlüssel oder Ollama:</strong> Lade
+          <a href="https://kursmuehle.de/bruecke.py" download>bruecke.py</a> herunter und starte sie, wie es oben in der
+          Datei steht. Sie zeigt dir eine Adresse und einen Code.</p>
+        <label class="feld">Code <input id="verbinden-code" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="sechs Ziffern"></label>
+        <details class="verbinden-mehr">
+          <summary>mehr</summary>
+          <label class="feld">Port (nur ändern, wenn dein Programm eine andere Zahl nennt) <input id="verbinden-port" inputmode="numeric" maxlength="5"></label>
+        </details>
+        <div class="kopieren">
+          <button type="button" id="verbinden-los" class="knopf haupt">Verbinden</button>
+          <button type="button" id="verbinden-trennen" class="textlink" hidden>Trennen</button>
+        </div>
+        <p id="verbinden-stand" class="stand" role="status" aria-live="polite"></p>
+      </div>
       <div id="chat-text" hidden>
         <div id="text-art" class="text-art" role="radiogroup" aria-label="Welcher Text">
           <label><input type="radio" name="text-art" value="einheit" checked> Diese Einheit</label>
@@ -388,5 +409,6 @@
 <script src="chat.js"></script>
 <script src="bilder.js"></script>
 <script src="nachbau.js"></script>
+<script src="verbindung.js"></script>
 </body>
 </html>

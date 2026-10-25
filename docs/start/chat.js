@@ -10,6 +10,7 @@
       nrVon = S.nrVon, schleifeMerken = S.schleifeMerken, schritt = S.schritt, sektion = S.sektion,
       teileOffen = S.teileOffen, texte = S.texte, zeichne = S.zeichne, zeichneSchritte = S.zeichneSchritte,
       zeigeFehler = S.zeigeFehler, zweig = S.zweig;
+  function ki() { return !!(S.anKiAktiv && S.anKiAktiv()); }     // „Eigene KI“ verbunden: senden statt kopieren
   function textGroesse() { return texte.teile.length ? new Blob([texte.teile[0]]).size : 0; }
 
   function textArt() {
@@ -41,18 +42,20 @@
     texte.teile.forEach(function (_, i) {
       tw.appendChild(el("button", { type: "button", cls: "klein teil-knopf", "data-teil": i,
           "aria-pressed": i === texte.teil ? "true" : "false",
-        text: "Teil " + (i + 1) + (texte.kopiert[i] ? " (kopiert)" : "") }));
+        text: "Teil " + (i + 1) + (texte.kopiert[i] ? (ki() ? " (gesendet)" : " (kopiert)") : "") }));
     });
     var t = texte.teile[texte.teil] || "";
     $("chat-zeile").textContent = !t ? (Z.geladen ?
         "Der Text entsteht …" : "Der Text entsteht, sobald die Seite bereit ist.")
       : "Für " + c.text + (texte.teile.length > 1 ? ", Teil " + (texte.teil + 1) + " von " + texte.teile.length +
-          ". Je Teil: in dasselbe Gespräch einfügen, die Antwort in Schritt " + nrVon(5) +
-          " übernehmen, dann der nächste Teil." : "") + " · " + kb(new Blob([t]).size);
+          (ki() ? ". Die Mühle sendet Teil für Teil und setzt jede Antwort ein." :
+            ". Je Teil: in dasselbe Gespräch einfügen, die Antwort in Schritt " + nrVon(5) +
+          " übernehmen, dann der nächste Teil.") : "") + " · " + kb(new Blob([t]).size);
     if ($("chat-text-feld").value !== t) $("chat-text-feld").value = t;
     $("text-kopieren").disabled = !t;
     $("text-kopieren").textContent = texte.teile.length > 1 ? "Teil " + (texte.teil + 1) +
-        " kopieren" : "Text kopieren";
+        (ki() ? " an meine KI senden" : " kopieren") : ki() ? "An meine KI senden" : "Text kopieren";
+    $("infobox-ok").textContent = ki() ? "Verstanden, Text senden" : "Verstanden, Text kopieren";
   }
 
   // Plan der Einheit (gen/mappe.py planung): Warnung vor dem Kopieren und an der Kartenliste, keine Sperre
@@ -125,7 +128,7 @@
     texte.teil = parseInt(b.dataset.teil, 10); $("kopiert").textContent = ""; zeichneChat();
   });
 
-  function textKopiert() {
+  function textKopiert(gesendet) {
     var kopierterTeil = texte.teil + 1;
     texte.kopiert[texte.teil] = true;
     if (!Z.mappe) return;
@@ -140,13 +143,35 @@
     zeichne(); autosave();
     if (naechster >= 0) {
       texte.teil = naechster; zeichneChat();
-      $("kopiert").textContent = "Teil " + kopierterTeil + " kopiert. Füge ihn " + (kopierterTeil === 1 ?
+      $("kopiert").textContent = gesendet ? "Teil " + kopierterTeil + " gesendet; die Antwort kommt in Schritt " +
+          nrVon(5) + ", danach geht Teil " + (naechster + 1) + " an deine KI."
+        : "Teil " + kopierterTeil + " kopiert. Füge ihn " + (kopierterTeil === 1 ?
           "in ein neues Gespräch" : "in dasselbe Gespräch") + " ein und die Antwort in Schritt " + nrVon(5)
         + "; danach kommt Teil " + (naechster + 1) + " dran.";
-    }
+    } else if (gesendet) $("kopiert").textContent = "Gesendet; die Antwort kommt in Schritt " + nrVon(5) + ".";
   }
-  function textKopieren() { kopieren($("chat-text-feld").value, $("chat-text-feld"), $("kopiert"), KOPIERT,
-      textKopiert); }
+  // Teil n an die eigene KI: Teil 1 in ein neues Gespräch, jeder weitere in dasselbe; die Antwort läuft durch
+  // eingabeUebernehmen wie eingefügt, danach geht der nächste Teil von selbst
+  function textSenden(n) {
+    var i = n === undefined ? texte.teil : n, t = texte.teile[i];
+    if (!t) return;
+    texte.teil = i;
+    S.anKi(t, { einheit: einheitTag(), neu: i === 0, ort: $("eingabe-stand"),
+      vorher: function () { textKopiert(true); },
+      stand: function (x, art) { standKarte($("eingabe-stand"), x, art); },
+      fertig: async function (antwort) {
+        var vorher = Z.mappe && Z.mappe.stueckelung ? (Z.mappe.stueckelung.eingefuegt || []).length : -1;
+        $("eingabe").value = antwort;
+        await eingabeUebernehmen(null);
+        var st = Z.mappe && Z.mappe.stueckelung;
+        if (ki() && st && teileOffen() && (st.eingefuegt || []).length > vorher && naechsterTeil() >= 0)
+          textSenden(naechsterTeil());
+      } });
+  }
+  function textKopieren() {
+    if (ki()) return textSenden();
+    kopieren($("chat-text-feld").value, $("chat-text-feld"), $("kopiert"), KOPIERT, textKopiert);
+  }
   // Vor dem ersten Kopieren einmal die Infobox (Rechte am Material, Nutzungsbedingungen des Chats)
   $("text-kopieren").onclick = function () {
     if (!S.infoboxAus) { $("infobox").hidden = false; $("infobox-ok").focus(); return; }
@@ -217,9 +242,13 @@
     var feld = el("textarea", { cls: "unsichtbar", readonly: true, "aria-hidden": "true", tabindex: "-1" });
     feld.value = d.satz;
     var stand = el("p", { cls: "stand", role: "status" });
-    var knopf = el("button", { type: "button", cls: "knopf diagnose-kopieren", text: "Satz für den Chat kopieren" });
-    knopf.onclick = function () { kopieren(d.satz, feld, stand,
-        "Kopiert. Füge ihn in deinen Chat ein und die Antwort hier ein."); };
+    var knopf = el("button", { type: "button", cls: "knopf diagnose-kopieren", text: ki() ? "Satz an meine KI senden" :
+        "Satz für den Chat kopieren" });
+    knopf.onclick = function () {
+      if (ki()) return S.anKi(d.satz, { einheit: einheitTag(), neu: false, ort: box,
+        stand: function (x, art) { standKarte($("eingabe-stand"), x, art); },
+        fertig: function (antwort) { $("eingabe").value = antwort; return eingabeUebernehmen(null); } });
+      kopieren(d.satz, feld, stand, "Kopiert. Füge ihn in deinen Chat ein und die Antwort hier ein."); };
     box.appendChild(el("div", { cls: "kopieren" }, [knopf]));
     box.appendChild(stand);
     box.appendChild(feld);
@@ -269,14 +298,15 @@
     var st = Z.mappe.stueckelung, n = naechsterTeil(), da = (st.eingefuegt || []).length;
     $("teil-stand-text").textContent = (da === 1 ? "Teil " + (st.eingefuegt[0] + 1) : da + " Teile") + " von " +
         st.ids.length
-      + " eingefügt, jetzt Teil " + (n + 1) + " kopieren.";
+      + " eingefügt, jetzt Teil " + (n + 1) + (ki() ? " an deine KI." : " kopieren.");
     var bereitText = texte.teile.length === st.ids.length && !!texte.teile[n];
-    $("teil-weiter").textContent = "Teil " + (n + 1) + " kopieren";
+    $("teil-weiter").textContent = "Teil " + (n + 1) + (ki() ? " an meine KI senden" : " kopieren");
     $("teil-weiter").disabled = !bereitText;
   }
   $("teil-weiter").onclick = function () {
     var n = naechsterTeil();
     if (n < 0 || !texte.teile[n]) return;
+    if (ki()) return textSenden(n);
     texte.teil = n; zeichneChat();   // Feld „Text ansehen“ trägt jetzt diesen Teil (Rückfall ohne Zwischenablage)
     kopieren(texte.teile[n], $("chat-text-feld"), $("teil-kopiert"), "Kopiert. Füge Teil " + (n + 1)
       + " in dasselbe Gespräch ein und die Antwort des Chats oben ins Feld.", function () { textKopiert(); $("eingabe")
@@ -325,8 +355,8 @@
       var st = Z.mappe.stueckelung, mehr = "";
       if (teileOffen()) {
         standKarte($("eingabe-stand"), "Übernommen: " + e.n + (e.n === 1 ? " Baustein" : " Bausteine") +
-            ". Kopiere jetzt Teil "
-          + (naechsterTeil() + 1) + " von " + st.ids.length +
+            (ki() ? ". Jetzt geht Teil " : ". Kopiere jetzt Teil ")
+          + (naechsterTeil() + 1) + " von " + st.ids.length + (ki() ? " an deine KI" : "") +
               "; die Prüfung zeigt Fehler erst, wenn alle Teile da sind.", "ok");
         $("teil-weiter").focus({ preventScroll: true });
         return;
@@ -334,8 +364,8 @@
       var rot = Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler" && (!e.ids ||
           e.ids.indexOf(b.id) >= 0); }).length;
       var aussen = Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler" && !d.baustein; }).length;
-      if (rot || aussen) mehr = " Unter dem Feld steht die Korrektur: „Korrektur anfordern“ kopiert die Bitte für " +
-          "den Chat.";
+      if (rot || aussen) mehr = ki() ? " Unter dem Feld steht die Korrektur: „An meine KI senden“ schickt die Bitte." :
+          " Unter dem Feld steht die Korrektur: „Korrektur anfordern“ kopiert die Bitte für den Chat.";
       if (gleichE.length) mehr = " Die Antwort für „" + gleichE[0] + "“ ist dieselbe wie vorher." + mehr;
       standKarte($("eingabe-stand"), "Übernommen (" + MODUS_TEXT[modus] + "): " + e.n + (e.n === 1 ?
           " Baustein" : " Bausteine")
@@ -358,7 +388,8 @@
   Array.prototype.forEach.call(document.querySelectorAll("input[name=modus]"), function (r) {
     r.addEventListener("change", function () { if (S.letzteAntwort && r.checked) eingabeUebernehmen(r.value); });
   });
-  Object.assign(S, { EIGEN: EIGEN, diagnoseKarte: diagnoseKarte, eigenerText: eigenerText, standKarte: standKarte,
+  Object.assign(S, { EIGEN: EIGEN, diagnoseKarte: diagnoseKarte, eigenerText: eigenerText,
+    eingabeUebernehmen: eingabeUebernehmen, standKarte: standKarte,
     textGroesse: textGroesse, textSpaeter: textSpaeter, zeichneChat: zeichneChat, zeichnePlanung: zeichnePlanung,
     zeichneTeile: zeichneTeile });
 })();
