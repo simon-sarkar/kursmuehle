@@ -558,7 +558,8 @@
    "codeblock": true,
    "teil_bausteine": 6,
    "eingabe_kb": null,
-   "bilder": false
+   "bilder": false,
+   "aufwand": "Wähl in ByLKI das neueste Modell ohne Zusatz wie mini oder flash im Namen."
   },
   {
    "wert": "ais",
@@ -567,7 +568,8 @@
    "codeblock": true,
    "teil_bausteine": null,
    "eingabe_kb": 68,
-   "bilder": false
+   "bilder": false,
+   "aufwand": "Wähl im AIS-Chat oben links das Modell; nimm keins mit nano oder 8B im Namen, das sind kleine Modelle."
   },
   {
    "wert": "fobizz",
@@ -576,7 +578,8 @@
    "codeblock": true,
    "teil_bausteine": null,
    "eingabe_kb": 68,
-   "bilder": false
+   "bilder": false,
+   "aufwand": "Stell in fobizz „Auto“ um und nimm unter „Mehr Modelle“ das neueste Modell ohne Zusatz wie mini oder flash im Namen."
   },
   {
    "wert": "mucgpt",
@@ -585,7 +588,8 @@
    "codeblock": true,
    "teil_bausteine": 6,
    "eingabe_kb": null,
-   "bilder": false
+   "bilder": false,
+   "aufwand": "Bietet MUCGPT eine Modellwahl, nimm das neueste Modell ohne Zusatz wie mini oder flash im Namen."
   },
   {
    "wert": "chatgpt",
@@ -595,7 +599,7 @@
    "teil_bausteine": null,
    "eingabe_kb": null,
    "bilder": true,
-   "aufwand": "Stell in ChatGPT vor dem Senden den Aufwand auf Extra High, das geht auch im kostenlosen Konto."
+   "aufwand": "Stell in ChatGPT vor dem Senden den Aufwand auf „Extra High“, das geht auch im kostenlosen Konto."
   },
   {
    "wert": "claude",
@@ -604,7 +608,8 @@
    "codeblock": true,
    "teil_bausteine": null,
    "eingabe_kb": null,
-   "bilder": false
+   "bilder": false,
+   "aufwand": "Nimm in Claude das neueste Modell ohne Zusatz und schalte das Denken ein, wenn es den Schalter gibt."
   },
   {
    "wert": "gemini",
@@ -613,7 +618,8 @@
    "codeblock": true,
    "teil_bausteine": null,
    "eingabe_kb": null,
-   "bilder": true
+   "bilder": true,
+   "aufwand": "Nimm in Gemini das neueste Modell ohne Zusatz wie flash oder lite im Namen und schalte das Denken ein, wenn es den Schalter gibt."
   },
   {
    "wert": "eigene",
@@ -631,7 +637,8 @@
    "codeblock": true,
    "teil_bausteine": 6,
    "eingabe_kb": null,
-   "bilder": false
+   "bilder": false,
+   "aufwand": "Nimm das neueste Modell ohne Zusatz wie mini oder flash im Namen; steht „Auto“ voreingestellt, stell um."
   }
  ],
  "chat_gruppen": {

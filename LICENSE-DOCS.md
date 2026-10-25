@@ -1,8 +1,8 @@
 # Lizenz für Texte, Vorlagen und Testkurse
 
-Alle Inhalte dieses Repositories außer dem Programmcode in `scripts/` – also
-`README.md`, die Texte der Projektseite, die Kursinhalte und
-Bilder der Testkurse in `scripts/tests/fixtures/` – stehen unter
+Alle Inhalte dieses Repositories außer dem Programmcode – also `README.md`, die
+Texte der Projektseite, die Dokumentation, Vorlagen, Bilder, Logo und Banner sowie
+die Kursinhalte und Bilder der Testkurse in `scripts/tests/fixtures/` – stehen unter
 
 **Creative Commons Namensnennung – Nicht kommerziell – Weitergabe unter
 gleichen Bedingungen 4.0 International (CC BY-NC-SA 4.0)**
@@ -16,8 +16,10 @@ die Nutzung nicht kommerziell ist und Bearbeitungen unter derselben Lizenz
 weitergegeben werden. Einsatz an Schulen und in der Lehrerfortbildung gilt
 als nicht kommerziell.
 
-Der Programmcode in `scripts/` (ohne die Kursinhalte und Bilder der Testkurse) steht unter der PolyForm Noncommercial License
-1.0.0, siehe `LICENSE`.
+Der gesamte Programmcode steht unter der PolyForm Noncommercial License 1.0.0, siehe `LICENSE`: der Generator in
+`scripts/`, die Browser-Fassung in `web/` (veröffentlicht unter `docs/start/`), `docs/bruecke.py`, `docs/make_logo.py`,
+die Werkzeuge in `tools/` und die Workflows in `.github/`. Ausgenommen sind die Kursinhalte und Bilder der Testkurse
+sowie die Schriften (unten).
 
 Die Lehrplantexte unter `docs/start/lehrplan/` (kursmuehle.de/start/lehrplan/) stammen aus LehrplanPLUS des
 Staatsinstituts für Schulqualität und Bildungsforschung (ISB), https://www.lehrplanplus.bayern.de; sie sind amtliche

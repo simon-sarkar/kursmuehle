@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht (AP13.5d: Schritt 3 mit mitlaufender Vorschau; AP13.5e: Charakter je Design; AP13.5f: eigene KI im Lauf, Lehrplan-Haken, Schriften; AP13.9: Design-Rest)
+## Unveröffentlicht (AP13.5d: Schritt 3 mit mitlaufender Vorschau; AP13.5e: Charakter je Design; AP13.5f: eigene KI im Lauf, Lehrplan-Haken, Schriften; AP13.7: Startseite und Unterseiten; AP13.9: Design-Rest)
 
 - Die Vorschau des gewählten Designs läuft beim Scrollen mit: auf breiten Bildschirmen rechts, sonst als Leiste am unteren Rand, die ein Tippen aufklappt.
 - Die Vorschau zeigt Inhalt, auch wenn du Schritt 3 erreichst, bevor die Mühle fertig geladen ist.
@@ -26,6 +26,17 @@
 - Der Haken heißt „Lehrplanbezug Grund- und Mittelschulen Bayern“, ist zuerst aus und merkt sich deine letzte Wahl; gesetzt öffnet er den Lehrplan sofort, bis zur Wahl eines Lernbereichs steht ein gelber Hinweis darunter und am Rand.
 - Das Fazit von Schritt 1 nennt den Lernbereich; bei „Mach du“ ist der passendste Lernbereich schon gewählt.
 - Einfache Sprache für die Grundschule richtet sich nach Jahrgangsstufe oder Schulart, auch ohne Lehrplanbezug.
+- Die Startseite zeigt an einem Ausschnitt, wie eine Einheit aussieht, statt des alten Bilds der Mühle.
+- Die Startseite sagt, was herauskommt, dass die Mühle nichts kostet und dass mit eigener KI das Kopieren entfällt.
+- Statt einer Liste von Chats steht auf der Startseite ein Satz zu Nutzungsbedingungen und Schule, dazu die Regel für die Wahl des Modells.
+- In Schritt 4 steht über dem Kopierknopf für jeden Chat ein Satz, wo du dort das Modell wählst; bei „Eigene KI“ keiner.
+- Ein leeres Thema oder Minuten außerhalb von 10 bis 300 im Startformular zeigen eine Zeile mit roter Mühle statt der Blase des Browsers.
+- Der Datenschutz-Absatz auf Startseite und Impressum gilt für alle drei Wege: selbst kopieren, eigene KI, Testphase.
+- Das Impressum nennt die Titelschriften mit ihrer Lizenz und die Speicherdauer in der Testphase genauer.
+- „Erfahrungen“ ergänzt die Durchläufe vom 24. und 25.10. samt automatischen Tests; Angaben ohne Protokoll sind gestrichen oder gekennzeichnet.
+- Die Kacheln fürs Schulportal in 512 und 128 px sind neu gezeichnet; Ecken und Mühle waren darin verschoben.
+- Verlässt die Maus das Rad der Mühle auf Startseite oder Impressum knapp bei einer halben Umdrehung, läuft es ohne Skriptfehler aus.
+- Die Platzhalter im Startformular zeigen nur Thema und Jahrgangsstufe, ohne „zum Beispiel“; die Themen kommen aus derselben Liste wie in der Mühle, sobald sie vorliegt.
 - Im Website-Modus folgen die Kapitelnummern dem Design: große Kreise bei Grundschule, Sticker bei Verspielt, Zahlen bei Modern, Erdtonkreise bei Natur, schwarze Quadrate bei Druck, „1.“ in der Textfarbe bei Klassisch und „Ohne Vorlage“; Sachlich, Freundlich, Magazin und Dunkel bleiben unverändert.
 - Bei Magazin und Grundschule steht ein Foto in der Bildzeile in voller Breite, wenn es quer liegt und breiter als 900 px ist; Symbolbilder bleiben 200 px breit.
 - Grundschule behält das Dreieck „Importprobe steht aus“, bis der Umbruch langer Wörter auf der Plattform bestätigt ist.

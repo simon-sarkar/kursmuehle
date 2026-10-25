@@ -6,11 +6,11 @@
 <meta name="color-scheme" content="light dark">
 <title>Kursmühle – Unterrichtseinheiten für die ByCS-Lernplattform</title>
 <link rel="canonical" href="https://kursmuehle.de/">
-<meta name="description" content="Kursmühle macht aus deinem Thema eine Unterrichtseinheit für die ByCS-Lernplattform. Den Inhalt schreibt dein Chat, die Datei entsteht in deinem Browser.">
+<meta name="description" content="Kursmühle macht aus deinem Thema eine Unterrichtseinheit für die ByCS-Lernplattform. Den Inhalt schreibt ein KI-Chat, die Datei entsteht in deinem Browser.">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
-<!-- Startseite: Schritt 1 der Mühle. Lädt nichts von außen; liest nur, ob die Mühle eine Einheit gesichert hat
-     (IndexedDB „kursmuehle“, Speicher „mappe“, Schlüssel „aktuell“). Das Logo der Kacheln schreibt docs/make_logo.py
-     zwischen die beiden Logo-Marken. -->
+<!-- Startseite: Schritt 1 der Mühle. Lädt nichts von außen und von der Mühle nur start/themen.js (Platzhalter); liest
+     nur, ob die Mühle eine Einheit gesichert hat (IndexedDB „kursmuehle“, Speicher „mappe“, Schlüssel „aktuell“). Das
+     Logo der Kacheln schreibt docs/make_logo.py zwischen die beiden Logo-Marken. -->
 <script>
 // Hell ist Standard; die Wahl „Dunkel“ liegt im localStorage dieses Browsers.
 (function () { try { if (localStorage.getItem("kursmuehle-schema") === "dunkel") document.documentElement.dataset.theme = "dark"; } catch (e) {} })();
@@ -20,14 +20,14 @@
           --grund: #faf6ee; --band: #f3e9d8; --flaeche: #ffffff; --feld: #ffffff; --kachel: #ffffff;
           --text: #2a2a2a; --text2: #3d3833; --leise: #6b6458; --linie: #e4d8c3; --ocker: #d9a441; --ocker-text: #8a6416; --fokus: #8a6416;
           --fuss: #2a2a2a; --fuss-text: #f3e9d8; --fuss-leise: #cfc4b2;
-          --wz: #2a2a2a; --wz-deckung: 1; --schatten: rgba(42,42,42,.10);
+          --wz: #2a2a2a; --wz-deckung: 1; --schatten: rgba(42,42,42,.10); --fehler: #b42318;
           --logo-grund: #2a2a2a; --logo-muehle: #f3e9d8; --logo-rand: 5px; --breite: 1040px; }
   :root[data-theme="dark"] { color-scheme: dark;
           --grund: #262522; --band: #2a2a2a; --flaeche: #1b1a18; --feld: #1b1a18; --kachel: #35332f;
           --text: #f3e9d8; --text2: #e6dccb; --leise: #b9ae9c; --linie: #423e37;
           --ocker-text: #d9a441; --fokus: #d9a441;
           --fuss: #141312; --fuss-text: #f3e9d8; --fuss-leise: #b9ae9c;
-          --wz: #f3e9d8; --wz-deckung: .9; --schatten: rgba(0,0,0,.35);
+          --wz: #f3e9d8; --wz-deckung: .9; --schatten: rgba(0,0,0,.35); --fehler: #ff9a8b;
           --logo-grund: #f3e9d8; --logo-muehle: #2a2a2a; --logo-rand: 4px; }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
@@ -97,6 +97,12 @@
   .knopf.haupt { background: var(--ocker); border-color: var(--ocker); color: #2a2a2a; }
   .knopf.haupt:hover { background: #cf9632; }
   .start-form .knopf { grid-column: 1 / -1; justify-self: start; min-width: 9rem; }
+  /* Meldung statt Blase des Browsers (wie Schritt 1 der Mühle): leer ohne Höhe, sonst eine Zeile mit roter Mühle */
+  .meldung { grid-column: 1 / -1; margin: -12px 0 0; display: flex; align-items: center; gap: 6px;
+             color: var(--fehler); font-size: .9rem; font-weight: 600; }
+  .meldung:not(:empty) { margin-top: -4px; }
+  .meldung .logo { width: 16px; height: 16px; flex: none; --logo-grund: var(--fehler); --logo-muehle: var(--band);
+                   --ocker: var(--band); --logo-rand: 8px; }
   .vorsatz { font-size: 0.9rem; color: var(--leise); margin: 14px 0 0; }
   @media (max-width: 640px) {
     .start-form { grid-template-columns: 1fr 1fr; }
@@ -126,12 +132,13 @@
   .ergebnis { background: var(--flaeche); padding: 72px 0; }
   .ergebnis .innen { display: grid; gap: 40px 64px; grid-template-columns: 1fr; align-items: start; }
   @media (min-width: 820px) { .ergebnis .innen { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); } }
-  @media (max-width: 819px) { .ergebnis figure { order: 2; } }   /* Handy: erst der Ablauf, dann das Bild */
+  @media (max-width: 819px) { .ergebnis .bilder { order: 2; } }   /* Handy: erst der Text, dann die Bilder */
   figure { margin: 0; }
   figure img { display: block; width: 100%; height: auto; border-radius: 10px;
                box-shadow: 0 0 0 1px var(--linie); }
   figcaption { font-size: .92rem; color: var(--leise); margin-top: 12px; max-width: 60ch; }
   h2 { font-size: 1.45rem; line-height: 1.2; margin: 0 0 22px; letter-spacing: -.01em; }
+  p + h2 { margin-top: 36px; }
   ol.ablauf { list-style: none; counter-reset: s; padding: 0; margin: 0 0 32px; }
   ol.ablauf li { counter-increment: s; position: relative; padding-left: 40px; margin-bottom: 14px; }
   ol.ablauf li::before { content: counter(s); position: absolute; left: 0; top: -4px; font-size: 1.6rem;
@@ -167,9 +174,9 @@
   <div class="innen">
     <div>
       <h1 id="s1-titel">Worum geht es?</h1>
-      <form id="start-form" class="start-form" action="start/" method="get" autocomplete="off">
+      <form id="start-form" class="start-form" action="start/" method="get" autocomplete="off" novalidate>
         <label class="feld feld-thema">Thema
-          <input id="f-thema" name="thema" type="text" placeholder="zum Beispiel Bruchrechnen" maxlength="120">
+          <input id="f-thema" name="thema" type="text" placeholder="Bruchrechnen" maxlength="120">
         </label>
         <label class="feld feld-klein">Jahrgangsstufe
           <input id="f-jahrgang" name="jahrgang" type="text" inputmode="numeric" maxlength="12" placeholder="7">
@@ -177,10 +184,20 @@
         <label class="feld feld-klein">Minuten
           <input id="f-minuten" name="minuten" type="number" min="10" max="300" step="5" value="45" inputmode="numeric">
         </label>
+        <p id="start-meldung" class="meldung" aria-live="polite"></p>
         <button type="submit" class="knopf haupt">Weiter</button>
       </form>
-      <p class="vorsatz">Aus deinem Thema wird eine Einheit mit Lesetexten und Übungen für die ByCS-Lernplattform, als Datei,
-      die du in deinem Kurs wiederherstellst. Sie entsteht in deinem Browser; du brauchst dazu einen KI-Chat wie ByLKI oder fobizz.</p>
+      <template id="fehler-muehle"><!-- logo --><svg class="logo" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><rect width="256" height="256" rx="56" class="l-g"/><path d="M100,236 L156,236 L147,150 L109,150 Z" class="l-m"/>
+  <rect x="115" y="170" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="131" y="170" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="115" y="188" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="131" y="188" width="12" height="12" rx="3" class="l-a"/>
+  <g class="rad"><g transform="rotate(45 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(135 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(225 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(315 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g>
+  <path d="M158.7,120.3 L155.7,124.0 L162.2,134.4 L152.1,141.8 L144.2,132.4 L139.7,134.1 L135.1,135.3 L134.3,147.6 L121.7,147.6 L120.9,135.3 L116.3,134.1 L111.8,132.4 L103.9,141.8 L93.8,134.4 L100.3,124.0 L97.3,120.3 L94.7,116.3 L82.8,119.3 L78.9,107.4 L90.3,102.8 L90.0,98.0 L90.3,93.2 L78.9,88.6 L82.8,76.7 L94.7,79.7 L97.3,75.7 L100.3,72.0 L93.8,61.6 L103.9,54.2 L111.8,63.6 L116.3,61.9 L120.9,60.7 L121.7,48.4 L134.3,48.4 L135.1,60.7 L139.7,61.9 L144.2,63.6 L152.1,54.2 L162.2,61.6 L155.7,72.0 L158.7,75.7 L161.3,79.7 L173.2,76.7 L177.1,88.6 L165.7,93.2 L166.0,98.0 L165.7,102.8 L177.1,107.4 L173.2,119.3 L161.3,116.3 Z" class="l-m l-k"/></g>
+  <circle cx="128" cy="98" r="22" class="l-g"/>
+  <circle cx="128" cy="98" r="9" class="l-a"/></svg><!-- /logo --></template>
+      <p class="vorsatz">Aus deinem Thema wird eine Einheit für die ByCS-Lernplattform, für Grund- und Mittelschule. Die Mühle
+      kostet nichts und läuft in deinem Browser; den Inhalt schreibt ein KI-Chat.</p>
     </div>
     <div class="start">
       <p class="weiter" id="weiter" hidden><a href="start/?weiter=1">Weiter mit deiner Einheit<small id="weiter-titel"></small></a></p>
@@ -199,23 +216,34 @@
 
 <section class="ergebnis" aria-labelledby="ablauf-titel">
   <div class="innen">
-    <!-- Bild tauschen, sobald docs/landing-kurs.png vorliegt (test_landing.py meldet es). -->
-    <figure>
-      <img src="landing-muehle.png" alt="Die Mühle nach dem letzten Schritt: sechs erledigte Schritte als Zeilen, darunter der Knopf Herunterladen und fünf Schritte zum Wiederherstellen." width="814" height="1054" loading="lazy">
-      <figcaption>Nach dem letzten Schritt: die Datei für die Lernplattform und darunter, wie sie in deinen Kurs kommt.</figcaption>
-    </figure>
+    <!-- Bild: python3 scripts/tests/test_landing.py --bilder docs (drei Bausteine aus dem Generator) -->
+    <div class="bilder">
+      <figure>
+        <img src="landing-einheit.png" alt="Ausschnitt einer Einheit: Überschrift „Wohin verschwindet die Pfütze?“, zwei Absätze Lesetext, ein Merkkasten mit einem kleinen Zeichen an der Ecke und eine Übung mit drei Antworten, die gewählte als richtig markiert." width="808" height="923" loading="lazy">
+        <figcaption>So sieht ein Ausschnitt einer Einheit aus.</figcaption>
+      </figure>
+    </div>
     <div>
-      <h2 id="ablauf-titel">So läuft es</h2>
+      <h2 id="ablauf-titel">Was herauskommt</h2>
+      <p>Die Einheit enthält Lesetexte und Übungen mit Rückmeldung, wenn du willst im Kachelformat. Auf Wunsch nennt die Mühle dem
+      Chat Ziele aus dem LehrplanPLUS der Grund- und Mittelschule; das Aussehen wählst du aus elf Designs.</p>
+      <h2>So läuft es</h2>
       <ol class="ablauf">
-        <li>Du gibst Thema, Jahrgangsstufe und Minuten ein.</li>
-        <li>Du kopierst den Auftrag in deinen KI-Chat und die Antwort zurück. Fehlt etwas, zeigt die Seite einen Satz für den Chat.</li>
-        <li>Du lädst die Datei herunter und spielst sie in deinem Kurs über „Wiederherstellen“ ein.</li>
+        <li>Du gibst Thema, Jahrgangsstufe und Minuten ein und klickst auf „Weiter“.</li>
+        <li>Du kopierst den Text für den Chat aus der Mühle in deinen KI-Chat und die Antwort zurück. Fehlt
+          etwas, bekommst du eine Korrekturbitte für den Chat. Mit einem KI-Programm auf deinem Rechner
+          (<a href="verbinden.md">eigene KI</a>) entfällt das Kopieren.</li>
+        <li>Du lädst die Datei für die Lernplattform herunter und stellst sie nach Anleitung der Mühle über
+          „Wiederherstellen“ wieder her, zum Beispiel als neuen Kurs.</li>
       </ol>
-      <p class="chats">Eingerichtet für ByLKI, fobizz, AIS-Chat, MUCGPT, ChatGPT, Claude und Gemini. Durchläufe gab es bisher
-      mit ByLKI, fobizz und einem Claude-Modell, nicht jeder kam ohne Korrekturrunde durch; wie die anderen Chats antworten,
-      soll die Beta zeigen.</p>
-      <p class="chats">Die Seite ist in der Beta. Sie baut Kurssicherungen, aber einzelne Chats antworten noch in einer Form,
-      die sie nicht lesen kann; die Aufträge werden an echten Durchläufen verbessert.</p>
+      <p>Die Mühle ist für gängige KI-Chats eingerichtet; Konto, Kosten und Nutzungsbedingungen regelt der Anbieter, und
+      ob du einen Chat dienstlich nutzen darfst, klärst du mit deiner Schule.</p>
+      <p>Nimm das neueste Modell ohne Zusatz; Namen mit mini, fast, flash, lite, nano oder small sind die kleinen, und
+      solche Modelle brauchen öfter eine Korrekturbitte. Steht
+      „Auto“ voreingestellt, stell um, denn „Auto“ lässt den Dienst raten, und bei einem langen Text rät er oft klein. Gibt
+      es einen Schalter wie „Denken“ oder „ausführlich“, schalte ihn ein.</p>
+      <p class="chats">In den automatischen Tests klappt es meist ohne Korrekturbitte, in echten Chats noch nicht
+      immer.</p>
     </div>
   </div>
 </section>
@@ -228,23 +256,51 @@
       <li><a href="impressum.html">Impressum und Datenschutz</a></li>
       <li><a href="verbinden.md">Eigene KI verbinden</a></li>
       <li><a href="https://github.com/simon-sarkar/kursmuehle/tree/main/docs/kachel">Kachel fürs Schulportal</a></li>
-      <li><a href="https://github.com/simon-sarkar/kursmuehle">Repository</a></li>
+      <li><a href="https://github.com/simon-sarkar/kursmuehle">GitHub</a></li>
       <li><a href="https://github.com/simon-sarkar/kursmuehle/blob/main/docs/erfahrungen.md">Erfahrungen</a></li>
-      <li><a href="https://github.com/simon-sarkar/kursmuehle/blob/main/CHANGELOG.md">Changelog</a></li>
+      <li><a href="https://github.com/simon-sarkar/kursmuehle/blob/main/CHANGELOG.md">Änderungen</a></li>
     </ul>
-    <p>Kursmühle ist ein privates, nicht kommerzielles Projekt und kein Angebot der ByCS-Lernplattform.
+    <p>Kursmühle ist mein privates, nicht kommerzielles Projekt und kein Angebot der ByCS-Lernplattform.
     Rückmeldungen an kursmuehle@pm.me.</p>
-    <p class="leise">Code unter PolyForm Noncommercial 1.0.0, Texte unter CC BY-NC-SA 4.0. Diese Seite setzt keine
-    Cookies und lädt nichts von anderen Adressen. Die Mühle schickt nichts, was du eingibst, an kursmuehle.de; verbindest
-    du deine eigene KI, geht der Auftrag von deinem Rechner an den Anbieter oder das Programm, das du eingerichtet hast.</p>
+    <p class="leise">Schreib keine Namen von Schülerinnen und Schülern in Thema, Material oder Aufträge.</p>
+    <!-- Datenschutz: derselbe Wortlaut in impressum.html (test_landing.py vergleicht) -->
+    <p class="leise datenschutz">Kopierst du den Text für den Chat, bekommt der Chat nur diesen Text; von deinen
+    Eingaben sehe ich nichts. Mit eigener KI geht der Text von deinem Rechner an deren Anbieter oder Programm.</p>
+    <p class="leise datenschutz">Habe ich dich zum Test eingeladen, kann der Text über meinen Dienst ki.kursmühle.de an
+    einen KI-Anbieter gehen; der Dienst hält Text und Antwort höchstens zwei Stunden nach der letzten Anfrage bereit und
+    protokolliert keine Inhalte.</p>
   </div>
 </footer>
 
+<script src="start/themen.js"></script>
 <script>
 // „Weiter“ baut die Adresse start/#thema=…&jahrgang=…&minuten=…; das Fragment verlässt den Browser nicht.
 // Ohne Skript schickt das Formular dieselben Felder als ?thema=…, die Mühle liest beides.
+// Leeres Thema oder Minuten außerhalb 10 bis 300: eine Zeile mit roter Mühle unter den Feldern, keine Blase des Browsers.
 (function () {
-  var f = document.getElementById("start-form");
+  var f = document.getElementById("start-form"), meldung = document.getElementById("start-meldung");
+  function melden(id, text) {
+    var feld = document.getElementById(id);
+    meldung.textContent = "";
+    meldung.appendChild(document.getElementById("fehler-muehle").content.cloneNode(true));
+    meldung.appendChild(document.createTextNode(text));
+    feld.setAttribute("aria-invalid", "true");
+    feld.setAttribute("aria-describedby", "start-meldung");
+    feld.focus();
+  }
+  function aufheben() {
+    meldung.textContent = "";
+    [].forEach.call(f.querySelectorAll("[aria-invalid]"), function (e) {
+      e.removeAttribute("aria-invalid"); e.removeAttribute("aria-describedby"); });
+  }
+  function pruefen() {
+    var minuten = document.getElementById("f-minuten").value.trim(), m = Number(minuten);
+    if (!document.getElementById("f-thema").value.trim()) { melden("f-thema", "Gib ein Thema ein."); return false; }
+    if (minuten && !(m >= 10 && m <= 300)) {
+      melden("f-minuten", "Gib bei Minuten eine Zahl von 10 bis 300 ein."); return false; }
+    return true;
+  }
+  f.addEventListener("input", function (e) { if (e.target.getAttribute("aria-invalid")) aufheben(); });
   function adresse() {
     var wert = function (id) { return document.getElementById(id).value.trim(); };
     var thema = wert("f-thema"), jahrgang = wert("f-jahrgang"), minuten = wert("f-minuten");
@@ -253,7 +309,7 @@
     if (q && minuten) q += "&minuten=" + encodeURIComponent(minuten);
     return "start/" + (q ? "#" + q : "");
   }
-  f.addEventListener("submit", function (e) { e.preventDefault(); location.href = adresse(); });
+  f.addEventListener("submit", function (e) { e.preventDefault(); if (pruefen()) location.href = adresse(); });
   // Die Kacheln nehmen Eingaben in den Feldern mit.
   [].forEach.call(document.querySelectorAll("#kachel, #mini"), function (a) {
     a.addEventListener("click", function (e) {
@@ -285,7 +341,11 @@
       if (bleibt()) return;
       if (!a.classList.contains("dreht") || (ruhig && ruhig.matches)) { a.classList.remove("dreht"); return; }
       var m = getComputedStyle(rad).transform, w = 0;
-      if (m && m !== "none") { var z = m.match(/-?[\d.e]+/g).map(Number); w = Math.atan2(z[1], z[0]) * 180 / Math.PI; }
+      if (m && m !== "none") {                             // matrix(a, b, …); Werte wie 1.74533e-05 knapp neben 180° ganz lesen
+        var z = m.slice(m.indexOf("(") + 1).match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi).map(parseFloat);
+        w = Math.atan2(z[1], z[0]) * 180 / Math.PI;
+        if (!isFinite(w)) w = 0;
+      }
       a.classList.remove("dreht");
       if (w > 0) w -= 360;                                 // (-360, 0]
       var ziel = Math.floor(w / 180 - 1e-6) * 180;         // nächste halbe Umdrehung gegen den Uhrzeigersinn
@@ -335,17 +395,22 @@
   zeige();
 })();
 
-// Platzhalter: bei jedem Laden ein anderes Paar aus Thema und Jahrgangsstufe.
+// Platzhalter: bei jedem Laden ein anderes Paar aus Thema und Jahrgangsstufe, nur das Thema, ohne „zum Beispiel“.
+// Die Paare kommen aus start/themen.js (AP13.8, aus references/themen.yaml): window.KM_THEMEN als Liste von
+// [Thema, Jahrgangsstufe] oder {thema, jahrgang}. Fehlt die Datei, gilt die Liste hier.
 (function () {
-  var paare = [["Bruchrechnen", 6], ["Satz des Pythagoras", 9], ["Das Ohr", 7], ["Photosynthese", 8],
+  var aus = window.KM_THEMEN, paare = [];
+  if (Array.isArray(aus)) paare = aus.map(function (x) { return Array.isArray(x) ? x : [x && x.thema, x && x.jahrgang]; })
+      .filter(function (x) { return x[0]; });
+  if (!paare.length) paare = [["Bruchrechnen", 6], ["Satz des Pythagoras", 9], ["Das Ohr", 7], ["Photosynthese", 8],
     ["Die Französische Revolution", 8], ["Wetter und Klima", 5], ["Der Wasserkreislauf", 4], ["Nomen und Verben", 3],
     ["Simple past", 6], ["Prozentrechnung", 7], ["Das Eichhörnchen", 2], ["Der einfache Stromkreis", 5],
     ["Lineare Funktionen", 8], ["Eine Bewerbung schreiben", 9], ["Die mittelalterliche Stadt", 7], ["Aufbau der Zelle", 9],
     ["Die Lunge", 7], ["Netzwerke und IP-Adressen", 9], ["Säuren und Basen", 9], ["Die Uhr lesen", 2]];
   var p = paare[Math.floor(Math.random() * paare.length)];
   var t = document.getElementById("f-thema"), j = document.getElementById("f-jahrgang");
-  if (t && !t.value) t.placeholder = "zum Beispiel " + p[0];
-  if (j && !j.value) j.placeholder = String(p[1]);
+  if (t && !t.value) t.placeholder = String(p[0]);
+  if (j && !j.value && p[1] != null) j.placeholder = String(p[1]);
 })();
 </script>
 </body>

@@ -99,58 +99,73 @@
 
 <h2>Impressum</h2>
 <address>Simon Sarkar<br>Chiemgaustr. 140<br>81549 München<br>kursmuehle@pm.me</address>
-<p>Kursmühle ist ein privates, nicht kommerzielles Projekt. Es gehört nicht zur ByCS-Lernplattform und ist kein
+<p>Kursmühle ist mein privates, nicht kommerzielles Projekt. Es gehört nicht zur ByCS-Lernplattform und ist kein
 Angebot ihres Betreibers.</p>
 
 <h2>Datenschutz</h2>
-<p>Die Mühle läuft in deinem Browser. Sie schickt nichts, was du eingibst, an kursmuehle.de; es gibt dort keinen
-Server, der Eingaben annimmt (Ausnahme: der Testbetrieb mit Code, unten). Sie setzt keine Cookies und hat kein
-Tracking. Die Seiten laden nichts von anderen Adressen, außer bei deiner eigenen KI und im Testbetrieb.</p>
-<p>Verbindest du deine eigene KI, geht der Auftrag von deinem Rechner an den Anbieter, den du selbst eingerichtet hast,
-oder an dein eigenes Programm; Adresse und Code dafür liegen in deinem Browser. Die Seite ruft dazu ein Programm auf
-deinem Rechner auf (127.0.0.1), erst wenn du „Eigene KI“ verbunden hast.</p>
-<p><strong>Testbetrieb mit Code.</strong> Wer von mir einen Testcode bekommen hat, kann die Mühle während der
-Testphase über eine bereitgestellte KI laufen lassen. Der Auftrag geht dann von deinem Browser an ki.kursmühle.de (ein
-Dienst bei Cloudflare, Inc., USA) und von dort an Anthropic (USA); die Kosten trage ich. Zweck ist allein, die Mühle
-mit Lehrkräften zu erproben; der Dienst endet mit der Testphase. Inhalte werden nicht protokolliert. Verlauf und
-Antwort liegen höchstens zwei Stunden im Zwischenspeicher des Dienstes, damit Teil 2 und Korrekturen den Zusammenhang
-haben, und verfallen dann. Gezählt werden die Aufträge je Code und Tag; nach falschen Codes wird die IP-Adresse eine
-Minute lang gesperrt. Anthropic verarbeitet die Aufträge nach seinen Bedingungen für die API. Gib im Testbetrieb keine
-personenbezogenen Daten ein.</p>
-<p>Damit eine angefangene Einheit nach dem Schließen des Tabs nicht verloren ist, sichert die Mühle sie im Speicher
-deines Browsers (IndexedDB). Dort bleibt sie, bis eine andere Einheit sie ersetzt, du sie mit „×“ verwirfst oder den
+<p>Die Mühle läuft in deinem Browser; bei kursmuehle.de wertet kein Server deine Eingaben aus. Die Seiten setzen keine
+Cookies, haben kein Tracking und laden nichts von fremden Servern, außer wenn du eine eigene KI verbindest oder in der
+Testphase einen Testcode nutzt (unten).</p>
+<p>Ist JavaScript in deinem Browser ausgeschaltet oder blockiert, schickt das Startformular Thema, Jahrgangsstufe und
+Minuten als Teil der Seitenadresse an kursmuehle.de; sie landen dann in den Zugriffsprotokollen von GitHub, dem Dienst,
+bei dem die Seiten liegen.</p>
+<p>Schreib keine Namen von Schülerinnen und Schülern in Thema, Material oder Aufträge.</p>
+<!-- Datenschutz: derselbe Wortlaut in index.html (test_landing.py vergleicht) -->
+<p class="datenschutz">Kopierst du den Text für den Chat, bekommt der Chat nur diesen Text; von deinen
+Eingaben sehe ich nichts. Mit eigener KI geht der Text von deinem Rechner an deren Anbieter oder Programm.</p>
+<p class="datenschutz">Habe ich dich zum Test eingeladen, kann der Text über meinen Dienst ki.kursmühle.de an
+einen KI-Anbieter gehen; der Dienst hält Text und Antwort höchstens zwei Stunden nach der letzten Anfrage bereit und
+protokolliert keine Inhalte.</p>
+<p>Was du in einen Chat einfügst, unterliegt den Bedingungen seines Anbieters.</p>
+<p>Verbindest du deine eigene KI, liegen Adresse und Zugangscode dafür in deinem Browser. Erst wenn du unter „Eigene KI“
+eine Verbindung eingerichtet hast, ruft die Seite ein Programm auf, das auf deinem eigenen Rechner läuft (die Adresse
+127.0.0.1 steht für deinen Rechner).</p>
+<p><strong>Testphase mit Code.</strong> Habe ich dich zum Test eingeladen und dir einen Testcode gegeben, kannst du
+die Mühle während der Testphase über eine bereitgestellte KI laufen lassen. Der Text geht dann von deinem Browser an ki.kursmühle.de (ein
+Dienst bei Cloudflare, Inc., USA) und von dort an Anthropic (USA); die Kosten trage ich.</p>
+<p>Den Dienst gibt es nur, um die Mühle mit dir und anderen Lehrkräften zu erproben; er endet mit der Testphase.
+Text und Antwort bleiben höchstens zwei Stunden nach der letzten Anfrage im Zwischenspeicher des Dienstes, damit eine
+weitere Anfrage zur selben Einheit und Korrekturbitten daran anknüpfen können; danach werden sie gelöscht.</p>
+<p>Gezählt werden die Anfragen je Code und Tag; nach fünf falschen Codes wird die IP-Adresse eine Minute lang gesperrt. Anthropic verarbeitet die
+Anfragen nach seinen Bedingungen für die Programmierschnittstelle (API). Gib in der Testphase keine personenbezogenen
+Daten ein.</p>
+<p>Damit eine angefangene Einheit nach dem Schließen der Seite nicht verloren ist, legt die Mühle sie in deinem Browser
+ab. Dort bleibt sie, bis eine andere Einheit sie ersetzt, du sie mit „×“ verwirfst oder den
 Browserspeicher löschst; ich sehe davon nichts.</p>
-<p>Den Text für den Chat kopierst du selbst in einen Chat deiner Wahl, außer bei deiner eigenen KI. Was dort
-eingefügt oder hingeschickt wird, unterliegt den Bedingungen dieses Chats oder Anbieters.</p>
-<p>Die Seiten liegen bei GitHub Pages (GitHub, Inc., USA). Beim Abruf speichert GitHub Zugriffsdaten wie die
-IP-Adresse in Protokollen; GitHub nimmt nach eigener Angabe am EU-US Data Privacy Framework teil (siehe die
+<p>Setzt du den Haken für den Lehrplanbezug, lädt die Mühle die Lehrplantexte deines Fachs als Datei von kursmuehle.de
+nach; welche Datei abgerufen wird, steht wie jeder Abruf in den Protokollen von GitHub.</p>
+<p>Die Seiten liefert GitHub aus (GitHub, Inc., USA, Dienst „GitHub Pages“). Beim Abruf speichert GitHub Zugriffsdaten
+wie die IP-Adresse in Protokollen; GitHub nimmt nach eigener Angabe am Datenschutzabkommen zwischen EU und USA („EU-US
+Data Privacy Framework“) teil (siehe die
 <a href="https://docs.github.com/de/site-policy/privacy-policies/github-general-privacy-statement">Datenschutzerklärung
 von GitHub</a>). Auf diese Protokolle habe ich keinen Zugriff.</p>
 
 <table>
-  <thead><tr><th>Eingabe</th><th>Wo sie bleibt</th></tr></thead>
+  <thead><tr><th>Daten</th><th>Wo sie bleiben</th></tr></thead>
   <tbody>
     <tr><td>Thema, Jahrgangsstufe, Minuten, Einstellungen</td><td>in deinem Browser</td></tr>
-    <tr><td>Antwort des Chats, Bilder, die du an einer Karte einsetzt</td><td>in deinem Browser</td></tr>
-    <tr><td>Angefangene Einheit</td><td>im Speicher deines Browsers, bis eine andere Einheit sie ersetzt oder du sie verwirfst</td></tr>
-    <tr><td>Kursdatei und Datei für die Lernplattform</td><td>als Download auf deinem Rechner</td></tr>
+    <tr><td>Antwort des Chats, Bilder, die du in der Einheit einsetzt</td><td>in deinem Browser</td></tr>
+    <tr><td>Angefangene Einheit</td><td>im Browserspeicher, bis eine andere Einheit sie ersetzt oder du sie verwirfst</td></tr>
+    <tr><td>Gespeicherte Einheit und Datei für die Lernplattform</td><td>als Download auf deinem Rechner</td></tr>
     <tr><td>Text für den Chat</td><td>in deiner Zwischenablage; nach dem Einfügen beim Anbieter des Chats</td></tr>
-    <tr><td>Adresse und Code der eigenen KI</td><td>in deinem Browser; der Auftrag geht von deinem Rechner an den Anbieter oder das Programm, das du eingerichtet hast</td></tr>
-    <tr><td>Auftrag im Testbetrieb mit Code</td><td>höchstens zwei Stunden bei ki.kursmühle.de (Cloudflare), dann gelöscht; bei Anthropic nach dessen Bedingungen</td></tr>
+    <tr><td>Adresse und Zugangscode der eigenen KI</td><td>in deinem Browser; der Text geht von deinem Rechner an den Anbieter oder das Programm, das du eingerichtet hast</td></tr>
+    <tr><td>Text in der Testphase mit Code</td><td>höchstens zwei Stunden nach der letzten Anfrage bei ki.kursmühle.de (Cloudflare), dann gelöscht; bei Anthropic nach dessen Bedingungen</td></tr>
     <tr><td>Rückmeldung</td><td>bei mir, wenn du sie selbst per Mail schickst</td></tr>
-    <tr><td>Abruf der Seite</td><td>in den Zugriffsprotokollen von GitHub</td></tr>
+    <tr><td>Abruf der Seite und der Lehrplantexte</td><td>in den Zugriffsprotokollen von GitHub</td></tr>
   </tbody>
 </table>
 
 <h2>Lizenz</h2>
 <p>Code unter PolyForm Noncommercial 1.0.0, Texte und Vorlagen unter CC BY-NC-SA 4.0; der Wortlaut steht im
-<a href="https://github.com/simon-sarkar/kursmuehle">Repository</a>. Pyodide, PyYAML und tzdata, die die Mühle mitbringt,
-stehen unter ihren eigenen Lizenzen
-(<a href="https://github.com/simon-sarkar/kursmuehle/blob/main/docs/start/vendor/LIZENZEN.md">Liste</a>). Für Kurse,
-die du mit Kursmühle erstellst, gelten diese Lizenzen nicht.</p>
-<p>Die Lehrplantexte unter <code>start/lehrplan/</code> stammen aus LehrplanPLUS des Staatsinstituts für Schulqualität und
-Bildungsforschung (ISB), <a href="https://www.lehrplanplus.bayern.de">lehrplanplus.bayern.de</a>. Sie sind amtliche
-Werke, stehen wörtlich und nicht unter den Lizenzen dieses Projekts.</p>
+<a href="https://github.com/simon-sarkar/kursmuehle">Projekt auf GitHub</a>. Die mitgelieferten Programmteile Pyodide,
+PyYAML und tzdata sowie die Titelschriften der Designs stehen unter eigenen Lizenzen
+(<a href="https://github.com/simon-sarkar/kursmuehle/blob/main/docs/start/vendor/LIZENZEN.md">Liste der Lizenzen</a>).</p>
+<p>Für Kurse,
+die du mit Kursmühle erstellst, gelten die Lizenzen dieses Projekts nicht; eine Titelschrift, die die Mühle in den Kurs
+einbettet, bleibt unter der SIL Open Font License.</p>
+<p>Die Lehrplantexte in der Mühle stammen aus dem LehrplanPLUS des Staatsinstituts für
+Schulqualität und Bildungsforschung (ISB), <a href="https://www.lehrplanplus.bayern.de">lehrplanplus.bayern.de</a>. Sie
+sind amtliche Werke und stehen wörtlich in der Mühle; die Lizenzen dieses Projekts gelten für sie nicht.</p>
 </div></main>
 <footer><div class="innen"><a href="./">Startseite</a> · <a href="start/">Mahlwerk starten</a></div></footer>
 <script>
@@ -166,7 +181,11 @@ Werke, stehen wörtlich und nicht unter den Lizenzen dieses Projekts.</p>
       if (bleibt()) return;
       if (!a.classList.contains("dreht") || (ruhig && ruhig.matches)) { a.classList.remove("dreht"); return; }
       var m = getComputedStyle(rad).transform, w = 0;
-      if (m && m !== "none") { var z = m.match(/-?[\d.e]+/g).map(Number); w = Math.atan2(z[1], z[0]) * 180 / Math.PI; }
+      if (m && m !== "none") {                             // matrix(a, b, …); Werte wie 1.74533e-05 knapp neben 180° ganz lesen
+        var z = m.slice(m.indexOf("(") + 1).match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi).map(parseFloat);
+        w = Math.atan2(z[1], z[0]) * 180 / Math.PI;
+        if (!isFinite(w)) w = 0;
+      }
       a.classList.remove("dreht");
       if (w > 0) w -= 360;                                 // (-360, 0]
       var ziel = Math.floor(w / 180 - 1e-6) * 180;         // nächste halbe Umdrehung gegen den Uhrzeigersinn
