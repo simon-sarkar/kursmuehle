@@ -1,9 +1,7 @@
-/* Kursmühle – Oberfläche (AP13): Schrittfolge in einer Spalte, ab Schritt 5 rechts der Rand mit Zahlen und Herkunft;
- * auf dem Handy untereinander. Palette aus docs/make_logo.py; die zwei Herkunftstöne sind Ocker und Anthrazit auf Weiß
- * gemischt (keine Wertung, kein Rot oder Grün). AP13.1: Ocker als Knopf nur für das Ergebnis (`.knopf.ergebnis`);
- * Hauptknöpfe der Schritte und Auswahlrahmen sind Anthrazit, die Verwaltung steht als Textlinks in der Kopfzeile.
- * AP13.3: dunkles Schema unter :root[data-theme="dark"] (Palette der Landingpage, Schlüssel `kursmuehle-schema` in
- * localStorage, hell ist Standard); alle Farben sind Token, Textlinks Anthrazit (dunkel: Creme), Fokusrahmen Ocker. */
+/* Kursmühle – Oberfläche: Schrittfolge in einer Spalte, ab Schritt 5 rechts der Rand mit Zahlen und Herkunft; auf dem
+ * Handy untereinander. Palette aus docs/make_logo.py; die zwei Herkunftstöne sind Ocker und Anthrazit auf Weiß gemischt
+ * (keine Wertung, kein Rot oder Grün). Ocker trägt als Knopf nur das Ergebnis (`.knopf.ergebnis`), damit es auffällt.
+ * Dunkles Schema unter :root[data-theme="dark"] wie auf der Landingpage; alle Farben sind Token. */
 :root {
   color-scheme: light;
   --creme: #f3e9d8;              /* Fläche in Creme: Rand, Nummern, Infobox */
@@ -19,7 +17,7 @@
   --ocker-hover: #cf9632;
   --ergebnis-text: #2a2a2a;      /* Schrift auf Ocker, in beiden Schemata */
   --ocker-tief: #8a6416;
-  --link: #2a2a2a;               /* AP13.1 offen, AP13.3 entschieden: Textlinks in Anthrazit */
+  --link: #2a2a2a;
   --fokus: #d9a441;
   --haupt: #2a2a2a;              /* Hauptknopf, aktive Schrittnummer */
   --haupt-text: #f3e9d8;
@@ -128,7 +126,6 @@ p { margin: 0 0 10px; }
 .knopf.ergebnis:hover { background: var(--ocker-hover); }
 .knopf:disabled { opacity: 0.45; cursor: default; }
 .textlink { background: none; border: 0; padding: 6px 0; font: inherit; color: var(--link); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-.schema { margin-left: 2px; }
 .feld { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: var(--leise); }
 input[type=text], input[type=number], select, textarea { font: inherit; font-size: 16px; color: var(--text); background: var(--flaeche);
   border: 1px solid var(--linie); border-radius: 8px; padding: 9px 10px; min-height: 44px; width: 100%; }
@@ -172,7 +169,7 @@ select { appearance: auto; }
 .schritt:not(.auf) .s-inhalt { display: none; }
 .s-inhalt > .knopf.haupt { margin-top: 16px; }
 
-/* Hinweise beim ersten Durchlauf (AP13.1): unter der Überschrift, nie blockierend */
+/* Hinweise beim ersten Durchlauf: unter der Überschrift, nie blockierend */
 .s-hinweis { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; margin: 0 0 14px; padding: 10px 14px;
   border-left: 3px solid var(--linie); background: var(--grund); border-radius: 0 8px 8px 0; font-size: 0.95rem; }
 .s-hinweis p { margin: 0; flex: 1 1 18rem; }
@@ -213,7 +210,7 @@ select { appearance: auto; }
   border-radius: var(--rund); background: var(--grund); font: inherit; font-size: 0.9rem; color: var(--text); cursor: pointer; text-align: center; }
 .aus-kachel:hover { border-color: var(--text); }
 .aus-kachel[aria-checked=true] { border-color: var(--text); box-shadow: inset 0 0 0 2px var(--text); background: var(--flaeche); font-weight: 650; }
-.aus-kachel > * { pointer-events: none; }        /* Klick trifft immer den Knopf (AP13.3, Firefox) */
+.aus-kachel > * { pointer-events: none; }        /* Klick trifft immer den Knopf (Firefox) */
 .aus-mini svg { display: block; width: 100%; height: auto; border-radius: 6px; box-shadow: 0 0 0 1px var(--linie); }
 .farben .aus-kachel { width: 104px; }
 .bilder-wahl .aus-kachel { width: 104px; }
@@ -243,7 +240,7 @@ select { appearance: auto; }
 .text-ansehen summary { cursor: pointer; color: var(--link); padding: 6px 0; }
 .text-ansehen textarea { min-height: 12rem; font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace; }
 
-/* Warnung vor dem Kopieren, Phasenwarnung an der Liste (AP13.1) */
+/* Warnung vor dem Kopieren, Phasenwarnung an der Liste */
 .warnung-box { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 12px; padding: 10px 14px;
   border-radius: 8px; background: var(--warn-flaeche); color: var(--text); }
 .warnung-box p { margin: 0; flex: 1 1 16rem; }
@@ -251,13 +248,13 @@ select { appearance: auto; }
 
 /* 5 Einfügen, Karten */
 .einfuegen textarea { min-height: 9rem; font: 14px/1.45 ui-monospace, Menlo, Consolas, monospace; }
-/* Statuskarte unter einem Einfügefeld (AP13.3): Rahmen statt einer Zeile */
+/* Statuskarte unter einem Einfügefeld: Rahmen, eine Zeile wird übersehen */
 .stand-karte { margin: 10px 0 0; padding: 10px 14px; border: 1px solid var(--linie); border-left-width: 4px; border-radius: 8px;
   background: var(--flaeche); font-size: 0.95rem; }
 .stand-karte.ok { border-left-color: var(--ok); }
 .stand-karte.fehler { border-left-color: var(--fehler); }
 .einfuegen .kopieren { margin-top: 8px; }
-/* AP13.4: Diagnose einer Antwort ohne Bausteine */
+/* Diagnose einer Antwort ohne Bausteine */
 .diagnose-karte p { margin: 0 0 6px; }
 .diagnose-karte ul { margin: 0 0 8px; padding-left: 18px; }
 .diagnose-karte code { font-size: 0.88em; background: var(--creme); padding: 0 3px; border-radius: 3px; overflow-wrap: anywhere; }
@@ -349,7 +346,7 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .hinzufuegen { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
 .hinzufuegen select { width: auto; min-width: 0; flex: 0 1 18rem; }
 
-/* Bilder (AP13.1): eine Zeile je Bildwunsch mit beiden Texten, Upload und Ablagefläche */
+/* Bilder: eine Zeile je Bildwunsch */
 .bilder-liste { list-style: none; margin: 0 0 12px; padding: 0; border: 1px solid var(--linie); border-radius: var(--rund); }
 .bild-zeile { padding: 12px 14px; border-top: 1px solid var(--linie); }
 .bild-zeile:first-child { border-top: 0; }
@@ -359,6 +356,11 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .bild-status { margin-left: auto; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 6px; }
 .bild-status .punkt { background: var(--leer); }
 .bild-zeile.da .bild-status .punkt { background: var(--ok); }
+.bild-zeile.ungeprueft { background: var(--warn-flaeche); }
+.bild-zeile.ungeprueft .bild-status .punkt { background: var(--warn); }
+.bild-pruefung { margin: 10px 0 0; padding: 0; border: 0; font-size: 0.9rem; }
+.bild-pruefung legend { padding: 0; color: var(--leise); font-size: 0.85rem; }
+.bild-frage { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
 .bild-text { margin: 6px 0 0; font-size: 0.93rem; }
 .bild-text-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; font-size: 0.85rem; color: var(--leise); }
 .bild-text p { margin: 2px 0 0; overflow-wrap: anywhere; }
@@ -454,7 +456,7 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
   .kopf-links { margin-left: auto; }
 }
 
-/* AP13.4: Schleife – drei Wege unter der Karte; weggelassene Karte gestrichen */
+/* Schleife: drei Wege unter der Karte; weggelassene Karte gestrichen */
 .ausweg { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--linie); border-left: 4px solid var(--warn); border-radius: 8px; background: var(--warn-flaeche); }
 .ausweg-titel { margin: 0 0 6px; font-weight: 700; }
 .ausweg-weg { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; margin: 6px 0; }

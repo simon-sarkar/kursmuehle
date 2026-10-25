@@ -9,7 +9,7 @@
  *             Kennzahlen in einem Lauf
  *           | mappe {funktion, args}  gen.mappe: verschiebe, entferne, umbenennen, kennzahlen, angaben_lesen,
  *             angaben_schreiben, geplant, planung, auffuellen, antwort, modus, einsetzen, anhaengen (Liste in PY_BRUECKE)
- *           | prompt {funktion, args}  gen.prompt: einheit, baustein, korrektur, fragen, fachcheck, vergleich (AP11)
+ *           | prompt {funktion, args}  gen.prompt: einheit, baustein, korrektur, fragen, fachcheck, vergleich
  * Bytes laufen als ArrayBuffer/Uint8Array (Assets: {name: Uint8Array}); die .mbz kommt als übertragener ArrayBuffer.
  * Klassischer Worker ohne ES-Module (läuft so auch aus einem Blob, Offline-Datei später). */
 "use strict";
@@ -85,7 +85,7 @@ var PY_BRUECKE = [
   "",
   "_MAPPE = {'verschiebe', 'entferne', 'umbenennen', 'kennzahlen', 'angaben_lesen', 'angaben_schreiben', 'geplant',",
   "          'planung', 'auffuellen',",
-  "          'antwort', 'modus', 'einsetzen', 'anhaengen', 'dateiname'}",
+  "          'antwort', 'modus', 'einsetzen', 'anhaengen', 'dateiname', 'bild_verkleinert'}",
   "_PROMPT = {'einheit', 'baustein', 'korrektur', 'diagnose', 'fragen', 'fachcheck', 'vergleich'}",
   "",
   "def km_mappe(e):",

@@ -1,5 +1,5 @@
-/* Kursmühle – Messseite für den Autor (aus der Testseite von AP10a): Ladezeit, Prüfzeit, Bauzeit, WASM-Heap auf dem
- * eigenen Gerät messen und als Text kopieren. Braucht app.js (Kern `km`); keine Oberfläche für Lehrkräfte. */
+/* Kursmühle – Messseite für den Autor: Ladezeit, Prüfzeit, Bauzeit, WASM-Heap auf dem
+ * eigenen Gerät messen und als Text kopieren. Braucht kern.js (Kern `km`); keine Oberfläche für Lehrkräfte. */
 "use strict";
 
 (function () {
@@ -161,7 +161,7 @@
     setTimeout(function () { pruefeJetzt(textEl.value); }, 50);
   });
 
-  // Jede gewählte Kursdatei öffnen, prüfen und bauen (seit AP12a statt der gebündelten Beispielmappen)
+  // Jede gewählte Kursdatei öffnen, prüfen und bauen
   $("messen-dateien").onchange = async function (ev) {
     var dateien = Array.prototype.slice.call(ev.target.files || []);
     ev.target.value = "";

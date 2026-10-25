@@ -163,7 +163,7 @@
      "rolle": "lesen",
      "dehnbar": true,
      "bausteine": [
-      "automatisch: Lesetext mit Fragen | Eine Seite in vier Schritten: 1. neue Begriffe einführen, jeden an einem Beispiel; 2. Fragen, in denen die Lernenden die Begriffe an Beispielen anwenden, als Quiz direkt nach der Seite (id mit -2); 3. die Kernaussage im Merke-Kasten festhalten; 4. die Kernaussage an Fällen zeigen, Schritt für Schritt, wenn das Thema ein Verfahren hat."
+      "automatisch: Lesetext mit Fragen | Eine Seite: neue Begriffe einführen, jeden an einem Fall; Fragen zum Anwenden der Begriffe als Quiz direkt nach der Seite (id mit -2); die Kernaussage im Merke-Kasten; hat das Thema ein Verfahren, die Kernaussage Schritt für Schritt an Fällen."
      ]
     },
     {
@@ -480,6 +480,15 @@
     "max": null
    }
   ],
+  "bild_hochladen": {
+   "kante": 1200,
+   "qualitaet": 85
+  },
+  "bild_pruefung": [
+   "Text im Bild lesbar oder keiner",
+   "Pfeile zeigen auf das Richtige",
+   "keine fremden Symbole oder Gesten"
+  ],
   "faecher": [
    "Biologie",
    "Chemie",
@@ -658,5 +667,5 @@
   "Geschichte",
   "Lesebuch"
  ],
- "version": "2.0.0-b5"
+ "version": "2.0.0-b6"
 }

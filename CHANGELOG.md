@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.0.0-b6 – 2026-10-24 (AP13.4b: Bild in jedem Baustein, Hinweis als Rückmeldung, kürzerer Text, Bilder beim Hochladen)
+
+- Eine `Bild:`-Zeile darf in jedem Baustein an jeder Stelle stehen, auch in Zuordnen und Quiz; in Übungen steht das Bild über der Übung oder in der Beschreibung der Aktivität.
+- „Die Zeile mit den Gruppen fehlt“ erscheint nur noch, wenn im Baustein wirklich keine `zonen:` steht.
+- Ein Hinweis in Zuordnen, Lückentext oder Quiz erscheint als Rückmeldung zur ganzen Übung; bei Lernkarten sagt die Mühle gelb, dass er nicht angezeigt wird.
+- „Lösungen gegenprüfen“ übernimmt aus Übungen keine Hinweise, Merksätze und Bilder mehr.
+- Der Text für den Chat ist kürzer (sechs Karten mit allen acht Typen unter 12 KB) und zeigt den Tipp im Lückentext an einem Beispiel.
+- Ab Teil 2 erfährt der Chat, dass die Abschnittsüberschrift die Minuten der ganzen Einheit trägt; die Mühle setzt sie beim Einfügen selbst.
+- Der Bildprompt verlangt Bilder ohne Wörter, nur mit Ziffern an Pfeilen, die Legende in der Unterschrift, und beschreibt, was zu sehen ist, statt was fehlen soll.
+- Hochgeladene Bilder ohne Transparenz speichert die Mühle als JPEG mit 1200 px langer Kante, sonst als PNG; die Zeile nennt die Größe vorher und nachher.
+- Im Schritt Bilder stehen je Bild drei Prüffragen; ein Bild, dessen Fragen nicht abgehakt sind, bleibt gelb „ungeprüft“.
+- Haben die Bilder einer Einheit zusammen mehr als 3 MB, ist das am Rand gelb.
+
 ## 2.0.0-b5 – 2026-10-24 (AP13.4: nachsichtiger Parser, Korrektursätze, Schleife mit Auswegen, Bilder in Stufen, Kontext, Übungen)
 
 - Die Mühle liest Bausteine mit drei bis sechs Rauten, übergeht Trennlinien (`---`), nimmt `Beispiel: Text` in einer Zeile und einen Hinweis nach der Zuordnen-Liste an; eine Frage ohne `MC:` mit ✔-Liste gilt als Multiple Choice.

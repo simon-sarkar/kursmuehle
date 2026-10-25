@@ -7,7 +7,7 @@
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 <link rel="stylesheet" href="ansicht.css">
 <script>
-// AP13.3: dasselbe Farbschema wie die Landingpage (localStorage „kursmuehle-schema“), vor dem Zeichnen; hell ist Standard
+// dasselbe Farbschema wie die Landingpage (localStorage „kursmuehle-schema“), vor dem Zeichnen; hell ist Standard
 (function () { try { if (localStorage.getItem("kursmuehle-schema") === "dunkel") document.documentElement.dataset.theme = "dark"; } catch (e) {} })();
 </script>
 </head>
@@ -33,9 +33,9 @@
 </div>
 <p id="testfassung" class="testfassung" hidden></p>
 
-<!-- AP13: Schrittfolge. Jeder Schritt erscheint erst, wenn der vorige getan ist; erledigte Schritte stehen als eine
-     aufklappbare Zeile darüber. Die Kursdatei ist in beiden Zweigen („Mach du“, „Ich steuere“) dieselbe. AP13.1: Schritt
-     „Bilder“ (data-nr 5.5) nur, wenn die Antwort Bildwünsche hat; die Nummern zählt app.js; je Schritt beim ersten
+<!-- Schrittfolge. Jeder Schritt erscheint erst, wenn der vorige getan ist; erledigte Schritte stehen als eine
+     aufklappbare Zeile darüber. Die Kursdatei ist in beiden Zweigen („Mach du“, „Ich steuere“) dieselbe. Schritt
+     „Bilder“ (data-nr 5.5) nur, wenn die Antwort Bildwünsche hat; die Nummern zählt schritte.js; je Schritt beim ersten
      Erreichen ein Hinweis aus hinweise.json. -->
 <main class="seite">
  <h1 class="unsichtbar">Kursmühle: Einheit für die ByCS-Lernplattform</h1>
@@ -81,7 +81,7 @@
           <span class="zweig-name">Ich steuere</span>
           <span class="zweig-zeile">Du wählst den Aufbau, schreibst Aufträge zu einzelnen Bausteinen und stellst mehr ein.</span></button>
       </div>
-      <!-- AP13.4: Kontext im Zweig „Mach du“, beide Felder freiwillig; dieselben Angaben wie unter „Mehr einstellen“ -->
+      <!-- Kontext im Zweig „Mach du“, beide Felder freiwillig; dieselben Angaben wie unter „Mehr einstellen“ -->
       <div id="mach-teil" class="mach-teil" hidden>
         <label class="feld feld-breit">Worum geht es genau? <span class="feld-zeile">freiwillig</span>
           <textarea id="m-kontext" class="von-lehrkraft" rows="3" maxlength="600" spellcheck="true"
@@ -137,7 +137,7 @@
           <div id="aus-format" class="kacheln-wahl" role="radiogroup" aria-labelledby="aus-format-t"></div></div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="aus-farbe-t">Farbe</h3>
           <div id="aus-farbe" class="kacheln-wahl farben" role="radiogroup" aria-labelledby="aus-farbe-t"></div></div>
-        <!-- AP13.4: Zahl der Bilder (Steckbrief kurs.bilder) und Darstellung der Übungen (kurs.website) -->
+        <!-- Zahl der Bilder (Steckbrief kurs.bilder) und Darstellung der Übungen (kurs.website) -->
         <div class="aus-gruppe"><h3 class="unterkopf" id="aus-bilder-t">Bilder</h3>
           <div id="aus-bilder" class="kacheln-wahl bilder-wahl" role="radiogroup" aria-labelledby="aus-bilder-t"></div></div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="aus-website-t">Wie erscheinen Übungen?</h3>
@@ -204,16 +204,16 @@
         <textarea id="eingabe" rows="6" spellcheck="false" placeholder="Hier einfügen (Strg+V oder lange drücken)"></textarea>
         <div class="kopieren"><button type="button" id="eingabe-uebernehmen" class="knopf">Antwort übernehmen</button></div>
         <p id="eingabe-stand" class="stand-karte" role="status" aria-live="polite" hidden></p>
-        <!-- AP13.4: die Antwort ergab keinen Baustein – die ersten drei Meldungen mit Zeile und Zitat, Satz für den Chat -->
+        <!-- die Antwort ergab keinen Baustein: die ersten drei Meldungen mit Zeile und Zitat, Satz für den Chat -->
         <div id="eingabe-diagnose" class="stand-karte fehler diagnose-karte" role="status" hidden></div>
       </div>
-      <!-- AP13.3: gestückelter Text – Fortschritt, rote Karten erst nach dem letzten Teil -->
+      <!-- gestückelter Text: Fortschritt, rote Karten erst nach dem letzten Teil -->
       <div id="teil-stand" class="teil-stand" role="status" hidden>
         <p id="teil-stand-text"></p>
         <button type="button" id="teil-weiter" class="knopf haupt">Teil 2 kopieren</button>
         <p id="teil-kopiert" class="stand" aria-live="polite"></p>
       </div>
-      <!-- AP13.3: ein Korrekturweg – alle Sätze und neu beauftragten Bausteine, ein Text, eine Antwort, Einsetzen nach id: -->
+      <!-- ein Korrekturweg: alle Sätze und neu beauftragten Bausteine, ein Text, eine Antwort, Einsetzen nach id: -->
       <div id="korrektur" class="korrektur" hidden>
         <h3 id="korrektur-titel" class="unterkopf">Korrektur</h3>
         <ul id="korrektur-liste" class="korrektur-liste"></ul>
@@ -234,7 +234,7 @@
     </div>
   </section>
 
-  <!-- Bilder (AP13.1): nur, wenn die Antwort mindestens eine Zeile „Bildwunsch:“ hat -->
+  <!-- Bilder: nur, wenn die Antwort mindestens eine Zeile „Bildwunsch:“ hat -->
   <section id="schritt-bilder" class="schritt" data-nr="5.5" aria-labelledby="sb-titel" hidden>
     <h2 class="s-kopf"><button type="button" class="s-zeile" data-nr="5.5"><span class="s-nr">6</span>
       <span class="s-titel" id="sb-titel">Bilder einfügen</span><span class="s-fazit"></span></button></h2>
@@ -382,6 +382,11 @@
   if (j && !j.value) j.placeholder = String(p[1]);
 })();
 </script>
-<script src="app.js"></script>
+<script src="kern.js"></script>
+<script src="schritte.js"></script>
+<script src="karten.js"></script>
+<script src="chat.js"></script>
+<script src="bilder.js"></script>
+<script src="nachbau.js"></script>
 </body>
 </html>

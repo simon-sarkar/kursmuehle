@@ -1,0 +1,364 @@
+/* Kursmühle – Text für den Chat (Auswahl, Stückelung, Kopieren) und Einfügen der Antwort mit Diagnose. */
+"use strict";
+
+(function () {
+  if (!document.getElementById("schritt-5")) return;
+  var S = km.seite;
+  var $ = S.$, KOPIERT = S.KOPIERT, Z = S.Z, auswertung = S.auswertung, autosave = S.autosave, chatInfo = S.chatInfo,
+      einheitTag = S.einheitTag, el = S.el, erledigtBis = S.erledigtBis, felderFuellen = S.felderFuellen,
+      geaendert = S.geaendert, inhalt = S.inhalt, karteNach = S.karteNach, kb = S.kb, kopieren = S.kopieren,
+      nrVon = S.nrVon, schleifeMerken = S.schleifeMerken, schritt = S.schritt, sektion = S.sektion,
+      teileOffen = S.teileOffen, texte = S.texte, zeichne = S.zeichne, zeichneSchritte = S.zeichneSchritte,
+      zeigeFehler = S.zeigeFehler, zweig = S.zweig;
+  function textGroesse() { return texte.teile.length ? new Blob([texte.teile[0]]).size : 0; }
+
+  function textArt() {
+    if (zweig() !== "steuer") return Z.mappe && Z.mappe.anhaengen ? "leer" : "einheit";
+    return (document.querySelector("input[name=text-art]:checked") || {}).value || "einheit";
+  }
+
+  function zeichneChat() {
+    var gewaehlt = !!(Z.mappe && Z.mappe.chat && chatInfo(Z.mappe.chat));
+    $("chat-wahl").hidden = gewaehlt && !S.chatWahlOffen;
+    $("chat-text").hidden = !gewaehlt || S.chatWahlOffen;   // „Anderer Chat“: nur die Kacheln, der Text bleibt erhalten
+    Array.prototype.forEach.call(document.querySelectorAll("#chat-knoepfe [data-chat]"), function (b) {
+      b.setAttribute("aria-pressed", String(gewaehlt && b.dataset.chat === Z.mappe.chat));
+    });
+    zeichnePlanung();
+    if (!gewaehlt) return;
+    var c = chatInfo(Z.mappe.chat);
+    var eigene = Z.mappe.bausteine.filter(function (k) { return (k.einheit || "") === einheitTag(); });
+    var leer = eigene.filter(function (k) { return k.geplant; }).length;
+    var voll = eigene.filter(function (k) { return !k.geplant; }).length;
+    $("art-leer-l").hidden = !(leer && voll);
+    var art = document.querySelector("input[name=text-art]:checked");
+    if (art && art.closest("label").hidden) document.querySelector("input[name=text-art][value=einheit]")
+        .checked = true;
+    $("chat-aufwand").hidden = !c.aufwand;
+    $("chat-aufwand").textContent = c.aufwand || "";
+    var tw = $("teil-wahl"); tw.innerHTML = "";
+    tw.hidden = texte.teile.length < 2;
+    texte.teile.forEach(function (_, i) {
+      tw.appendChild(el("button", { type: "button", cls: "klein teil-knopf", "data-teil": i,
+          "aria-pressed": i === texte.teil ? "true" : "false",
+        text: "Teil " + (i + 1) + (texte.kopiert[i] ? " (kopiert)" : "") }));
+    });
+    var t = texte.teile[texte.teil] || "";
+    $("chat-zeile").textContent = !t ? (Z.geladen ?
+        "Der Text entsteht …" : "Der Text entsteht, sobald die Seite bereit ist.")
+      : "Für " + c.text + (texte.teile.length > 1 ? ", Teil " + (texte.teil + 1) + " von " + texte.teile.length +
+          ". Je Teil: in dasselbe Gespräch einfügen, die Antwort in Schritt " + nrVon(5) +
+          " übernehmen, dann der nächste Teil." : "") + " · " + kb(new Blob([t]).size);
+    if ($("chat-text-feld").value !== t) $("chat-text-feld").value = t;
+    $("text-kopieren").disabled = !t;
+    $("text-kopieren").textContent = texte.teile.length > 1 ? "Teil " + (texte.teil + 1) +
+        " kopieren" : "Text kopieren";
+  }
+
+  // Plan der Einheit (gen/mappe.py planung): Warnung vor dem Kopieren und an der Kartenliste, keine Sperre
+  function planungText() {
+    var p = Z.kennzahlen && Z.kennzahlen.planung;
+    if (!p || (!p.zu_wenig && !p.fehlen.length)) return "";
+    return [p.zu_wenig ? p.text + ". Bausteine ergänzen?" : ""].concat(p.fehlen.map(function (f) { return f + "."; }))
+        .filter(Boolean).join(" ");
+  }
+  function zeichnePlanung() {
+    var t = planungText();
+    $("kopier-warnung").hidden = !t || !Z.mappe || !chatInfo(Z.mappe.chat);
+    $("kopier-warnung-text").textContent = t;
+    $("karten-warnung").hidden = !t || zweig() !== "steuer";
+    $("karten-warnung").textContent = t;
+  }
+  $("auffuellen").onclick = async function () {
+    if (!Z.mappe) return;
+    try {
+      await km.bereit();
+      Z.mappe = await km.mappeFn("auffuellen", [Z.mappe]);
+      Z.kennzahlen = await km.mappeFn("kennzahlen", [Z.mappe, Z.pruefung, null, Z.steckbrief_text]);
+      zeichne(); geaendert(); textSpaeter(0);
+      $("kopiert").textContent = "Bausteine ergänzt. Sie stehen jetzt im Text unten.";
+      $("kopiert").className = "stand ok";
+    } catch (e) { zeigeFehler(e); }
+  };
+
+  function textSpaeter(ms) {
+    clearTimeout(S.textTimer);
+    S.textTimer = setTimeout(texteErzeugen, ms === undefined ? 400 : ms);
+  }
+  async function texteErzeugen() {
+    if (!Z.geladen || !Z.mappe || !Z.mappe.chat) { if (Z.mappe) zeichneChat(); return; }
+    var nr = ++texte.laeuft;
+    var art = textArt();
+    try {
+      // Teile aus gen/prompt.py: nur die laufende Einheit; nach dem ersten Kopieren gilt die eingefrorene Stückelung
+      var e = await km.prompt("einheit", [Z.mappe, Z.steckbrief_text, null, null, art === "leer"]);
+      var teile = e.teile;
+      if (nr !== texte.laeuft) return;           // ein neuerer Lauf ist schon unterwegs
+      if (art !== texte.art || teile.length !== texte.teile.length) { texte.teil = 0; texte.kopiert = {}; }
+      texte.art = art; texte.teile = teile; texte.ids = e.ids || [];
+      if (texte.teil >= teile.length) texte.teil = 0;
+      zeichneChat();
+      felderFuellen();
+    } catch (e) { zeigeFehler(e); }
+  }
+
+  $("chat-knoepfe").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-chat]"); if (!b || !Z.mappe) return;
+    Z.mappe.chat = b.dataset.chat;
+    S.chatWahlOffen = false;
+    zeichneChat(); geaendert(); textSpaeter(0); zeichneSchritte();
+    setTimeout(function () { var k = $("text-kopieren"); if (k) k.focus({ preventScroll: true }); }, 0);
+  });
+  $("chat-aendern").onclick = function () {
+    S.chatWahlOffen = true;
+    if (schritt() > 4) S.auf[4] = true;
+    zeichneSchritte(); zeichneChat();
+    sektion(4).scrollIntoView({ block: "start" });
+    var k = $("chat-knoepfe").querySelector("[aria-pressed=true]") || $("chat-knoepfe").querySelector("button");
+    if (k) k.focus({ preventScroll: true });
+  };
+  Array.prototype.forEach.call(document.querySelectorAll("input[name=text-art]"), function (r) {
+    r.addEventListener("change", function () { $("kopiert").textContent = ""; textSpaeter(0); });
+  });
+  $("teil-wahl").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-teil]"); if (!b) return;
+    texte.teil = parseInt(b.dataset.teil, 10); $("kopiert").textContent = ""; zeichneChat();
+  });
+
+  function textKopiert() {
+    var kopierterTeil = texte.teil + 1;
+    texte.kopiert[texte.teil] = true;
+    if (!Z.mappe) return;
+    Z.mappe.kopiert = true;
+    // beim ersten Kopieren eines gestückelten Textes Teilzahl und Zuordnung der Karten einfrieren
+    if (texte.teile.length > 1 && !Z.mappe.stueckelung) {
+      Z.mappe.stueckelung = { einheit: einheitTag() || null, leer: texte.art === "leer", ids: texte.ids,
+          eingefuegt: [] };
+    }
+    var naechster = texte.teile.length > 1 ? texte.teile.findIndex(function (_, i) { return !texte.kopiert[i]; }) : -1;
+    if (schritt() < 5) { erledigtBis(5); Z.mappe.schritt = 5; S.auf = {}; }
+    zeichne(); autosave();
+    if (naechster >= 0) {
+      texte.teil = naechster; zeichneChat();
+      $("kopiert").textContent = "Teil " + kopierterTeil + " kopiert. Füge ihn " + (kopierterTeil === 1 ?
+          "in ein neues Gespräch" : "in dasselbe Gespräch") + " ein und die Antwort in Schritt " + nrVon(5)
+        + "; danach kommt Teil " + (naechster + 1) + " dran.";
+    }
+  }
+  function textKopieren() { kopieren($("chat-text-feld").value, $("chat-text-feld"), $("kopiert"), KOPIERT,
+      textKopiert); }
+  // Vor dem ersten Kopieren einmal die Infobox (Rechte am Material, Nutzungsbedingungen des Chats)
+  $("text-kopieren").onclick = function () {
+    if (!S.infoboxAus) { $("infobox").hidden = false; $("infobox-ok").focus(); return; }
+    textKopieren();
+  };
+  $("infobox-ok").onclick = function () {
+    $("infobox").hidden = true;
+    if ($("infobox-nie").checked) { S.infoboxAus = true; km.einstellung("infobox_aus", true).catch(function () {}); }
+    else S.infoboxAus = true;                      // in dieser Sitzung nicht noch einmal
+    textKopieren();
+  };
+
+  function setzeModus(m) { var r = document.querySelector("input[name=modus][value=" + m + "]");
+      if (r) r.checked = true; }
+  var MODUS_TEXT = { ersetzen: "Einheit ersetzt", baustein: "nur diese Bausteine ersetzt",
+      anhaengen: "als weitere Einheit angehängt" };
+
+  // Antwort mit einem Modus einsetzen; vorher den Stand sichern, damit ein anderer Modus von dort aus neu einsetzt
+  async function einsetzen(text, modus, vorher) {
+    Z.mappe = JSON.parse(JSON.stringify(vorher.mappe)); Z.kurs_md = vorher.kurs_md;
+    var neu, meldung = "";
+    if (modus === "baustein") {
+      var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, text]);
+      if (!r.ersetzt.length && !r.eingefuegt.length) {
+        await km.stand(Z.kurs_md);
+        return { ok: false, text: r.fehler.join(" ") || "Kein Baustein passte zu einer Karte." };
+      }
+      var ids = r.ersetzt.concat(r.eingefuegt);
+      neu = r.kurs_md;
+      await km.stand(neu);
+      Z.mappe.bausteine.forEach(function (k) { if (ids.indexOf(k.id) >= 0) k.neu = false; });
+      if (r.fehler.length) meldung = " " + r.fehler.join(" ");
+      return { ok: true, n: ids.length, ids: ids, text: meldung };
+    }
+    if (modus === "anhaengen") neu = await km.mappeFn("anhaengen", [Z.kurs_md, text, Z.mappe.anhaengen || null]);
+    else neu = (await km.mappeFn("antwort", [text])).kursdatei;
+    var pr = await km.stand(neu);
+    if (modus === "anhaengen" && Z.mappe.anhaengen) delete Z.mappe.anhaengen;
+    return { ok: true, n: pr.bausteine.length, text: "" };
+  }
+
+  // Meldung unter einem Einfügefeld als Karte mit Rahmen: eine Zeile wird übersehen
+  function standKarte(e, text, art) {
+    e.hidden = !text; e.textContent = text || "";
+    e.className = "stand-karte" + (art ? " " + art : "");
+  }
+  // Antwort ohne Bausteine: die ersten drei Meldungen mit Zeile und Zitat, dazu als Satz für den Chat
+  function mitCode(text) {
+    var out = [];
+    String(text || "").split("`").forEach(function (t, i) { if (t) out.push(i % 2 ? el("code", { text: t }) : t); });
+    return out;
+  }
+  function diagnoseKarte(box, d) {
+    box.innerHTML = "";
+    box.hidden = !d;
+    if (!d) return;
+    if (d.leer) {
+      box.appendChild(el("p", { text: "Im Text stehen keine Bausteine. " + (d.tipp ? d.tipp +
+          "." : "Kopiere die ganze Antwort mit dem Kopierknopf des Chats.") }));
+      return;
+    }
+    box.appendChild(el("p", { text: "Die Mühle findet in der Antwort keinen Baustein:" }));
+    box.appendChild(el("ul", {}, d.meldungen.map(function (m) {
+      return el("li", { cls: "diagnose-zeile" }, [m.zeile ? "Zeile " + m.zeile + ": " : "", m.zitat ? el("code", {
+          text: m.zitat }) : null,
+        m.zitat ? ", " : ""].concat(mitCode(m.text)));
+    })));
+    var feld = el("textarea", { cls: "unsichtbar", readonly: true, "aria-hidden": "true", tabindex: "-1" });
+    feld.value = d.satz;
+    var stand = el("p", { cls: "stand", role: "status" });
+    var knopf = el("button", { type: "button", cls: "knopf diagnose-kopieren", text: "Satz für den Chat kopieren" });
+    knopf.onclick = function () { kopieren(d.satz, feld, stand,
+        "Kopiert. Füge ihn in deinen Chat ein und die Antwort hier ein."); };
+    box.appendChild(el("div", { cls: "kopieren" }, [knopf]));
+    box.appendChild(stand);
+    box.appendChild(feld);
+  }
+
+  function eigenerText(text) {
+    var t = String(text || "").trim();
+    if (!t) return "";
+    var gleich = function (x) { x = String(x || "").trim(); return !!x && (x === t || (t.length >= 40 &&
+        x.indexOf(t) >= 0) || (t.length >= 200 && t.indexOf(x.slice(0, 200)) >= 0)); };
+    if (gleich(S.korrektur.text) || S.korrekturen.some(function (k) { return gleich(k.satz); })) return "satz";
+    if (texte.teile.some(gleich)) return "text";
+    return "";
+  }
+  var EIGEN = { satz: "Das ist der Satz für deinen Chat; füge ihn dort ein und kopiere seine Antwort hierher.",
+    text: "Das ist der Text für deinen Chat; füge ihn dort ein und kopiere seine Antwort hierher." };
+
+  // Gestückelter Text: welcher Teil kam? Der mit den meisten ids der Antwort (b7-2 zählt zu b7), sonst der erste, der
+  // noch fehlt. Sind alle da, endet die Stückelung und die roten Karten erscheinen.
+  function teilEingefuegt(ids) {
+    var st = Z.mappe && Z.mappe.stueckelung;
+    if (!st || !st.ids) return;
+    st.eingefuegt = st.eingefuegt || [];
+    var basis = function (x) { return String(x).replace(/-\d+$/, ""); };
+    var best = -1, treffer = 0;
+    st.ids.forEach(function (teil, i) {
+      var n = (ids || []).filter(function (x) { return teil.indexOf(x) >= 0 || teil.indexOf(basis(x)) >= 0; }).length;
+      if (n > treffer) { treffer = n; best = i; }
+    });
+    if (best < 0) best = st.ids.findIndex(function (_, i) { return st.eingefuegt.indexOf(i) < 0; });
+    if (best >= 0 && st.eingefuegt.indexOf(best) < 0) st.eingefuegt.push(best);
+    // schrieb der Chat mehrere Teile auf einmal, gilt jeder Teil als da, dessen Karten alle Inhalt haben
+    st.ids.forEach(function (teil, i) {
+      if (st.eingefuegt.indexOf(i) < 0 && teil.every(function (id) { var k = karteNach(id); return !k || !k.geplant;
+          })) st.eingefuegt.push(i);
+    });
+    if (st.eingefuegt.length >= st.ids.length) delete Z.mappe.stueckelung;
+  }
+  function naechsterTeil() {
+    var st = Z.mappe && Z.mappe.stueckelung;
+    return st ? st.ids.findIndex(function (_, i) { return (st.eingefuegt || []).indexOf(i) < 0; }) : -1;
+  }
+  function zeichneTeile() {
+    var offen = teileOffen() && inhalt();
+    $("teil-stand").hidden = !offen;
+    if (!offen) return;
+    var st = Z.mappe.stueckelung, n = naechsterTeil(), da = (st.eingefuegt || []).length;
+    $("teil-stand-text").textContent = (da === 1 ? "Teil " + (st.eingefuegt[0] + 1) : da + " Teile") + " von " +
+        st.ids.length
+      + " eingefügt, jetzt Teil " + (n + 1) + " kopieren.";
+    var bereitText = texte.teile.length === st.ids.length && !!texte.teile[n];
+    $("teil-weiter").textContent = "Teil " + (n + 1) + " kopieren";
+    $("teil-weiter").disabled = !bereitText;
+  }
+  $("teil-weiter").onclick = function () {
+    var n = naechsterTeil();
+    if (n < 0 || !texte.teile[n]) return;
+    texte.teil = n; zeichneChat();   // Feld „Text ansehen“ trägt jetzt diesen Teil (Rückfall ohne Zwischenablage)
+    kopieren(texte.teile[n], $("chat-text-feld"), $("teil-kopiert"), "Kopiert. Füge Teil " + (n + 1)
+      + " in dasselbe Gespräch ein und die Antwort des Chats oben ins Feld.", function () { textKopiert(); $("eingabe")
+          .focus({ preventScroll: true }); });
+  };
+
+  async function eingabeUebernehmen(modusErzwungen) {
+    var text = modusErzwungen && S.letzteAntwort ? S.letzteAntwort.text : $("eingabe").value;
+    if (!text.trim()) return;
+    var eigen = !modusErzwungen && eigenerText(text);
+    if (eigen) { diagnoseKarte($("eingabe-diagnose"), null); standKarte($("eingabe-stand"), EIGEN[eigen], "fehler");
+        return; }
+    try {
+      await km.bereit();
+      var modus = modusErzwungen, mo = null;
+      if (!modus) {
+        mo = await km.mappeFn("modus", [Z.mappe, text]);
+        if (mo.modus === "keine") {
+          standKarte($("eingabe-stand"), "");
+          diagnoseKarte($("eingabe-diagnose"), await km.prompt("diagnose", [text]));
+          return;
+        }
+        // nächste Einheit, die noch ohne Inhalt ist: anhängen statt in die erste Einheit einsetzen
+        var neueOffen = Z.mappe.anhaengen && Z.mappe.bausteine.some(function (k) {
+            return k.einheit === Z.mappe.anhaengen && k.geplant; });
+        modus = neueOffen ? "anhaengen" : mo.modus;
+        setzeModus(modus);
+        S.letzteAntwort = { text: text, vorher: { mappe: JSON.parse(JSON.stringify(Z.mappe)), kurs_md: Z.kurs_md } };
+      }
+      diagnoseKarte($("eingabe-diagnose"), null);
+      var e = await einsetzen(text, modus, S.letzteAntwort.vorher);
+      if (!e.ok) {
+        standKarte($("eingabe-stand"), e.text, "fehler");
+        zeichne();
+        return;
+      }
+      if (mo) teilEingefuegt(e.ids || mo.ids);
+      Z.mappe.durchsicht = false;
+      // neuer Inhalt: ab Schritt 5 neu durchsehen
+      if (schritt() > 5 || schritt() < 5) { Z.mappe.schritt = 5; S.auf = {}; }
+      await auswertung();
+      // Hash je Baustein merken; einzelne Bausteine zählen als Runde, eine ganze Einheit fängt neu an
+      var gleichE = schleifeMerken(e.ids || Z.pruefung.bausteine.map(function (b) { return b.id; }), false);
+      zeichne(); geaendert();
+      $("eingabe").value = "";
+      var st = Z.mappe.stueckelung, mehr = "";
+      if (teileOffen()) {
+        standKarte($("eingabe-stand"), "Übernommen: " + e.n + (e.n === 1 ? " Baustein" : " Bausteine") +
+            ". Kopiere jetzt Teil "
+          + (naechsterTeil() + 1) + " von " + st.ids.length +
+              "; die Prüfung zeigt Fehler erst, wenn alle Teile da sind.", "ok");
+        $("teil-weiter").focus({ preventScroll: true });
+        return;
+      }
+      var rot = Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler" && (!e.ids ||
+          e.ids.indexOf(b.id) >= 0); }).length;
+      var aussen = Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler" && !d.baustein; }).length;
+      if (rot || aussen) mehr = " Unter dem Feld steht die Korrektur: „Korrektur anfordern“ kopiert die Bitte für " +
+          "den Chat.";
+      if (gleichE.length) mehr = " Die Antwort für „" + gleichE[0] + "“ ist dieselbe wie vorher." + mehr;
+      standKarte($("eingabe-stand"), "Übernommen (" + MODUS_TEXT[modus] + "): " + e.n + (e.n === 1 ?
+          " Baustein" : " Bausteine")
+        + (rot ? ", davon " + rot + " mit Fehler (rot)." : aussen ? "." : ". Sieh sie durch und geh dann weiter.") +
+            mehr + e.text,
+        rot || aussen ? "fehler" : "ok");
+    } catch (err) { zeigeFehler(err); }
+  }
+  $("eingabe").addEventListener("input", function () {
+    clearTimeout(S.eingabeTimer);
+    S.eingabeTimer = setTimeout(function () { eingabeUebernehmen(null); }, 500);
+  });
+  $("eingabe").addEventListener("paste", function () {
+    clearTimeout(S.eingabeTimer);
+    S.eingabeTimer = setTimeout(function () { eingabeUebernehmen(null); }, 30);
+  });
+  // Knopf zusätzlich zur Automatik: nach dem Einfügen fehlt sonst etwas zum Klicken
+  $("eingabe-uebernehmen").onclick = function () { clearTimeout(S.eingabeTimer); eingabeUebernehmen(null); };
+  // Anderen Modus gewählt: die letzte Antwort vom Stand davor aus neu einsetzen
+  Array.prototype.forEach.call(document.querySelectorAll("input[name=modus]"), function (r) {
+    r.addEventListener("change", function () { if (S.letzteAntwort && r.checked) eingabeUebernehmen(r.value); });
+  });
+  Object.assign(S, { EIGEN: EIGEN, diagnoseKarte: diagnoseKarte, eigenerText: eigenerText, standKarte: standKarte,
+    textGroesse: textGroesse, textSpaeter: textSpaeter, zeichneChat: zeichneChat, zeichnePlanung: zeichnePlanung,
+    zeichneTeile: zeichneTeile });
+})();
