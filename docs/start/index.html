@@ -51,9 +51,9 @@
     <h2 class="s-kopf"><button type="button" class="s-zeile" data-nr="1"><span class="s-nr">1</span>
       <span class="s-titel" id="s1-titel">Worum geht es?</span><span class="s-fazit"></span></button></h2>
     <div class="s-inhalt">
-      <form id="start-form" class="start-form" autocomplete="off">
+      <form id="start-form" class="start-form" autocomplete="off" novalidate>
         <label class="feld feld-thema">Thema
-          <input id="f-thema" type="text" required placeholder="zum Beispiel Bruchrechnen" maxlength="120">
+          <input id="f-thema" type="text" aria-required="true" placeholder="Terme und Gleichungen" maxlength="120">
         </label>
         <label class="feld feld-klein"><span id="f-jahrgang-t">Jahrgangsstufe</span>
           <input id="f-jahrgang" type="text" inputmode="numeric" maxlength="12" placeholder="7">
@@ -209,7 +209,7 @@
       <div id="chat-wahl" class="chat-wahl">
         <p>Wo fügst du den Text ein?</p>
         <div id="chat-knoepfe" class="chat-knoepfe"></div>
-        <p id="chat-modell" class="leise">Wähle im Chat das stärkste Modell, das dir dort offensteht; kleine Modelle (Flash, Mini, Medium, Lite) halten das Format oft nicht ein und brauchen mehr Runden.</p>
+        <p id="chat-modell" class="leise">Nimm im Chat das neueste Modell ohne Zusatz; Namen mit mini, fast, flash, lite, nano oder small sind die kleinen und brauchen öfter eine Korrekturbitte. Steht „Auto“ voreingestellt, stell um; gibt es einen Schalter wie „Denken“ oder „ausführlich“, schalte ihn ein.</p>
         <p class="leise">Über private Konten entscheidet deine Schule.</p>
       </div>
       <!-- Eigene KI (AP14): zwei Wege, Code, Port unter „mehr“; verbindung.js zeigt das Feld -->
@@ -446,18 +446,17 @@
   <label for="ordner-oeffnen" class="textlink">Ordner aus Kursmühle 1 öffnen</label>
   <a href="../">Startseite</a>
 </footer>
+<script src="themen.js"></script>
 <script>
-// Platzhalter in Schritt 1: bei jedem Laden ein anderes Paar aus Thema und Jahrgangsstufe (Autor 24.10.2026).
+// Platzhalter in Schritt 1: bei jedem Laden ein anderes Paar aus Thema und Jahrgangsstufe (Autor 24.10.2026); die
+// Paare kommen aus references/themen.yaml (themen.js, AP13.8 §8), der Platzhalter zeigt nur das Thema
 (function () {
-  var paare = [["Bruchrechnen", 6], ["Satz des Pythagoras", 9], ["Das Ohr", 7], ["Photosynthese", 8],
-    ["Die Französische Revolution", 8], ["Wetter und Klima", 5], ["Der Wasserkreislauf", 4], ["Nomen und Verben", 3],
-    ["Simple past", 6], ["Prozentrechnung", 7], ["Das Eichhörnchen", 2], ["Der einfache Stromkreis", 5],
-    ["Lineare Funktionen", 8], ["Eine Bewerbung schreiben", 9], ["Die mittelalterliche Stadt", 7], ["Aufbau der Zelle", 9],
-    ["Die Lunge", 7], ["Netzwerke und IP-Adressen", 9], ["Säuren und Basen", 9], ["Die Uhr lesen", 2]];
+  var paare = window.KM_THEMEN || [];
+  if (!paare.length) return;
   var p = paare[Math.floor(Math.random() * paare.length)];
   var t = document.getElementById("f-thema"), j = document.getElementById("f-jahrgang");
-  if (t && !t.value) t.placeholder = "zum Beispiel " + p[0];
-  if (j && !j.value) j.placeholder = String(p[1]);
+  if (t && !t.value) t.placeholder = p.thema;
+  if (j && !j.value) j.placeholder = String(p.jahrgang);
 })();
 </script>
 <script src="kern.js"></script>

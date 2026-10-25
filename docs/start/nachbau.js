@@ -221,14 +221,15 @@
     window.scrollTo(0, 0);
   }
 
-  // Rückmeldung: Version, Chat, Fach, Jahrgangsstufe (ohne Lehrplanbezug nur „nein“), Vorlage und Weg; keine Inhalte,
-  // kein Thema, keine Namen
+  // Rückmeldung: Version, Chat, Fach, Jahrgangsstufe (ohne Lehrplanbezug die Zahl aus dem Feld, sonst nur „nein“),
+  // Vorlage und Weg; keine Inhalte, kein Thema, keine Namen
   function rueckmeldungText() {
     var m = Z.mappe || {}, e = m.einheit || {}, c = chatInfo(m.chat);
+    var ohneLp = S.angaben.lehrplanbezug === "nein", jg = ohneLp ? S.jahrgangZahl(e.jahrgang || S.angaben.jahrgang) :
+        e.jahrgang || S.angaben.jahrgang;
     return ["Rückmeldung zu Kursmühle " + ((S.katalog && S.katalog.version) || ""), "",
       "Chat: " + (c ? (m.chat === "eigene" && S.kiName ? S.kiName() : c.text) : "–"), "Fach: " + (S.angaben.fach || "–"),
-      S.angaben.lehrplanbezug === "nein" ? "Lehrplanbezug: nein" : "Jahrgangsstufe: " + (e.jahrgang ||
-          S.angaben.jahrgang || "–"),
+      ohneLp && !jg ? "Lehrplanbezug: nein" : "Jahrgangsstufe: " + (jg || "–"),
       "Vorlage: " + (e.vorlage || "–") + (m.zweig ? " (" + ZWEIG_TEXT[m.zweig] + ")" : ""), korrekturZeile(m), "",
       "Wo hat es gestockt?", "", "", "Was hättest du anders gewollt?", "", "",
           "Nimmst du es für deine nächste Einheit wieder? Wenn nicht, woran liegt es?", "", ""].join("\n");

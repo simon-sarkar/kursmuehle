@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht (AP13.5d: Schritt 3 mit mitlaufender Vorschau; AP13.5e: Charakter je Design; AP13.5f: eigene KI im Lauf, Lehrplan-Haken, Schriften; AP13.7: Startseite und Unterseiten; AP13.9: Design-Rest)
+## 2.0.0-b9 – 2026-10-25 (AP13.7, AP13.8, AP13.9: Produktstand für den Erstnutzer-Test)
 
 - Die Vorschau des gewählten Designs läuft beim Scrollen mit: auf breiten Bildschirmen rechts, sonst als Leiste am unteren Rand, die ein Tippen aufklappt.
 - Die Vorschau zeigt Inhalt, auch wenn du Schritt 3 erreichst, bevor die Mühle fertig geladen ist.
@@ -30,16 +30,24 @@
 - Die Startseite sagt, was herauskommt, dass die Mühle nichts kostet und dass mit eigener KI das Kopieren entfällt.
 - Statt einer Liste von Chats steht auf der Startseite ein Satz zu Nutzungsbedingungen und Schule, dazu die Regel für die Wahl des Modells.
 - In Schritt 4 steht über dem Kopierknopf für jeden Chat ein Satz, wo du dort das Modell wählst; bei „Eigene KI“ keiner.
-- Ein leeres Thema oder Minuten außerhalb von 10 bis 300 im Startformular zeigen eine Zeile mit roter Mühle statt der Blase des Browsers.
 - Der Datenschutz-Absatz auf Startseite und Impressum gilt für alle drei Wege: selbst kopieren, eigene KI, Testphase.
 - Das Impressum nennt die Titelschriften mit ihrer Lizenz und die Speicherdauer in der Testphase genauer.
 - „Erfahrungen“ ergänzt die Durchläufe vom 24. und 25.10. samt automatischen Tests; Angaben ohne Protokoll sind gestrichen oder gekennzeichnet.
 - Die Kacheln fürs Schulportal in 512 und 128 px sind neu gezeichnet; Ecken und Mühle waren darin verschoben.
 - Verlässt die Maus das Rad der Mühle auf Startseite oder Impressum knapp bei einer halben Umdrehung, läuft es ohne Skriptfehler aus.
-- Die Platzhalter im Startformular zeigen nur Thema und Jahrgangsstufe, ohne „zum Beispiel“; die Themen kommen aus derselben Liste wie in der Mühle, sobald sie vorliegt.
 - Im Website-Modus folgen die Kapitelnummern dem Design: große Kreise bei Grundschule, Sticker bei Verspielt, Zahlen bei Modern, Erdtonkreise bei Natur, schwarze Quadrate bei Druck, „1.“ in der Textfarbe bei Klassisch und „Ohne Vorlage“; Sachlich, Freundlich, Magazin und Dunkel bleiben unverändert.
 - Bei Magazin und Grundschule steht ein Foto in der Bildzeile in voller Breite, wenn es quer liegt und breiter als 900 px ist; Symbolbilder bleiben 200 px breit.
 - Grundschule behält das Dreieck „Importprobe steht aus“, bis der Umbruch langer Wörter auf der Plattform bestätigt ist.
+- Mit verbundener KI gehen die weiteren Teile eines gestückelten Texts von selbst; „Anhalten“ stoppt nach dem laufenden Teil, danach geht jeder Teil mit einem Klick.
+- Wird eine Antwort zu lang, endet sie nach einem ganzen Baustein mit „Fortsetzung folgt“; die Mühle nimmt die Bausteine an und bittet um den Rest.
+- Nach der zweiten Korrekturrunde einer Einheit rät beim Kopieren eine Zeile unter der Korrekturbitte, im Chat das größte Modell zu wählen.
+- Die Platzhalter im Startformular und in Schritt 1 zeigen eines von 50 Themen aus Grund- und Mittelschule, die im Lehrplan stehen, mit Jahrgangsstufe und ohne „zum Beispiel“.
+- Die Vorlagen nennen ihre Phasen wie das Artikulationsschema (etwa Vorwissensaktivierung, Lernzielkontrolle, Transfer); Kursmappen mit den alten Namen übernehmen die neuen beim Öffnen.
+- Eine Zahl im Feld Zielgruppe gilt als Jahrgangsstufe: der Text für den Chat, das Fazit und die Rückmeldung nennen „Jahrgangsstufe 9“.
+- Ein Agent kann sich mit Namen melden; die Kachel zeigt dann etwa „verbunden · Claude Code“ statt „Agent“.
+- Über der Chat-Auswahl in Schritt 4 steht dieselbe Modellregel wie auf der Startseite: neuestes Modell ohne Zusatz, „Auto“ umstellen, „Denken“ einschalten.
+- Mit eigenem Schlüssel nimmt die Brücke bei OpenAI gpt-5 und bei Mistral mistral-large-latest; `--modell` wählt ein kleineres.
+- Fehlt das Thema oder liegen die Minuten außerhalb von 10 bis 300, steht im Startformular und in der Mühle unter dem Feld eine Zeile mit einer kleinen roten Mühle statt der Blase des Browsers.
 
 ## 2.0.0-b8 – 2026-10-25 (AP13.5c: Anordnung, Standardfarben, Skala der Designs; AP13.6: LehrplanPLUS für Grund- und Mittelschule; AP14b: Testcode)
 

@@ -157,21 +157,78 @@
     } else if (gesendet) $("kopiert").textContent = "Gesendet; die Antwort kommt in Schritt " + nrVon(5) + ".";
   }
   // Teil n an die eigene KI: Teil 1 in ein neues Gespräch, jeder weitere in dasselbe; die Antwort läuft durch
-  // eingabeUebernehmen wie eingefügt, danach geht der nächste Teil von selbst
+  // eingabeUebernehmen wie eingefügt, danach geht der nächste Teil von selbst (AP13.8; rote Karten halten die Kette
+  // nicht an). „Anhalten“ in der Zeile „Teil n von m · Deine KI schreibt“ stoppt nach dem laufenden Teil; danach geht
+  // jeder Teil dieser Einheit mit einem Klick (#teil-weiter)
+  S.angehalten = {};
+  S.restSatz = ""; S.restZahl = 0;                // Zahl der fehlenden Karten nach der letzten Bitte um den Rest
+  function kette() { return ki() && !S.angehalten[einheitTag() || ""]; }
+  function eingefuegtZahl() { var st = Z.mappe && Z.mappe.stueckelung; return st ? (st.eingefuegt || []).length : -1; }
+  function weiterSenden(vorher) {
+    var st = Z.mappe && Z.mappe.stueckelung;
+    if (kette() && st && teileOffen() && (st.eingefuegt || []).length > vorher && naechsterTeil() >= 0)
+      textSenden(naechsterTeil());
+  }
+  function anhaltenKnopf(ort) {
+    if (ort.querySelector("#teil-anhalten")) return;
+    var b = el("button", { type: "button", cls: "textlink", id: "teil-anhalten", text: "Anhalten" });
+    b.onclick = function () {
+      S.angehalten[einheitTag() || ""] = true;
+      b.replaceWith(el("span", { cls: "leise", id: "teil-angehalten", text: " Angehalten; der nächste Teil geht mit " +
+          "einem Klick." }));
+    };
+    ort.append(" ", b);
+  }
   function textSenden(n) {
     var i = n === undefined ? texte.teil : n, t = texte.teile[i];
     if (!t) return;
     texte.teil = i;
+    var von = texte.teile.length, st = Z.mappe && Z.mappe.stueckelung;
+    var danach = von > 1 && texte.teile.some(function (_, j) { return j !== i && !(st && (st.eingefuegt || [])
+        .indexOf(j) >= 0); });
     S.anKi(t, { einheit: einheitTag(), neu: i === 0, ort: $("eingabe-stand"), feld: "eingabe",
+      vor: von > 1 ? "Teil " + (i + 1) + " von " + von + " · " : "",
       vorher: function () { textKopiert(true); },
-      stand: function (x, art) { standKarte($("eingabe-stand"), x, art); },
+      stand: function (x, art) {
+        standKarte($("eingabe-stand"), x, art);
+        if (art === "laeuft" && x && danach && kette()) anhaltenKnopf($("eingabe-stand"));
+      },
       fertig: async function (antwort) {
-        var vorher = Z.mappe && Z.mappe.stueckelung ? (Z.mappe.stueckelung.eingefuegt || []).length : -1;
+        var vorher = eingefuegtZahl();
         $("eingabe").value = antwort;
         await eingabeUebernehmen(null);
-        var st = Z.mappe && Z.mappe.stueckelung;
-        if (ki() && st && teileOffen() && (st.eingefuegt || []).length > vorher && naechsterTeil() >= 0)
-          textSenden(naechsterTeil());
+        weiterSenden(vorher);
+      } });
+  }
+
+  // AP13.8: endet die Antwort mit „Fortsetzung folgt“, nimmt die Mühle die Bausteine an und bittet um die fehlenden
+  // Bausteine (gen/prompt.py fortsetzung); verbunden geht die Bitte von selbst, solange jede Antwort Neues bringt
+  function restZeigen(satz) {
+    var box = $("rest-bitte");
+    if (!box) { box = el("div", { id: "rest-bitte", cls: "kopieren" }); $("eingabe-stand").after(box); }
+    box.innerHTML = ""; box.hidden = false;
+    var feld = el("textarea", { cls: "unsichtbar", readonly: true, "aria-hidden": "true", tabindex: "-1" });
+    feld.value = satz;
+    var stand = el("p", { cls: "stand", role: "status" });
+    var knopf = el("button", { type: "button", cls: "knopf", id: "rest-anfordern", text: ki() ?
+        "Rest an meine KI senden" : "Rest anfordern", disabled: besetzt() });
+    knopf.onclick = function () {
+      if (ki()) return restSenden(satz);
+      kopieren(satz, feld, stand, "Kopiert. Füge die Bitte in dasselbe Gespräch ein und die Antwort oben ins Feld.",
+        function () { $("eingabe").focus({ preventScroll: true }); });
+    };
+    box.append(knopf, stand, feld);
+  }
+  function restWeg() { var b = $("rest-bitte"); if (b) b.hidden = true; }
+  function restSenden(satz) {
+    restWeg();
+    S.anKi(satz, { einheit: einheitTag(), neu: false, ort: $("eingabe-stand"), feld: "eingabe", vor: "Rest · ",
+      stand: function (x, art) { standKarte($("eingabe-stand"), x, art); },
+      fertig: async function (antwort) {
+        var vorher = eingefuegtZahl();
+        $("eingabe").value = antwort;
+        await eingabeUebernehmen(null);
+        weiterSenden(vorher);
       } });
   }
   function textKopieren() {
@@ -293,7 +350,8 @@
     if (!t) return "";
     var gleich = function (x) { x = String(x || "").trim(); return !!x && (x === t || (t.length >= 40 &&
         x.indexOf(t) >= 0) || (t.length >= 200 && t.indexOf(x.slice(0, 200)) >= 0)); };
-    if (gleich(S.korrektur.text) || S.korrekturen.some(function (k) { return gleich(k.satz); })) return "satz";
+    if (gleich(S.korrektur.text) || gleich(S.restSatz) || S.korrekturen.some(function (k) { return gleich(k.satz); }))
+      return "satz";
     if (texte.teile.some(gleich)) return "text";
     return "";
   }
@@ -301,8 +359,9 @@
     text: "Das ist der Text für deinen Chat; füge ihn dort ein und kopiere seine Antwort hierher." };
 
   // Gestückelter Text: welcher Teil kam? Der mit den meisten ids der Antwort (b7-2 zählt zu b7), sonst der erste, der
-  // noch fehlt. Sind alle da, endet die Stückelung und die roten Karten erscheinen.
-  function teilEingefuegt(ids) {
+  // noch fehlt. Sind alle da, endet die Stückelung und die roten Karten erscheinen. Mit `rest` (Antwort endet mit
+  // „Fortsetzung folgt“) gilt der Teil erst als da, wenn alle seine Karten Inhalt haben.
+  function teilEingefuegt(ids, rest) {
     var st = Z.mappe && Z.mappe.stueckelung;
     if (!st || !st.ids) return;
     st.eingefuegt = st.eingefuegt || [];
@@ -313,7 +372,7 @@
       if (n > treffer) { treffer = n; best = i; }
     });
     if (best < 0) best = st.ids.findIndex(function (_, i) { return st.eingefuegt.indexOf(i) < 0; });
-    if (best >= 0 && st.eingefuegt.indexOf(best) < 0) st.eingefuegt.push(best);
+    if (best >= 0 && st.eingefuegt.indexOf(best) < 0 && !rest) st.eingefuegt.push(best);
     // schrieb der Chat mehrere Teile auf einmal, gilt jeder Teil als da, dessen Karten alle Inhalt haben
     st.ids.forEach(function (teil, i) {
       if (st.eingefuegt.indexOf(i) < 0 && teil.every(function (id) { var k = karteNach(id); return !k || !k.geplant;
@@ -353,6 +412,7 @@
     var eigen = !modusErzwungen && eigenerText(text);
     if (eigen) { diagnoseKarte($("eingabe-diagnose"), null); standKarte($("eingabe-stand"), EIGEN[eigen], "fehler");
         return; }
+    restWeg();
     try {
       await km.bereit();
       var modus = modusErzwungen, mo = null;
@@ -377,7 +437,7 @@
         zeichne();
         return;
       }
-      if (mo) teilEingefuegt(e.ids || mo.ids);
+      if (mo) teilEingefuegt(e.ids || mo.ids, mo.fortsetzung);
       Z.mappe.durchsicht = false;
       // neuer Inhalt: ab Schritt 5 neu durchsehen
       if (schritt() > 5 || schritt() < 5) { Z.mappe.schritt = 5; S.auf = {}; }
@@ -386,11 +446,27 @@
       var gleichE = schleifeMerken(e.ids || Z.pruefung.bausteine.map(function (b) { return b.id; }), false);
       zeichne(); geaendert();
       $("eingabe").value = "";
-      var st = Z.mappe.stueckelung, mehr = "";
+      var st = Z.mappe.stueckelung, mehr = "", baust = e.n + (e.n === 1 ? " Baustein" : " Bausteine");
+      // „Fortsetzung folgt“: Karten, die noch fehlen, und die Bitte darum kommen aus gen/mappe.py modus
+      var leer = (mo && mo.rest_ids || []).filter(function (id) { var k = karteNach(id); return k && k.geplant; });
+      if (leer.length && mo.rest) {
+        S.restSatz = mo.rest;
+        var von = ki() && (!S.restZahl || leer.length < S.restZahl);   // von selbst nur, solange jede Antwort Neues bringt
+        S.restZahl = leer.length;
+        standKarte($("eingabe-stand"), "Übernommen: " + baust + "; die Antwort endet mit „Fortsetzung folgt“. " +
+            (von ? "Die Mühle bittet deine KI um den Rest." : ki() ? "„Rest an meine KI senden“ bittet um die " +
+              "fehlenden Bausteine." : "„Rest anfordern“ kopiert die Bitte um die fehlenden Bausteine für den Chat."),
+            "ok");
+        restZeigen(S.restSatz);
+        if (von) restSenden(S.restSatz);
+        else $("rest-anfordern").focus({ preventScroll: true });
+        return;
+      }
+      S.restZahl = 0;
       if (teileOffen()) {
-        standKarte($("eingabe-stand"), "Übernommen: " + e.n + (e.n === 1 ? " Baustein" : " Bausteine") +
-            (ki() ? ". Jetzt geht Teil " : ". Kopiere jetzt Teil ")
-          + (naechsterTeil() + 1) + " von " + st.ids.length + (ki() ? " an deine KI" : "") +
+        standKarte($("eingabe-stand"), "Übernommen: " + baust + (kette() ? ". Jetzt geht Teil " : ki() ?
+            ". „Teil " + (naechsterTeil() + 1) + " an meine KI senden“ schickt Teil " : ". Kopiere jetzt Teil ")
+          + (naechsterTeil() + 1) + " von " + st.ids.length + (kette() ? " an deine KI" : "") +
               "; die Prüfung zeigt Fehler erst, wenn alle Teile da sind.", "ok");
         $("teil-weiter").focus({ preventScroll: true });
         return;

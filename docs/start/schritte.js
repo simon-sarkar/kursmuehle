@@ -14,11 +14,14 @@
       hinweiseSichern = S.hinweiseSichern, hoehe = S.hoehe, inhalt = S.inhalt, neuPruefen = S.neuPruefen,
       oberText = S.oberText, schritt = S.schritt, sektion = S.sektion, sichtbareSchritte = S.sichtbareSchritte,
       status = S.status, teileOffen = S.teileOffen, texte = S.texte, zeichne = S.zeichne, zweig = S.zweig;
+  // AP13.8: erste Zahl 1 bis 13 im Feld Jahrgangsstufe oder Zielgruppe (wie gen/mappe.py jahrgang_zahl)
+  function jahrgangZahl(w) { var m = /(^|\D)(1[0-3]|[1-9])(?!\d)/.exec(String(w || "")); return m ? m[2] : ""; }
   function fazit(n) {
     var e = (Z.mappe && Z.mappe.einheit) || {};
     var ohneLp = S.angaben.lehrplanbezug === "nein";       // AP13.6: ohne Lehrplan heißt das Feld „Zielgruppe“
-    if (n === 1) return [e.thema, e.jahrgang ? (ohneLp ? "Zielgruppe: " : "Jahrgangsstufe ") + e.jahrgang : "", e.minuten ? e.minuten +
-        " Minuten" : ""].filter(Boolean).join(" · ");
+    var jg = ohneLp ? jahrgangZahl(e.jahrgang) : e.jahrgang;   // eine Zahl darin ist die Jahrgangsstufe
+    if (n === 1) return [e.thema, jg ? "Jahrgangsstufe " + jg : e.jahrgang ? "Zielgruppe: " + e.jahrgang : "",
+      e.minuten ? e.minuten + " Minuten" : ""].filter(Boolean).join(" · ");
     if (n === 2) {
       var z = ZWEIG_TEXT[zweig()] || "";
       var n = Z.mappe.bausteine.filter(function (k) { return !k.aus; }).length;
@@ -189,10 +192,67 @@
     });
   }
 
+  // AP13.8 §7: Pflicht- und Bereichsfelder prüft die Mühle selbst (Formular `novalidate`, keine Blase des Browsers):
+  // eine Zeile auf Deutsch unter dem Feld mit der Mühle aus logo.svg in der Fehlerfarbe, `aria-invalid` am Feld, Fokus
+  // bleibt im Feld; die Zeile geht beim ersten Zeichen. Ein Satz je Fall.
+  var MUEHLE_ROT = '<svg viewBox="20 -10 216 256" width="16" height="16" focusable="false"><g fill="currentColor">' +
+      '<path d="M100,236 L156,236 L147,150 L109,150 Z"/>' + [45, 135, 225, 315].map(function (w) {
+        return '<path transform="rotate(' + w + ' 128 98)" d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z"/>'; }).join("") +
+      '<circle cx="128" cy="98" r="44"/></g><circle cx="128" cy="98" r="12" style="fill: var(--flaeche)"/></svg>';
+  function feldSatz(feld) {
+    var w = feld.value.trim(), art = feld.id.slice(2);
+    if (art === "thema" && !w) return "Gib ein Thema ein.";
+    if (art === "minuten" && w && !(/^\d+$/.test(w) && +w >= 10 && +w <= 300))
+      return "Die Minuten liegen zwischen 10 und 300.";
+    if (art === "jahrgang" && w && /^Jahrgangsstufe/.test($(feld.id + "-t").textContent) && !jahrgangZahl(w))
+      return "Die Jahrgangsstufe ist eine Zahl von 1 bis 13.";
+    return "";
+  }
+  function feldMeldung(feld, satz) {
+    if (!document.getElementById("stil-meldung")) {
+      document.head.appendChild(el("style", { id: "stil-meldung", text: [
+        ".feld-meldung { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; margin: 0;",
+        "  font-size: 0.9rem; color: var(--fehler); }",
+        ".feld-meldung svg { flex: none; display: block; }"
+      ].join("\n") }));
+    }
+    var id = feld.id + "-meldung", p = $(id);
+    if (!p) {
+      p = el("p", { id: id, cls: "feld-meldung", "aria-live": "polite" });
+      var knopf = feld.form && feld.form.querySelector("[type=submit]");
+      if (knopf) knopf.before(p); else feld.closest("label").after(p);
+    }
+    p.innerHTML = MUEHLE_ROT;
+    p.firstChild.setAttribute("aria-hidden", "true");
+    p.append(satz);
+    p.hidden = false;
+    feld.setAttribute("aria-invalid", "true");
+    feld.setAttribute("aria-describedby", id);
+  }
+  function feldOk(feld) {
+    var p = $(feld.id + "-meldung");
+    if (p) p.hidden = true;
+    feld.removeAttribute("aria-invalid");
+    feld.removeAttribute("aria-describedby");
+  }
+  // -> true, wenn alle Felder stimmen; sonst Meldung am ersten falschen und Fokus dorthin
+  function felderPruefen(ids) {
+    var erstes = null;
+    ids.forEach(function (id) {
+      var f = $(id), satz = feldSatz(f);
+      if (satz) { feldMeldung(f, satz); erstes = erstes || f; } else feldOk(f);
+    });
+    if (erstes) erstes.focus({ preventScroll: false });
+    return !erstes;
+  }
+  ["f-thema", "f-jahrgang", "f-minuten", "a-thema", "a-jahrgang", "a-minuten"].forEach(function (id) {
+    $(id).addEventListener("input", function () { feldOk($(id)); });
+  });
+
   $("start-form").onsubmit = function (ev) { ev.preventDefault(); startAbsenden(); };
   function startAbsenden() {
     var thema = $("f-thema").value.trim();
-    if (!thema) { $("f-thema").focus(); return; }
+    if (!felderPruefen(["f-thema", "f-jahrgang", "f-minuten"])) return;
     var e = { thema: thema, jahrgang: $("f-jahrgang").value.trim(), minuten: parseInt($("f-minuten").value, 10) || 45 };
     if (!S.katalog) return;
     if (!Z.mappe) { einheitAnlegen(e, S.katalog.vorlagen[0]); return; }
@@ -856,6 +916,7 @@
       return;
     }
     var feld = FELDER[ev.target.id]; if (!feld) return;
+    if (/^a-(thema|jahrgang|minuten)$/.test(ev.target.id) && !felderPruefen([ev.target.id])) return;
     var wert = ev.target.value;
     if (feld === "minuten") wert = parseInt(wert, 10) || "";
     if (ev.target.id === "a-farbe" && wert === "eigen") wert = ($("a-farbe-hex").value || $("farbe-eigen").value).toUpperCase();
@@ -900,7 +961,8 @@
         /* ohne Speicher: nur diese Seite */ }
     schemaZeigen();
   };
-  Object.assign(S, { adresseLesen: adresseLesen, angabenSchreiben: angabenSchreiben, gehe: gehe, nachZwei: nachZwei, neuStart: neuStart,
+  Object.assign(S, { adresseLesen: adresseLesen, angabenSchreiben: angabenSchreiben, felderPruefen: felderPruefen,
+    gehe: gehe, jahrgangZahl: jahrgangZahl, nachZwei: nachZwei, neuStart: neuStart,
     schemaZeigen: schemaZeigen, steckbriefSicher: steckbriefSicher, vorlageNach: vorlageNach, vorschauLaden: vorschauLaden,
     vorlagenZeigen: vorlagenZeigen, weiterAnzeigen: weiterAnzeigen, zeichneAussehen: zeichneAussehen,
     zeichneSchritte: zeichneSchritte, zeigeFehler: zeigeFehler });

@@ -27,8 +27,8 @@ und einzelne Chats antworten noch in einer Form, die die Seite nicht lesen kann.
 | Übungen als Website in einem Abschnitt oder als Block im Textfeld: Quiz, Zuordnen, Lückentext, Markieren, Lernkarten, Geschichte, mit Rückmeldung zur ganzen Übung | Bewertung und Abschluss je Übung in der Website, eigene Spiele und Simulationen |
 | Feedback-Umfragen, Links und Videos, Badges, Kursbild, Abschlussverfolgung, Sichtbarkeit ab Datum | Gruppen, Termine, andere Zugriffsbedingungen |
 | Kursbanner und Kachelbilder (ohne Bild als Fläche im Design), Zahl der Bilder je Einheit, Bilder in jedem Baustein, Bildwunsch mit Auftrag für einen Bildgenerator, eigene Bilder hochladen (verkleinert, mit Prüffragen) | Abschnitts- und Kachelbilder automatisch aus dem Material |
-| Einheit speichern und später weiterbauen, nächste Einheit anhängen, Nachlieferung zu einem bestehenden Kurs | Abbruch einer Antwort des Chats erkennen |
-| Eigene KI direkt anbinden: ein Programm wie Claude Code oder Codex, ein eigener Zugangsschlüssel (OpenAI, Anthropic, Mistral) oder Ollama; Teile und Korrekturen ohne Kopieren | Bilder über die Verbindung, Verbindung vom iPad oder aus dem Schulnetz |
+| Einheit speichern und später weiterbauen, nächste Einheit anhängen, Nachlieferung zu einem bestehenden Kurs; eine zu lange Antwort endet mit „Fortsetzung folgt“, die Mühle bittet um den Rest | Abbruch einer Antwort erkennen, wenn der Chat die Schlusszeile nicht schreibt |
+| Eigene KI direkt anbinden: ein Programm wie Claude Code oder Codex (mit seinem Namen in der Mühle), ein eigener Zugangsschlüssel (OpenAI, Anthropic, Mistral) oder Ollama; Teile gehen von selbst nacheinander, Korrekturen ohne Kopieren | Bilder über die Verbindung, Verbindung vom iPad oder aus dem Schulnetz |
 | Prüfung der Antwort vor dem Bau mit Sätzen, was im Chat zu korrigieren ist, und Auswegen, wenn der Chat dieselbe Antwort wiederholt | Fachliche Prüfung des Inhalts; die bleibt bei der Lehrkraft |
 | Lehrplan: Grundschule, Mittelschule (LehrplanPLUS, Lernbereiche mit Kompetenzerwartungen als Ziel der Einheit im Auftrag) | Realschule, Gymnasium, Förderschule, berufliche Schulen |
 

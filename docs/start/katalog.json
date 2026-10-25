@@ -200,7 +200,7 @@
    "zeile": "Thema ist bekannt",
    "phasen": [
     {
-     "phase": "Aufwärmen",
+     "phase": "Einstieg",
      "anteil": 10,
      "rolle": "einstieg",
      "bausteine": [
@@ -208,7 +208,7 @@
      ]
     },
     {
-     "phase": "Kurz erinnern",
+     "phase": "Vorwissensaktivierung",
      "anteil": 10,
      "rolle": "lesen",
      "bausteine": [
@@ -216,17 +216,17 @@
      ]
     },
     {
-     "phase": "Üben in Stufen",
+     "phase": "Übung",
      "anteil": 55,
      "rolle": "üben",
      "dehnbar": true,
      "bausteine": [
-      "automatisch: Stufe 1 | Erkennen, leichte Fälle.",
-      "automatisch: Stufe 2 | Anwenden auf Fälle, mit Eingabe."
+      "automatisch: Stufe 1 | Üben in Stufen, Stufe 1: erkennen, leichte Fälle.",
+      "automatisch: Stufe 2 | Üben in Stufen, Stufe 2: anwenden auf Fälle, mit Eingabe."
      ]
     },
     {
-     "phase": "Selbstkontrolle",
+     "phase": "Lernzielkontrolle",
      "anteil": 15,
      "rolle": "sichern",
      "bausteine": [
@@ -249,7 +249,7 @@
    "zeile": "Fragenkatalog oder Stoffliste liegt vor",
    "phasen": [
     {
-     "phase": "Überblick",
+     "phase": "Zielangabe",
      "anteil": 5,
      "rolle": "rahmen",
      "bausteine": [
@@ -257,7 +257,7 @@
      ]
     },
     {
-     "phase": "Erinnern",
+     "phase": "Wiederholung",
      "anteil": 25,
      "rolle": "lesen",
      "dehnbar": true,
@@ -266,16 +266,16 @@
      ]
     },
     {
-     "phase": "Üben nach Teilthemen",
+     "phase": "Übung",
      "anteil": 45,
      "rolle": "üben",
      "dehnbar": true,
      "bausteine": [
-      "automatisch: Teilthemen üben | Aufgaben je Teilthema."
+      "automatisch: Teilthemen üben | Üben nach Teilthemen: Aufgaben je Teilthema."
      ]
     },
     {
-     "phase": "Probelauf",
+     "phase": "Lernzielkontrolle",
      "anteil": 20,
      "rolle": "sichern",
      "bausteine": [
@@ -306,7 +306,7 @@
      ]
     },
     {
-     "phase": "Lesen",
+     "phase": "Erarbeitung",
      "anteil": 35,
      "rolle": "lesen",
      "dehnbar": true,
@@ -315,7 +315,7 @@
      ]
     },
     {
-     "phase": "Üben",
+     "phase": "Übung",
      "anteil": 30,
      "rolle": "üben",
      "dehnbar": true,
@@ -325,7 +325,7 @@
      ]
     },
     {
-     "phase": "Sichern",
+     "phase": "Sicherung",
      "anteil": 20,
      "rolle": "sichern",
      "bausteine": [
@@ -333,7 +333,7 @@
      ]
     },
     {
-     "phase": "Anwendung",
+     "phase": "Transfer",
      "anteil": 5,
      "rolle": "sichern",
      "optional": true,
@@ -699,5 +699,5 @@
   "Geschichte",
   "Lesebuch"
  ],
- "version": "2.0.0-b8"
+ "version": "2.0.0-b9"
 }

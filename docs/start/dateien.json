@@ -1,5 +1,5 @@
 {
-"version": "2.0.0-b8",
+"version": "2.0.0-b9",
 "dateien": [
 "ansicht.css",
 "bilder.js",
@@ -21,6 +21,7 @@
 "muster-locker.svg",
 "nachbau.js",
 "schritte.js",
+"themen.js",
 "verbindung.js",
 "worker.js",
 "lehrplan/index.json",

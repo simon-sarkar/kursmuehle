@@ -92,10 +92,12 @@
     speichern(null); V.info = null; V.fehler = null;
     zeichne();
   };
+  // AP13.8: ein Agent darf sich beim Abholen benennen (`/auftrag?name=…`, docs/bruecke.py prüft die Zeichen)
+  function agentName() { return (V.info && V.info.name) || "Agent"; }
   V.name = function () {
     if (!V.info) return "Eigene KI";
     if (V.info.modus === "test") return "Kursmühle-KI (Test)";
-    return "Eigene KI (" + (V.info.modus === "agent" ? "Agent" : V.info.modell || "Schlüssel") + ")";
+    return "Eigene KI (" + (V.info.modus === "agent" ? agentName() : V.info.modell || "Schlüssel") + ")";
   };
   V.gemerkt = gespeichert();
 
@@ -110,7 +112,7 @@
 
   function zustandText() {
     if (V.info && V.info.modus === "test") return "verbunden · Kursmühle-KI (Testphase)";
-    if (V.info) return "verbunden · " + (V.info.modus === "agent" ? "Agent" + (V.info.bereit ? "" :
+    if (V.info) return "verbunden · " + (V.info.modus === "agent" ? agentName() + (V.info.bereit ? "" :
         " (holt gerade nichts ab)") : V.info.modell);
     if (V.fehler === "code") return "Code stimmt nicht";
     if (V.fehler && V.gemerkt) return "nicht erreichbar";
@@ -247,8 +249,8 @@
   }
   function dauer(ms) { var s = Math.round(ms / 1000); return Math.floor(s / 60) + ":" + ("0" + s % 60).slice(-2); }
 
-  // Text an die eigene KI: „Deine KI schreibt …“ mit Dauer über o.stand, die Antwort an o.fertig (dasselbe Einsetzen
-  // wie beim Einfügen von Hand); ohne Verbindung öffnet sich „So geht es“
+  // Text an die eigene KI: „Deine KI schreibt …“ mit Dauer über o.stand (davor o.vor, etwa „Teil 2 von 3 · “), die
+  // Antwort an o.fertig (dasselbe Einsetzen wie beim Einfügen von Hand); ohne Verbindung öffnet sich „So geht es“
   S.anKi = async function (text, o) {
     if (S.kiLaeuft) return false;            // ein Auftrag zur Zeit; ein zweiter Klick schickt nichts doppelt
     fehlerWeg();
@@ -262,7 +264,7 @@
     if (o.vorher) o.vorher();
     zeichne();
     var t0 = Date.now();
-    function tick() { o.stand("Deine KI schreibt … " + dauer(Date.now() - t0), "laeuft"); }
+    function tick() { o.stand((o.vor || "") + "Deine KI schreibt … " + dauer(Date.now() - t0), "laeuft"); }
     tick();
     var uhr = setInterval(tick, 1000);
     try {

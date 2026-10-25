@@ -17,13 +17,15 @@ Der Schlüssel kommt aus der Umgebungsvariable (OPENAI_API_KEY, ANTHROPIC_API_KE
 Abfrage beim Start; er steht nie in einer Datei oder einer Logzeile. Aufträge und Antworten liegen nur im Speicher.
 
 Schnittstelle (jede Anfrage mit `Authorization: Bearer <Code>`):
-    GET    /status                       {version, modus, modell, bereit, wartend}
+    GET    /status                       {version, modus, modell, name, bereit, wartend}
     POST   /gespraech                    {gespraech}
     DELETE /gespraech/<id>
     POST   /auftrag {gespraech, text}    {auftrag}
     GET    /antwort/<auftrag>            {text} oder {fehler}; 204, solange sie fehlt
     nur im Modus agent:
-    GET    /auftrag?warten=60            {auftrag, gespraech, text, fortsetzung}; 204 nach der Wartezeit
+    GET    /auftrag?warten=60[&name=N]   {auftrag, gespraech, text, fortsetzung}; 204 nach der Wartezeit; `name`
+                                         (höchstens 40 Zeichen: Buchstaben, Ziffern, Leerzeichen, Punkt, Bindestrich)
+                                         zeigt die Mühle neben „Eigene KI“
     POST   /antwort {auftrag, text}      {ok}
 
 Kursmühle, https://kursmuehle.de · Lizenz: PolyForm Noncommercial 1.0.0
@@ -56,16 +58,19 @@ SPERRE = 60                        # Sekunden nach fünf falschen Codes
 VERFALL = 2 * 3600                 # ein Gespräch ohne Auftrag verfällt
 AUFTRAG_ZEIT = 10 * 60             # so lange wartet ein Auftrag auf seine Antwort
 ABFRAGE = 60                       # längstes `warten=` beim Abholen
+NAME = re.compile(r"(?:[^\W_]|[ .-]){1,40}")    # Name des Agenten (AP13.8): Buchstaben, Ziffern, Leerzeichen, . und -
 
-# Je Anbieter: Adresse, Pfad, Umgebungsvariable, Standardmodell (Sonnet-Klasse), Format der Anfrage
+# Je Anbieter: Adresse, Pfad, Umgebungsvariable, Standardmodell, Format der Anfrage. Standard ist nach der Modellregel
+# der Startseite das neueste Modell ohne Zusatz (keins mit mini, fast, flash, lite, nano, small); `--modell` wählt ein
+# kleineres.
 ANBIETER = {
     "openai": {"adresse": "https://api.openai.com", "pfad": "/v1/chat/completions", "schluessel": "OPENAI_API_KEY",
-               "modell": "gpt-5-mini", "format": "openai", "tokens": "max_completion_tokens"},
+               "modell": "gpt-5", "format": "openai", "tokens": "max_completion_tokens"},
     "anthropic": {"adresse": "https://api.anthropic.com", "pfad": "/v1/messages", "schluessel": "ANTHROPIC_API_KEY",
                   "modell": "claude-sonnet-5-5", "format": "anthropic", "tokens": "max_tokens",
                   "kopf": {"anthropic-version": "2023-06-01"}},
     "mistral": {"adresse": "https://api.mistral.ai", "pfad": "/v1/chat/completions", "schluessel": "MISTRAL_API_KEY",
-                "modell": "mistral-medium-latest", "format": "openai", "tokens": "max_tokens"},
+                "modell": "mistral-large-latest", "format": "openai", "tokens": "max_tokens"},
     "ollama": {"adresse": "http://127.0.0.1:11434", "pfad": "/api/chat", "schluessel": None,
                "modell": "qwen3:14b", "format": "ollama"},
 }
@@ -143,6 +148,7 @@ class Bruecke:
         self.auftraege = {}           # id -> {gespraech, text, status, antwort, fehler, start, fortsetzung}
         self.offen = []               # Agentenmodus: Aufträge, die noch niemand abgeholt hat
         self.fehlversuche, self.gesperrt_bis, self.agent_zuletzt, self.agent_wartet = 0, 0.0, 0.0, 0
+        self.agent_name = None        # nennt der Agent beim Abholen einen Namen, steht er im Status
 
     # Code prüfen; nach fünf Fehlversuchen nimmt die Brücke 60 s lang keinen Code an
     def pruefen(self, kopf):
@@ -236,7 +242,8 @@ class Bruecke:
         bereit = self.modus == "schluessel" or self.agent_wartet > 0 or \
             time.time() - self.agent_zuletzt < self.abfrage + 30
         return {"version": VERSION, "modus": self.modus, "modell": self.modell if self.modus == "schluessel" else None,
-                "bereit": bereit, "wartend": len(self.offen)}
+                "name": self.agent_name if self.modus == "agent" else None, "bereit": bereit,
+                "wartend": len(self.offen)}
 
 
 # --- HTTP ----------------------------------------------------------------------------------------------------------
@@ -338,6 +345,10 @@ class Handler(BaseHTTPRequestHandler):
                 warten = float((frage.get("warten") or ["0"])[0])
             except ValueError:
                 warten = 0.0
+            name = " ".join((frage.get("name") or [""])[0].split())
+            if NAME.fullmatch(name):                # ein ungültiger Name ändert nichts, das Abholen läuft weiter
+                with b.lock:
+                    b.agent_name = name
             r = b.abholen(warten)
             return self.senden(200, r) if r else self.senden(204)
         with b.lock:

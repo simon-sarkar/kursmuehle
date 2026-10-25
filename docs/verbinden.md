@@ -6,11 +6,12 @@ antwortest mit einer Kursdatei. Die Lehrkraft hat dich gebeten, dich zu verbinde
 
 1. Lade `https://kursmuehle.de/bruecke.py` in einen leeren Ordner (HTTPS genügt, eine Prüfsumme brauchst du nicht).
 2. Starte sie im Hintergrund: `python3 bruecke.py --agent` (Windows: `py bruecke.py --agent`; fehlt Python dort,
-   installiere es zuerst von python.org). Sie lauscht nur auf `127.0.0.1:48127`.
+   installiere es von python.org). Sie lauscht nur auf `127.0.0.1:48127`; `--modell` erlaubt ein kleineres Modell.
 3. Nenne der Lehrkraft einmal den Code aus der Zeile `Code:` der Ausgabe und die Adresse aus `Mühle auf diesem
    Rechner:`. Sie gibt den Code in der Mühle unter „Eigene KI“ ein.
-4. Hole Aufträge in einer Schleife: `GET http://127.0.0.1:48127/auftrag?warten=60` mit
-   `Authorization: Bearer <Code>`. 204 heißt: noch keiner, gleich wieder fragen. 200 liefert
+4. Hole Aufträge in einer Schleife: `GET http://127.0.0.1:48127/auftrag?warten=60&name=<dein Name>` mit
+   `Authorization: Bearer <Code>`; der Name (etwa `Claude%20Code`, höchstens 40 Zeichen: Buchstaben, Ziffern,
+   Leerzeichen, Punkt, Bindestrich) steht dann in der Mühle. 204 heißt: noch keiner, gleich wieder fragen. 200 liefert
    `{auftrag, gespraech, text, fortsetzung}`; `fortsetzung: true` heißt: derselbe Unterricht wie der vorige Auftrag
    desselben `gespraech`, dessen Zusammenhang gilt weiter.
 5. Schreib die Antwort genau nach dem Format im Auftrag und sende sie: `POST http://127.0.0.1:48127/antwort` mit

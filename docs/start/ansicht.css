@@ -391,7 +391,7 @@ select.k-typ { width: auto; max-width: 100%; min-height: 32px; padding: 3px 6px;
 .k-felder { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; font-size: 0.9rem; color: var(--leise); }
 .k-felder label { display: inline-flex; align-items: center; gap: 6px; }
 .k-felder input { width: auto; min-height: 34px; padding: 4px 8px; border-color: transparent; background: var(--grund); }
-.k-phase { width: 11rem !important; }
+.k-phase { width: 14rem !important; }   /* längster Phasenname „Vorwissensaktivierung“ (AP13.8 §9) */
 .k-soll { width: 4.5rem !important; }
 .k-ist { font-size: 0.85rem; }
 .k-an-l { margin: 6px 0 2px; font-size: 0.9rem; color: var(--leise); }
@@ -535,7 +535,6 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
   .s-zeile { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; }
   .s-fazit { margin-left: 0; grid-column: 2; }
   .karte { padding: 10px 12px 6px; }
-  .k-phase { width: 9.5rem !important; }
   .hinzufuegen select { flex: 1 1 auto; }
   .k-neu { order: 3; }
   .k-loeschen { margin-left: 0; }

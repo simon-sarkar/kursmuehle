@@ -553,12 +553,30 @@
       ? " (alle Punkte zusammen)" : "") + (ki ? "; ihre Antwort setzt die Mühle ein." :
         ". Füge sie in deinen Chat ein und die Antwort des Chats hier unten.");
     $("korrektur-kopieren").textContent = ki ? "An meine KI senden" : "Korrektur anfordern";
+    modellHinweisZeigen(zeigen);
     $("korrektur-antwort").hidden = !S.korrektur.offen;
     S.standKarte($("korrektur-ergebnis"), S.korrektur.stand, S.korrektur.art);
     if (!S.korrektur.text && !neu.length) S.korrektur.text = S.korrekturen.map(function (k) { return k.satz; })
         .join("\n");
     $("korrektur-feld").value = S.korrektur.text;
     $("korrektur-kopieren").disabled = !S.korrektur.text || S.kiBesetzt();
+  }
+  // AP13.8: nach der zweiten roten Runde (Zähler `schleife`) einmal je Einheit eine Zeile unter der Korrekturbitte zum
+  // Modell, nur im Kopierweg (mit verbundener KI, Testphase, Schlüssel oder Agent, ist das Modell gesetzt). Gemerkt in
+  // `modellhinweis`.
+  var MODELL_HINWEIS = "Bietet dein Chat mehrere Modelle an, wähle das größte; kleine Modelle liefern die Kursdatei " +
+      "öfter in dieser Form.";
+  function verbunden() { return !!(S.anKiAktiv && S.anKiAktiv()); }
+  S.modellHinweis = null;
+  function modellHinweisPruefen(ids) {
+    var tag = einheitTag() || "", liste = Z.mappe.modellhinweis = Z.mappe.modellhinweis || [];
+    if (verbunden() || liste.indexOf(tag) >= 0 || !ids.some(ausweg)) return;
+    liste.push(tag); S.modellHinweis = tag;
+  }
+  function modellHinweisZeigen(zeigen) {
+    var p = $("korrektur-modell");
+    if (!p) { p = el("p", { id: "korrektur-modell", cls: "leise", text: MODELL_HINWEIS }); $("korrektur-zeile").after(p); }
+    p.hidden = !zeigen || S.modellHinweis !== (einheitTag() || "") || verbunden();
   }
   // Jede Korrekturbitte als Ereignis in der Kursmappe (keine Inhalte): Version, Chat, Typ, Regel, Runde je Einheit
   function korrekturVermerken() {
@@ -576,6 +594,7 @@
   }
   $("korrektur-kopieren").onclick = function () {
     if (!S.korrektur.text) return;
+    S.modellHinweis = null;                        // der Hinweis stand bei dieser Bitte; danach nicht wieder
     S.korrektur.offen = true; S.korrektur.stand = ""; S.korrektur.art = "";
     $("korrektur-antwort").hidden = false; S.standKarte($("korrektur-ergebnis"), "");
     // eigene KI: dieselbe Bitte ins Gespräch der Einheit, die Antwort durch korrekturEinsetzen wie eingefügt
@@ -647,6 +666,7 @@
               "; die Bitte oben ist neu, kopiere sie noch einmal." : "; die Bitte oben ist dieselbe wie vorher.") + weg;
         S.korrektur.stand += r.fehler.length ? " " + r.fehler.join(" ") : "";
         S.korrektur.art = "fehler"; S.korrektur.text = "";
+        modellHinweisPruefen(ids);
       }
       zeichne(); geaendert(); korrekturSpaeter(0);
       var f = !$("korrektur").hidden ? $("korrektur-kopieren") : $("weiter-5");
