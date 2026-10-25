@@ -1,17 +1,21 @@
 # Changelog
 
-## Unveröffentlicht
+## 2.0.0-b10 – 2026-10-25 (AP13.5g: Befunde des Erstnutzer-Tests)
 
-- Das Design Grundschule trägt kein Dreieck mehr: der Import seiner letzten offenen CSS-Eigenschaft ist geprüft.
-- Ist eine genaue Zahl von Bildern gewählt, verlangt der Text für den Chat genau so viele, und die Prüfung meldet, wenn welche fehlen.
+- Die Startseite nennt keine Schulart mehr als Grenze; eine Zielgruppe wie „Elternabend“ steht unter „Erweitert“, das Feld Jahrgangsstufe nimmt nur Zahlen.
+- Angehakte Lernbereiche zeigen „Noch nicht übernommen“ und gelten auch, wenn du den Schritt ohne „Übernehmen“ verlässt.
+- Neben Schritt 3 stehen zwei gerahmte Vorschauen, die Einheit und die Kursseite im gewählten Format; nichts darin ist klickbar.
+- Schritt 3 zeigt die Gruppen nacheinander (Design, Farbe, Dichte, Ränder, Kursformat, Bilder, Übungen), die vorgewählte Kachel heißt „Standard“, und „Eigene“ öffnet den Farbwähler auf der Kachel.
+- „Eckig“ und „Linie“ sind bei jedem Design zu sehen; neu ist „Wellig“, ein Rand wie mit Bleistift gezogen; Grundschule trägt kein Dreieck mehr.
+- Bei Bilder trägt „Benutzerdefiniert“ eine Zahl von 1 bis 30 ein; der Text für den Chat verlangt dann genau so viele, und die Prüfung meldet, wenn welche fehlen.
+- Auf dem Handy passt die Kopfzeile in zwei Zeilen, Öffnen, Speichern und Neue Einheit liegen im Menü; die Designs stehen in zwei Spalten.
+- Nach dem Kopieren erscheint kurz „Text kopiert“; das Einfügefeld klappt nach dem Übernehmen zu, „Noch einmal einfügen“ öffnet es wieder.
+- Bildkarten nennen das Format aus dem Prompt, schneiden ein abweichendes Bild auf Wunsch zu und klappen nach „Passt“ zu; bei ByLKI steht ein Satz zum kleinen Bildguthaben.
 - Schritt 6 beginnt mit der Wahl, wie du die Lösungen prüfst: mit deiner KI, in einem neuen Chat oder selbst; nur dieser Teil klappt auf.
 - Beim Gegenprüfen steht je Abweichung die Lösung der Kursdatei neben der Antwort des Chats, mit drei Wegen: Aufgabe korrigieren lassen, „Meine Lösung gilt“, „Übergehen“; weiter geht es, wenn alle entschieden sind.
 - Korrekturen aus Schritt 6 gehen als eine Bitte je Baustein in das Gespräch der Einheit; Entscheidungen zu unveränderten Bausteinen bleiben danach stehen.
 - Zeilen „Rückmeldung …“ unter einem Lückentext oder einer Einsetzen-Aufgabe sind ein Fehler mit Korrekturbitte statt zusätzlicher Lücken; der Text für den Chat sagt, dass der Tipp in die Lücke gehört.
-- Die Startseite nennt keine Schulart mehr als Grenze; eine Zielgruppe wie „Elternabend“ steht unter „Erweitert“, das Feld Jahrgangsstufe nimmt nur Zahlen.
-- Angehakte Lernbereiche zeigen „Noch nicht übernommen“ und gelten auch, wenn du den Schritt ohne „Übernehmen“ verlässt.
-- Nach dem Kopieren erscheint kurz „Text kopiert“; das Einfügefeld klappt nach dem Übernehmen zu, „Noch einmal einfügen“ öffnet es wieder.
-- Bildkarten nennen das Format aus dem Prompt, schneiden ein abweichendes Bild auf Wunsch zu und klappen nach „Passt“ zu; bei ByLKI steht ein Satz zum kleinen Bildguthaben.
+- Quadratische und hochformatige Bilder stehen mittig mit höchstens 60 bzw. 45 % der Breite.
 - Die Startseite zeigt Schritt 3 als Bild; der Datenschutz-Abschnitt sagt jede Angabe einmal.
 
 ## 2.0.0-b9 – 2026-10-25 (AP13.7, AP13.8, AP13.9: Produktstand für den Erstnutzer-Test)

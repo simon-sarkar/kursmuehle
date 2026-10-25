@@ -432,7 +432,7 @@
   "farbe": [
    {
     "wert": "",
-    "text": "Wie die Familie"
+    "text": "Standard"
    },
    {
     "wert": "blau",
@@ -492,6 +492,12 @@
     "text": "viele",
     "min": 8,
     "max": null
+   },
+   {
+    "wert": "zahl",
+    "text": "Benutzerdefiniert",
+    "min": 1,
+    "max": 30
    }
   ],
   "bild_hochladen": {
@@ -700,5 +706,5 @@
   "Geschichte",
   "Lesebuch"
  ],
- "version": "2.0.0-b9"
+ "version": "2.0.0-b10"
 }

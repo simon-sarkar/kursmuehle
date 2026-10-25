@@ -30,8 +30,7 @@
           richtungText() : []).filter(Boolean).join(" · ");
     }
     if (n === 3) return [oberText("familie", S.angaben.familie || "sachlich"), feinheitenText(),
-      oberText("format", S.angaben.format),
-      "Bilder: " + oberText("bilder", bilderWert()), oberText("website", S.angaben.website ||
+      oberText("format", S.angaben.format), bilderText(), oberText("website", S.angaben.website ||
           "textfeld")].filter(Boolean).join(" · ");
     if (n === 4) { var c = chatInfo(Z.mappe.chat); return c ? c.text + (Z.mappe.kopiert ? " · Text kopiert" : "") : "";
         }
@@ -404,7 +403,7 @@
         S.korrekturen = []; S.letzteAntwort = null;
     S.korrektur = { text: "", offen: false, stand: "", art: "" };
     $("korrektur-eingabe").value = ""; $("eingabe-stand").hidden = true;
-    S.chatWahlOffen = false; S.auf = {};
+    S.chatWahlOffen = false; S.auf = {}; gruppenBis = 1;
     $("chat-text-feld").value = ""; $("gegen-text-feld").value = ""; $("gegen-antwort").value = "";
     $("gegen-ergebnis").innerHTML = ""; $("gegen-stand").textContent = ""; $("kopiert").textContent = "";
     $("eingabe-stand").textContent = ""; $("infobox").hidden = true; $("importiert-stand").hidden = true;
@@ -637,7 +636,6 @@
     Array.prototype.forEach.call(box.querySelectorAll(".aus-kachel"), function (b) {
       b.setAttribute("aria-checked", String(b.dataset.wert === gewaehlt));
     });
-    $("vorschau-name").textContent = (familieInfo(gewaehlt) || {}).text || "";
     vorschauLaden();
   }
   // Vorschau der gewählten Familie (AP13.5d §1, §4): bei jedem Wechsel von Familie oder Feinheit ein Aufruf von
@@ -652,6 +650,7 @@
     if (innen.dataset.stand !== vorschauFertig) {
       innen.innerHTML = vorschauHtml;                                 // HTML aus dem Generator
       innen.dataset.stand = vorschauFertig;
+      ruhig(innen);
     }
     vorschauMassstab();
   }
@@ -669,6 +668,13 @@
       vorschauStand = "";
       console.error("Vorschau der Familie", e);
     });
+  }
+  // AP13.5g b2: die Vorschau ist Anschauung; nichts darin bekommt den Fokus (dazu inert, aria-hidden im Markup und
+  // pointer-events: none in ansicht.css)
+  function ruhig(box) {
+    box.setAttribute("inert", "");
+    Array.prototype.forEach.call(box.querySelectorAll("a, button, input, select, textarea, summary, [tabindex]"),
+        function (e) { e.setAttribute("tabindex", "-1"); });
   }
   // die Mini-Einheit ist 500 px breit (plus Rand); verkleinert auf die Breite der Spalte oder Leiste
   function vorschauMassstab() {
@@ -696,7 +702,7 @@
         '" height="3" rx="1" fill="#5B6475"/>';
     return s + "</svg>";
   }
-  // Kästen: rund, eckig, Linie; „familie“ zeichnet die Form der gewählten Familie (formen.kasten in familien.yaml)
+  // Ränder: rund, eckig, Linie, wellig; „familie“ zeichnet die Form der gewählten Familie (formen.kasten in familien.yaml)
   function miniKasten(wert) {
     var s = '<svg viewBox="0 0 120 40" aria-hidden="true" focusable="false"><rect width="120" height="40" fill="#fff"/>',
         text = '<rect x="26" y="15" width="56" height="3" rx="1" fill="#5B6475"/><rect x="26" y="22" width="40" ' +
@@ -705,9 +711,13 @@
       return '<rect x="14" y="7" width="92" height="26" rx="' + r + '" fill="' + fill + '"' +
           (stroke ? ' stroke="#5B6475"' : '') + (extra || "") + '/>';
     };
-    if (wert === "linie") return s + '<rect x="14" y="7" width="3" height="26" fill="#5B6475"/>' + text + "</svg>";
+    if (wert === "linie") return s + '<rect x="14" y="7" width="4" height="26" fill="#5B6475"/>' + text + "</svg>";
     if (wert === "rund") return s + box(10, "#EEF1F6", true) + text + "</svg>";
-    if (wert === "eckig") return s + box(0, "#EEF1F6", true) + text + "</svg>";
+    if (wert === "eckig") return s + '<rect x="15" y="8" width="90" height="24" fill="#fff" stroke="#5B6475" ' +
+        'stroke-width="2"/>' + text + "</svg>";
+    if (wert === "wellig") return s + '<path d="M15 8.6C40 7.2 76 9.6 105 7.9C106 16 104.6 25 105.4 32.1C76 33.2 ' +
+        '40 31.4 14.8 32.4C14 25 15.6 16 15 8.6Z" fill="#fff" stroke="#5B6475" stroke-width="1.8" ' +
+        'stroke-linejoin="round"/>' + text + "</svg>";
     var f = familieInfo(familieJetzt()) || {}, r = Math.min(f.kasten_r || 0, 12), form = f.kasten_form || "rahmen";
     var teil = {
       balken: box(r, "#EEF1F6") + '<rect x="14" y="7" width="4" height="26" fill="#5B6475"/>',
@@ -773,22 +783,50 @@
     return b;
   }
   // Kacheln werden einmal gebaut und danach nur umgeschaltet: ein Neubau zwischen mousedown und mouseup schluckt in
-  // Firefox den Klick, der Steckbrief bliebe ohne die Wahl. w.label setzt eine Beschriftung nur für Vorleseprogramme
-  // (erste Kachel bei Farbe und Kästen, ohne sichtbaren Text)
+  // Firefox den Klick, der Steckbrief bliebe ohne die Wahl. w.label setzt eine Beschriftung nur für Vorleseprogramme,
+  // wenn die Kachel keinen Text hat; w.element ist eine fertige Kachel aus dem Markup (Farbe „Eigene“ mit Farbwähler)
   function kachelGruppe(box, gruppe, werte, mini, gewaehlt) {
     var alt = box.querySelectorAll(".aus-kachel");
     if (alt.length !== werte.length || werte.some(function (w, i) { return alt[i].dataset.wert !== w.wert; })) {
       box.innerHTML = "";
-      werte.forEach(function (w) { box.appendChild(kachel(gruppe, w.wert, w.text, "", false, w.zeile, w.probe)); });
+      werte.forEach(function (w) { box.appendChild(w.element || kachel(gruppe, w.wert, w.text, "", false, w.zeile,
+          w.probe)); });
     }
     Array.prototype.forEach.call(box.querySelectorAll(".aus-kachel"), function (b, i) {
       b.setAttribute("aria-checked", String(werte[i].wert === gewaehlt));
-      if (werte[i].label) b.setAttribute("aria-label", werte[i].label); else b.removeAttribute("aria-label");
+      if (werte[i].label && !werte[i].text) b.setAttribute("aria-label", werte[i].label); else b.removeAttribute("aria-label");
       var t = b.querySelector(".aus-name-text");
       if (t && t.textContent !== werte[i].text) t.textContent = werte[i].text;
-      var m = b.querySelector(".aus-mini"), svg = mini(werte[i].wert);
-      if (m.dataset.svg !== svg) { m.innerHTML = svg; m.dataset.svg = svg; }      // eigenes SVG, keine Eingabe
+      var m = b.querySelector(".aus-mini"), svg = m && mini(werte[i].wert);
+      if (m && m.dataset.svg !== svg) { m.innerHTML = svg; m.dataset.svg = svg; }  // eigenes SVG, keine Eingabe
     });
+  }
+  // AP13.5g b1: Gruppen in Schritt 3 nacheinander. gruppenBis = Zahl der sichtbaren Gruppen; ein Klick in einer Gruppe
+  // zeigt die nächste, „Alle Einstellungen zeigen“ alle; nach „Weiter“ (mappe.aussehen) stehen alle
+  var GRUPPEN = ["familie", "farbe", "dichte", "kasten", "format", "bilder", "website"], gruppenBis = 1;
+  function gruppenZeigen() {
+    var n = Z.mappe && Z.mappe.aussehen ? GRUPPEN.length : gruppenBis;
+    // Familie mit fester Farbe: in der Gruppe Farbe ist nichts zu klicken, die nächste steht gleich
+    if (GRUPPEN[n - 1] === "farbe" && (familieInfo(familieJetzt()) || {}).akzent_fest) n += 1;
+    Array.prototype.forEach.call(document.querySelectorAll("#schritt-3 .aus-gruppe"), function (g) {
+      g.hidden = GRUPPEN.indexOf(g.dataset.gruppe) >= n;
+    });
+    $("alle-zeigen").hidden = n >= GRUPPEN.length;
+    return n > GRUPPEN.indexOf("format");
+  }
+  $("alle-zeigen").onclick = function () {
+    gruppenBis = GRUPPEN.length;
+    zeichneAussehen();
+    var g = document.querySelector("#schritt-3 .aus-gruppe[data-gruppe=farbe]");
+    if (g && g.hidden) g = document.querySelector("#schritt-3 .aus-gruppe[data-gruppe=dichte]");
+    var k = g && g.querySelector(".aus-kachel"); if (k) k.focus({ preventScroll: true });
+  };
+  // Bilder (AP13.5g b5): eine Zahl im Steckbrief gehört zur Kachel „Benutzerdefiniert“ (wert zahl)
+  function bilderKachel() { var w = String(bilderWert()); return /^\d+$/.test(w) && w !== "0" ? "zahl" : w; }
+  function bilderZahl() { var n = parseInt($("bilder-zahl").value, 10); return n >= 1 && n <= 30 ? n : 10; }
+  function bilderText() {
+    var w = String(bilderWert());
+    return bilderKachel() !== "zahl" ? "Bilder: " + oberText("bilder", w) : w === "1" ? "1 Bild" : w + " Bilder";
   }
   function zeichneAussehen() {
     if (!S.katalog) return;
@@ -798,10 +836,12 @@
       var fest = fam.akzent_fest, farbe = S.angaben.farbe || "";
       kachelGruppe($("aus-dichte"), "dichte", S.familien.dichte, miniDichte, S.angaben.dichte || "normal");
       kachelGruppe($("aus-kasten"), "kasten", S.familien.kasten.map(function (w) {
-        return w.wert === "familie" ? { wert: w.wert, text: "", label: "Kästen wie " + (fam.text || "die Familie") } : w;
+        return w.wert === "familie" ? { wert: w.wert, text: w.text, label: "Ränder wie " + (fam.text || "die Familie") }
+          : w.probe ? { wert: w.wert, text: w.text, probe: "Importprobe steht aus" } : w;
       }), miniKasten, S.angaben.kasten || "familie");
-      $("farbe-eigen-l").hidden = !/^#/.test(farbe) || !!fest;
-      if (/^#[0-9A-Fa-f]{6}$/.test(farbe)) $("farbe-eigen").value = farbe.toLowerCase();
+      if (/^#[0-9A-Fa-f]{6}$/.test(farbe)) { $("farbe-eigen").value = farbe.toLowerCase(); EIGEN.dataset.gewaehlt = "1"; }
+      EIGEN.querySelector(".eigen-mini").style.background = EIGEN.dataset.gewaehlt ? $("farbe-eigen").value : "";
+      $("farbe-eigen").disabled = !!fest;
       $("farbe-fest").hidden = !fest;
       $("farbe-fest").textContent = fest ? oberText("familie", familieJetzt()) + " nutzt keine Akzentfarbe." : "";
       $("aus-farbe").classList.toggle("aus-gesperrt", !!fest);
@@ -813,27 +853,35 @@
     }), function (w) { return miniFormat(w, hue); }, format);
     $("start-l").hidden = format !== "wochen";
     if (document.activeElement !== $("a-start")) $("a-start").value = S.angaben.start || "";
-    // Farbe (AP13.5d §3): erster Kreis = Farbe der Familie (Wert leer), dann fünf Namen, zuletzt „Eigene“
+    // Farbe (AP13.5d §3): erster Kreis = Farbe der Familie (Wert leer, „Standard“), dann fünf Namen, zuletzt
+    // „Eigene“ mit dem Farbwähler auf der Kachel (AP13.5g b1)
     var famHue = fam.akzent || STANDARD_FARBE;
     kachelGruppe($("aus-farbe"), "farbe", o.farbe.map(function (w) {
-      return w.wert ? w : { wert: "", text: "", label: "Farbe von " + (fam.text || "der Familie") };
-    }).concat([{ wert: "eigen", text: "Eigene" }]), function (w) {
-      if (w === "eigen") return '<svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><circle cx="20" cy="20" ' +
-          'r="15" fill="' + (/^#/.test(S.angaben.farbe || "") ? S.angaben.farbe : "#fff") + '" stroke="#5B6475" ' +
-          'stroke-dasharray="3 3" stroke-width="2"/></svg>';
+      return w.wert ? w : { wert: "", text: w.text, label: "Farbe von " + (fam.text || "der Familie") };
+    }).concat([{ wert: "eigen", text: "Eigene", element: EIGEN }]), function (w) {
       return '<svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><circle cx="20" cy="20" r="16" fill="'
         + (FARBEN[w] || famHue) + '"/></svg>';
     }, /^#/.test(S.angaben.farbe || "") ? "eigen" : S.angaben.farbe || "");
     if (S.familien) Array.prototype.forEach.call($("aus-farbe").querySelectorAll(".aus-kachel"), function (b) {
-      b.disabled = !!fam.akzent_fest; });
-    kachelGruppe($("aus-bilder"), "bilder", o.bilder, miniBilder, bilderWert());
+      b.toggleAttribute("disabled", !!fam.akzent_fest); });
+    kachelGruppe($("aus-bilder"), "bilder", o.bilder, miniBilder, bilderKachel());
+    $("bilder-zahl-l").hidden = bilderKachel() !== "zahl";
+    if (bilderKachel() === "zahl" && document.activeElement !== $("bilder-zahl")) $("bilder-zahl").value = bilderWert();
     kachelGruppe($("aus-website"), "website", o.website, function (w) { return miniWebsite(w, hue); },
         S.angaben.website || "textfeld");
+    var mitFormat = gruppenZeigen();
+    $("format-karte").hidden = !mitFormat;
+    if (S.familien) $("vorschau-name").textContent = [(familieInfo(familieJetzt()) || {}).text,
+      mitFormat ? oberText("format", format) : ""].filter(Boolean).join(" · ");
+    if (mitFormat) S.formatVorschau();
   }
   function miniBilder(wert) {
     var n = { "0": 0, "2-3": 2, "4-7": 4, "8+": 8 }[wert] || 0,
         s = '<svg viewBox="0 0 120 76" aria-hidden="true" focusable="false"><rect width="120" height="76" ' +
         'fill="#fff"/>';
+    if (wert === "zahl") return s + '<rect x="30" y="12" width="60" height="52" rx="4" fill="#D5DAE3"/><text x="60" ' +
+        'y="47" text-anchor="middle" font-size="26" font-weight="700" fill="#0B1220" font-family="system-ui, sans-serif">' +
+        (bilderKachel() === "zahl" ? bilderWert() : bilderZahl()) + "</text></svg>";      // nur Ziffern
     if (!n) s += '<rect x="20" y="20" width="80" height="36" rx="3" fill="none" stroke="#C3C8D2" ' +
         'stroke-dasharray="4 3"/>';
     for (var i = 0; i < n; i++) {
@@ -856,15 +904,36 @@
         '" width="40" height="3" rx="1" fill="#5B6475"/>'; });
     return s + "</svg>";
   }
+  // die Kachel „Eigene“ ist ein label: der Klick öffnet den Farbwähler (Klick auf das Feld, hier übergangen); eine
+  // schon gewählte eigene Farbe gilt sofort. „Benutzerdefiniert“ bei Bilder schreibt die Zahl aus dem Feld darunter.
+  var EIGEN = $("farbe-eigen-l");
+  EIGEN.insertBefore(el("span", { cls: "eigen-mini", "aria-hidden": "true" }), EIGEN.firstChild);
+  EIGEN.querySelector(".eigen-mini").appendChild($("farbe-eigen"));
   $("schritt-3").addEventListener("click", function (ev) {
-    var b = ev.target.closest(".aus-kachel"); if (!b || !Z.mappe || b.disabled) return;
+    var b = ev.target.closest(".aus-kachel");
+    if (!b || !Z.mappe || b.hasAttribute("disabled") || ev.target.id === "farbe-eigen") return;
     var a = {}, wert = b.dataset.wert;
-    if (b.dataset.feld === "farbe" && wert === "eigen") wert = $("farbe-eigen").value.toUpperCase();
+    gruppenBis = Math.max(gruppenBis, GRUPPEN.indexOf(b.dataset.feld) + 2);
+    if (b.dataset.feld === "farbe" && wert === "eigen") {
+      if (!EIGEN.dataset.gewaehlt) { zeichneAussehen(); return; }
+      wert = $("farbe-eigen").value.toUpperCase();
+    }
+    if (b.dataset.feld === "bilder" && wert === "zahl") wert = String(bilderZahl());
     a[b.dataset.feld] = wert;
     S.angaben[b.dataset.feld] = wert;
     zeichneAussehen(); felderFuellen();
     angabenSchreiben(a, true);
     if (b.dataset.feld === "format" && wert === "wochen" && !S.angaben.start) $("a-start").focus();
+    if (b.dataset.feld === "bilder" && b.dataset.wert === "zahl") $("bilder-zahl").focus();
+  });
+  // Zahl der Bilder (1 bis 30): schreibt kurs.bilder als Zahl, sobald sie gültig ist
+  var bilderTimer = null;
+  $("bilder-zahl").addEventListener("input", function () {
+    var w = $("bilder-zahl").value.trim();
+    if (!Z.mappe || !/^\d+$/.test(w) || +w < 1 || +w > 30) return;
+    S.angaben.bilder = String(+w);
+    clearTimeout(bilderTimer);
+    bilderTimer = setTimeout(function () { angabenSchreiben({ bilder: String(+w) }, true); }, 300);
   });
   // Kursbeginn (Format Wochen): schreibt kurs.start als JJJJ-MM-TT; leer = Tag des Baus
   $("a-start").addEventListener("change", function () {
@@ -878,6 +947,8 @@
   $("farbe-eigen").addEventListener("change", function () {
     if (!Z.mappe) return;
     var w = $("farbe-eigen").value.toUpperCase();
+    EIGEN.dataset.gewaehlt = "1";
+    gruppenBis = Math.max(gruppenBis, GRUPPEN.indexOf("farbe") + 2);
     S.angaben.farbe = w;
     zeichneAussehen(); felderFuellen();
     angabenSchreiben({ farbe: w }, true);
@@ -992,6 +1063,24 @@
     geaendert();
   });
 
+  // Kopfzeile unter 640 px (AP13.5g b7): der Menüknopf klappt die Textlinks als Liste auf; ein Klick darin, Escape
+  // oder ein Klick außerhalb klappt zu
+  function menue(auf) {
+    $("kopf-menue").setAttribute("aria-expanded", String(auf));
+    document.querySelector(".kopf").classList.toggle("menue-auf", auf);
+  }
+  $("kopf-menue").onclick = function () { menue($("kopf-menue").getAttribute("aria-expanded") !== "true"); };
+  $("kopf-links").addEventListener("click", function (ev) {
+    if (ev.target.closest(".kopf-link")) setTimeout(function () { menue(false); }, 0);   // erst nach der Dateiwahl
+  });
+  document.addEventListener("click", function (ev) {
+    if (!ev.target.closest(".kopf") && $("kopf-menue").getAttribute("aria-expanded") === "true") menue(false);
+  });
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key !== "Escape" || $("kopf-menue").getAttribute("aria-expanded") !== "true") return;
+    menue(false); $("kopf-menue").focus();
+  });
+
   // hell und dunkel wie die Landingpage (Schlüssel kursmuehle-schema)
   function schemaZeigen() {
     var d = document.documentElement.dataset.theme === "dark";
@@ -1005,7 +1094,7 @@
     schemaZeigen();
   };
   Object.assign(S, { adresseLesen: adresseLesen, angabenSchreiben: angabenSchreiben, felderPruefen: felderPruefen,
-    gehe: gehe, jahrgangZahl: jahrgangZahl, nachZwei: nachZwei, neuStart: neuStart,
+    akzent: akzent, gehe: gehe, jahrgangZahl: jahrgangZahl, nachZwei: nachZwei, neuStart: neuStart,
     schemaZeigen: schemaZeigen, steckbriefSicher: steckbriefSicher, vorlageNach: vorlageNach, vorschauLaden: vorschauLaden,
     vorlagenZeigen: vorlagenZeigen, weiterAnzeigen: weiterAnzeigen, zeichneAussehen: zeichneAussehen,
     zeichneSchritte: zeichneSchritte, zeigeFehler: zeigeFehler });

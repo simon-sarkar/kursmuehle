@@ -16,14 +16,19 @@
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
   <p id="kopf-status" class="status" role="status" aria-live="polite"></p>
-  <div class="kopf-links">
-    <span id="autosave-stand" class="kopf-stand"></span>
+  <span id="autosave-stand" class="kopf-stand"></span>
+  <!-- unter 640 px: Logo, Name, Menü und × in der ersten Zeile, Status und Sicherung in der zweiten; das Menü klappt
+       die Textlinks als Liste auf -->
+  <button type="button" id="kopf-menue" class="kopf-menue" aria-expanded="false" aria-controls="kopf-links"
+    aria-label="Menü"><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false"><path
+    d="M3 5.5h14M3 10h14M3 14.5h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+  <div id="kopf-links" class="kopf-links">
     <label for="datei-oeffnen" class="kopf-link">Einheit öffnen</label>
     <button type="button" id="speichern" class="kopf-link" disabled hidden>Einheit speichern</button>
     <button type="button" id="neue-einheit" class="kopf-link" hidden>Neue Einheit</button>
     <button type="button" id="schema" class="kopf-link" title="Farbschema wechseln">Dunkel</button>
-    <button type="button" id="schliessen" class="kopf-x" aria-label="Einheit schließen" title="Einheit schließen" hidden>×</button>
   </div>
+  <button type="button" id="schliessen" class="kopf-x" aria-label="Einheit schließen" title="Einheit schließen" hidden>×</button>
 </div>
 </header>
 <div id="verwerfen-frage" class="verwerfen-frage" role="alertdialog" aria-labelledby="verwerfen-text" hidden>
@@ -173,39 +178,50 @@
       <span class="s-titel" id="s3-titel">Wie soll der Kurs aussehen?</span><span class="s-fazit"></span></button></h2>
     <div class="s-inhalt">
       <div class="aus-raster">
+      <!-- Gruppen nacheinander (AP13.5g b1): beim ersten Erreichen nur Design, jede weitere nach einem Klick in der
+           Gruppe davor; „Alle Einstellungen zeigen“ zeigt den Rest, „Weiter“ übernimmt für verdeckte Gruppen den
+           Standard. Nach „Weiter“ (mappe.aussehen) stehen alle Gruppen. -->
       <div class="aussehen">
-        <div class="aus-gruppe"><h3 class="unterkopf" id="aus-familie-t">Design</h3>
-          <div id="aus-familie" class="kacheln-wahl familien vierer" role="radiogroup" aria-labelledby="aus-familie-t"></div>
-          <details id="feinheiten" class="feinheiten">
-            <summary>Feinheiten</summary>
-            <div class="feinheiten-inhalt">
-              <h4 class="unterkopf" id="aus-farbe-t">Farbe</h4>
-              <div class="farb-reihe">
-                <div id="aus-farbe" class="kacheln-wahl farben" role="radiogroup" aria-labelledby="aus-farbe-t"></div>
-                <label id="farbe-eigen-l" class="farbe-eigen" hidden><span class="unsichtbar">Eigene Farbe</span>
-                  <input id="farbe-eigen" type="color" value="#1d5fd1"></label></div>
-              <p id="farbe-fest" class="leise" hidden></p>
-              <h4 class="unterkopf" id="aus-dichte-t">Dichte</h4>
-              <div id="aus-dichte" class="kacheln-wahl schmal" role="radiogroup" aria-labelledby="aus-dichte-t"></div>
-              <h4 class="unterkopf" id="aus-kasten-t">Kästen</h4>
-              <div id="aus-kasten" class="kacheln-wahl schmal" role="radiogroup" aria-labelledby="aus-kasten-t"></div>
-            </div>
-          </details></div>
-        <div class="aus-gruppe"><h3 class="unterkopf" id="aus-format-t">Kursformat</h3>
+        <div class="aus-gruppe" data-gruppe="familie"><h3 class="unterkopf" id="aus-familie-t">Design</h3>
+          <div id="aus-familie" class="kacheln-wahl familien vierer" role="radiogroup" aria-labelledby="aus-familie-t"></div></div>
+        <div id="feinheiten" class="feinheiten">
+          <div class="aus-gruppe" data-gruppe="farbe"><h3 class="unterkopf" id="aus-farbe-t">Farbe</h3>
+            <div id="aus-farbe" class="kacheln-wahl farben" role="radiogroup" aria-labelledby="aus-farbe-t"></div>
+            <!-- die Kachel „Eigene“ trägt den Farbwähler; schritte.js setzt sie als letzte Kachel in #aus-farbe -->
+            <label id="farbe-eigen-l" class="aus-kachel farbe-eigen" data-feld="farbe" data-wert="eigen" role="radio"
+              aria-checked="false"><input id="farbe-eigen" type="color" value="#1d5fd1" aria-label="Eigene Farbe"><span
+              class="aus-name"><span class="aus-name-text">Eigene</span></span></label>
+            <p id="farbe-fest" class="leise" hidden></p></div>
+          <div class="aus-gruppe" data-gruppe="dichte"><h3 class="unterkopf" id="aus-dichte-t">Dichte</h3>
+            <div id="aus-dichte" class="kacheln-wahl schmal" role="radiogroup" aria-labelledby="aus-dichte-t"></div></div>
+          <div class="aus-gruppe" data-gruppe="kasten"><h3 class="unterkopf" id="aus-kasten-t">Ränder</h3>
+            <div id="aus-kasten" class="kacheln-wahl schmal" role="radiogroup" aria-labelledby="aus-kasten-t"></div></div>
+        </div>
+        <div class="aus-gruppe" data-gruppe="format"><h3 class="unterkopf" id="aus-format-t">Kursformat</h3>
           <div id="aus-format" class="kacheln-wahl vierer" role="radiogroup" aria-labelledby="aus-format-t"></div>
           <label id="start-l" class="feld feld-klein start-feld" hidden>Kursbeginn <input id="a-start" type="date"></label></div>
-        <!-- Zahl der Bilder (Steckbrief kurs.bilder) und Darstellung der Übungen (kurs.website) -->
-        <div class="aus-gruppe"><h3 class="unterkopf" id="aus-bilder-t">Bilder</h3>
-          <div id="aus-bilder" class="kacheln-wahl bilder-wahl" role="radiogroup" aria-labelledby="aus-bilder-t"></div></div>
-        <div class="aus-gruppe"><h3 class="unterkopf" id="aus-website-t">Wie erscheinen Übungen?</h3>
+        <!-- Zahl der Bilder (Steckbrief kurs.bilder: Stufe oder Zahl 1 bis 30) und Darstellung der Übungen (kurs.website) -->
+        <div class="aus-gruppe" data-gruppe="bilder"><h3 class="unterkopf" id="aus-bilder-t">Bilder</h3>
+          <div id="aus-bilder" class="kacheln-wahl bilder-wahl" role="radiogroup" aria-labelledby="aus-bilder-t"></div>
+          <label id="bilder-zahl-l" class="feld feld-klein bilder-zahl" hidden>Zahl der Bilder (1 bis 30)
+            <input id="bilder-zahl" type="number" inputmode="numeric" min="1" max="30" step="1" value="10"></label></div>
+        <div class="aus-gruppe" data-gruppe="website"><h3 class="unterkopf" id="aus-website-t">Wie erscheinen Übungen?</h3>
           <div id="aus-website" class="kacheln-wahl breit" role="radiogroup" aria-labelledby="aus-website-t"></div></div>
+        <button type="button" id="alle-zeigen" class="textlink alle-zeigen" hidden>Alle Einstellungen zeigen</button>
       </div>
-      <!-- Vorschau der gewählten Familie: ab 1100 px haftende Spalte rechts, darunter Leiste am unteren Rand -->
+      <!-- Vorschau: ab 1100 px Spalte rechts, die beim Scrollen stehen bleibt (eigener Bildlauf), darunter Leiste am
+           unteren Rand; zwei Karten: die Einheit im Design (gen/api.design_vorschau) und die Kursseite im Format
+           (formate.js). Beides ist Anschauung, nichts darin ist klickbar. -->
       <aside id="vorschau-spalte" class="vorschau-spalte" aria-label="Vorschau">
         <button type="button" id="vorschau-leiste" class="vorschau-leiste" aria-expanded="false">
           <span class="vs-name"><span class="leise">Vorschau</span> <span id="vorschau-name"></span></span>
           <span class="vs-auf" aria-hidden="true"></span></button>
-        <div id="vorschau-gross" class="vorschau-gross"><div class="vs-innen"></div></div>
+        <div class="vs-karten">
+          <div class="vs-karte"><p class="vs-kopf">Einheit</p>
+            <div id="vorschau-gross" class="vorschau-gross"><div class="vs-innen" aria-hidden="true"></div></div></div>
+          <div id="format-karte" class="vs-karte" hidden><p class="vs-kopf">Kursseite</p>
+            <div id="format-vorschau" class="format-vorschau" aria-hidden="true"></div></div>
+        </div>
       </aside>
       </div>
       <button type="button" id="weiter-3" class="knopf haupt">Weiter</button>
@@ -500,6 +516,7 @@
 </script>
 <script src="kern.js"></script>
 <script src="schritte.js"></script>
+<script src="formate.js"></script>
 <script src="karten.js"></script>
 <script src="chat.js"></script>
 <script src="bilder.js"></script>

@@ -21,12 +21,12 @@ und einzelne Chats antworten noch in einer Form, die die Seite nicht lesen kann.
 | Kann | Noch nicht |
 |---|---|
 | Kursformate Themen, Kacheln, Wochen, Ein-Themen, Komprimierte Abschnitte, Einzelaktivität | Lernlandkarte, Mimo |
-| Seiten und Textfelder mit Überschriften, Schritten, Tabellen, Kästen, Merksätzen und Bildern in elf Designs mit eigener Anordnung, Farbe, Dichte und Kastenform, sieben davon mit Motiv, Titelschrift und Bannerfläche | Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool |
+| Seiten und Textfelder mit Überschriften, Schritten, Tabellen, Kästen, Merksätzen und Bildern in elf Designs mit eigener Anordnung, Farbe, Dichte und Rändern (auch wellig), sieben davon mit Motiv, Titelschrift und Bannerfläche | Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool |
 | Test (Multiple Choice, Wahr/Falsch, Kurzantwort), Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar | Weitere Fragetypen im Test, Zeitlimits, Forum-Diskussionen |
 | H5P-Inhalte: Interactive Book, Branching Scenario, Question Set, Drag and Drop, Lückentext, Lernkarten und weitere | Weitere H5P-Typen wie Interactive Video oder Image Hotspots |
 | Übungen als Website in einem Abschnitt oder als Block im Textfeld: Quiz, Zuordnen, Lückentext, Markieren, Lernkarten, Geschichte, mit Rückmeldung zur ganzen Übung | Bewertung und Abschluss je Übung in der Website, eigene Spiele und Simulationen |
 | Feedback-Umfragen, Links und Videos, Badges, Kursbild, Abschlussverfolgung, Sichtbarkeit ab Datum | Gruppen, Termine, andere Zugriffsbedingungen |
-| Kursbanner und Kachelbilder (ohne Bild als Fläche im Design), Zahl der Bilder je Einheit, Bilder in jedem Baustein, Bildwunsch mit Auftrag für einen Bildgenerator, eigene Bilder hochladen (verkleinert, mit Prüffragen) | Abschnitts- und Kachelbilder automatisch aus dem Material |
+| Kursbanner und Kachelbilder (ohne Bild als Fläche im Design), Zahl der Bilder je Einheit (Stufe oder genaue Zahl), Bilder in jedem Baustein, Bildwunsch mit Auftrag für einen Bildgenerator, eigene Bilder hochladen (verkleinert, mit Prüffragen) | Abschnitts- und Kachelbilder automatisch aus dem Material |
 | Einheit speichern und später weiterbauen, nächste Einheit anhängen, Nachlieferung zu einem bestehenden Kurs; eine zu lange Antwort endet mit „Fortsetzung folgt“, die Mühle bittet um den Rest | Abbruch einer Antwort erkennen, wenn der Chat die Schlusszeile nicht schreibt |
 | Eigene KI direkt anbinden: ein Programm wie Claude Code oder Codex (mit seinem Namen in der Mühle), ein eigener Zugangsschlüssel (OpenAI, Anthropic, Mistral) oder Ollama; Teile gehen von selbst nacheinander, Korrekturen ohne Kopieren | Bilder über die Verbindung, Verbindung vom iPad oder aus dem Schulnetz |
 | Prüfung der Antwort vor dem Bau mit Sätzen, was im Chat zu korrigieren ist, und Auswegen, wenn der Chat dieselbe Antwort wiederholt | Fachliche Prüfung des Inhalts; die bleibt bei der Lehrkraft |
@@ -42,7 +42,7 @@ soll die Beta zeigen.
       Abschnitt; Import auf der Plattform geprüft für Themen und Kacheln
 - [x] Die Seite im Browser: Schrittfolge, Antwort einfügen und prüfen, ein Satz für den Chat, wenn etwas fehlt, Bilder
       hochladen oder per Bildauftrag erzeugen, hell und dunkel
-- [x] Mehr Einstellungen für das Aussehen des Kurses: elf Designs, Farbe, Dichte, Kästen, Übungsblöcke, mit Vorschau
+- [x] Mehr Einstellungen für das Aussehen des Kurses: elf Designs, Farbe, Dichte, Ränder, Übungsblöcke, mit Vorschau der Einheit und der Kursseite
 - [x] LehrplanPLUS: Lernbereich wählen, die Kompetenzerwartungen gehen in den Auftrag; zuerst Grund- und Mittelschule
 - [ ] 2.0 ohne Beta-Marke, nach Rückmeldungen von Lehrkräften
 - [x] Die eigene KI direkt anbinden, ohne Kopieren und Einfügen; der Schlüssel bleibt auf dem eigenen Rechner
