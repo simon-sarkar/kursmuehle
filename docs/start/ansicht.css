@@ -265,6 +265,33 @@ select { appearance: auto; }
 .warnung-box { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 12px; padding: 10px 14px;
   border-radius: 8px; background: var(--warn-flaeche); color: var(--text); }
 .warnung-box p { margin: 0; flex: 1 1 16rem; }
+/* AP13.6: Lehrplan am Fach-Feld – Haken, Picker in vier Zeilen, Vermerk, Vorschlag */
+.lehrplan-ort { display: grid; gap: 6px; }
+.lp-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; }
+.lp-knopf { padding: 4px 0; }
+.lp-vermerk { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 0.93rem; }
+.lp-vermerk span { background: var(--lehrkraft); border: 1px solid var(--lehrkraft-kante); border-radius: 6px; padding: 2px 8px; }
+.lp-vermerk .kopf-x { color: var(--text); }
+.lp-vorschlag { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0; font-size: 0.93rem; }
+.lp-vorschlag .knopf { min-height: 36px; padding: 5px 12px; font-weight: 500; text-align: left; max-width: 100%; overflow-wrap: anywhere; }
+.lp-feld { border: 1px solid var(--linie); border-radius: var(--rund); padding: 12px; background: var(--flaeche); display: grid; gap: 12px; }
+.lp-reihe { display: grid; gap: 6px; }
+.lp-nr { font-size: 0.85rem; font-weight: 650; color: var(--leise); }
+.lp-reihe select { max-width: 100%; }
+.lp-hinweis { margin: 0; }
+.lp-lbs, .lp-tbs, .lp-erws { list-style: none; margin: 0; padding: 0; }
+.lp-lbs { display: grid; gap: 6px; }
+.lp-lb-kopf { display: flex; align-items: flex-start; gap: 8px; }
+.lp-lb-kopf input, .lp-tb input, .lp-ziel input { width: 18px; height: 18px; accent-color: var(--ocker-tief); margin: 3px 0 0; flex: none; }
+.lp-titel { text-align: left; padding: 0; }
+.lp-tbs { margin: 6px 0 6px 26px; display: grid; gap: 8px; }
+.lp-tb-kopf { display: flex; gap: 8px; font-weight: 600; }
+.lp-erws { margin: 4px 0 0 26px; display: grid; gap: 6px; font-size: 0.93rem; }
+.lp-erw { display: grid; gap: 2px; }
+.lp-ziel { display: flex; gap: 6px; font-size: 0.85rem; color: var(--leise); }
+.lp-warnung { margin: 0; padding: 6px 10px; border-radius: 8px; background: var(--warn-flaeche); color: var(--warn); font-size: 0.93rem; }
+.lp-fuss { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.lp-quelle { margin: 0; font-size: 0.85rem; }
 .karten-warnung { margin: 0 0 10px; padding: 8px 12px; border-radius: 8px; background: var(--warn-flaeche); font-size: 0.93rem; }
 
 /* 5 Einfügen, Karten */

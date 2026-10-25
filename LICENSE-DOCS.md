@@ -19,5 +19,9 @@ als nicht kommerziell.
 Der Programmcode in `scripts/` (ohne die Kursinhalte und Bilder der Testkurse) steht unter der PolyForm Noncommercial License
 1.0.0, siehe `LICENSE`.
 
+Die Lehrplantexte unter `docs/start/lehrplan/` (kursmuehle.de/start/lehrplan/) stammen aus LehrplanPLUS des
+Staatsinstituts für Schulqualität und Bildungsforschung (ISB), https://www.lehrplanplus.bayern.de; sie sind amtliche
+Werke und nicht Teil der CC-BY-NC-SA-Lizenz.
+
 Mit einer `.mbz` erzeugte Kurse gehören der Lehrkraft, die sie gebaut hat;
 sie unterliegen keiner dieser Lizenzen.

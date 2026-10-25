@@ -55,7 +55,7 @@
         <label class="feld feld-thema">Thema
           <input id="f-thema" type="text" required placeholder="zum Beispiel Bruchrechnen" maxlength="120">
         </label>
-        <label class="feld feld-klein">Jahrgangsstufe
+        <label class="feld feld-klein"><span id="f-jahrgang-t">Jahrgangsstufe</span>
           <input id="f-jahrgang" type="text" inputmode="numeric" maxlength="12" placeholder="7">
         </label>
         <label class="feld feld-klein">Minuten
@@ -93,6 +93,8 @@
         </label>
         <label class="feld">Fach <span class="feld-zeile">freiwillig</span>
           <input id="m-fach" type="text" maxlength="60" list="faecher-liste" autocomplete="off"></label>
+        <!-- AP13.6: Haken „Lehrplanbezug“, Picker, Vorschlag (lehrplan.js) -->
+        <div id="m-lehrplan" class="lehrplan-ort feld-breit"></div>
       </div>
       <!-- AP13.5b: Eingabekarte „Ich gebe die Richtung“, alle Felder freiwillig; Material steht bei „Einheit aus eigenem
            Material“ direkt unter dem Fach, sonst zuletzt -->
@@ -121,9 +123,10 @@
           <summary>Mehr einstellen</summary>
           <div class="mehr-felder">
             <label class="feld">Thema <input id="a-thema" type="text" maxlength="120"></label>
-            <label class="feld feld-klein">Jahrgangsstufe <input id="a-jahrgang" type="text" maxlength="12"></label>
+            <label class="feld feld-klein"><span id="a-jahrgang-t">Jahrgangsstufe</span> <input id="a-jahrgang" type="text" maxlength="12"></label>
             <label class="feld feld-klein">Minuten <input id="a-minuten" type="number" min="10" max="300" step="5"></label>
             <label class="feld">Fach <input id="a-fach" type="text" maxlength="60" list="faecher-liste" autocomplete="off"></label>
+            <div id="a-lehrplan" class="lehrplan-ort feld-breit"></div>
             <label class="feld feld-breit">Worum geht es genau?
               <textarea id="a-kontext" class="von-lehrkraft" rows="3" maxlength="600" spellcheck="true"
                 placeholder="Was sollen die Lernenden danach können? Was ist vorausgesetzt, was nicht?"></textarea>
@@ -451,5 +454,6 @@
 <script src="bilder.js"></script>
 <script src="nachbau.js"></script>
 <script src="verbindung.js"></script>
+<script src="lehrplan.js"></script>
 </body>
 </html>

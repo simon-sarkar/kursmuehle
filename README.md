@@ -30,6 +30,7 @@ und einzelne Chats antworten noch in einer Form, die die Seite nicht lesen kann.
 | Einheit speichern und später weiterbauen, nächste Einheit anhängen, Nachlieferung zu einem bestehenden Kurs | Abbruch einer Antwort des Chats erkennen |
 | Eigene KI direkt anbinden: ein Programm wie Claude Code oder Codex, ein eigener Zugangsschlüssel (OpenAI, Anthropic, Mistral) oder Ollama; Teile und Korrekturen ohne Kopieren | Bilder über die Verbindung, Verbindung vom iPad oder aus dem Schulnetz |
 | Prüfung der Antwort vor dem Bau mit Sätzen, was im Chat zu korrigieren ist, und Auswegen, wenn der Chat dieselbe Antwort wiederholt | Fachliche Prüfung des Inhalts; die bleibt bei der Lehrkraft |
+| Lehrplan: Grundschule, Mittelschule (LehrplanPLUS, Lernbereiche mit Kompetenzerwartungen als Ziel der Einheit im Auftrag) | Realschule, Gymnasium, Förderschule, berufliche Schulen |
 
 Der Auftrag ist eingerichtet für ByLKI, fobizz, AIS-Chat, MUCGPT, ChatGPT, Claude und Gemini. Durchläufe gab es bisher
 mit ByLKI, fobizz und einem Claude-Modell, nicht jeder kam ohne Korrekturrunde durch; wie die anderen Chats antworten,
@@ -42,7 +43,7 @@ soll die Beta zeigen.
 - [x] Die Seite im Browser: Schrittfolge, Antwort einfügen und prüfen, ein Satz für den Chat, wenn etwas fehlt, Bilder
       hochladen oder per Bildauftrag erzeugen, hell und dunkel
 - [x] Mehr Einstellungen für das Aussehen des Kurses: elf Designs, Farbe, Dichte, Kästen, Übungsblöcke, mit Vorschau
-- [ ] LehrplanPLUS: Lernbereich wählen, die Kompetenzerwartungen gehen in den Auftrag; zuerst Grund- und Mittelschule
+- [x] LehrplanPLUS: Lernbereich wählen, die Kompetenzerwartungen gehen in den Auftrag; zuerst Grund- und Mittelschule
 - [ ] 2.0 ohne Beta-Marke, nach Rückmeldungen von Lehrkräften
 - [x] Die eigene KI direkt anbinden, ohne Kopieren und Einfügen; der Schlüssel bleibt auf dem eigenen Rechner
       ([so geht es](docs/verbinden.md))

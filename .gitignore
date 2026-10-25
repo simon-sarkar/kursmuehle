@@ -10,6 +10,7 @@ web/messungen/
 web/katalog.json
 web/dateien.json
 web/familien.json
+web/lehrplan/
 web/logo.svg
 web/muster-locker.svg
 web/muster-dicht.svg

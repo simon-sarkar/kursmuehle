@@ -76,7 +76,11 @@
     if (!Z.mappe) return;
     try {
       await km.bereit();
-      Z.mappe = await km.mappeFn("auffuellen", [Z.mappe]);
+      // wie km.stand: nur die Bausteine aus der Antwort; was die Seite inzwischen gesetzt hat (Schritt, Durchsicht,
+      // Chat), bleibt; eine inzwischen geöffnete andere Mappe bleibt unberührt
+      var gesendet = Z.mappe, neu = await km.mappeFn("auffuellen", [gesendet]);
+      if (Z.mappe !== gesendet) return;
+      km.mappeUebernehmen(gesendet, neu);
       Z.kennzahlen = await km.mappeFn("kennzahlen", [Z.mappe, Z.pruefung, null, Z.steckbrief_text]);
       zeichne(); geaendert(); textSpaeter(0);
       $("kopiert").textContent = "Bausteine ergänzt. Sie stehen jetzt im Text unten.";

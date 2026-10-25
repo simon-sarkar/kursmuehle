@@ -258,6 +258,7 @@ var km = (function () {
   return { anfrage: anfrage, laden: laden, bereit: bereit, pruefe: pruefe, stand: stand, mappeFn: mappeFn,
       prompt: prompt, baue: baue, designVorschau: designVorschau,
     mappeAusBytes: mappeAusBytes, mappeAusDateien: mappeAusDateien, mappeSchreiben: mappeSchreiben,
+    mappeUebernehmen: mappeUebernehmen,
     neueMappe: neueMappe, heap: heap, beenden: beenden, sha256: sha256, autosaveSchreiben: autosaveSchreiben,
     autosaveLesen: autosaveLesen, autosaveLoeschen: autosaveLoeschen, einstellung: einstellung, zustand: zustand,
         messungen: messungen,
@@ -579,6 +580,7 @@ window.km = km;
     S.zeichneBilder();
     S.zeichneFragen();
     S.zeichneWiederherstellen();
+    S.zeichneLehrplan();
     S.rueckmeldungFuellen();
     S.knoepfe();
     S.zeichneSchritte();

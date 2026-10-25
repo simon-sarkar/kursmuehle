@@ -1,11 +1,18 @@
 # Changelog
 
-## Unveröffentlicht (AP13.5c: Anordnung, Standardfarben, Skala der Designs; AP14b: Testcode)
+## 2.0.0-b8 – 2026-10-25 (AP13.5c: Anordnung, Standardfarben, Skala der Designs; AP13.6: LehrplanPLUS für Grund- und Mittelschule; AP14b: Testcode)
 
 - Die Designs unterscheiden sich in der Anordnung: Titel über, auf oder unter dem Bannerbild, Bild links, rechts, oben oder klein neben dem Text, Ablauf als Kacheln, Liste, Spalte oder ein Satz, Übungskopf in vier Formen.
 - Jedes Design hat eine eigene Standardfarbe und eine eigene Schriftgröße; Grundschule setzt größere Schrift und Knöpfe mit mindestens 48 px.
 - Magazin trägt Schwarz mit Rot, Freundlich Blau mit warmem Pastell und runde Knöpfe.
 - Einheiten mit Freundlich oder Magazin sehen nach dem nächsten Bau anders aus als bisher; Sachlich bleibt unverändert.
+- Am Fach-Feld wählst du über „Aus dem Lehrplan“ Schulart, Fach, Zug und Lernbereiche aus LehrplanPLUS für Grund- und Mittelschule.
+- Je Kompetenzerwartung setzt du einen Haken „Ziel dieser Einheit“; der Text für den Chat nennt diese Ziele wörtlich und den Rest des Lernbereichs als Rahmen.
+- Der Chat erfährt, dass ein Lernbereich für mehrere Einheiten angelegt ist und diese Einheit nur einen Ausschnitt umsetzt; im Kurs steht nichts vom Lehrplan.
+- Bei „Mach du“ schlägt die Mühle passende Lernbereiche zum Thema vor; übernommen wird nur, was du anklickst.
+- Der Haken „Lehrplanbezug“ lässt sich für Fortbildungen und Projekte entfernen; dann heißt das Feld in Schritt 1 „Zielgruppe“ und nichts aus dem Lehrplan wird geladen.
+- „Bausteine ergänzen“ verliert keine Wahl mehr, die du während der Rechnung getroffen hast.
+- Quelle der Lehrplantexte: LehrplanPLUS, Staatsinstitut für Schulqualität und Bildungsforschung (ISB).
 - Mit einem Testcode läuft die Mühle über eine bereitgestellte KI; keine Kachel, nur für die Testphase.
 
 ## 2.0.0-b7 – 2026-10-25 (AP13.5: Designfamilien, Feinheiten, Vorschau; AP13.5b: dritter Weg „Ich gebe die Richtung“; AP14: eigene KI direkt verbinden)

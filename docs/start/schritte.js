@@ -16,7 +16,8 @@
       status = S.status, teileOffen = S.teileOffen, texte = S.texte, zeichne = S.zeichne, zweig = S.zweig;
   function fazit(n) {
     var e = (Z.mappe && Z.mappe.einheit) || {};
-    if (n === 1) return [e.thema, e.jahrgang ? "Jahrgangsstufe " + e.jahrgang : "", e.minuten ? e.minuten +
+    var ohneLp = S.angaben.lehrplanbezug === "nein";       // AP13.6: ohne Lehrplan heißt das Feld „Zielgruppe“
+    if (n === 1) return [e.thema, e.jahrgang ? (ohneLp ? "Zielgruppe: " : "Jahrgangsstufe ") + e.jahrgang : "", e.minuten ? e.minuten +
         " Minuten" : ""].filter(Boolean).join(" · ");
     if (n === 2) {
       var z = ZWEIG_TEXT[zweig()] || "";
@@ -797,7 +798,7 @@
         /* ohne Speicher: nur diese Seite */ }
     schemaZeigen();
   };
-  Object.assign(S, { adresseLesen: adresseLesen, gehe: gehe, nachZwei: nachZwei, neuStart: neuStart,
+  Object.assign(S, { adresseLesen: adresseLesen, angabenSchreiben: angabenSchreiben, gehe: gehe, nachZwei: nachZwei, neuStart: neuStart,
     schemaZeigen: schemaZeigen, steckbriefSicher: steckbriefSicher, vorlageNach: vorlageNach, miniaturen: miniaturen,
     vorlagenZeigen: vorlagenZeigen, weiterAnzeigen: weiterAnzeigen, zeichneAussehen: zeichneAussehen,
     zeichneSchritte: zeichneSchritte, zeigeFehler: zeigeFehler });

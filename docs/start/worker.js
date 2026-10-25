@@ -9,7 +9,7 @@
  *             Kennzahlen in einem Lauf
  *           | mappe {funktion, args}  gen.mappe: verschiebe, entferne, umbenennen, kennzahlen, angaben_lesen,
  *             angaben_schreiben, geplant, planung, auffuellen, antwort, modus, einsetzen, anhaengen (Liste in PY_BRUECKE)
- *           | prompt {funktion, args}  gen.prompt: einheit, baustein, korrektur, fragen, fachcheck, vergleich
+ *           | prompt {funktion, args}  gen.prompt: einheit, baustein, korrektur, fragen, fachcheck, vergleich, lehrplan
  *           | design_vorschau {familie, hebel}  gen.api.design_vorschau: Miniatur einer Familie als HTML; ohne familie
  *             alle Familien als {name: html} (AP13.5)
  * Bytes laufen als ArrayBuffer/Uint8Array (Assets: {name: Uint8Array}); die .mbz kommt als übertragener ArrayBuffer.
@@ -88,7 +88,7 @@ var PY_BRUECKE = [
   "_MAPPE = {'verschiebe', 'entferne', 'umbenennen', 'kennzahlen', 'angaben_lesen', 'angaben_schreiben', 'geplant',",
   "          'planung', 'auffuellen',",
   "          'antwort', 'modus', 'einsetzen', 'anhaengen', 'dateiname', 'bild_verkleinert'}",
-  "_PROMPT = {'einheit', 'baustein', 'korrektur', 'diagnose', 'fragen', 'fachcheck', 'vergleich'}",
+  "_PROMPT = {'einheit', 'baustein', 'korrektur', 'diagnose', 'fragen', 'fachcheck', 'vergleich', 'lehrplan'}",
   "",
   "def km_mappe(e):",
   "    f = e.get('funktion')",
