@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht (AP13.5d: Schritt 3 mit mitlaufender Vorschau; AP13.5e: Charakter je Design; AP13.5f: eigene KI im Lauf, Lehrplan-Haken, Schriften)
+## Unveröffentlicht (AP13.5d: Schritt 3 mit mitlaufender Vorschau; AP13.5e: Charakter je Design; AP13.5f: eigene KI im Lauf, Lehrplan-Haken, Schriften; AP13.9: Design-Rest)
 
 - Die Vorschau des gewählten Designs läuft beim Scrollen mit: auf breiten Bildschirmen rechts, sonst als Leiste am unteren Rand, die ein Tippen aufklappt.
 - Die Vorschau zeigt Inhalt, auch wenn du Schritt 3 erreichst, bevor die Mühle fertig geladen ist.
@@ -26,6 +26,9 @@
 - Der Haken heißt „Lehrplanbezug Grund- und Mittelschulen Bayern“, ist zuerst aus und merkt sich deine letzte Wahl; gesetzt öffnet er den Lehrplan sofort, bis zur Wahl eines Lernbereichs steht ein gelber Hinweis darunter und am Rand.
 - Das Fazit von Schritt 1 nennt den Lernbereich; bei „Mach du“ ist der passendste Lernbereich schon gewählt.
 - Einfache Sprache für die Grundschule richtet sich nach Jahrgangsstufe oder Schulart, auch ohne Lehrplanbezug.
+- Im Website-Modus folgen die Kapitelnummern dem Design: große Kreise bei Grundschule, Sticker bei Verspielt, Zahlen bei Modern, Erdtonkreise bei Natur, schwarze Quadrate bei Druck, „1.“ in der Textfarbe bei Klassisch und „Ohne Vorlage“; Sachlich, Freundlich, Magazin und Dunkel bleiben unverändert.
+- Bei Magazin und Grundschule steht ein Foto in der Bildzeile in voller Breite, wenn es quer liegt und breiter als 900 px ist; Symbolbilder bleiben 200 px breit.
+- Grundschule behält das Dreieck „Importprobe steht aus“, bis der Umbruch langer Wörter auf der Plattform bestätigt ist.
 
 ## 2.0.0-b8 – 2026-10-25 (AP13.5c: Anordnung, Standardfarben, Skala der Designs; AP13.6: LehrplanPLUS für Grund- und Mittelschule; AP14b: Testcode)
 
