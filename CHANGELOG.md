@@ -1,5 +1,22 @@
 # Changelog
 
+## Unveröffentlicht
+
+## 2.0.0-b14 – 2026-10-26 (AP13.13b, AP13.15, AP13.16, AP13.18 A: Lizenz und KI-Hinweis, Übungen ohne JavaScript, Materialleser)
+
+* Lizenz und KI-Hinweis im Kurs wählbar
+* Übungen auch ohne JavaScript lesbar, etwa in der Moodle-App
+* Materialleser erkennt Bilddateien und räumt Formularköpfe auf
+- Vor dem Download wählst du unter „Lizenz und KI-Hinweis im Kurs“ eine Lizenz für Texte und Aufgaben und den Satz „Mit KI erstellt, von der Lehrkraft geprüft.“; beides steht klein am Ende jedes Abschnitts.
+- Lizenz und Name gelten auch für die nächste Einheit; den KI-Hinweis setzt du je Einheit.
+- Öffnest du eine Einheit aus einer neueren Kursmühle oder aus der Testversion, sagt die Seite das beim Öffnen.
+- Steckbrief: neue Schlüssel `kurs.lizenz`, `kurs.lizenz_name`, `kurs.ki_hinweis`.
+- Übungen auf der Kursseite bleiben ohne JavaScript lesbar (Moodle-App, nach dem Speichern im Editor): Aufgaben mit Lösung zum Aufklappen, Lernkarten zum Aufklappen, die Geschichte mit Verweisen.
+- Die Website einer Einheit zeigt ohne JavaScript alle Kapitel mit Bildern und druckt alle Kapitel.
+- Tastschreiben (Mittelschule) steht im Lehrplanbezug auch in Jahrgangsstufe 6, wie im Lehrplan „5/6“
+- Eine Word- oder PowerPoint-Datei, die nur Bilder enthält, sagt das jetzt an der Datei.
+- Leere Formularköpfe („Name: Klasse: Datum:“) fallen aus dem gelesenen Text weg, aus PDFs auch einzelne Ziffern und doppelte Absätze.
+
 ## 2.0.0-b13 – 2026-10-26 (AP13.12c, AP13.13, AP13.14: Lehrplan an einem Ort, Material aus Dateien, Satzlänge und Hilfen)
 
 * Lehrplanbezug in jedem Weg an derselben Stelle

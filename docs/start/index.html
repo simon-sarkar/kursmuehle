@@ -468,6 +468,19 @@
       <span class="s-titel" id="s7-titel">Datei für die Lernplattform</span><span class="s-fazit"></span></button></h2>
     <div class="s-inhalt">
       <div class="erstellen">
+        <!-- AP13.15: Lizenz und KI-Hinweis als kleine Zeile am Ende jedes Abschnitts (Steckbrief kurs.lizenz,
+             kurs.lizenz_name, kurs.ki_hinweis; Liste und Satz aus katalog.yaml, oberflaeche.lizenz und .ki_hinweis);
+             die Zusammenfassung nennt den Stand, nachbau.js füllt sie -->
+        <details id="kursangaben" class="ausklapp kursangaben" data-merken="kursangaben">
+          <summary id="kursangaben-stand">Lizenz und KI-Hinweis im Kurs: keine</summary>
+          <div class="ka-inhalt">
+          <label class="schalter ki-schalter"><input id="k-ki" type="checkbox"> <span id="k-ki-text">Hinweis im Kurs</span></label>
+          <label class="feld">Lizenz der Texte und Aufgaben <select id="k-lizenz"></select></label>
+          <label id="k-name-l" class="feld" hidden>Name für die Namensnennung (optional)
+            <input id="k-name" type="text" maxlength="80" autocomplete="name" spellcheck="false"></label>
+          <p class="leise">Steht klein am Ende jedes Abschnitts. Gilt für Texte und Aufgaben, nicht für Bilder.</p>
+          </div>
+        </details>
         <button type="button" id="herunterladen" class="knopf ergebnis">Datei für die Lernplattform herunterladen</button>
         <button type="button" id="glossar-laden" class="knopf" hidden>Glossar-Einträge herunterladen</button>
         <p id="erstellen-stand" class="stand" role="status" aria-live="polite"></p>

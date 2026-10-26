@@ -515,9 +515,12 @@
       zeichneVorschlag();
       // AP13.5f: mit Haken und ohne Wahl ist der beste Treffer vorbelegt (einmal je Thema; nach „×“ bleiben die Knöpfe)
       var einmal = e.thema + "|" + jahrgangText();        // ohne Schulart: die setzt der Vorschlag selbst
-      if (vorschlag.erg.treffer.length && vorschlag.genommen !== einmal) {
+      // Vorbelegung erst, wenn die Angaben dieser Mappe aus dem Steckbrief gelesen sind (Neuladen, Einheit öffnen: der
+      // Index kommt oft vor Python an; eine gespeicherte Wahl geht vor). Sonst beim nächsten Zeichnen neu versuchen
+      if (S.angabenFuer !== Z.mappe) { vorschlag.schluessel = null; return; }
+      if (vorschlag.erg.treffer.length && vorschlag.genommen !== einmal && !S.angaben.lehrplan) {
         vorschlag.genommen = einmal;
-        vorschlagNehmen(0);
+        vorschlagNehmen(0, true);
       }
     }).catch(function () { /* ohne Daten kein Vorschlag */ });
   }
@@ -534,10 +537,11 @@
             (VARIANTE[t.variante] || t.variante) : "") + ", " + t.kuerzel + " " + t.titel }));
     });
   }
-  function vorschlagNehmen(nr) {
+  function vorschlagNehmen(nr, auto) {
     var t = vorschlag.erg && vorschlag.erg.treffer[nr], index = vorschlag.index; if (!t) return;
     var eintrag = index.schularten[t.schulart].faecher.filter(function (f) { return f.datei === t.datei; })[0];
     ladeDatei(t.datei).then(function (d) {
+      if (auto && (S.angaben.lehrplan || S.angabenFuer !== Z.mappe)) return;   // nie über eine gespeicherte Wahl
       var wahl = {}; wahl[t.pfad] = { an: true, tb: {} };
       var alt = P; P = { schulart: t.schulart };
       var lp = lehrplanBauen(index, eintrag, d, wahl, t.jahrgangsstufe);

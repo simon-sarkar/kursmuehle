@@ -383,6 +383,35 @@
     });
   }
 
+  // AP13.15: Lizenz und KI-Hinweis im Kurs (Steckbrief kurs.lizenz, kurs.lizenz_name, kurs.ki_hinweis über
+  // angaben_schreiben); jede Änderung macht den Bau ungültig, der nächste Klick auf „Herunterladen“ baut neu
+  function zeichneKursangaben() {
+    if (!S.katalog) return;
+    var o = S.katalog.oberflaeche, a = S.angaben || {}, sel = $("k-lizenz");
+    if (!sel.options.length) o.lizenz.forEach(function (w) { sel.appendChild(el("option", { value: w.wert,
+        text: w.text })); });
+    $("k-ki-text").textContent = "Hinweis im Kurs: „" + o.ki_hinweis + "“";
+    var lizenz = a.lizenz || "", ki = a.ki_hinweis === "ja", teile = [];
+    if (document.activeElement !== sel) sel.value = lizenz;
+    $("k-ki").checked = ki;
+    if (document.activeElement !== $("k-name")) $("k-name").value = a.lizenz_name || "";
+    $("k-name-l").hidden = !lizenz;
+    if (lizenz) teile.push(oberText("lizenz", lizenz));
+    if (ki) teile.push("KI-Hinweis");
+    $("kursangaben-stand").textContent = "Lizenz und KI-Hinweis im Kurs: " + (teile.join(", ") || "keine");
+  }
+  function kursangabe(a) {
+    if (!Z.mappe) return;
+    S.angabenSchreiben(a, false).then(function () {
+      if (!("ki_hinweis" in a)) S.kursangabenMerken(S.angaben.lizenz, S.angaben.lizenz_name);
+      zeichneKursangaben();
+    });
+  }
+  $("k-ki").addEventListener("change", function () { kursangabe({ ki_hinweis: $("k-ki").checked ? "ja" : "nein" }); });
+  $("k-lizenz").addEventListener("change", function () { kursangabe({ lizenz: $("k-lizenz").value }); });
+  $("k-name").addEventListener("change", function () {
+    kursangabe({ lizenz_name: $("k-name").value.replace(/\s+/g, " ").trim().slice(0, 80) }); });
+
   $("herunterladen").onclick = async function () {
     if (Z.bau && Z.bau.mbz) { herunterladen(); return; }
     S.bauLaeuft = true;
@@ -427,6 +456,7 @@
     Z.mappe.einheiten = n;
     Z.mappe.anhaengen = "e" + n;
     Z.bau = null;
+    if (S.angaben.ki_hinweis === "ja") kursangabe({ ki_hinweis: "nein" });   // AP13.15: je Einheit neu gesetzt
     $("f-thema").value = ""; $("f-minuten").value = (Z.mappe.einheit && Z.mappe.einheit.minuten) || 45;
     gehe(1, "f-thema");
     $("s1-titel").textContent = "Worum geht es in der nächsten Einheit?";
@@ -568,6 +598,7 @@
     zeichne();
   }
   Object.assign(S, { leeren: leeren, rueckmeldungFuellen: rueckmeldungFuellen, rueckmeldungOeffnen: rueckmeldungOeffnen,
-    zeichneFragen: zeichneFragen, zeichneGegen: zeichneGegen, zeichneWiederherstellen: zeichneWiederherstellen });
+    zeichneKursangaben: zeichneKursangaben, zeichneFragen: zeichneFragen, zeichneGegen: zeichneGegen,
+    zeichneWiederherstellen: zeichneWiederherstellen });
   starten();
 })();

@@ -8,7 +8,8 @@
  *           | stand {text, assets, steckbrief, mappe}  prüfen (mit den Prüfregeln der Mühle), Mappe abgleichen,
  *             Kennzahlen in einem Lauf
  *           | mappe {funktion, args}  gen.mappe: verschiebe, entferne, umbenennen, kennzahlen, angaben_lesen,
- *             angaben_schreiben, geplant, planung, auffuellen, antwort, modus, einsetzen, anhaengen (Liste in PY_BRUECKE)
+ *             angaben_schreiben, geplant, planung, auffuellen, antwort, modus, einsetzen, anhaengen, herkunft_hinweis
+ *             (Liste in PY_BRUECKE)
  *           | prompt {funktion, args}  gen.prompt: einheit, baustein, korrektur, fragen, fachcheck, vergleich, lehrplan
  *           | design_vorschau {familie, hebel}  gen.api.design_vorschau: Miniatur einer Familie als HTML; ohne familie
  *             alle Familien als {name: html} (AP13.5)
@@ -139,7 +140,7 @@ var PY_BRUECKE = [
   "",
   "_MAPPE = {'verschiebe', 'entferne', 'umbenennen', 'kennzahlen', 'angaben_lesen', 'angaben_schreiben', 'geplant',",
   "          'planung', 'auffuellen', 'loesung_zulassen', 'zusatzaufgabe',",
-  "          'antwort', 'modus', 'einsetzen', 'anhaengen', 'dateiname', 'bild_verkleinert'}",
+  "          'antwort', 'modus', 'einsetzen', 'anhaengen', 'dateiname', 'bild_verkleinert', 'herkunft_hinweis'}",
   "_PROMPT = {'einheit', 'baustein', 'korrektur', 'diagnose', 'fragen', 'fachcheck', 'vergleich', 'lehrplan'}",
   "",
   "def km_mappe(e):",
@@ -164,7 +165,7 @@ var PY_BRUECKE = [
   "    return api.design_vorschauen(e.get('hebel'))",
   "",
   "def km_info():",
-  "    return {'python': sys.version.split()[0], 'version': api.VERSION}",
+  "    return {'python': sys.version.split()[0], 'version': api.VERSION, 'format': _M.FORMAT}",
 ].join("\n");
 
 async function laden(id) {
@@ -188,7 +189,8 @@ async function laden(id) {
   zeiten.generator_ms = Math.round(performance.now() - t2);
   zeiten.gesamt_ms = Math.round(performance.now() - t0);
   bereit = true;
-  return Object.assign({ python: info.python, version: info.version, pyodide: pyodide.version }, zeiten);
+  return Object.assign({ python: info.python, version: info.version, format: info.format, pyodide: pyodide.version },
+      zeiten);
 }
 
 function nachPython(obj) {
