@@ -6,6 +6,7 @@
 - Die Wörterzählung des Hefteintrags schneidet Paare wie „play → played“ nicht mehr ab; nur Rückmeldungen hinter Antworten zählen nicht.
 - Testphase mit Code: Aufträge, bei denen die KI länger als 100 Sekunden schreibt, kommen an statt mit „524“ abzubrechen; der Worker liest die Antwort als Strom (Worker neu ausrollen).
 - Testphase mit Code: jeder Code reicht für drei Einheiten; Korrekturen, Folgeteile und Gegenprüfen zählen nicht extra.
+- Ränder: neue Wahl „Sehr wellig“ mit deutlicher Welle, die sich auf breiten Kästen wiederholt statt sich zu dehnen (Steckbrief `design.kasten: sehr_wellig`).
 
 ## 2.0.0-b10 – 2026-10-25 (AP13.5g: Befunde des Erstnutzer-Tests)
 

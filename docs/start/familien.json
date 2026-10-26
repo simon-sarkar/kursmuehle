@@ -234,6 +234,10 @@
   {
    "wert": "wellig",
    "text": "Wellig"
+  },
+  {
+   "wert": "sehr_wellig",
+   "text": "Sehr wellig"
   }
  ]
 }

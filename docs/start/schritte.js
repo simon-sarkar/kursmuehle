@@ -702,7 +702,7 @@
         '" height="3" rx="1" fill="#5B6475"/>';
     return s + "</svg>";
   }
-  // Ränder: rund, eckig, Linie, wellig; „familie“ zeichnet die Form der gewählten Familie (formen.kasten in familien.yaml)
+  // Ränder: rund, eckig, Linie, wellig, sehr wellig; „familie“ zeichnet die Form der gewählten Familie (formen.kasten in familien.yaml)
   function miniKasten(wert) {
     var s = '<svg viewBox="0 0 120 40" aria-hidden="true" focusable="false"><rect width="120" height="40" fill="#fff"/>',
         text = '<rect x="26" y="15" width="56" height="3" rx="1" fill="#5B6475"/><rect x="26" y="22" width="40" ' +
@@ -717,6 +717,12 @@
         'stroke-width="2"/>' + text + "</svg>";
     if (wert === "wellig") return s + '<path d="M15 8.6C40 7.2 76 9.6 105 7.9C106 16 104.6 25 105.4 32.1C76 33.2 ' +
         '40 31.4 14.8 32.4C14 25 15.6 16 15 8.6Z" fill="#fff" stroke="#5B6475" stroke-width="1.8" ' +
+        'stroke-linejoin="round"/>' + text + "</svg>";
+    if (wert === "sehr_wellig") return s + '<path d="M19 7C23.97 7 27.69 9.4 32.67 9.4S41.36 7 46.33 7S55.03 9.4 60 ' +
+        '9.4S68.69 7 73.67 7S82.36 9.4 87.33 9.4S96.03 7 101 7C103.76 7 106 9.24 106 12C106 14.91 103.6 17.09 103.6 ' +
+        '20S106 25.09 106 28C106 30.76 103.76 33 101 33C96.03 33 92.31 30.6 87.33 30.6S78.64 33 73.67 33S64.97 30.6 ' +
+        '60 30.6S51.31 33 46.33 33S37.64 30.6 32.67 30.6S23.97 33 19 33C16.24 33 14 30.76 14 28C14 25.09 16.4 22.91 ' +
+        '16.4 20S14 14.91 14 12C14 9.24 16.24 7 19 7Z" fill="#fff" stroke="#5B6475" stroke-width="1.8" ' +
         'stroke-linejoin="round"/>' + text + "</svg>";
     var f = familieInfo(familieJetzt()) || {}, r = Math.min(f.kasten_r || 0, 12), form = f.kasten_form || "rahmen";
     var teil = {
