@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 8b7bfe2 vom 26.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 0a243a8 vom 26.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -115,11 +115,19 @@
       <!-- AP13.5b: Eingabekarte „Ich gebe die Richtung“, alle Felder freiwillig; Material steht bei „Einheit aus eigenem
            Material“ direkt unter dem Fach, sonst zuletzt -->
       <div id="richtung-teil" class="richtung-teil" hidden>
-        <div id="r-material-feld" class="r-material-feld">
-          <label class="feld feld-breit">Dein Material (Stichpunkte, Hefteintrag) <span class="feld-zeile">freiwillig</span>
+        <!-- AP13.13: Dateien lesen (web/material.js); Liste der Abschnitte unter dem Feld, nicht gespeichert -->
+        <div id="r-material-feld" class="r-material-feld material-ort" data-material="r">
+          <label class="feld feld-breit">Dein Material (Text, Stichpunkte oder Dateien) <span class="feld-zeile">freiwillig</span>
             <textarea id="r-material" class="von-lehrkraft" rows="4" spellcheck="true"></textarea>
             <span class="feld-zeile">Nur Material, an dem du die Rechte hast.</span>
+            <span id="r-material-grenze" class="feld-zeile"></span>
           </label>
+          <div class="material-datei">
+            <label class="knopf klein-knopf">Datei lesen <input id="r-material-dateien" class="unsichtbar" type="file" multiple
+              accept=".txt,.md,.docx,.odt,.pptx,.odp,.pdf"></label>
+            <span class="feld-zeile">oder auf das Feld ziehen: Word, LibreOffice, PowerPoint, PDF, Text</span>
+          </div>
+          <div id="r-material-liste" class="material-liste" hidden></div>
         </div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="r-art-t">Art der Einheit</h3>
           <div id="r-art" class="kacheln-wahl breit" role="radiogroup" aria-labelledby="r-art-t"></div></div>
@@ -163,11 +171,19 @@
               <div id="a-sprache" class="kacheln-wahl text-wahl" role="radiogroup" aria-labelledby="a-sprache-t"></div></div>
             <label class="feld">Abschluss <select id="a-abschluss"></select></label>
             <label class="feld">Umfang <select id="a-portionierung"></select></label>
-            <label class="feld feld-breit">Dein Material (Stichpunkte, Hefteintrag)
-              <textarea id="a-material" class="von-lehrkraft" rows="4" spellcheck="true"></textarea>
-              <span class="feld-zeile">Nur Material, an dem du die Rechte hast.</span>
-              <span id="material-grenze" class="feld-zeile"></span>
-            </label>
+            <div class="feld-breit material-ort" data-material="a">
+              <label class="feld">Dein Material (Text, Stichpunkte oder Dateien)
+                <textarea id="a-material" class="von-lehrkraft" rows="4" spellcheck="true"></textarea>
+                <span class="feld-zeile">Nur Material, an dem du die Rechte hast.</span>
+                <span id="material-grenze" class="feld-zeile"></span>
+              </label>
+              <div class="material-datei">
+                <label class="knopf klein-knopf">Datei lesen <input id="a-material-dateien" class="unsichtbar" type="file" multiple
+                  accept=".txt,.md,.docx,.odt,.pptx,.odp,.pdf"></label>
+                <span class="feld-zeile">oder auf das Feld ziehen: Word, LibreOffice, PowerPoint, PDF, Text</span>
+              </div>
+              <div id="a-material-liste" class="material-liste" hidden></div>
+            </div>
           </div>
         </details>
       </div>
@@ -568,6 +584,7 @@
 <script src="karten.js"></script>
 <script src="chat.js"></script>
 <script src="bilder.js"></script>
+<script src="material.js"></script>
 <script src="nachbau.js"></script>
 <script src="verbindung.js"></script>
 <script src="lehrplan.js"></script>

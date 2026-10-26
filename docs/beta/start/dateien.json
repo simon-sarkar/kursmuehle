@@ -1,6 +1,6 @@
 {
 "version": "2.0.0-b12",
-"generator": "8a6989ccc0303437",
+"generator": "1045ec997e5707ab",
 "dateien": [
 "ansicht.css",
 "bilder.js",
@@ -15,6 +15,7 @@
 "kern.js",
 "lehrplan.js",
 "logo.svg",
+"material.js",
 "messung.html",
 "messung.js",
 "muster-dicht-dunkel.svg",
@@ -217,6 +218,7 @@
 "vendor/pyodide/pyodide.asm.js",
 "vendor/pyodide/pyodide.asm.wasm",
 "vendor/pyodide/pyodide.js",
+"vendor/pyodide/pypdf-6.21.2-py3-none-any.whl",
 "vendor/pyodide/python_stdlib.zip",
 "vendor/pyodide/pyyaml-6.0.2-cp312-cp312-pyodide_2024_0_wasm32.whl",
 "vendor/pyodide/tzdata-2024.1-py2.py3-none-any.whl",

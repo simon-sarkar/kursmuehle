@@ -648,11 +648,16 @@ window.km = km;
       if (f.tagName === "SELECT" && f.selectedIndex < 0) f.selectedIndex = 0;
     });
     if (S.zielgruppeSperre) { S.zielgruppeSperre("f", true); S.zielgruppeSperre("a", true); }
-    var c = chatInfo(Z.mappe.chat);
-    $("material-grenze").textContent = !c ? "" : c.eingabe_kb
-      ? c.text + " nahm im Test " + c.eingabe_kb + " KB Text an; der Text für den Chat hat mit deinem Material etwa " +
-          kb(S.textGroesse()) + "."
-      : "Wie viel Text " + c.text + " annimmt, ist nicht gemessen. Halte das Material kurz.";
+    // Grenzzeile an beiden Materialfeldern (AP13.13): ohne Chat oder ohne Messwert nur die Größe des Materials, rot
+    // mit Satz, sobald Teil 1 den Messwert des Chats übersteigt
+    var c = chatInfo(Z.mappe.chat), mat = Z.mappe.material || "", zuViel = false, zeile = "";
+    if (c && c.eingabe_kb) {
+      zuViel = S.textGroesse() > c.eingabe_kb * 1024;
+      zeile = c.text + " nahm im Test " + c.eingabe_kb + " KB Text an; der Text für den Chat hat mit deinem Material etwa " +
+          kb(S.textGroesse()) + "." + (zuViel ? " Kürze das Material oder wähle weniger Abschnitte." : "");
+    } else if (mat.trim()) zeile = "Dein Material hat etwa " + kb(new Blob([mat]).size) + ".";
+    ["material-grenze", "r-material-grenze"].forEach(function (id) {
+      $(id).textContent = zeile; $(id).classList.toggle("fehler", zuViel); });
   }
   Object.assign(S, { $: $, AUTO: AUTO, FARBEN: FARBEN, KOPIERT: KOPIERT, SCHRITTE: SCHRITTE,
     STANDARD_FARBE: STANDARD_FARBE, Z: Z, ZWEIG_TEXT: ZWEIG_TEXT, auswertung: auswertung, autosave: autosave,

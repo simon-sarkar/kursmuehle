@@ -12,6 +12,8 @@
  *           | prompt {funktion, args}  gen.prompt: einheit, baustein, korrektur, fragen, fachcheck, vergleich, lehrplan
  *           | design_vorschau {familie, hebel}  gen.api.design_vorschau: Miniatur einer Familie als HTML; ohne familie
  *             alle Familien als {name: html} (AP13.5)
+ *           | material_lesen {name, daten}  gen.api.material_lesen: eigenes Material aus einer Datei (AP13.13); pypdf
+ *             lädt erst beim ersten PDF
  * Bytes laufen als ArrayBuffer/Uint8Array (Assets: {name: Uint8Array}); die .mbz kommt als übertragener ArrayBuffer.
  * Klassischer Worker ohne ES-Module (läuft so auch aus einem Blob, Offline-Datei später).
  * Pyodide-Dateien und generator.zip kommen ab dem zweiten Aufruf aus der Cache API (AP13.12 b4). */
@@ -30,6 +32,8 @@ importScripts(BASIS + "vendor/pyodide/pyodide.js");
 // die Schlüssel den Zusatz -beta: dieselbe Regel wie km.speicher() in kern.js (AP13.10), hier auf die Adresse des
 // Workers angewandt. Ohne Cache API (Firefox privat) oder bei einem Fehler geht es übers Netz.
 var PYODIDE_VERSION = "0.27.8";        // wie web/vendor/pyodide/pyodide-lock.json (test_web.py prüft das)
+var PYPDF = "pypdf-6.21.2-py3-none-any.whl";   // Wheel unter vendor/pyodide/, nicht in der Lock-Datei (test_material.py)
+var pypdfGeladen = false;
 var ZUSATZ = /(^|\/)beta\//.test(self.location.pathname) ? "-beta" : "";
 function speicher(name) { return name + ZUSATZ; }
 var netz = self.fetch.bind(self);
@@ -150,6 +154,10 @@ var PY_BRUECKE = [
   "        raise ValueError('unbekannte Funktion ' + str(f))",
   "    return getattr(_P, f)(*(e.get('args') or []))",
   "",
+  "def km_material_lesen(e):",
+  "    d = e.get('daten')",
+  "    return api.material_lesen(e.get('name') or '', bytes(d.tobytes() if isinstance(d, memoryview) else d or b''))",
+  "",
   "def km_design_vorschau(e):",
   "    if e.get('familie'):",
   "        return api.design_vorschau(e.get('familie'), e.get('hebel'))",
@@ -254,6 +262,13 @@ self.onmessage = async function (ev) {
       else if (m.aktion === "mappe") ergebnis = aufruf("km_mappe", { funktion: m.funktion, args: m.args });
       else if (m.aktion === "prompt") ergebnis = aufruf("km_prompt", { funktion: m.funktion, args: m.args });
       else if (m.aktion === "design_vorschau") ergebnis = aufruf("km_design_vorschau", { familie: m.familie, hebel: m.hebel });
+      else if (m.aktion === "material_lesen") {
+        if (!pypdfGeladen && /\.pdf$/i.test(m.name || "")) {
+          await pyodide.loadPackage(BASIS + "vendor/pyodide/" + PYPDF, { messageCallback: function () {} });
+          pypdfGeladen = true;
+        }
+        ergebnis = aufruf("km_material_lesen", { name: m.name, daten: new Uint8Array(m.daten) });
+      }
       else if (m.aktion === "steckbrief_lesen") ergebnis = aufruf("km_steckbrief_lesen", { text: m.text });
       else if (m.aktion === "steckbrief_schreiben") ergebnis = aufruf("km_steckbrief_schreiben", { sb: m.sb });
       else throw new Error("unbekannte Aktion " + m.aktion);
