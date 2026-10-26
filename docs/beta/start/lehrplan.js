@@ -1,8 +1,8 @@
 /* Kursmühle – LehrplanPLUS (AP13.6): Haken „Lehrplanbezug“, Picker Schulart → Fach → Zug/Variante → Lernbereiche am
- * Fach-Feld („Mach du“, „Ich gebe die Richtung“, „Mehr einstellen“), Vorschlag in „Mach du“. Die Daten liegen unter
- * lehrplan/ (web_bundle.py); index.json lädt erst mit dem Haken, wenn der Picker aufgeht oder „Mach du“ einen Vorschlag
- * sucht, eine Fachdatei erst bei der Fachwahl. Die Suchen gibt es auch in Python (scripts/lehrplan.py, test_lehrplan.py
- * vergleicht beide). Texte gehen wörtlich in kurs.lehrplan, nie in den Kurs.
+ * Fach-Feld, Vorschlag aus dem Thema. AP13.12c: ein Ort in Schritt 2 unter den drei Kacheln, in jedem Weg derselbe,
+ * zugeklappt unter „Lehrplanbezug (optional)“. Die Daten liegen unter lehrplan/ (web_bundle.py); index.json lädt erst
+ * mit dem Haken, wenn der Picker aufgeht oder der Vorschlag sucht, eine Fachdatei erst bei der Fachwahl. Die Suchen
+ * gibt es auch in Python (scripts/lehrplan.py, test_lehrplan.py vergleicht beide). Texte gehen wörtlich in kurs.lehrplan, nie in den Kurs.
  * AP13.5f: der Haken ist standardmäßig aus und folgt der letzten Wahl im Browser (localStorage kursmuehle-lehrplan);
  * an und ohne Lernbereich steht der Picker offen, darunter eine gelbe Zeile; Kürzel und Wortanfänge im Fach-Feld. */
 "use strict";
@@ -151,7 +151,6 @@
   function ausdruecklich() { return S.angaben.lehrplanbezug === "ja"; }
   function gewaehlt() { var lp = S.angaben.lehrplan; return !!(lp && (lp.lernbereiche || []).length); }
   function offen() { return !Z.steckbrief_text && !S.angaben.lehrplanbezug && !S.angaben.lehrplan; }
-  function ortJetzt() { return S.zweig() === "steuer" ? "a" : "m"; }
   function jahrgangText() { var e = (Z.mappe && Z.mappe.einheit) || {}; return e.jahrgang || S.angaben.jahrgang || ""; }
   // c2: Text ohne Zahl im Feld Jahrgangsstufe der Einheit ist die Zielgruppe (schritte.js zielgruppeSperre)
   function zielgruppe() { var j = String(((Z.mappe && Z.mappe.einheit) || {}).jahrgang || "").trim();
@@ -164,31 +163,38 @@
     return t.join(" · ") || eintrag.fach;
   }
 
-  // Bausteine je Ort: Haken, Zeile, Knopf, Vermerk, Feld des Pickers, Vorschlag (nur „Mach du“), Quelle
-  var ORTE = ["m", "a"], P = null;        // P: offener Picker {ort, schulart, fach, datei, daten, wahl, auf}
-  ORTE.forEach(function (o) {
-    var box = $(o + "-lehrplan");
-    box.appendChild(el("div", { cls: "lp-kopf" }, [
-      el("label", { cls: "schalter lp-haken" }, [el("input", { id: o + "-lehrplanbezug", type: "checkbox",
-        "data-lp": "bezug" }), " Lehrplanbezug Grund- und Mittelschulen Bayern"]),
-      el("button", { type: "button", id: o + "-lehrplan-knopf", cls: "textlink lp-knopf", "data-lp": "oeffnen",
-        text: "Aus dem Lehrplan" })]));
-    box.appendChild(el("p", { id: o + "-lehrplan-zg", cls: "feld-zeile lp-zg", hidden: "hidden",
-      text: "Mit Zielgruppe ohne Lehrplanbezug" }));
-    // Fächer zur Eingabe im Fach-Feld (Kürzel und Wortanfänge), nur mit Haken; ohne Haken die Liste des Browsers
-    box.insertBefore(el("p", { id: o + "-fach-treffer", cls: "lp-vorschlag lp-fach-treffer", hidden: "hidden" }),
-        box.firstChild);
-    box.appendChild(el("p", { id: o + "-lehrplan-vermerk", cls: "lp-vermerk", hidden: "hidden" }, [el("span"),
-      el("button", { type: "button", cls: "kopf-x lp-loesen", "data-lp": "loesen", "aria-label": "Lehrplan lösen",
-        title: "Lehrplan lösen", text: "×" })]));
-    if (o === "m") box.appendChild(el("p", { id: "m-lehrplan-vorschlag", cls: "lp-vorschlag", hidden: "hidden" }));
-    box.appendChild(el("div", { id: o + "-lehrplan-feld", cls: "lp-feld", hidden: "hidden" }));
-    box.appendChild(el("p", { id: o + "-lehrplan-fehlt", cls: "lp-warnung", role: "status", hidden: "hidden",
-      text: FEHLT }));
-    box.addEventListener("click", klick);
-    box.addEventListener("change", aenderung);
-    $(o + "-fach").addEventListener("input", function () { fachTreffer(o); });
+  // Bausteine des einen Orts (AP13.12c): im Kopf des Ausklappteils der Vermerk mit „×“ statt „Lehrplanbezug
+  // (optional)“; darin Trefferzeile am Fach-Feld, Haken, Knopf, Zeile zur Zielgruppe, Vorschlag, Feld des Pickers,
+  // Quelle; die gelbe Zeile steht unter dem Ausklappteil und bleibt zugeklappt sichtbar
+  var P = null;                           // P: offener Picker {schulart, fach, datei, daten, wahl, auf}
+  var teil = $("lehrplan-teil"), box = $("lehrplan"), aus = $("lehrplan-ausklapp");
+  box.appendChild(el("div", { cls: "lp-kopf" }, [
+    el("label", { cls: "schalter lp-haken" }, [el("input", { id: "lehrplanbezug", type: "checkbox",
+      "data-lp": "bezug" }), " Lehrplanbezug Grund- und Mittelschulen Bayern"]),
+    el("button", { type: "button", id: "lehrplan-knopf", cls: "textlink lp-knopf", "data-lp": "oeffnen",
+      text: "Aus dem Lehrplan" })]));
+  box.appendChild(el("p", { id: "lehrplan-zg", cls: "feld-zeile lp-zg", hidden: "hidden",
+    text: "Mit Zielgruppe ohne Lehrplanbezug" }));
+  // Fächer zur Eingabe im Fach-Feld (Kürzel und Wortanfänge), nur mit Haken; ohne Haken die Liste des Browsers
+  box.insertBefore(el("p", { id: "fach-treffer", cls: "lp-vorschlag lp-fach-treffer", hidden: "hidden" }), box.firstChild);
+  var loesen = el("button", { type: "button", cls: "kopf-x lp-loesen", "aria-label": "Lehrplan lösen",
+    title: "Lehrplan lösen", text: "×" });
+  $("lehrplan-auf").appendChild(el("span", { id: "lehrplan-vermerk", cls: "lp-vermerk", hidden: "hidden" }, [el("span"),
+    loesen]));
+  // „×“ im Kopf: weder auf- oder zuklappen noch den gemerkten Ausklappzustand umschalten (S.ausklapp hört am Kopf)
+  loesen.addEventListener("click", function (ev) {
+    ev.preventDefault(); ev.stopPropagation();
+    if (Z.mappe) schreiben({ lehrplan: null });
   });
+  box.appendChild(el("p", { id: "lehrplan-vorschlag", cls: "lp-vorschlag", hidden: "hidden" }));
+  box.appendChild(el("div", { id: "lehrplan-feld", cls: "lp-feld", hidden: "hidden" }));
+  teil.appendChild(el("p", { id: "lehrplan-fehlt", cls: "lp-warnung", role: "status", hidden: "hidden", text: FEHLT }));
+  teil.addEventListener("click", klick);
+  teil.addEventListener("change", aenderung);
+  $("fach").addEventListener("input", fachTreffer);
+  // Ausklappteil gemerkt über data-merken (S.ausklapp, AP13.12 a); zugeklappt mit Haken im offenen Picker gelten die
+  // Haken (c3)
+  aus.addEventListener("toggle", function () { if (!aus.open) zuMitWahl(); });
 
   function schreiben(a) {
     Object.assign(S.angaben, a);
@@ -199,8 +205,8 @@
 
   // Trefferzeile unter dem Fach-Feld: Kürzel vor Namen, höchstens acht; steht das Fach schon genau da, keine Zeile
   var fachLauf = 0;
-  function fachTreffer(o) {
-    var p = $(o + "-fach-treffer"), text = $(o + "-fach").value, nr = ++fachLauf;
+  function fachTreffer() {
+    var p = $("fach-treffer"), text = $("fach").value, nr = ++fachLauf;
     if (!bezug() || !text.trim()) { p.hidden = true; return; }
     ladeIndex().then(function (index) {
       if (nr !== fachLauf) return;
@@ -214,12 +220,12 @@
       });
     }).catch(function () { p.hidden = true; });
   }
-  function fachWaehlen(o, name) {
-    var f = $(o + "-fach");
+  function fachWaehlen(name) {
+    var f = $("fach");
     f.value = name;
     f.dispatchEvent(new Event("input", { bubbles: true }));
     f.dispatchEvent(new Event("change", { bubbles: true }));
-    $(o + "-fach-treffer").hidden = true;
+    $("fach-treffer").hidden = true;
     if (P && P.index && P.schulart && namenImPicker().indexOf(name) >= 0) fachSetzen(name);
     f.focus({ preventScroll: true });
   }
@@ -271,10 +277,8 @@
 
   // ---------------------------------------------------------------- Picker zeichnen
   function zeichnePicker() {
-    ORTE.forEach(function (o) { if (!P || P.ort !== o) { $(o + "-lehrplan-feld").hidden = true;
-        $(o + "-lehrplan-feld").innerHTML = ""; } });
-    if (!P) return;
-    var feld = $(P.ort + "-lehrplan-feld");
+    var feld = $("lehrplan-feld");
+    if (!P) { feld.hidden = true; feld.innerHTML = ""; return; }
     feld.hidden = false;
     feld.innerHTML = "";
     var jg = stufe(jahrgangText());
@@ -340,16 +344,19 @@
   }
   function lernbereiche() {
     var box = el("div", { cls: "lp-reihe lp-lbs-box" }, [el("span", { cls: "lp-nr", text: "Lernbereiche" }),
-      el("p", { cls: "feld-zeile", text: "Ein Lernbereich ist für mehrere Einheiten angelegt. Hake die Erwartungen an, " +
-          "die diese Einheit trägt; der Rest bleibt Rahmen." })]);
+      el("p", { cls: "feld-zeile", text: "Ein Lernbereich ist für mehrere Einheiten angelegt. Klicke auf einen " +
+          "Lernbereich, um seine Teilbereiche und Kompetenzerwartungen zu sehen. Hake an, was diese Einheit trägt." })]);
     var ul = el("ul", { cls: "lp-lbs" });
     P.daten.lernbereiche.forEach(function (lb, i) {
       var w = P.wahl[i] || { an: false, tb: {} }, auf = !!P.auf[i];
       var li = el("li", { cls: "lp-lb", "data-i": i }, [el("div", { cls: "lp-lb-kopf" }, [
         el("input", { type: "checkbox", cls: "lp-lb-haken", "data-lp": "lb", "data-i": i, id: "lp-lb-" + i,
           "aria-label": lb.kuerzel + " " + lb.titel, checked: w.an ? "checked" : null }),
+        // AP13.12c: der ganze Titel ist der Knopf, davor ▸/▾ (CSS nach aria-expanded), dahinter die Zahl der Teilbereiche
         el("button", { type: "button", cls: "textlink lp-titel", "data-lp": "auf", "data-i": i,
-          "aria-expanded": String(auf), text: lb.kuerzel + " " + lb.titel })])]);
+          "aria-expanded": String(auf) }, [el("span", { cls: "lp-titel-text", text: lb.kuerzel + " " + lb.titel }),
+          el("span", { cls: "lp-tb-zahl", text: lb.teilbereiche.length + (lb.teilbereiche.length === 1 ?
+              " Teilbereich" : " Teilbereiche") })])])]);
       if (auf) {
         var tul = el("ul", { cls: "lp-tbs" });
         lb.teilbereiche.forEach(function (tb, t) {
@@ -373,42 +380,46 @@
   }
 
   // ---------------------------------------------------------------- Ereignisse
-  function oeffnen(ort, auto) {
+  function oeffnen(auto) {
     var s = klein(S.angaben.schulart || "");
     var lp = S.angaben.lehrplan;
-    P = { ort: ort, schulart: SCHULARTEN[s] ? s : !s && lp && SCHULARTEN[lp.schulart] ? lp.schulart : null, fach: null,
+    P = { schulart: SCHULARTEN[s] ? s : !s && lp && SCHULARTEN[lp.schulart] ? lp.schulart : null, fach: null,
       datei: null, daten: null, wahl: {}, auf: {}, index: null, zuViele: false, auto: !!auto };
     zeichnePicker();
     if (S.angaben.schulart && !SCHULARTEN[s]) return;
     ladeIndex().then(function (index) {
-      if (!P || P.ort !== ort) return;
+      if (!P) return;
       P.index = index;
       zeichnePicker();
-      var f = $(ort + "-lehrplan-feld").querySelector("button, select");
+      var f = $("lehrplan-feld").querySelector("button, select");
       if (f) f.focus({ preventScroll: true });
     }).catch(function (e) { S.zeigeFehler(e); });
   }
   function dateiLaden() {
     var p = P, datei = P.datei;
     zeichnePicker();
-    ladeDatei(datei).then(function (d) { if (P !== p || P.datei !== datei) return; P.daten = d; zeichnePicker(); })
+    ladeDatei(datei).then(function (d) {
+      if (P !== p || P.datei !== datei) return;
+      P.daten = d;
+      // AP13.12c: ein Lernbereich mit genau einem Teilbereich steht gleich offen
+      d.lernbereiche.forEach(function (lb, i) { if (lb.teilbereiche.length === 1) P.auf[i] = true; });
+      zeichnePicker();
+    })
       .catch(function (e) { S.zeigeFehler(e); });
   }
   function klick(ev) {
     var b = ev.target.closest("[data-lp]"); if (!b || !Z.mappe || b.tagName === "INPUT" || b.tagName === "SELECT") return;
-    var ort = b.closest(".lehrplan-ort").id.charAt(0), was = b.dataset.lp;
-    if (was === "oeffnen") { if (P && P.ort === ort) { if (!zuMitWahl()) { P = null; zeichnePicker(); } } else oeffnen(ort);
-        return; }
-    if (was === "schliessen") { P = null; zeichnePicker(); $(ort + "-lehrplan-knopf").focus(); return; }
-    if (was === "loesen") { schreiben({ lehrplan: null }); return; }
+    var was = b.dataset.lp;
+    if (was === "oeffnen") { if (P) { if (!zuMitWahl()) { P = null; zeichnePicker(); } } else oeffnen(); return; }
+    if (was === "schliessen") { P = null; zeichnePicker(); $("lehrplan-knopf").focus(); return; }
     if (was === "vorschlag") { vorschlagNehmen(parseInt(b.dataset.nr, 10)); return; }
-    if (was === "fachwahl") { fachWaehlen(ort, b.dataset.wert); return; }
+    if (was === "fachwahl") { fachWaehlen(b.dataset.wert); return; }
     if (!P) return;
     if (was === "schulart") { if (P.schulart !== b.dataset.wert) { P.schulart = b.dataset.wert; P.fach = null;
         P.datei = null; P.daten = null; P.wahl = {}; } zeichnePicker(); }
     else if (was === "datei") { P.datei = b.dataset.wert; P.daten = null; P.wahl = {}; dateiLaden(); }
     else if (was === "auf") { var i = b.dataset.i; P.auf[i] = !P.auf[i]; zeichnePicker();
-        var t = $(P.ort + "-lehrplan-feld").querySelector(".lp-titel[data-i='" + i + "']"); if (t) t.focus(); }
+        var t = $("lehrplan-feld").querySelector(".lp-titel[data-i='" + i + "']"); if (t) t.focus(); }
     else if (was === "uebernehmen") uebernehmen();
   }
   function aenderung(ev) {
@@ -417,7 +428,13 @@
     if (!P) return;
     if (was === "fach") { fachSetzen(t.value); return; }
     var i = t.dataset.i, w = P.wahl[i] = P.wahl[i] || { an: false, tb: {} };
-    if (was === "lb") { w.an = t.checked; if (!t.checked) w.tb = {}; }
+    if (was === "lb") {
+      w.an = t.checked; if (!t.checked) w.tb = {};
+      if (t.checked && !P.auf[i]) {                       // AP13.12c: angehakt klappt er auf, der Fokus bleibt am Haken
+        P.auf[i] = true; zeichnePicker();
+        var h = $("lp-lb-" + i); if (h) h.focus({ preventScroll: true });
+      }
+    }
     else {
       var tn = t.dataset.t, wt = w.tb[tn] = w.tb[tn] || { an: false, ziele: {} };
       if (was === "tb") { wt.an = t.checked; if (!t.checked) wt.ziele = {}; else w.an = true; }
@@ -428,7 +445,7 @@
   }
   // Kästchen nachziehen statt neu zeichnen (der Fokus bleibt am Kästchen)
   function hakenAbgleichen() {
-    var feld = $(P.ort + "-lehrplan-feld");
+    var feld = $("lehrplan-feld");
     Array.prototype.forEach.call(feld.querySelectorAll("input[data-lp]"), function (c) {
       var w = P.wahl[c.dataset.i] || { an: false, tb: {} }, wt = w.tb[c.dataset.t] || { an: false, ziele: {} };
       c.checked = c.dataset.lp === "lb" ? w.an : c.dataset.lp === "tb" ? wt.an : !!wt.ziele[c.dataset.z];
@@ -438,12 +455,9 @@
   }
   // c3: dieselbe gelbe Zeile sagt bei offenem Picker mit Haken „Noch nicht übernommen“, sonst ohne Lernbereich FEHLT
   function zeichneFehlt() {
-    var fehlt = ausdruecklich() && !gewaehlt(), wahl = !!P && gewaehlteZahl() > 0;
-    ORTE.forEach(function (o) {
-      var p = $(o + "-lehrplan-fehlt"), offenHier = wahl && P.ort === o;
-      p.textContent = offenHier ? NICHT_UEBERNOMMEN : FEHLT;
-      p.hidden = !offenHier && !fehlt;
-    });
+    var fehlt = ausdruecklich() && !gewaehlt(), wahl = !!P && gewaehlteZahl() > 0, p = $("lehrplan-fehlt");
+    p.textContent = wahl ? NICHT_UEBERNOMMEN : FEHLT;
+    p.hidden = !wahl && !fehlt;
   }
   // c3: Picker mit Haken, aber ohne „Übernehmen“ geschlossen (Knopf, Haken aus, Schritt verlassen): die Haken gelten
   function zuMitWahl() {
@@ -467,12 +481,12 @@
   }
   function uebernehmen(still) {
     if (!P || !P.daten || !gewaehlteZahl()) return;
-    var lp = aktuellerLehrplan(), ort = P.ort;
+    var lp = aktuellerLehrplan();
     P = null;
     zeichnePicker();
     schreiben({ fach: lp.fach, schulart: SCHULARTEN[lp.schulart], lehrplan: lp });
     S.felderFuellen();
-    if (!still) $(ort + "-lehrplan-knopf").focus({ preventScroll: true });
+    if (!still) $("lehrplan-knopf").focus({ preventScroll: true });
   }
   function hakenSetzen(an) {
     merken(an);
@@ -484,11 +498,11 @@
     S.zeichneSchritte();
   }
 
-  // ---------------------------------------------------------------- Vorschlag in „Mach du“
+  // ---------------------------------------------------------------- Vorschlag aus dem Thema (AP13.12c: in jedem Weg)
   var vorschlag = { schluessel: "", treffer: [], erg: null, genommen: "" };
   function vorschlagSuchen() {
     var e = (Z.mappe && Z.mappe.einheit) || {};
-    var aus = !Z.mappe || S.zweig() !== "mach" || !bezug() || S.angaben.lehrplan || !e.thema || !stufe(jahrgangText());
+    var aus = !Z.mappe || !S.zweig() || !bezug() || S.angaben.lehrplan || !e.thema || !stufe(jahrgangText());
     var schluessel = aus ? "" : [e.thema, jahrgangText(), S.angaben.schulart || ""].join("|");
     if (schluessel === vorschlag.schluessel) return;
     vorschlag.schluessel = schluessel; vorschlag.erg = null;
@@ -508,7 +522,7 @@
     }).catch(function () { /* ohne Daten kein Vorschlag */ });
   }
   function zeichneVorschlag() {
-    var p = $("m-lehrplan-vorschlag"), r = vorschlag.erg;
+    var p = $("lehrplan-vorschlag"), r = vorschlag.erg;
     p.innerHTML = "";
     p.hidden = !vorschlag.schluessel || !r || !r.treffer.length;
     if (p.hidden) return;
@@ -555,20 +569,19 @@
       S.angabenSchreiben(a);
     }
     var an = bezug(), lp = an ? S.angaben.lehrplan : null, fehlt = ausdruecklich() && !gewaehlt();
-    ORTE.forEach(function (o) {
-      $(o + "-lehrplanbezug").checked = an;
-      $(o + "-lehrplanbezug").disabled = !!zg;
-      $(o + "-lehrplan-zg").hidden = !zg;
-      $(o + "-lehrplan-knopf").hidden = !an || fehlt;     // ohne Wahl steht der Picker ohnehin offen
-      var v = $(o + "-lehrplan-vermerk");
-      v.hidden = !lp || !(lp.lernbereiche || []).length;
-      if (!v.hidden) v.firstChild.textContent = vermerkText(lp);
-      if (!an) $(o + "-fach-treffer").hidden = true;
-    });
+    teil.hidden = !S.zweig();                             // sichtbar, sobald ein Weg gewählt ist
+    $("lehrplanbezug").checked = an;
+    $("lehrplanbezug").disabled = !!zg;
+    $("lehrplan-zg").hidden = !zg;
+    $("lehrplan-knopf").hidden = !an || fehlt;            // ohne Wahl steht der Picker ohnehin offen
+    var v = $("lehrplan-vermerk");                        // statt „Lehrplanbezug (optional)“
+    v.hidden = !lp || !(lp.lernbereiche || []).length;
+    $("lehrplan-auf-text").hidden = !v.hidden;
+    if (!v.hidden) v.firstChild.textContent = vermerkText(lp);
+    if (!an) $("fach-treffer").hidden = true;
     if (!an && P) { P = null; zeichnePicker(); }
-    // Haken an, kein Lernbereich: Picker offen an der Stelle des Zweigs; mit Wahl schließt ein so geöffneter Picker
-    if (fehlt && !P) oeffnen(ortJetzt(), true);
-    else if (fehlt && P.ort !== ortJetzt()) { P.ort = ortJetzt(); zeichnePicker(); }
+    // Haken an, kein Lernbereich: Picker offen; mit Wahl schließt ein so geöffneter Picker
+    if (fehlt && !P) oeffnen(true);
     else if (!fehlt && P && P.auto) { P = null; zeichnePicker(); }
     zeichneFehlt();
     fazitErgaenzen();

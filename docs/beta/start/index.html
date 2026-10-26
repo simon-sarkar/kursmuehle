@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 0a243a8 vom 26.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 8481d03 vom 26.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -100,17 +100,23 @@
           <span class="zweig-name">Ich steuere</span>
           <span class="zweig-zeile">Du wählst den Aufbau, schreibst Aufträge zu einzelnen Bausteinen und stellst mehr ein.</span></button>
       </div>
-      <!-- Kontext in „Mach du“ und „Ich gebe die Richtung“, beide Felder freiwillig; dieselben Angaben wie unter
-           „Mehr einstellen“ -->
+      <!-- AP13.12c: ein Ort für den Lehrplan in allen drei Wegen, sobald ein Weg gewählt ist. Zugeklappt nur der Knopf
+           „Lehrplanbezug (optional)“, mit gewähltem Lehrplan an seiner Stelle der Vermerk mit „×“; aufgeklappt Fach,
+           Haken, „Aus dem Lehrplan“, Picker und Vorschlag (lehrplan.js) -->
+      <div id="lehrplan-teil" class="lehrplan-teil" hidden>
+        <details id="lehrplan-ausklapp" class="ausklapp lehrplan-ausklapp" data-merken="lehrplan">
+          <summary id="lehrplan-auf"><span id="lehrplan-auf-text">Lehrplanbezug (optional)</span></summary>
+          <label class="feld">Fach <span class="feld-zeile">freiwillig</span>
+            <input id="fach" type="text" maxlength="60" autocomplete="off"></label>
+          <div id="lehrplan" class="lehrplan-ort"></div>
+        </details>
+      </div>
+      <!-- Kontext in „Mach du“ und „Ich gebe die Richtung“, freiwillig; dieselbe Angabe wie unter „Mehr einstellen“ -->
       <div id="mach-teil" class="mach-teil" hidden>
         <label class="feld feld-breit">Worum geht es genau? <span class="feld-zeile">freiwillig</span>
           <textarea id="m-kontext" class="von-lehrkraft" rows="3" maxlength="600" spellcheck="true"
             placeholder="Was sollen die Lernenden danach können? Was ist vorausgesetzt, was nicht?"></textarea>
         </label>
-        <label class="feld">Fach <span class="feld-zeile">freiwillig</span>
-          <input id="m-fach" type="text" maxlength="60" autocomplete="off"></label>
-        <!-- AP13.6: Haken „Lehrplanbezug“, Picker, Vorschlag (lehrplan.js) -->
-        <div id="m-lehrplan" class="lehrplan-ort feld-breit"></div>
       </div>
       <!-- AP13.5b: Eingabekarte „Ich gebe die Richtung“, alle Felder freiwillig; Material steht bei „Einheit aus eigenem
            Material“ direkt unter dem Fach, sonst zuletzt -->
@@ -152,8 +158,6 @@
             <label class="feld">Zielgruppe statt Jahrgangsstufe <input id="a-zielgruppe" type="text" maxlength="40"
               placeholder="Lehrerkonferenz, Elternabend" autocomplete="off"></label>
             <label class="feld feld-klein">Minuten <input id="a-minuten" type="number" min="10" max="300" step="5"></label>
-            <label class="feld">Fach <input id="a-fach" type="text" maxlength="60" autocomplete="off"></label>
-            <div id="a-lehrplan" class="lehrplan-ort feld-breit"></div>
             <label class="feld feld-breit">Worum geht es genau?
               <textarea id="a-kontext" class="von-lehrkraft" rows="3" maxlength="600" spellcheck="true"
                 placeholder="Was sollen die Lernenden danach können? Was ist vorausgesetzt, was nicht?"></textarea>

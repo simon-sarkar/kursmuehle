@@ -364,6 +364,12 @@ select { appearance: auto; }
   border-radius: 8px; background: var(--warn-flaeche); color: var(--text); }
 .warnung-box p { margin: 0; flex: 1 1 16rem; }
 /* AP13.6: Lehrplan am Fach-Feld – Haken, Picker in vier Zeilen, Vermerk, Vorschlag */
+/* AP13.12c: ein Ort unter den drei Kacheln, zugeklappt nur der Knopf oder der Vermerk mit „×“ */
+.lehrplan-teil { margin-top: 14px; display: grid; gap: 6px; }
+.lehrplan-ausklapp > .feld { margin-bottom: 10px; max-width: 24rem; }
+.lehrplan-ausklapp > summary .lp-vermerk { display: inline-flex; vertical-align: middle; font-weight: 400; color: var(--text);
+  max-width: calc(100% - 1.5em); }
+.lehrplan-ausklapp > summary .lp-vermerk span { overflow-wrap: anywhere; }
 .lehrplan-ort { display: grid; gap: 6px; }
 .lp-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; }
 .lp-knopf { padding: 4px 0; }
@@ -382,6 +388,10 @@ select { appearance: auto; }
 .lp-lb-kopf { display: flex; align-items: flex-start; gap: 8px; }
 .lp-lb-kopf input, .lp-tb input, .lp-ziel input { width: 18px; height: 18px; accent-color: var(--ocker-tief); margin: 3px 0 0; flex: none; }
 .lp-titel { text-align: left; padding: 0; }
+/* AP13.12c: Lernbereich erkennbar aufklappbar – ▸/▾ vor dem Titel, Zahl der Teilbereiche dahinter */
+.lp-titel::before { content: "▸"; display: inline-block; width: 1.1em; text-decoration: none; color: var(--leise); }
+.lp-titel[aria-expanded=true]::before { content: "▾"; }
+.lp-tb-zahl { display: inline-block; margin-left: 8px; font-size: 0.85rem; color: var(--leise); text-decoration: none; }
 .lp-tbs { margin: 6px 0 6px 26px; display: grid; gap: 8px; }
 .lp-tb-kopf { display: flex; gap: 8px; font-weight: 600; }
 .lp-erws { margin: 4px 0 0 26px; display: grid; gap: 6px; font-size: 0.93rem; }

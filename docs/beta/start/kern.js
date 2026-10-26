@@ -629,9 +629,8 @@ window.km = km;
     var jgA = String(e.jahrgang || S.angaben.jahrgang || ""), jgF = String(e.jahrgang || "");
     var zgA = /\d/.test(jgA) ? "" : jgA.trim(), zgF = /\d/.test(jgF) ? "" : jgF.trim();
     var werte = { "a-thema": e.thema || S.angaben.thema || "", "a-jahrgang": zgA ? "" : jgA, "a-zielgruppe": zgA,
-      "a-minuten": e.minuten || S.angaben.minuten || "", "a-fach": S.angaben.fach || "",
-          "a-schulart": S.angaben.schulart || "",
-      "m-fach": S.angaben.fach || "", "a-kontext": S.angaben.kontext || "", "m-kontext": S.angaben.kontext || "",
+      "a-minuten": e.minuten || S.angaben.minuten || "", "a-schulart": S.angaben.schulart || "",
+      "fach": S.angaben.fach || "", "a-kontext": S.angaben.kontext || "", "m-kontext": S.angaben.kontext || "",
       "a-format": S.angaben.format, "a-familie": S.angaben.familie,
       "a-farbe": /^#/.test(S.angaben.farbe || "") ? "eigen" : S.angaben.farbe,
       "a-farbe-hex": /^#/.test(S.angaben.farbe || "") ? S.angaben.farbe : "",

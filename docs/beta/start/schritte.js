@@ -1068,7 +1068,6 @@
   };
 
   var FELDER = { "a-thema": "thema", "a-jahrgang": "jahrgang", "a-zielgruppe": "jahrgang", "a-minuten": "minuten",
-      "a-fach": "fach",
       "a-schulart": "schulart",
     "a-format": "format", "a-familie": "familie", "a-farbe": "farbe", "a-farbe-hex": "farbe", "a-abschluss": "abschluss",
     "a-portionierung": "portionierung", "a-kontext": "kontext" };
@@ -1110,7 +1109,7 @@
         S.textSpaeter(); }, 400);
   }
   $("m-kontext").addEventListener("input", function () { kontextSchreiben("kontext", $("m-kontext").value); });
-  $("m-fach").addEventListener("input", function () { kontextSchreiben("fach", $("m-fach").value.trim()); });
+  $("fach").addEventListener("input", function () { kontextSchreiben("fach", $("fach").value.trim()); });
   $("a-material").addEventListener("input", function () {
     if (!Z.mappe) return;
     Z.mappe.material = $("a-material").value;
