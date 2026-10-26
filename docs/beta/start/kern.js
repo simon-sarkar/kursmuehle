@@ -301,6 +301,7 @@ window.km = km;
   S.letzteAntwort = null;
   S.infoboxAus = false;
   S.schreibKette = Promise.resolve();
+  S.angabenFuer = null;            // Mappe, deren Angaben aus dem Steckbrief gelesen sind (neuPruefen)
   S.korrektur = { text: "", offen: false, stand: "", art: "" };
   S.korrekturTimer = null;
   S.hinweise = { an: true, gesehen: [] };
@@ -557,7 +558,9 @@ window.km = km;
     await km.stand(Z.kurs_md);
     for (var kette = null; kette !== S.schreibKette;) { kette = S.schreibKette; await kette; }
     var gelesen = await km.mappeFn("angaben_lesen", [Z.steckbrief_text]);
-    if (kette === S.schreibKette) S.angaben = gelesen;    // sonst kam inzwischen ein Klick; dessen Werte gelten
+    // sonst kam inzwischen ein Klick; dessen Werte gelten. angabenFuer: die Angaben dieser Mappe sind vollständig
+    // gelesen (lehrplan.js belegt den Lehrplan erst danach vor, sonst überschriebe der Vorschlag eine gespeicherte Wahl)
+    if (kette === S.schreibKette) { S.angaben = gelesen; S.angabenFuer = Z.mappe; }
     await auswertung();
     zeichne();
     autosave();
