@@ -6,7 +6,7 @@
   if (!document.getElementById("schritt-5")) return;
   var S = km.seite;
   var $ = S.$, Z = S.Z, ZWEIG_TEXT = S.ZWEIG_TEXT, adresseLesen = S.adresseLesen, autosave = S.autosave,
-      bildwuensche = S.bildwuensche, chatInfo = S.chatInfo, download = S.download, el = S.el, geaendert = S.geaendert,
+      chatInfo = S.chatInfo, download = S.download, el = S.el, geaendert = S.geaendert,
       gehe = S.gehe, heute = S.heute, knoepfe = S.knoepfe, kopieren = S.kopieren, ladenStarten = S.ladenStarten,
       nachZwei = S.nachZwei, neuStart = S.neuStart, oberText = S.oberText, schemaZeigen = S.schemaZeigen,
       schritt = S.schritt, status = S.status, weiterAnzeigen = S.weiterAnzeigen, zeichne = S.zeichne,
@@ -47,7 +47,8 @@
   }
   $("weiter-5").onclick = function () {
     if (!Z.mappe) return;
-    if (bildwuensche().length) gehe(5.5); else nachBildern();
+    // Schritt Bilder nur, wenn er sichtbar ist: Bildwünsche trotz „keine“ (Standard seit AP13.12 a2) führen weiter
+    if (S.sichtbareSchritte().indexOf(5.5) >= 0) gehe(5.5); else nachBildern();
   };
   $("weiter-bilder").onclick = function () { if (Z.mappe) nachBildern(); };
 
@@ -119,9 +120,27 @@
     var w = weg(), o = offen();
     return !S.fragenListe.length || (w !== "ki" && w !== "chat") || (!!o && !o.length);
   }
+  // AP13.12 a10: Zeilen `Offen:` der Kursdatei (gen/api.offen) oben in Schritt 6, je Zeile mit ihrem Baustein; wie bei
+  // den Bildwünschen nur die laufende Einheit (Zeilen im Kopf gehören zur ersten)
+  function zeichneOffen() {
+    var ul = $("offen-liste"), tag = S.einheitTag();
+    var zeilen = ((Z.pruefung && Z.pruefung.offen) || []).filter(function (o) {
+      var k = o.baustein && S.karteNach(o.baustein);
+      return o.baustein ? !!k && (k.einheit || "") === tag : !tag;
+    });
+    ul.innerHTML = "";
+    zeilen.forEach(function (o) {
+      ul.appendChild(el("li", {}, [o.text, o.baustein ? el("span", { cls: "leise", text: " · " }) : null,
+        o.baustein ? el("button", { type: "button", cls: "hinweis-link", "data-ziel": o.baustein, text: o.titel ||
+            o.baustein }) : null]));
+    });
+    $("offen-kasten").hidden = !zeilen.length;
+  }
+  $("offen-liste").onclick = function (ev) { var z = ev.target.closest("[data-ziel]"); if (z) zuKarte(z.dataset.ziel); };
   function zeichneGegen() {
     if (!Z.mappe) return;
     stil();
+    zeichneOffen();
     bereinigen();
     var n = S.fragenListe.length, w = weg(), ki = kiAktiv();
     $("durchsicht-satz").textContent = n ? (n === 1 ? "Eine Frage" : n + " Fragen") + " mit Lösungen. Wie prüfst du, " +
@@ -321,29 +340,47 @@
     var glossar = Z.pruefung && Z.pruefung.bausteine.some(function (b) { return b.typ === "Glossar"; });
     var badge = S.angaben.abschluss === "test und abzeichen" || (Z.pruefung && Z.pruefung.bausteine.some(function (b) {
         return b.typ === "Badge"; }));
+    // AP13.12 a12: mit den Wörtern der Plattform, wie sie eine Lehrkraft sieht (kein „Als neuen Kurs wiederherstellen“)
     var schritte = [
-      "Öffne deinen Kurs auf der ByCS-Lernplattform: Mehr → Kurs wiederherstellen. Zieh die Datei in das Feld " +
-          "„Datei“ und klicke „Wiederherstellen“, dann „Weiter“.",
-      delta ? "Ziel: „In diesen Kurs wiederherstellen“ mit „Zusammenführen“. Die neue Einheit kommt hinten an; was " +
-          "schon im Kurs ist, bleibt."
-        : "Ziel: „Als neuen Kurs wiederherstellen“ und eine Kategorie wählen. Für einen leeren Kurs, den du schon " +
-            "hast: „In diesen Kurs wiederherstellen“ mit „Zusammenführen“.",
-      "„Einstellungen“: Weiter. „Schema“: Soll ein bestehender Kurs das Kursformat " + (oberText("format",
-          S.angaben.format) || "") +
-          " bekommen, stell „Kurseinstellungen überschreiben“ auf „Ja“. Dann „Wiederherstellen“.",
+      delta ? "Öffne auf der Plattform den Kurs, in dem die erste Einheit schon liegt."
+        : "Leg auf der Plattform einen leeren Kurs an oder nimm einen leeren, den du schon hast. Nie einen Kurs mit " +
+            "Klasse.",
+      (delta ? "Im Kurs" : "Im leeren Kurs") + ": Mehr → Kurs wiederverwenden → Sicherung wiederherstellen. Datei " +
+          "hochladen, Wiederherstellen, Weiter.",
+      delta ? "Ziel: „In diesen Kurs wiederherstellen“ → „Den gesicherten Kurs mit diesem Kurs verschmelzen“; die neue " +
+          "Einheit kommt hinten an."
+        : "Ziel: „In diesen Kurs wiederherstellen“ → „Alle Inhalte dieses Kurses löschen und dann wiederherstellen“ " +
+            "(nur im leeren Kurs; nur so kommen Kursformat und Kachelbilder mit).",
+      delta ? "„Einstellungen“ und „Schema“: Weiter. Dann „Wiederherstellen“."
+        : "„Einstellungen“: Weiter. „Schema“: „Kurseinstellungen überschreiben“ auf „Ja“, damit der Kurs das " +
+            "Kursformat " + (oberText("format", S.angaben.format) || "") + " bekommt. Dann „Wiederherstellen“.",
       glossar ? "Glossar: Öffne das Glossar im Kurs, Mehr → Einträge importieren, und wähle die Datei mit den " +
           "Glossar-Einträgen (Knopf oben)."
         : "Sieh die Kursseite einmal so an, wie sie deine Klasse sieht (Rolle wechseln → Schüler/in).",
       badge ? "Abzeichen: Mehr → Badges, das Abzeichen öffnen und „Zugriff " +
           "aktivieren“." : "Prüfe Kursbild und Banner; fehlt ein Bild, steht dort ein Platzhalter."];
     schritte.forEach(function (s) { ol.appendChild(el("li", { text: s })); });
+    whBilder();
     var imp = (Z.mappe && Z.mappe.importiert) || [];
     var alle = einheitenImKurs().every(function (e) { return imp.indexOf(e) >= 0; });
     $("importiert-frage").hidden = !!(Z.mappe && alle);
     $("importiert-stand").hidden = !(Z.mappe && alle);
     $("importiert-stand")
-        .textContent = "Vermerkt. Die nächste Einheit wird als Nachlieferung erstellt und mit „Zusammenführen“ " +
-        "eingespielt.";
+        .textContent = "Vermerkt. Die nächste Einheit wird als Nachlieferung erstellt und mit „Den gesicherten Kurs " +
+        "mit diesem Kurs verschmelzen“ eingespielt.";
+    zeichneErgebnisWahl();
+  }
+  // Bildschirmfotos je Schritt aus katalog.yaml (oberflaeche.wiederherstellen_bilder, Dateien unter web/hilfe/); ohne
+  // Einträge bleibt „Mit Bildern“ verborgen
+  function whBilder() {
+    var liste = (S.katalog && S.katalog.oberflaeche.wiederherstellen_bilder) || [], box = $("wh-bilder-liste");
+    $("wh-bilder").hidden = !liste.length;
+    if (!liste.length || box.childElementCount === liste.length) return;
+    box.innerHTML = "";
+    liste.forEach(function (b, i) {
+      box.appendChild(el("figure", {}, [el("img", { src: "hilfe/" + b.datei, alt: b.text || "", loading: "lazy" }),
+        el("figcaption", { cls: "leise", text: "Schritt " + (i + 1) })]));
+    });
   }
 
   $("herunterladen").onclick = async function () {
@@ -360,7 +397,11 @@
       if (Z.bau && Z.bau.mbz) Z.bau.downloadName = (await km.mappeFn("dateiname", [Z.mappe, heute()]))
           .replace(/\.kursmappe\.zip$/, neu.length ? "_nachlieferung.mbz" : ".mbz");
       S.bauLaeuft = false;
-      if (Z.bau && Z.bau.mbz) { herunterladen(); status("Bereit", "ok"); }
+      if (Z.bau && Z.bau.mbz) {
+        herunterladen(); status("Bereit", "ok");
+        // AP13.12 a11: erster Download der Einheit, für die Minuten in der Rückmeldung
+        if (Z.mappe && !Z.mappe.zeit_download) { Z.mappe.zeit_download = new Date().toISOString(); autosave(); }
+      }
       else status("Die Datei ließ sich nicht erstellen.", "fehler");
       zeichneWiederherstellen(); knoepfe(); zeichneSchritte(); rueckmeldungFuellen();
     } catch (e) { S.bauLaeuft = false; zeigeFehler(e); knoepfe(); }
@@ -425,17 +466,34 @@
   }
 
   // Rückmeldung: Version, Chat, Fach, Jahrgangsstufe (ohne Lehrplanbezug die Zahl aus dem Feld, sonst nur „nein“),
-  // Vorlage und Weg; keine Inhalte, kein Thema, keine Namen
+  // Vorlage und Weg; seit AP13.12 a11 dazu Ergebnis (Knopf in Schritt 7), importiert, Minuten von Schritt 1 bis zum
+  // Download (mappe.zeit_start, zeit_download) und Korrekturrunden der laufenden Einheit; keine Inhalte, kein Thema,
+  // keine Namen. Was die Lehrkraft in „Was ist passiert?“ und „Fehlermeldung“ schreibt, steht darunter.
+  var ERGEBNIS = { lief: "Lief", gehakt: "Hat gehakt", abgebrochen: "Abgebrochen" }, rmErgebnis = "";
+  function minutenBisDatei(m) {
+    var a = Date.parse(m.zeit_start || ""), b = Date.parse(m.zeit_download || "");
+    return a && b && b >= a ? Math.round((b - a) / 60000) : null;
+  }
+  function runden(m) {
+    var tag = S.einheitTag();
+    return ((m && m.korrekturen) || []).filter(function (x) { return (x.einheit || "") === tag; })
+      .reduce(function (n, x) { return Math.max(n, x.runde || 0); }, 0);
+  }
   function rueckmeldungText() {
-    var m = Z.mappe || {}, e = m.einheit || {}, c = chatInfo(m.chat);
+    var m = Z.mappe || {}, e = m.einheit || {}, c = chatInfo(m.chat), min = minutenBisDatei(m);
     var ohneLp = S.angaben.lehrplanbezug === "nein", jg = ohneLp ? S.jahrgangZahl(e.jahrgang || S.angaben.jahrgang) :
         e.jahrgang || S.angaben.jahrgang;
+    var imp = einheitenImKurs().every(function (x) { return (m.importiert || []).indexOf(x) >= 0; });
+    var frei = rmErgebnis && rmErgebnis !== "lief" ? ["Was ist passiert?", $("rm-passiert").value.trim(), "",
+      "Fehlermeldung der Plattform:", $("rm-meldung").value.trim(), ""] : [];
     return ["Rückmeldung zu Kursmühle " + ((S.katalog && S.katalog.version) || ""), "",
+      "Ergebnis: " + (ERGEBNIS[rmErgebnis] || "–"), "Importiert: " + (Z.mappe && imp ? "ja" : "nein"),
+      "Minuten bis zur Datei: " + (min === null ? "–" : min), "Korrekturrunden: " + runden(m),
       "Chat: " + (c ? (m.chat === "eigene" && S.kiName ? S.kiName() : c.text) : "–"), "Fach: " + (S.angaben.fach || "–"),
       ohneLp && !jg ? "Lehrplanbezug: nein" : "Jahrgangsstufe: " + (jg || "–"),
-      "Vorlage: " + (e.vorlage || "–") + (m.zweig ? " (" + ZWEIG_TEXT[m.zweig] + ")" : ""), korrekturZeile(m), "",
-      "Wo hat es gestockt?", "", "", "Was hättest du anders gewollt?", "", "",
-          "Nimmst du es für deine nächste Einheit wieder? Wenn nicht, woran liegt es?", "", ""].join("\n");
+      "Vorlage: " + (e.vorlage || "–") + (m.zweig ? " (" + ZWEIG_TEXT[m.zweig] + ")" : ""), korrekturZeile(m), ""]
+      .concat(frei, ["Wo hat es gestockt?", "", "", "Was hättest du anders gewollt?", "", "",
+          "Nimmst du es für deine nächste Einheit wieder? Wenn nicht, woran liegt es?", "", ""]).join("\n");
   }
   // „Korrekturen: 2 · mindest.quiz, zeit.annahme · Chat: ByLKI“ aus den Ereignissen der Kursmappe
   function korrekturZeile(m) {
@@ -446,8 +504,43 @@
         chats.join(", ") : "");
   }
   var rmBearbeitet = false;
-  function rueckmeldungFuellen() { if (!rmBearbeitet) $("rm-text").value = rueckmeldungText(); }
-  $("rm-text").addEventListener("input", function () { rmBearbeitet = true; });
+  function rueckmeldungFuellen() {
+    if (!rmBearbeitet) $("rm-text").value = rueckmeldungText();
+    mailAdresse();
+  }
+  $("rm-text").addEventListener("input", function () { rmBearbeitet = true; mailAdresse(); });
+  // „Per Mail senden“: mailto mit Betreff und Text; Mailprogramme nehmen lange Adressen nicht, darüber wird der Text
+  // gekürzt („Text kopieren“ bleibt vollständig)
+  var MAIL_MAX = 1800;
+  function mailAdresse() {
+    var betreff = "Rückmeldung Kursmühle " + ((S.katalog && S.katalog.version) || "") + (rmErgebnis ? " · " +
+        ERGEBNIS[rmErgebnis] : ""), text = $("rm-text").value, n = text.length;
+    var adresse = function (t) { return "mailto:kursmuehle@pm.me?subject=" + encodeURIComponent(betreff) + "&body=" +
+        encodeURIComponent(t); }, url = adresse(text);
+    while (url.length > MAIL_MAX && n > 0) {
+      n = Math.max(0, n - 100);
+      url = adresse(text.slice(0, n) + "\n… (gekürzt; den ganzen Text kopierst du mit „Text kopieren“)");
+    }
+    $("rm-mail").href = url;
+  }
+  // Rückmeldung mit einem Klick (AP13.12 a11): drei Knöpfe nach „Importiert?“; „Hat gehakt“ und „Abgebrochen“ zeigen
+  // die zwei Felder
+  function zeichneErgebnisWahl() {
+    Array.prototype.forEach.call($("ergebnis-wahl").querySelectorAll("[data-ergebnis]"), function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.ergebnis === rmErgebnis));
+    });
+    $("rm-felder").hidden = !rmErgebnis || rmErgebnis === "lief";
+  }
+  $("ergebnis-wahl").onclick = function (ev) {
+    var b = ev.target.closest("[data-ergebnis]");
+    if (!b) return;
+    rmErgebnis = b.dataset.ergebnis;
+    rmBearbeitet = false;
+    zeichneErgebnisWahl();
+    rueckmeldungOeffnen();
+    if (rmErgebnis !== "lief") $("rm-passiert").focus({ preventScroll: true });
+  };
+  ["rm-passiert", "rm-meldung"].forEach(function (id) { $(id).addEventListener("input", rueckmeldungFuellen); });
   function rueckmeldungOeffnen() {
     $("rueckmeldung").dataset.offen = "1";
     rueckmeldungFuellen();

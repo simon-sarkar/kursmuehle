@@ -12,8 +12,11 @@
  *           | prompt {funktion, args}  gen.prompt: einheit, baustein, korrektur, fragen, fachcheck, vergleich, lehrplan
  *           | design_vorschau {familie, hebel}  gen.api.design_vorschau: Miniatur einer Familie als HTML; ohne familie
  *             alle Familien als {name: html} (AP13.5)
+ *           | material_lesen {name, daten}  gen.api.material_lesen: eigenes Material aus einer Datei (AP13.13); pypdf
+ *             lädt erst beim ersten PDF
  * Bytes laufen als ArrayBuffer/Uint8Array (Assets: {name: Uint8Array}); die .mbz kommt als übertragener ArrayBuffer.
- * Klassischer Worker ohne ES-Module (läuft so auch aus einem Blob, Offline-Datei später). */
+ * Klassischer Worker ohne ES-Module (läuft so auch aus einem Blob, Offline-Datei später).
+ * Pyodide-Dateien und generator.zip kommen ab dem zweiten Aufruf aus der Cache API (AP13.12 b4). */
 "use strict";
 
 var BASIS = new URL("./", self.location.href).href;
@@ -22,6 +25,55 @@ var bereit = false;
 var ladeVersprechen = null;
 
 importScripts(BASIS + "vendor/pyodide/pyodide.js");
+
+// AP13.12 b4: Was Pyodide per fetch lädt (wasm, Standardbibliothek, Wheels, Lock-Datei) und generator.zip liegen in der
+// Cache API; pyodide.js und pyodide.asm.js (importScripts) bleiben beim HTTP-Cache. Schlüssel: Pyodide-Version bzw.
+// Inhalts-Hash des Generators aus dateien.json (die Beta trägt dieselbe Versionsnummer). In der Beta-Vorschau tragen
+// die Schlüssel den Zusatz -beta: dieselbe Regel wie km.speicher() in kern.js (AP13.10), hier auf die Adresse des
+// Workers angewandt. Ohne Cache API (Firefox privat) oder bei einem Fehler geht es übers Netz.
+var PYODIDE_VERSION = "0.27.8";        // wie web/vendor/pyodide/pyodide-lock.json (test_web.py prüft das)
+var PYPDF = "pypdf-6.21.2-py3-none-any.whl";   // Wheel unter vendor/pyodide/, nicht in der Lock-Datei (test_material.py)
+var pypdfGeladen = false;
+var ZUSATZ = /(^|\/)beta\//.test(self.location.pathname) ? "-beta" : "";
+function speicher(name) { return name + ZUSATZ; }
+var netz = self.fetch.bind(self);
+
+async function aufraeumen(art, name) {
+  try {
+    var namen = await self.caches.keys();
+    await Promise.all(namen.filter(function (n) {
+      return n.indexOf("kursmuehle-" + art + "-") === 0 && /-beta$/.test(n) === !!ZUSATZ && n !== name;
+    }).map(function (n) { return self.caches.delete(n); }));
+  } catch (e) { /* ohne Cache API nichts zu tun */ }
+}
+
+async function ausCache(name, url, opts) {
+  var cache = null;
+  try { cache = await self.caches.open(name); } catch (e) { return netz(url, opts); }
+  try { var da = await cache.match(url); if (da) return da; } catch (e) { /* weiter übers Netz */ }
+  var r = await netz(url, opts);
+  if (r.ok) { try { await cache.put(url, r.clone()); } catch (e) { /* voll oder gesperrt: nur nicht speichern */ } }
+  return r;
+}
+
+self.fetch = function (eingabe, opts) {
+  var url = new URL(eingabe instanceof Request ? eingabe.url : String(eingabe), BASIS).href;   // Pyodide gibt URL-Objekte
+  if (url.indexOf(BASIS + "vendor/pyodide/") === 0 && !/\.js$/.test(url))
+    return ausCache(speicher("kursmuehle-pyodide-" + PYODIDE_VERSION), url, opts);
+  return netz(eingabe, opts);
+};
+
+async function generatorLaden() {
+  var hash = null;
+  try {
+    var d = await netz(BASIS + "dateien.json", { cache: "no-cache" });
+    if (d.ok) hash = (await d.json()).generator || null;
+  } catch (e) { /* ohne Liste ohne Cache */ }
+  if (!hash) return netz(BASIS + "generator.zip", { cache: "no-cache" });
+  var name = speicher("kursmuehle-generator-" + hash);
+  aufraeumen("generator", name);
+  return ausCache(name, BASIS + "generator.zip", { cache: "no-cache" });
+}
 
 function heapMB() {
   try {
@@ -86,7 +138,7 @@ var PY_BRUECKE = [
   "    return {'pruefung': pr, 'mappe': m, 'kennzahlen': _M.kennzahlen(m, pr, steckbrief=e.get('steckbrief'))}",
   "",
   "_MAPPE = {'verschiebe', 'entferne', 'umbenennen', 'kennzahlen', 'angaben_lesen', 'angaben_schreiben', 'geplant',",
-  "          'planung', 'auffuellen', 'loesung_zulassen',",
+  "          'planung', 'auffuellen', 'loesung_zulassen', 'zusatzaufgabe',",
   "          'antwort', 'modus', 'einsetzen', 'anhaengen', 'dateiname', 'bild_verkleinert'}",
   "_PROMPT = {'einheit', 'baustein', 'korrektur', 'diagnose', 'fragen', 'fachcheck', 'vergleich', 'lehrplan'}",
   "",
@@ -102,6 +154,10 @@ var PY_BRUECKE = [
   "        raise ValueError('unbekannte Funktion ' + str(f))",
   "    return getattr(_P, f)(*(e.get('args') or []))",
   "",
+  "def km_material_lesen(e):",
+  "    d = e.get('daten')",
+  "    return api.material_lesen(e.get('name') or '', bytes(d.tobytes() if isinstance(d, memoryview) else d or b''))",
+  "",
   "def km_design_vorschau(e):",
   "    if e.get('familie'):",
   "        return api.design_vorschau(e.get('familie'), e.get('hebel'))",
@@ -114,6 +170,7 @@ var PY_BRUECKE = [
 async function laden(id) {
   var t0 = performance.now(), zeiten = {};
   status(id, "Pyodide wird geladen …", "pyodide");
+  aufraeumen("pyodide", speicher("kursmuehle-pyodide-" + PYODIDE_VERSION));
   pyodide = await loadPyodide({ indexURL: BASIS + "vendor/pyodide/" });
   zeiten.pyodide_ms = Math.round(performance.now() - t0);
   status(id, "Pakete (PyYAML, tzdata) …", "pakete");
@@ -122,7 +179,7 @@ async function laden(id) {
   zeiten.pakete_ms = Math.round(performance.now() - t1);
   status(id, "Generator wird geladen …", "generator");
   var t2 = performance.now();
-  var r = await fetch(BASIS + "generator.zip", { cache: "no-cache" });
+  var r = await generatorLaden();
   if (!r.ok) throw new Error("generator.zip fehlt (" + r.status + "); python3 scripts/web_bundle.py ausführen");
   var buf = await r.arrayBuffer();
   pyodide.unpackArchive(buf, "zip", { extractDir: "/km" });
@@ -205,6 +262,13 @@ self.onmessage = async function (ev) {
       else if (m.aktion === "mappe") ergebnis = aufruf("km_mappe", { funktion: m.funktion, args: m.args });
       else if (m.aktion === "prompt") ergebnis = aufruf("km_prompt", { funktion: m.funktion, args: m.args });
       else if (m.aktion === "design_vorschau") ergebnis = aufruf("km_design_vorschau", { familie: m.familie, hebel: m.hebel });
+      else if (m.aktion === "material_lesen") {
+        if (!pypdfGeladen && /\.pdf$/i.test(m.name || "")) {
+          await pyodide.loadPackage(BASIS + "vendor/pyodide/" + PYPDF, { messageCallback: function () {} });
+          pypdfGeladen = true;
+        }
+        ergebnis = aufruf("km_material_lesen", { name: m.name, daten: new Uint8Array(m.daten) });
+      }
       else if (m.aktion === "steckbrief_lesen") ergebnis = aufruf("km_steckbrief_lesen", { text: m.text });
       else if (m.aktion === "steckbrief_schreiben") ergebnis = aufruf("km_steckbrief_schreiben", { sb: m.sb });
       else throw new Error("unbekannte Aktion " + m.aktion);

@@ -295,7 +295,7 @@
   },
   {
    "name": "Einheit aus eigenem Material",
-   "zeile": "Folien, Heftbilder, Arbeitsblatt",
+   "zeile": "Folien, Arbeitsblatt, Hefteintrag",
    "phasen": [
     {
      "phase": "Einstieg",
@@ -360,11 +360,13 @@
    },
    {
     "wert": "einthemen",
-    "text": "Ein Thema je Reiter"
+    "text": "Ein Thema je Reiter",
+    "probe": "Import auf der Plattform noch nicht geprüft"
    },
    {
     "wert": "wochen",
-    "text": "Wochen"
+    "text": "Wochen",
+    "probe": "Import auf der Plattform noch nicht geprüft"
    }
   ],
   "schulart": [
@@ -382,23 +384,23 @@
    },
    {
     "wert": "Realschule",
-    "text": "Realschule"
+    "text": "Realschule (nur als Angabe)"
    },
    {
     "wert": "Gymnasium",
-    "text": "Gymnasium"
+    "text": "Gymnasium (nur als Angabe)"
    },
    {
     "wert": "Wirtschaftsschule",
-    "text": "Wirtschaftsschule"
+    "text": "Wirtschaftsschule (nur als Angabe)"
    },
    {
     "wert": "Förderschule",
-    "text": "Förderschule"
+    "text": "Förderschule (nur als Angabe)"
    },
    {
     "wert": "Berufliche Schule",
-    "text": "Berufliche Schule"
+    "text": "Berufliche Schule (nur als Angabe)"
    }
   ],
   "schwerpunkt": [
@@ -427,6 +429,17 @@
    {
     "wert": "anspruchsvoll",
     "text": "Anspruchsvoll"
+   }
+  ],
+  "differenzierung": [
+   {
+    "wert": "aus",
+    "text": "Aus"
+   },
+   {
+    "wert": "an",
+    "text": "An",
+    "zeile": "Bis zu zwei Hilfen je Übung auf der Kursseite und eine Zusatzaufgabe für Schnelle"
    }
   ],
   "farbe": [
@@ -472,14 +485,15 @@
     "wert": "0",
     "text": "keine",
     "min": 0,
-    "max": 0
+    "max": 0,
+    "standard": true
    },
    {
     "wert": "2-3",
     "text": "2 bis 3",
     "min": 2,
     "max": 3,
-    "standard": true
+    "alt": true
    },
    {
     "wert": "4-7",
@@ -518,6 +532,7 @@
    "qualitaet": 85
   },
   "bild_pruefung": "Passt, wenn Text im Bild lesbar ist (oder keiner da ist), Pfeile auf das Richtige zeigen und keine fremden Symbole oder Gesten zu sehen sind.",
+  "wiederherstellen_bilder": [],
   "abschluss": [
    {
     "wert": "keiner",
@@ -697,5 +712,5 @@
   "Geschichte",
   "Lesebuch"
  ],
- "version": "2.0.0-b11"
+ "version": "2.0.0-b13"
 }

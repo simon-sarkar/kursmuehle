@@ -78,8 +78,12 @@
       if (Z.pruefung && !k.geplant && !warten) {
         Z.pruefung.diagnosen.filter(function (d) { return d.baustein === k.id && d.stufe !== "hinweis"; })
             .forEach(function (d) {
-          diag.appendChild(el("li", { cls: d.stufe, "data-regel": d.regel || "", text: (d.zeile_im_baustein ? "Zeile " +
-              d.zeile_im_baustein + ": " : "") + d.text }));
+          var satz = (d.zeile_im_baustein ? "Zeile " + d.zeile_im_baustein + ": " : "") + d.text;
+          // AP13.14: Sprach-Hinweis gelb ohne Bitte; der Knopf nimmt den Satz für den Chat in die Korrekturbitte
+          var an = d.regel === "sprache.lang" ? S.spracheGelb.indexOf(k.id) >= 0 : null;
+          diag.appendChild(el("li", { cls: d.stufe, "data-regel": d.regel || "" }, an === null ? [satz] : [satz + " ",
+            el("button", { type: "button", cls: "k-sprache klein", "data-aktion": "sprache",
+                "aria-pressed": an ? "true" : "false", text: "Sprache anpassen lassen" })]));
         });
       }
       var sl = schleife()[k.id];
@@ -87,8 +91,10 @@
           text: "Die Antwort für „" + k.titel + "“ ist dieselbe wie vorher (Runde " + sl.rot + ")." }));
       // Ist-Minuten aus dem Inhalt (Rolle und Jahrgang); Zeitfelder und die Lücke nur mit „Zeitplanung anzeigen“
       var z = zeitInfo[k.id], ist = null;
+      var sp = Z.kennzahlen && Z.kennzahlen.sprache && Z.kennzahlen.sprache.je[k.id];
       if (minuten && z && z.gerechnet) {
-        ist = el("span", { cls: "k-ist geschaetzt", text: "gerechnet " + z.gerechnet + " min" });
+        ist = el("span", { cls: "k-ist geschaetzt", text: "gerechnet " + z.gerechnet + " min" + (sp ? " · Sätze im Mittel " +
+            String(sp.satz_mittel).replace(".", ",") + " Wörter, LIX " + sp.lix : "") });
         if (z.abweichung && zeitplanung) diag.appendChild(el("li", { cls: "hinweis k-luecke", text: z.text }));
       } else if (minuten && b && b.minuten) ist = el("span", { cls: "k-ist geschaetzt", text: "im Inhalt " + b.minuten +
           " min" });
@@ -277,6 +283,7 @@
       ["kz-minuten", "kz-folge", "kz-mc", "kz-rueckmeldung", "kz-uebung"].forEach(function (id) { setze(id, "–"); $(id)
           .parentNode.hidden = false; });
       $("kz-zahl-z").hidden = true;
+      $("kz-saetze-z").hidden = true;
       $("hinweise").innerHTML = ""; $("hinweise-mehr").hidden = true;
       return;
     }
@@ -295,6 +302,14 @@
       d.appendChild(el("span", { cls: "geschaetzt", text: String(m.ist) }));
       if (m.soll) d.appendChild(document.createTextNode(" von " + m.soll + " geplant"));
     }
+    // AP13.14: Zusatzaufgaben zählen nicht mit, die Zeile nennt sie getrennt
+    if (m.zusatz) $("kz-minuten").appendChild(document.createTextNode(", plus " + m.zusatz + " Minuten Zusatz"));
+    // AP13.14: höchster Mittelwert der Satzlänge und Zahl der Lesetexte über dem Richtwert
+    var sp = k.sprache;
+    $("kz-saetze-z").hidden = vorher || !sp;
+    if (sp) setze("kz-saetze", "im Mittel bis " + String(sp.mittel_max).replace(".", ",") + " Wörter" + (sp.ueber ?
+        ", " + sp.ueber + " von " + sp.lesetexte + (sp.lesetexte === 1 ? " Lesetext" : " Lesetexten") +
+        " über dem Richtwert" : ""), sp.ueber > 0);
     setze("kz-folge", (k.folge.length ? k.folge.join(" → ") : "–") + (k.folge_brueche ? " (" + k.folge_brueche +
         " Schritt" + (k.folge_brueche > 1 ? "e" : "") + " zurück)" : ""), k.folge_brueche > 0);
     var f = k.fragen;
@@ -441,6 +456,14 @@
     var liste = Z.mappe.bausteine, i = liste.indexOf(k), a = knopf.dataset.aktion;
     try {
       if (a === "zur-korrektur") { ev.preventDefault(); zurKorrektur(); }
+      else if (a === "sprache") {
+        var pos = S.spracheGelb.indexOf(k.id);
+        if (pos >= 0) S.spracheGelb.splice(pos, 1); else S.spracheGelb.push(k.id);
+        await auswertung();
+        S.korrektur.text = ""; zeichneKarten(); zeichneKorrektur(); korrekturSpaeter(0);
+        var sk = document.querySelector("#karte-" + CSS.escape(k.id) + " .k-sprache");
+        if (sk) sk.focus({ preventScroll: true });
+      }
       else if (["weglassen", "selbst", "selbst-uebernehmen", "anderer-chat"].indexOf(a) >= 0) await auswegAktion(a, k);
       else if (a === "neu") {
         // „Diesen Baustein neu beauftragen“ markiert die Karte; Text, Antwort und Einsetzen laufen über den einen
@@ -544,8 +567,11 @@
           "“ neu schreiben, nach deinem Auftrag an der Karte." }));
     });
     var n = ziele.length;
-    $("korrektur-titel").textContent = n > 1 ? n + " Bausteine brauchen eine Korrektur" : n === 1 ?
-        "Ein Baustein braucht eine Korrektur"
+    var nurGelb = !neu.length && S.korrekturen.length > 0 && S.korrekturen.every(function (k) {
+        return k.stufe === "warnung"; });
+    $("korrektur-titel").textContent = nurGelb ? (n === 1 ? "Ein Lesetext bekommt kürzere Sätze" : n +
+        " Lesetexte bekommen kürzere Sätze")
+      : n > 1 ? n + " Bausteine brauchen eine Korrektur" : n === 1 ? "Ein Baustein braucht eine Korrektur"
       : "Die Einheit braucht eine Korrektur";
     var ki = !!(S.anKiAktiv && S.anKiAktiv());
     $("korrektur-zeile").textContent = (ki ? "„An meine KI senden“ schickt die Bitte an deine KI" :
@@ -643,6 +669,7 @@
         S.standKarte($("korrektur-ergebnis"), S.korrektur.stand, "fehler"); return;
       } else await km.stand(r.kurs_md);
       Z.mappe.bausteine.forEach(function (k) { if (ids.indexOf(k.id) >= 0) k.neu = false; });
+      S.spracheGelb = S.spracheGelb.filter(function (id) { return ids.indexOf(id) < 0; });
       Z.mappe.durchsicht = false;
       if (schritt() !== 5) { Z.mappe.schritt = 5; S.auf = {}; }
       await auswertung();

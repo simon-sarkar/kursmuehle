@@ -1,7 +1,50 @@
 # Changelog
 
+## 2.0.0-b13 – 2026-10-26 (AP13.12c, AP13.13, AP13.14: Lehrplan an einem Ort, Material aus Dateien, Satzlänge und Hilfen)
+
+* Lehrplanbezug in jedem Weg an derselben Stelle
+* Material aus Word, LibreOffice, PowerPoint und PDF einlesen
+* Satzlänge je Lesetext, Hilfen und Zusatzaufgaben
+- Am Materialfeld liest „Datei lesen“ Word, LibreOffice, PowerPoint, PDF und Textdateien ein; Dateien lassen sich auch auf das Feld ziehen.
+- Nach dem Lesen wählst du je Datei die Abschnitte, Folien oder Seiten; der gewählte Text steht danach im Materialfeld und bleibt änderbar.
+- Die Dateien verlassen den Rechner nicht und werden nicht gespeichert; Scans, alte .doc-Dateien und geschützte Dateien bekommen eine Meldung an der Datei.
+- Wird der Text für den Chat mit dem Material größer, als der gewählte Chat im Test annahm, steht die Grenzzeile rot.
+- Das Feld heißt jetzt „Dein Material (Text, Stichpunkte oder Dateien)“; die Vorlage „Einheit aus eigenem Material“ nennt Folien, Arbeitsblatt, Hefteintrag.
+- Der Lehrplanbezug steht in allen drei Wegen an derselben Stelle unter den Kacheln, zugeklappt als „Lehrplanbezug (optional)“; mit gewähltem Lehrplan steht dort der Vermerk mit „×“.
+- Das Fach trägst du nur noch dort ein, nicht mehr zusätzlich unter „Mehr einstellen“.
+- Der Vorschlag aus dem Thema gilt jetzt auch in „Ich gebe die Richtung“ und „Ich steuere“.
+- Jeder Lernbereich zeigt ▸ oder ▾ und die Zahl seiner Teilbereiche; ein Haken klappt ihn auf, einer mit nur einem Teilbereich steht gleich offen.
+- Ein Lesetext, dessen Sätze oder Lesbarkeitswert (LIX) über dem Richtwert der Jahrgangsstufe liegen, bekommt einen gelben Hinweis mit der Zeile des längsten Satzes; gesperrt wird nichts.
+- Der Text für den Chat nennt die mittlere Satzlänge, die zur Jahrgangsstufe passt.
+- Übungen auf der Kursseite zeigen bis zu zwei Hilfen je Aufgabe, „Hilfe“ und darin „Noch eine Hilfe“, auch ohne JavaScript (Kursdatei: Zeilen `Hilfe: …` nach der Aufgabe).
+- Ein Baustein mit `zusatz: ja` ist eine Zusatzaufgabe: Titel mit „Zusatz: “, keine Abschlussverfolgung, Minuten außerhalb der Einheit.
+- „Sprache anpassen lassen“ an einem gelben Lesetext nimmt den Satz zum Kürzen in die Korrekturbitte; die Kennzahlen zeigen die Zeile „Sätze“.
+- In „Ich gebe die Richtung“ und „Mehr einstellen“ schaltet „Hilfen und Zusatzaufgaben“ Hilfen in den Übungen und eine Karte „Zusatz“ ein; die Minutenzeile nennt die Zusatzminuten getrennt.
+
+## 2.0.0-b12 – 2026-10-26 (AP13.10, AP13.12: Beta-Vorschau, Standard zuerst, Ausklappteile, Sicherheitsprüfung, Rückmeldung mit einem Klick)
+
+* Neues zuerst in einer Beta-Vorschau, kursmuehle.de nur nach Freigabe
+* Standard zuerst, alles Weitere zum Aufklappen; neue Einheiten ohne Bilder
+* Prüfung sperrt fremde Skripte; Seite für Schulleitung und Datenschutz
+- Neue Änderungen erscheinen zuerst in einer Beta-Vorschau mit eigenem Speicher im Browser (Link „Testversion“ unten auf Startseite und Mühle); kursmuehle.de bleibt beim zuletzt freigegebenen Stand.
+- Schritt 3 beginnt mit „Standard nehmen und weiter“ und der Zahl der Bilder; alles andere steht unter „Aussehen anpassen“, noch nicht auf der Plattform geprüfte Designs und Kursformate je Gruppe unter „Weitere“.
+- Neue Einheiten haben keine Bilder, bis du eine Zahl wählst; bestehende behalten ihre Wahl. Liefert der Chat trotzdem Bildwünsche, führt „Weiter“ zu den Fragen.
+- Zum Aufklappen: „Eigene KI“ (offen mit gemerkter Verbindung oder Testcode-Link), „Welches Modell nehmen?“, „Kennzahlen“ und in der Fußzeile „Mehr“ mit „Ordner aus Kursmühle 1 öffnen“; was du aufklappst, bleibt aufgeklappt.
+- Schularten ohne eigene Regeln tragen „(nur als Angabe)“; Schritt 1 nennt etwa 20 Minuten bis zur Datei.
+- Zeilen `Offen:` der KI stehen oben in Schritt 6; unter „Ohne Durchsicht weiter“ steht, dass die Lösungen dann ungeprüft sind.
+- Nach dem Download fragt Schritt 7 „Wie lief es?“; ein Klick auf „Lief“, „Hat gehakt“ oder „Abgebrochen“ füllt die Rückmeldung mit Ergebnis, Minuten bis zur Datei und Korrekturrunden, „Per Mail senden“ öffnet das Mailprogramm.
+- Mühle, Startseite und README beschreiben das Wiederherstellen mit den Wörtern der Plattform: leerer Kurs, „Kurs wiederverwenden“, „Alle Inhalte dieses Kurses löschen und dann wiederherstellen“.
+- Die Prüfung vor dem Download sperrt Skripte, die nicht von der Mühle stammen, Skripte in Attributen, `javascript:`-Adressen und eingebettete Seiten außer YouTube und Vimeo, in allen Texten des Kurses.
+- Ein Bild ohne Alt-Text bekommt einen gelben Hinweis mit dem Satz für den Chat, kein Fehler.
+- In den Übungen stehen neben jeder markierten Stelle ✓ oder ✗; Screenreader lesen „Richtig.“ und „Noch nicht ganz“ vor.
+- Ab dem zweiten Aufruf lädt die Mühle Python und den Generator aus dem Browser statt aus dem Netz.
+- Neue Seite „Für Schulleitung und Datenschutz“ in der Fußzeile der Startseite; den Satz zur eigenen KI zeigt die Startseite unter „Für Fortgeschrittene“.
+
 ## 2.0.0-b11 – 2026-10-26 (AP13.5h: Bilder-Schritt, Gegenprüfen mit Alternativen, Testphase mit Einheiten, Sehr wellig)
 
+* Bilder-Schritt: eine Karte offen, Begriffe im Bild oder als Ziffern
+* Testcodes mit drei Einheiten; Modell und Rest an der Kachel
+* Gegenprüfen mit weiteren erlaubten Lösungen; Rand „Sehr wellig“
 - „Eigene KI“: neben der Kachel steht „Trennen“, sobald eine Verbindung gemerkt ist.
 - Die Wörterzählung des Hefteintrags schneidet Paare wie „play → played“ nicht mehr ab; nur Rückmeldungen hinter Antworten zählen nicht.
 - Testphase mit Code: Aufträge, bei denen die KI länger als 100 Sekunden schreibt, kommen an statt mit „524“ abzubrechen; der Worker liest die Antwort als Strom (Worker neu ausrollen).
@@ -19,6 +62,9 @@
 
 ## 2.0.0-b10 – 2026-10-25 (AP13.5g: Befunde des Erstnutzer-Tests)
 
+* Schritt 3 neu geordnet, Vorschau von Einheit und Kursseite
+* Welliger Rand
+* Lösungen gegenprüfen mit drei Wegen je Abweichung
 - Die Startseite nennt keine Schulart mehr als Grenze; eine Zielgruppe wie „Elternabend“ steht unter „Erweitert“, das Feld Jahrgangsstufe nimmt nur Zahlen.
 - Angehakte Lernbereiche zeigen „Noch nicht übernommen“ und gelten auch, wenn du den Schritt ohne „Übernehmen“ verlässt.
 - Neben Schritt 3 stehen zwei gerahmte Vorschauen, die Einheit und die Kursseite im gewählten Format; nichts darin ist klickbar.
@@ -37,6 +83,9 @@
 
 ## 2.0.0-b9 – 2026-10-25 (AP13.7, AP13.8, AP13.9: Produktstand für den Erstnutzer-Test)
 
+* Vorschau läuft beim Scrollen mit
+* Motive und Titelschriften je Design
+* Alle Kursformate in Schritt 3
 - Die Vorschau des gewählten Designs läuft beim Scrollen mit: auf breiten Bildschirmen rechts, sonst als Leiste am unteren Rand, die ein Tippen aufklappt.
 - Die Vorschau zeigt Inhalt, auch wenn du Schritt 3 erreichst, bevor die Mühle fertig geladen ist.
 - Wer vor dem Ende des Ladens weiterklickt, bekommt keine falsche Meldung „ließ sich nicht vollständig laden“ mehr.
@@ -86,6 +135,8 @@
 
 ## 2.0.0-b8 – 2026-10-25 (AP13.5c: Anordnung, Standardfarben, Skala der Designs; AP13.6: LehrplanPLUS für Grund- und Mittelschule; AP14b: Testcode)
 
+* LehrplanPLUS für Grund- und Mittelschule
+* Designs neu geordnet, Standardfarben
 - Die Designs unterscheiden sich in der Anordnung: Titel über, auf oder unter dem Bannerbild, Bild links, rechts, oben oder klein neben dem Text, Ablauf als Kacheln, Liste, Spalte oder ein Satz, Übungskopf in vier Formen.
 - Jedes Design hat eine eigene Standardfarbe und eine eigene Schriftgröße; Grundschule setzt größere Schrift und Knöpfe mit mindestens 48 px.
 - Magazin trägt Schwarz mit Rot, Freundlich Blau mit warmem Pastell und runde Knöpfe.
@@ -101,6 +152,9 @@
 
 ## 2.0.0-b7 – 2026-10-25 (AP13.5: Designfamilien, Feinheiten, Vorschau; AP13.5b: dritter Weg „Ich gebe die Richtung“; AP14: eigene KI direkt verbinden)
 
+* Elf Designs mit Vorschau
+* Dritter Weg „Ich gebe die Richtung“
+* Eigene KI direkt verbinden
 - Schritt 3 bietet elf Designs statt drei Vorlagen: Sachlich, Freundlich, Magazin, Grundschule, Verspielt, Modern, Klassisch, Natur, Druck, Dunkel und „Ohne Vorlage“.
 - Jede Kachel zeigt eine verkleinerte Vorschau, die mit demselben Generator gebaut ist wie der Kurs.
 - Unter „Feinheiten“ wählst du Farbe (auch eine eigene), Dichte und Kästen; dort steht die Vorschau in Originalgröße.
@@ -120,6 +174,8 @@
 
 ## 2.0.0-b6 – 2026-10-24 (AP13.4b: Bild in jedem Baustein, Hinweis als Rückmeldung, kürzerer Text, Bilder beim Hochladen)
 
+* Bilder in jedem Baustein
+* Kürzerer Text für den Chat
 - Eine `Bild:`-Zeile darf in jedem Baustein an jeder Stelle stehen, auch in Zuordnen und Quiz; in Übungen steht das Bild über der Übung oder in der Beschreibung der Aktivität.
 - „Die Zeile mit den Gruppen fehlt“ erscheint nur noch, wenn im Baustein wirklich keine `zonen:` steht.
 - Ein Hinweis in Zuordnen, Lückentext oder Quiz erscheint als Rückmeldung zur ganzen Übung; bei Lernkarten sagt die Mühle gelb, dass er nicht angezeigt wird.
@@ -133,6 +189,8 @@
 
 ## 2.0.0-b5 – 2026-10-24 (AP13.4: nachsichtiger Parser, Korrektursätze, Schleife mit Auswegen, Bilder in Stufen, Kontext, Übungen)
 
+* Antworten des Chats werden nachsichtiger gelesen
+* Auswege, wenn der Chat dieselbe Antwort wiederholt
 - Die Mühle liest Bausteine mit drei bis sechs Rauten, übergeht Trennlinien (`---`), nimmt `Beispiel: Text` in einer Zeile und einen Hinweis nach der Zuordnen-Liste an; eine Frage ohne `MC:` mit ✔-Liste gilt als Multiple Choice.
 - Findet die Mühle in einer Antwort keinen Baustein, nennt sie die ersten drei Gründe mit Zeile und Zitat und bietet denselben Inhalt als Satz für den Chat an.
 - Ohne Jahrgangsstufe schreibt der Chat wie für Jahrgangsstufe 7, und der Rand sagt das.
@@ -151,6 +209,9 @@
 
 ## 2.0.0-b4 – 2026-10-24 (AP13.3: ein Korrekturweg, Stückelung, nachsichtiger Parser, fachneutrale Vorlage, Dunkel)
 
+* Ein Weg für Korrekturen
+* Lange Texte für den Chat in Teilen
+* Fachneutrale Vorlagen
 Korrekturen laufen jetzt über einen einzigen Weg, lange Texte werden in Teile gestückelt, und die Mühle gibt es auch dunkel.
 
 - **Ein Korrekturweg.** Unter dem Einfügefeld von Schritt 5 steht ein Block mit allen Sätzen der Prüfung; „Korrektur anfordern“ kopiert sie in einem Text, die Seite setzt die Antwort Baustein für Baustein nach `id:` ein. Die Korrekturschleife an der Karte entfällt.
@@ -170,6 +231,8 @@ Korrekturen laufen jetzt über einen einzigen Weg, lange Texte werden in Teile g
 
 ## 2.0.0-b3 – 2026-10-24 (AP13.2: Landingpage als Schritt 1, Dark Mode, Kopfzeile, drehende Mühle)
 
+* Startseite ist Schritt 1 der Mühle
+* Hell und dunkel
 Die Startseite beschreibt das Werkzeug nicht mehr, sie fängt an; die Mühle selbst bleibt unverändert.
 
 - **Startseite als Schritt 1.** Oben stehen die drei Felder Thema, Jahrgangsstufe und Minuten mit „Weiter“, gesetzt wie in der Mühle; „Weiter“ übergibt die Angaben im Adressteil nach `#` an die Mühle; er verlässt den Browser nicht und steht in keinem Zugriffsprotokoll. Ohne Skript schickt das Formular dieselben Felder.
@@ -181,6 +244,8 @@ Die Startseite beschreibt das Werkzeug nicht mehr, sie fängt an; die Mühle sel
 
 ## 2.0.0-b2 – 2026-10-24 (AP13.1: Mühle mit Führung, Korrekturschleife, Bildern und Zählregeln)
 
+* Korrekturschleife mit Sätzen für den Chat
+* Bilder in Stufen, Zählregeln
 Zweite Beta der Browser-Fassung; geändert ist nur die Mühle.
 
 - **Kopfzeile.** „Einheit öffnen“, „Einheit speichern“, „Neue Einheit“ und der Stand der Sicherung stehen als kleine Textlinks oben; das Wort „Kursdatei“ verschwindet aus der Oberfläche. Logo und Zurück-Knopf führen zur Startseite, die Einheit bleibt gesichert.
@@ -199,6 +264,8 @@ Zweite Beta der Browser-Fassung; geändert ist nur die Mühle.
 
 ## 2.0.0-b1 – 2026-10-24 (AP13 und AP13b: Schrittfolge, minimale Vorlagen, Typ automatisch, Nach dem Bau, Landingpage, Beta-Veröffentlichung)
 
+* Schrittfolge statt Formular
+* Erste öffentliche Beta unter kursmuehle.de
 Erste Beta der Browser-Fassung unter kursmuehle.de. Das Release-Zip für die Agenten-Nutzer bleibt 1.0.3 (latest), 2.0.0-b1 erscheint als Vorab-Release.
 
 - **Schrittfolge statt Vollformular.** Zu Beginn nur Thema, Jahrgangsstufe, Minuten und „Weiter“; jeder Schritt erscheint erst, wenn der vorige getan ist, erledigte Schritte stehen als aufklappbare Zeile mit Fazit. Sieben Schritte führen von „Worum geht es“ bis zur Datei für die Lernplattform.
@@ -218,6 +285,8 @@ Erste Beta der Browser-Fassung unter kursmuehle.de. Das Release-Zip für die Age
 
 ## 2.0.0-a4 – 2026-10-24 (AP12a in Teilen: Bild hochladen, Karten entschlacken, Minuten nach Rolle, keine Beispielkurse)
 
+* Eigene Bilder hochladen
+* Minuten je Baustein gerechnet
 Vorabfassung, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3. Das Paket ist unvollständig.
 
 - **Bild hochladen** an jeder Karte, deren Inhalt ein Bild nennt: PNG oder JPEG, die Seite verkleinert auf höchstens 1600 px lange Kante und legt es in der Kursdatei ab; die gelbe Warnung verschwindet. Der Download heißt `<Kurstitel>_<Datum>.mbz`.
@@ -230,6 +299,7 @@ Vorabfassung, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3. Das P
 
 ## 2.0.0-a3 – 2026-10-24 (AP11: Text für den Chat, Variante B als Oberfläche)
 
+* Text für den Chat aus der Mühle
 Vorabfassung, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die Browser-Fassung liegt nur im Entwicklungsrepo.
 
 - **Variante B ist die Oberfläche.** Karten links, Knöpfe rechts; Variante A und die Auswahlseite fallen weg. Auf Desktop und iPad steht das Mühlenmotiv als Wasserzeichen unter den Knöpfen, auf dem Handy entfällt es.
@@ -242,6 +312,7 @@ Vorabfassung, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die B
 
 ## 2.0.0-a2 – 2026-10-24 (AP10: Baustein-Ansicht mit Kursmappe)
 
+* Bausteine als Karten
 Vorabfassung, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die Browser-Fassung liegt nur im Entwicklungsrepo.
 
 - **Baustein-Ansicht in zwei Varianten.** Eine Spalte mit Zahlenleiste oder Karten links mit Zahlen und Knöpfen rechts. Du gibst Thema, Jahrgangsstufe und Minuten ein, legst die Einheit an und wählst eine Vorlage (Einführung, Übung und Vertiefung, Wiederholung und Prüfungsvorbereitung, Einheit aus eigenem Material).
@@ -254,6 +325,7 @@ Vorabfassung, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die B
 
 ## 2.0.0-a1 – 2026-10-24 (AP10a: Spike der Browser-Fassung, Repo-Split)
 
+* Generator läuft im Browser, kein Server
 Vorabfassung, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die Browser-Fassung liegt nur im Entwicklungsrepo.
 
 - **Repo-Split.** Entwickelt wird in einem privaten Repo; jeder Push auf `main` schreibt den öffentlichen Stand und hängt das Release-Zip an, Versionen mit Suffix werden Vorab-Release und nicht „latest“.
@@ -266,6 +338,7 @@ Vorabfassung, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die B
 
 ## 1.0.3 – 2026-10-23
 
+* Antworten von Chats ohne Code-Ausführung werden gelesen
 - Drehbücher von Chats ohne Code-Ausführung bauen jetzt unverändert: Angaben in einer Zeile mit ` · ` werden gelesen.
 - Eine Leerzeile zwischen `Schritte: …` und der Liste ist erlaubt.
 - Zeilen wie „Hinweis für die Lehrkraft: …“ werden ignoriert und gemeldet, statt einem Element zugeschlagen zu werden.
@@ -273,18 +346,22 @@ Vorabfassung, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die B
 
 ## 1.0.2 – 2026-10-23
 
+* Hinweise zur Wahl des Modells
 - Der Assistent baut die Sicherung gleich nach der Freigabe des Drehbuchs und behauptet nicht vorab, Python fehle.
 - Hinweis zum Modell: Bei kleinen oder kostenlosen Modellen Phasen, Übungstypen, Formate und Textlänge selbst vorgeben.
 - Bei ChatGPT den Aufwand auf „Extra High“ stellen (gibt es auch im Gratiskonto).
 
 ## 1.0.1 – 2026-10-23
 
+* Selbst erzeugte Beispielbilder, Rückmeldeadresse
 - Beispielbilder durch einfache, selbst erzeugte Schemazeichnungen ersetzt.
 - Darstellung des Teststands in README und Projektseite ehrlicher gefasst; Datenschutzsatz und Begriffe ergänzt.
 - Rückmeldeadresse kursmuehle@pm.me auf der Projektseite und in der README.
 
 ## 1.0 – 2026-10-23 (AP9: Fremdtest, Release-Zip, Projektseite, Wiederherstellungsanleitung)
 
+* Fremdtest mit einem frischen Assistenten bestanden
+* Release-Zip, Projektseite, Anleitung zum Wiederherstellen
 - Ein frischer Assistent der Sonnet-Klasse kam allein mit dem Release-Zip bis zur fertigen Sicherung.
 - Nennt die erste Nachricht Thema, Jahrgangsstufe, Einsatz und Minuten, entfällt die Eingangsfrage; zu breite Themen grenzt der Assistent selbst ein.
 - Eine einzelne Einheit bekommt das Themenformat; Geschichte erst ab etwa 90 Minuten.
@@ -295,6 +372,7 @@ Vorabfassung, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die B
 
 ## 0.9.1 – 2026-10-23 (AP7b: Textfeld-Modus nach der JS-Probe; didaktik.md in intake.md)
 
+* Übungen als Block im Textfeld
 - Textfeld-Modus (`website: textfeld`): Quiz, Zuordnen, Lernkarten, Lückentext und Geschichte stehen als Block im Textfeld zwischen den Lesetexten, ohne iframe.
 - Was für den Abschluss zählt, bleibt im Textfeld-Modus eine H5P-Aktivität.
 - Im Kachelformat entfällt ein Überblick in Allgemeines automatisch, weil er die Kacheln doppelt.
@@ -304,6 +382,8 @@ Vorabfassung, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die B
 
 ## 0.9 – 2026-10-23 (AP8: didaktik.md und qualitaet.md, überarbeitet nach dem AP8-Review)
 
+* Didaktische Standardannahmen
+* Prüfung gegen typische KI-Muster
 - Rangfolge Lehrkraft vor Material vor Standardannahme und die Standardannahmen D1–D10 als Laufzeitregeln.
 - Abweichungen von D1–D10 stehen als `Abweichung:`, Fachzweifel als `Offen:` im Kopf des Drehbuchs; `[Zweck: …]` gelangt nie in den Kurs.
 - Prüfdurchlauf vor der Freigabe mit Markerliste (Dreierreihe, rhetorische Frage, Zweckzeile, Lob) und Fachprüfung gegen das Bezugselement.
@@ -314,6 +394,7 @@ Vorabfassung, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die B
 
 ## 0.8 – 2026-10-23 (AP7: Website-Modus; Korrekturen aus Import-Test 3)
 
+* Übungen als Website in einem Abschnitt
 - Website-Modus: ein Abschnitt als eine HTML-Seite, eingebettet, im Vollbild oder in neuem Fenster, mit Startseite, Kapitelnavigation, Fortschritt und Übungen mit Rückmeldung.
 - Einschalten mit `website:` im Steckbrief, am Abschnitt oder mit `build.py --website`; die Kursdatei bleibt gleich.
 - Bewertete Teile bleiben Aktivitäten; die Seite enthält nichts von außen.
@@ -323,6 +404,7 @@ Vorabfassung, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die B
 
 ## 0.7 – 2026-10-23 (AP6: Kursformate; Glossareinträge beim Import)
 
+* Sechs Kursformate, Kacheln mit Bild
 - Kursformate Themen, Kacheln, Wochen, Ein-Themen, Komprimierte Abschnitte und Einzelaktivität, wählbar im Steckbrief oder mit `build.py --format`.
 - Kacheln mit Kachelbild (`kachelbild:`) oder Icon (`kachelicon:`) je Abschnitt, auch im Steckbrief unter `teile.<teil>`.
 - Wochen zählen ab `kurs.start`; Einzelaktivität erlaubt genau ein Element.
@@ -331,6 +413,7 @@ Vorabfassung, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die B
 
 ## 0.6 – 2026-10-23 (AP5: Moodle-Module Test, Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar)
 
+* Test, Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar
 - Neue Moodle-Module: Test (Multiple Choice, Wahr/Falsch, Kurzantwort mit Fragensammlung), Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar.
 - Kursdatei-Syntax für jedes Modul in `references/kursdatei.md`; Abschlussarten je Typ werden geprüft.
 - Dateien beliebigen Typs (PDF, Office, Audio) mit passendem Mimetype.
@@ -338,6 +421,7 @@ Vorabfassung, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die B
 
 ## 0.5 – 2026-10-23 (AP4: Designvorlagen, Textbausteine, Render-Test)
 
+* Drei Designvorlagen, Textbausteine für Lesetexte
 - Drei Designvorlagen: schlicht (Standard), kacheln, magazin; Wahl im Steckbrief unter `design.vorlage`.
 - Textbausteine für Lesetexte: `Überschrift:`, `Hervorhebung:`, `Schritte:`, Vergleichstabelle, `Bild:` mit Unterschrift, `==markiert==`.
 - Die Überblickskarte zeigt bei vorhandenem Banner keinen doppelten Titel mehr.
@@ -345,6 +429,7 @@ Vorabfassung, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die B
 
 ## 0.4 – 2026-10-23 (AP3: Menüführung, Formatfrage, Selbstabfrage, Kursbanner)
 
+* Menüführung mit fünf Einstiegen, Kursbanner
 - Einstieg mit fünf Wegen (nur Thema, Material, Material und Fragen, Fragen, bestehenden Kurs erweitern) und Steuerungsgrad; höchstens eine Fragerunde, jede Frage mit Vorschlag.
 - Kursformat wird früh gefragt, mit Empfehlung je Kurstyp.
 - Der Assistent prüft zu Beginn, ob er Code ausführen, Dateien lesen und Bilder erzeugen kann.
@@ -352,16 +437,19 @@ Vorabfassung, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die B
 
 ## 0.3 – 2026-10-23 (AP2: Prüfskript, site.json entfernt)
 
+* Prüfskript für jede Sicherung
 - `scripts/check.py` prüft eine Sicherung vor dem Import auf Struktur, Dateien, IDs, H5P-Bibliotheksversionen und Verfügbarkeit; `build.py` ruft die Prüfung nach jedem Bau auf.
 - Ausgabe `OK …` oder Zeilen `FEHLER <wo>: <was>`; eine fehlerhafte Sicherung bleibt zur Fehlersuche liegen.
 - `site.json` entfällt; die Herkunftsangaben sind feste Platzhalter ohne Bedeutung beim Import.
 
 ## 0.2.1 – 2026-10-23
 
+* Neuer Name „Kursmühle“, Logo und Banner
 - Umbenennung in „Kursmühle“; Logo, Wortmarke und Banner.
 
 ## 0.1 – 2026-10-23
 
+* Erste Fassung als Skill für KI-Assistenten
 - Erste Fassung (Tech-Demo): Abschnitte, Unterabschnitte, Textfelder, Seiten, Links und Videos, Feedback, Badges, Abschlussverfolgung.
 - H5P-Typen Interactive Book, Branching Scenario, Question Set, Drag and Drop, Fill in the Blanks, Dialog Cards und einfache Bausteine.
 - Nachlieferung per Delta-Sicherung und Sichtbarkeit ab Datum.
@@ -369,6 +457,7 @@ Vorabfassung, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die B
 
 ## 0.2 – 2026-10-23 (AP1: Kursdatei statt Python)
 
+* Kursdatei statt Programmcode
 - Das Drehbuch ist die Kursdatei `kurs.md`; `build.py` liest sie direkt, Assistenten schreiben keinen Python-Code mehr.
 - Elementtypen: Textfeld, Seite, Überblick, Link/Video, Lesebuch, Quiz, Zuordnen, Lernkarten, Geschichte, Lückentext, Umfrage, Badge, Unterabschnitt.
 - Quellen-, Zeit- und Bezugsmarker im Drehbuch landen nie im Kurs.
@@ -376,4 +465,5 @@ Vorabfassung, kein Release für Lehrkräfte: das Release-Zip bleibt 1.0.3, die B
 
 ## 0.1.1 – 2026-10-23
 
+* Lizenz festgelegt
 - Lizenz festgelegt: Code PolyForm Noncommercial 1.0.0, Texte und Vorlagen CC BY-NC-SA 4.0.

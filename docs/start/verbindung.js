@@ -5,7 +5,7 @@
 "use strict";
 
 (function () {
-  var SCHLUESSEL = "kursmuehle-verbindung", PORT = 48127;
+  var SCHLUESSEL = km.speicher("kursmuehle-verbindung"), PORT = 48127;   // in der Beta-Vorschau mit -beta
   var TESTADRESSE = window.KM_TESTADRESSE || "https://ki.xn--kursmhle-b6a.de";   // = ki.kursmühle.de (Cloudflare-Worker); KM_TESTADRESSE nur in Tests
   var TESTCODE = /^muehle-[a-z0-9-]{4,40}$/;
   var TEXT = {
@@ -144,10 +144,18 @@
     if (V.fehler && V.gemerkt) return "nicht erreichbar";
     return "nicht verbunden";
   }
-  // Zustand neben der Kachel, Feld „So geht es“; die Kacheln baut kern.js neu, darum nach jedem Füllen ergänzen
+  // Zustand neben der Kachel, Feld „So geht es“; die Kacheln baut kern.js neu, darum nach jedem Füllen ergänzen.
+  // AP13.12 a4: die Reihe „Verbunden“ liegt im zugeklappten Teil „Für Fortgeschrittene: eigene KI verbinden“ (in
+  // #chat-knoepfe, damit Klicks und Auswahl wie bei den übrigen Kacheln laufen)
   function kachelErgaenzen() {
     var k = document.querySelector("#chat-knoepfe [data-chat=eigene]");
     if (!k || $("ki-zustand")) return;
+    var reihe = k.closest(".chat-gruppe") || k;
+    var teil = el("details", { cls: "ausklapp ki-eigene", id: "ki-eigene" },
+        [el("summary", { text: "Für Fortgeschrittene: eigene KI verbinden" })]);
+    reihe.before(teil);
+    teil.appendChild(reihe);
+    S.ausklapp(teil, "ki");
     var hilfe = el("button", { type: "button", cls: "textlink", id: "ki-hilfe", "aria-controls": "verbinden",
         text: "So geht es" });
     hilfe.onclick = function () { S.verbindenOffen = !S.verbindenOffen; zeichne();
@@ -180,6 +188,8 @@
 
   function zeichne() {
     if (!$("verbinden")) return;
+    // gemerkte Verbindung, Testcode aus der Adresse oder gewählte Kachel: der Teil ist offen, bevor er gezeichnet wird
+    if ($("ki-eigene") && (V.gemerkt || vorwahl || (Z.mappe && Z.mappe.chat === "eigene"))) $("ki-eigene").open = true;
     var z = $("ki-zustand");
     if (z) z.textContent = zustandText();
     if ($("ki-hilfe")) $("ki-hilfe").setAttribute("aria-expanded", String(S.verbindenOffen));

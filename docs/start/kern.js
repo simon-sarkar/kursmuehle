@@ -195,9 +195,15 @@ var km = (function () {
     });
   }
 
+  // Stabiler Stand und Beta-Vorschau (kursmuehle.de/beta/, AP13.10) teilen die Herkunft und damit den Speicher: unter
+  // einem Pfadsegment beta/ tragen die Datenbank und die Schlüssel im localStorage den Zusatz -beta (dieselbe Regel im
+  // Skript der Landingpage); das Farbschema bleibt gemeinsam.
+  var ZUSATZ = /(^|\/)beta\//.test(location.pathname) ? "-beta" : "";
+  function speicher(name) { return name + ZUSATZ; }
+
   // Autosave nur gegen den geschlossenen Tab: die Kursdatei gehört als Datei der Lehrkraft. Die Landingpage liest
   // `mappe`/`aktuell` mit; Hinweise und Infobox liegen im Speicher `einstellungen`.
-  var DB = "kursmuehle", STORE = "mappe", EINST = "einstellungen";
+  var DB = speicher("kursmuehle"), STORE = "mappe", EINST = "einstellungen";
   function db() {
     return new Promise(function (resolve, reject) {
       if (!window.indexedDB) return reject(new Error("IndexedDB fehlt"));
@@ -260,7 +266,8 @@ var km = (function () {
     mappeAusBytes: mappeAusBytes, mappeAusDateien: mappeAusDateien, mappeSchreiben: mappeSchreiben,
     mappeUebernehmen: mappeUebernehmen,
     neueMappe: neueMappe, heap: heap, beenden: beenden, sha256: sha256, autosaveSchreiben: autosaveSchreiben,
-    autosaveLesen: autosaveLesen, autosaveLoeschen: autosaveLoeschen, einstellung: einstellung, zustand: zustand,
+    autosaveLesen: autosaveLesen, autosaveLoeschen: autosaveLoeschen, einstellung: einstellung, speicher: speicher,
+    zustand: zustand,
         messungen: messungen,
     bauOptionen: null, setStatus: function (cb) { statusCb = cb; } };
 })();
@@ -285,6 +292,7 @@ window.km = km;
   var texte = { teile: [], ids: [], art: "einheit", teil: 0, laeuft: 0, kopiert: {} };
   S.fragenListe = [];
   S.korrekturen = [];
+  S.spracheGelb = [];             // AP13.14: ids mit „Sprache anpassen lassen“ (flüchtig, nicht in der Mappe)
   S.letzteAntwort = null;
   S.infoboxAus = false;
   S.schreibKette = Promise.resolve();
@@ -372,7 +380,7 @@ window.km = km;
     return !!(st && st.ids && st.ids.length > 1 && (st.eingefuegt || []).length < st.ids.length);
   }
   function bilderStandard() { var w = S.katalog && S.katalog.oberflaeche.bilder.filter(function (x) { return x.standard;
-      })[0]; return w ? w.wert : "2-3"; }
+      })[0]; return w ? w.wert : "0"; }
   function bilderWert() { return S.angaben.bilder || bilderStandard(); }
   function sichtbareSchritte() { return SCHRITTE.filter(function (n) { return n !== 5.5 || (bildwuensche().length > 0 &&
       bilderWert() !== "0"); }); }
@@ -553,7 +561,10 @@ window.km = km;
   async function auswertung() {
     var pr = Z.pruefung || { bausteine: [], diagnosen: [] };
     S.fragenListe = await km.prompt("fragen", [pr]);
-    S.korrekturen = await km.prompt("korrektur", [pr]);
+    // AP13.14: gelbe Sprach-Hinweise nur für Karten mit „Sprache anpassen lassen“ (ids nur noch, wenn die Karte gelb ist)
+    S.spracheGelb = S.spracheGelb.filter(function (id) { return pr.diagnosen.some(function (d) {
+        return d.baustein === id && d.regel === "sprache.lang"; }); });
+    S.korrekturen = await km.prompt("korrektur", [pr, S.spracheGelb]);
     var fc = await km.prompt("fachcheck", [pr, Z.steckbrief_text]);
     $("gegen-text-feld").value = fc.text;
     Z.fragen = S.fragenListe; Z.korrekturen = S.korrekturen;
@@ -622,9 +633,8 @@ window.km = km;
     var jgA = String(e.jahrgang || S.angaben.jahrgang || ""), jgF = String(e.jahrgang || "");
     var zgA = /\d/.test(jgA) ? "" : jgA.trim(), zgF = /\d/.test(jgF) ? "" : jgF.trim();
     var werte = { "a-thema": e.thema || S.angaben.thema || "", "a-jahrgang": zgA ? "" : jgA, "a-zielgruppe": zgA,
-      "a-minuten": e.minuten || S.angaben.minuten || "", "a-fach": S.angaben.fach || "",
-          "a-schulart": S.angaben.schulart || "",
-      "m-fach": S.angaben.fach || "", "a-kontext": S.angaben.kontext || "", "m-kontext": S.angaben.kontext || "",
+      "a-minuten": e.minuten || S.angaben.minuten || "", "a-schulart": S.angaben.schulart || "",
+      "fach": S.angaben.fach || "", "a-kontext": S.angaben.kontext || "", "m-kontext": S.angaben.kontext || "",
       "a-format": S.angaben.format, "a-familie": S.angaben.familie,
       "a-farbe": /^#/.test(S.angaben.farbe || "") ? "eigen" : S.angaben.farbe,
       "a-farbe-hex": /^#/.test(S.angaben.farbe || "") ? S.angaben.farbe : "",
@@ -641,11 +651,16 @@ window.km = km;
       if (f.tagName === "SELECT" && f.selectedIndex < 0) f.selectedIndex = 0;
     });
     if (S.zielgruppeSperre) { S.zielgruppeSperre("f", true); S.zielgruppeSperre("a", true); }
-    var c = chatInfo(Z.mappe.chat);
-    $("material-grenze").textContent = !c ? "" : c.eingabe_kb
-      ? c.text + " nahm im Test " + c.eingabe_kb + " KB Text an; der Text für den Chat hat mit deinem Material etwa " +
-          kb(S.textGroesse()) + "."
-      : "Wie viel Text " + c.text + " annimmt, ist nicht gemessen. Halte das Material kurz.";
+    // Grenzzeile an beiden Materialfeldern (AP13.13): ohne Chat oder ohne Messwert nur die Größe des Materials, rot
+    // mit Satz, sobald Teil 1 den Messwert des Chats übersteigt
+    var c = chatInfo(Z.mappe.chat), mat = Z.mappe.material || "", zuViel = false, zeile = "";
+    if (c && c.eingabe_kb) {
+      zuViel = S.textGroesse() > c.eingabe_kb * 1024;
+      zeile = c.text + " nahm im Test " + c.eingabe_kb + " KB Text an; der Text für den Chat hat mit deinem Material etwa " +
+          kb(S.textGroesse()) + "." + (zuViel ? " Kürze das Material oder wähle weniger Abschnitte." : "");
+    } else if (mat.trim()) zeile = "Dein Material hat etwa " + kb(new Blob([mat]).size) + ".";
+    ["material-grenze", "r-material-grenze"].forEach(function (id) {
+      $(id).textContent = zeile; $(id).classList.toggle("fehler", zuViel); });
   }
   Object.assign(S, { $: $, AUTO: AUTO, FARBEN: FARBEN, KOPIERT: KOPIERT, SCHRITTE: SCHRITTE,
     STANDARD_FARBE: STANDARD_FARBE, Z: Z, ZWEIG_TEXT: ZWEIG_TEXT, auswertung: auswertung, autosave: autosave,

@@ -50,6 +50,23 @@
     return "";
   }
 
+  // AP13.12: Ausklappteile. Geöffnet bleibt, was die Lehrkraft einmal geöffnet hat (je Teil ein Schlüssel
+  // „kursmuehle-offen-<name>“ in localStorage, unter /beta/ mit dem Zusatz von km.speicher); öffnet die Seite einen
+  // Teil selbst (Testcode, gewählte Kachel), merkt sie nichts
+  function ausklapp(d, name) {
+    if (!d || d.dataset.merkt) return d;
+    d.dataset.merkt = name;
+    var k = km.speicher("kursmuehle-offen-" + name);
+    try { if (localStorage.getItem(k) === "ja") d.open = true; } catch (e) { /* ohne Speicher */ }
+    d.querySelector("summary").addEventListener("click", function () {
+      try { localStorage.setItem(k, d.open ? "nein" : "ja"); }   // schaltet erst nach dem Klick
+      catch (e) { /* ohne Speicher gilt es nur bis zum Neuladen */ }
+    });
+    return d;
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("details[data-merken]"), function (d) {
+    ausklapp(d, d.dataset.merken); });
+
   // Hinweis unter der Überschrift des aktiven Schritts, höchstens zwei Sätze, nie blockierend
   function zeichneHinweis(sec, n, aktiv) {
     var schluessel = n === 2 && zweig() === "richtung" && S.hinweisTexte["2-richtung"] ? "2-richtung" : String(n);
@@ -73,7 +90,8 @@
 
   function zeichneSchritte() {
     var s = schritt(), z = zweig();
-    if (s === 5.5 && Z.pruefung && !bildwuensche().length) s = 6;   // Bildwünsche inzwischen weg: weiter mit den Fragen
+    // Bildwünsche inzwischen weg oder Bilder „keine“: weiter mit den Fragen
+    if (s === 5.5 && Z.pruefung && sichtbareSchritte().indexOf(5.5) < 0) s = 6;
     document.body.dataset.schritt = String(s);
     document.body.dataset.zweig = z;
     document.body.dataset.bildschirm = Z.mappe ? "ansicht" : "start";
@@ -105,6 +123,7 @@
     $("vorlagen").hidden = inhalt();
     $("weiter-2").hidden = s > 2 || !z;
     $("weiter-3").hidden = s > 3;
+    $("standard-weiter").hidden = s > 3 || $("aussehen-anpassen").open;
     // Karten: in „Ich steuere“ unter Schritt 2, bis die erste Antwort da ist; danach in beiden Zweigen unter Schritt 5
     var ort = inhalt() ? $("karten-ort-5") : $("karten-ort-2");
     if ($("tafel-bausteine").parentNode !== ort) ort.appendChild($("tafel-bausteine"));
@@ -117,7 +136,7 @@
     document.querySelector(".seite").classList.toggle("mit-rand", s >= 5);
     $("weiter").hidden = !!Z.mappe || !$("weiter").dataset.da;
     $("weiter-5").hidden = !(s === 5 && inhalt() && !fehlerZahl() && !teileOffen());
-    $("weiter-5").textContent = bildwuensche().length ? "Weiter zu den Bildern" : S.fragenListe.length ?
+    $("weiter-5").textContent = sichtbareSchritte().indexOf(5.5) >= 0 ? "Weiter zu den Bildern" : S.fragenListe.length ?
         "Weiter zu den Fragen und Lösungen" : "Weiter zur Datei";
     $("rueckmeldung").hidden = !(s >= 7 && Z.bau && Z.bau.mbz) && !$("rueckmeldung").dataset.offen;
     $("speichern").hidden = !Z.mappe;
@@ -353,6 +372,16 @@
     Z.mappe.bausteine = vorlageKarten(v, e.minuten || 45);
     Z.mappe.bausteine.forEach(function (k) { if (alt[k.id]) k.auftrag = alt[k.id]; });
     e.vorlage = v.name;
+    if (S.angaben.differenzierung) zusatzKarte();     // AP13.14: neue Karten, Schalter an: Karte „Zusatz“ wieder dazu
+  }
+  async function zusatzKarte() {
+    try {
+      await km.bereit();
+      var gesendet = Z.mappe, neu = await km.mappeFn("zusatzaufgabe", [gesendet, true]);
+      if (Z.mappe !== gesendet) return;
+      km.mappeUebernehmen(gesendet, neu);
+      zeichne(); geaendert();
+    } catch (e) { zeigeFehler(e); }
   }
 
   async function steckbriefAnlegen() {
@@ -368,6 +397,7 @@
     Z.mappe = km.neueMappe(e.thema, e, vorlageKarten(v, e.minuten));
     Z.mappe.schritt = 2;
     Z.mappe.zeit_selbst = false;                   // Standard: das Modell verteilt die Minuten
+    Z.mappe.zeit_start = new Date().toISOString();  // AP13.12 a11: Minuten bis zum Download für die Rückmeldung
     Z.kurs_md = ""; Z.steckbrief_text = ""; Z.assets = {}; Z.pruefung = null; Z.kennzahlen = null; Z.bau = null;
         Z.beispiel = null;
     S.angaben = { thema: e.thema, jahrgang: e.jahrgang, minuten: e.minuten, familie: "sachlich", dichte: "normal",
@@ -392,6 +422,7 @@
     Z.mappe.laufend = Z.mappe.anhaengen;           // Text, Bilder und Rand gehören jetzt zu dieser Einheit
     delete Z.mappe.stueckelung;
     Z.mappe.durchsicht = false; delete Z.mappe.kopiert;
+    Z.mappe.zeit_start = new Date().toISOString(); delete Z.mappe.zeit_download;
     Z.bau = null;
     neuStart();
     document.querySelector("input[name=text-art][value=leer]").checked = true;
@@ -403,10 +434,10 @@
   function neuStart() {
     clearTimeout(S.kennzahlTimer); clearTimeout(S.textTimer); clearTimeout(S.eingabeTimer);
     texte.teile = []; texte.ids = []; texte.teil = 0; texte.art = "einheit"; texte.kopiert = {}; S.fragenListe = [];
-        S.korrekturen = []; S.letzteAntwort = null;
+        S.korrekturen = []; S.spracheGelb = []; S.letzteAntwort = null;
     S.korrektur = { text: "", offen: false, stand: "", art: "" };
     $("korrektur-eingabe").value = ""; $("eingabe-stand").hidden = true;
-    S.chatWahlOffen = false; S.auf = {}; gruppenBis = 1;
+    S.chatWahlOffen = false; S.auf = {};
     $("chat-text-feld").value = ""; $("gegen-text-feld").value = ""; $("gegen-antwort").value = "";
     $("gegen-ergebnis").innerHTML = ""; $("gegen-stand").textContent = ""; $("kopiert").textContent = "";
     $("eingabe-stand").textContent = ""; $("infobox").hidden = true; $("importiert-stand").hidden = true;
@@ -494,6 +525,7 @@
         return text("schwerpunkt", w); }).join(", "));
     if ((a.uebungstypen || []).length) t.push("Übungen: " + a.uebungstypen.join(", "));
     if (a.sprache && a.sprache !== "normal") t.push("Sprache: " + text("sprache", a.sprache));
+    if (a.differenzierung) t.push("Hilfen und Zusatzaufgaben");
     return t;
   }
   function textKacheln(box, feld, werte, gewaehlt, mehrfach) {
@@ -523,6 +555,8 @@
     textKacheln($("r-uebungen"), "uebungstypen", typen, a.uebungstypen || [], true);
     ["r-sprache", "a-sprache"].forEach(function (id) { textKacheln($(id), "sprache", o.sprache, a.sprache || "normal", false);
         });
+    ["r-differenzierung", "a-differenzierung"].forEach(function (id) { textKacheln($(id), "differenzierung",
+        o.differenzierung, a.differenzierung ? "an" : "aus", false); });
     Array.prototype.forEach.call($("r-art").querySelectorAll(".aus-kachel"), function (b) { b.disabled = inhalt(); });
     // Material: bei „Einheit aus eigenem Material“ als drittes Feld unter dem Fach, sonst zuletzt
     var teil = $("richtung-teil"), feld = $("r-material-feld");
@@ -546,12 +580,29 @@
       var reihe = Array.prototype.map.call(b.parentNode.querySelectorAll(".aus-kachel"), function (k) { return k.dataset.wert; });
       wert = reihe.filter(function (w) { return liste.indexOf(w) >= 0; });
     }
+    if (feld === "differenzierung") return differenzierung(wert === "an");
     S.angaben[feld] = wert; a[feld] = wert;
     zeichneRichtung(); zeichneSchritte();
     angabenSchreiben(a);
     S.textSpaeter();
   }
-  ["richtung-teil", "a-schwerpunkt", "a-sprache"].forEach(function (id) { $(id).addEventListener("click", richtungKlick); });
+  // AP13.14: Schalter „Hilfen und Zusatzaufgaben“ – Steckbrief und die Karte „Zusatz“ (gen/mappe.py zusatzaufgabe; aus:
+  // eine leere Karte fällt weg, eine mit Inhalt bleibt)
+  async function differenzierung(an) {
+    if (!!S.angaben.differenzierung === an) return;
+    S.angaben.differenzierung = an;
+    zeichneRichtung(); zeichneSchritte();
+    try {
+      await km.bereit();
+      var gesendet = Z.mappe, neu = await km.mappeFn("zusatzaufgabe", [gesendet, an]);
+      if (Z.mappe === gesendet) km.mappeUebernehmen(gesendet, neu);
+      await angabenSchreiben({ differenzierung: an });
+      zeichne();
+    } catch (e) { zeigeFehler(e); }
+    S.textSpaeter();
+  }
+  ["richtung-teil", "a-schwerpunkt", "a-sprache", "a-differenzierung"].forEach(function (id) {
+    $(id).addEventListener("click", richtungKlick); });
   $("r-material").addEventListener("input", function () {
     if (!Z.mappe) return;
     Z.mappe.material = $("r-material").value;
@@ -620,25 +671,53 @@
     d.innerHTML = PROBE_SVG;                                          // eigenes SVG, keine Eingabe
     return d;
   }
-  var FORMAT_PROBE = { einthemen: "Import auf der Plattform noch nicht geprüft",
-    wochen: "Import auf der Plattform noch nicht geprüft" }; // Stand der Importproben, s. Entwicklungsdoku
+  // AP13.12 a3: Kacheln mit Dreieck (`probe`) stehen nicht zwischen den geprüften, sondern im zugeklappten Teil
+  // „Weitere, noch nicht auf der Plattform geprüft“ direkt nach dem Raster ihrer Gruppe; ist eine davon gewählt, ist er
+  // offen. Welche das sind, sagt `probe` der Werte (familien.json, katalog.json), keine feste Liste.
+  function weitereTeil(box, anlegen) {
+    var d = box.nextElementSibling;
+    if (d && d.classList.contains("ungeprueft")) return d;
+    if (!anlegen) return null;
+    var t = $(box.getAttribute("aria-labelledby"));
+    d = el("details", { cls: "ungeprueft" }, [el("summary", { text: "Weitere, noch nicht auf der Plattform geprüft" }),
+      el("div", { cls: box.className, role: "radiogroup", "aria-label": (t ? t.textContent + ": " : "") +
+          "noch nicht geprüft" })]);
+    box.after(d);
+    return d;
+  }
+  function kachelnVon(box) {
+    var d = weitereTeil(box, false), k = Array.prototype.slice.call(box.querySelectorAll(".aus-kachel"));
+    return d ? k.concat(Array.prototype.slice.call(d.querySelectorAll(".aus-kachel"))) : k;
+  }
+  // Kacheln nur neu bauen, wenn sich Werte, Reihenfolge oder Teil geändert haben; -> Werte in der Reihenfolge der Kacheln
+  function kachelnSetzen(box, werte, bauen, gewaehlt) {
+    var reihe = werte.filter(function (w) { return !w.probe; }).concat(werte.filter(function (w) { return w.probe; }));
+    var d = weitereTeil(box, reihe.some(function (w) { return w.probe; })), innen = d && d.querySelector(".kacheln-wahl");
+    var alt = kachelnVon(box);
+    if (alt.length !== reihe.length || reihe.some(function (w, i) { return alt[i].dataset.wert !== w.wert ||
+        !w.probe !== !alt[i].closest(".ungeprueft"); })) {
+      box.innerHTML = ""; if (innen) innen.innerHTML = "";
+      reihe.forEach(function (w) { (w.probe ? innen : box).appendChild(bauen(w)); });
+    }
+    if (d) {
+      d.hidden = !innen.children.length;
+      if (reihe.some(function (w) { return w.probe && w.wert === gewaehlt; })) d.open = true;
+    }
+    return reihe;
+  }
   // Kacheln der Familien (AP13.5d): Name und ein Satz, ohne Miniatur; die Vorschau steht rechts oder in der Leiste
   function zeichneFamilien() {
-    var box = $("aus-familie"), liste = S.familien.familien, gewaehlt = familieJetzt();
-    if (box.querySelectorAll(".aus-kachel").length !== liste.length) {
-      box.innerHTML = "";
-      liste.forEach(function (f) {
-        var b = el("button", { type: "button", cls: "aus-kachel", role: "radio", "aria-checked": "false",
-          "data-feld": "familie", "data-wert": f.name });
-        b.appendChild(el("span", { cls: "aus-name" }, [el("span", { text: f.text }),
-          f.probe.length ? dreieck("Importprobe steht aus") : null]));
-        b.appendChild(el("span", { cls: "aus-zeile", text: f.zeile }));
-        box.appendChild(b);
-      });
-    }
-    Array.prototype.forEach.call(box.querySelectorAll(".aus-kachel"), function (b) {
-      b.setAttribute("aria-checked", String(b.dataset.wert === gewaehlt));
-    });
+    var box = $("aus-familie"), gewaehlt = familieJetzt();
+    kachelnSetzen(box, S.familien.familien.map(function (f) {
+      return { wert: f.name, text: f.text, zeile: f.zeile, probe: f.probe.length ? "Importprobe steht aus" : "" };
+    }), function (w) {
+      var b = el("button", { type: "button", cls: "aus-kachel", role: "radio", "aria-checked": "false",
+        "data-feld": "familie", "data-wert": w.wert });
+      b.appendChild(el("span", { cls: "aus-name" }, [el("span", { text: w.text }), w.probe ? dreieck(w.probe) : null]));
+      b.appendChild(el("span", { cls: "aus-zeile", text: w.zeile }));
+      return b;
+    }, gewaehlt);
+    kachelnVon(box).forEach(function (b) { b.setAttribute("aria-checked", String(b.dataset.wert === gewaehlt)); });
     vorschauLaden();
   }
   // Vorschau der gewählten Familie (AP13.5d §1, §4): bei jedem Wechsel von Familie oder Feinheit ein Aufruf von
@@ -795,13 +874,9 @@
   // Firefox den Klick, der Steckbrief bliebe ohne die Wahl. w.label setzt eine Beschriftung nur für Vorleseprogramme,
   // wenn die Kachel keinen Text hat; w.element ist eine fertige Kachel aus dem Markup (Farbe „Eigene“ mit Farbwähler)
   function kachelGruppe(box, gruppe, werte, mini, gewaehlt) {
-    var alt = box.querySelectorAll(".aus-kachel");
-    if (alt.length !== werte.length || werte.some(function (w, i) { return alt[i].dataset.wert !== w.wert; })) {
-      box.innerHTML = "";
-      werte.forEach(function (w) { box.appendChild(w.element || kachel(gruppe, w.wert, w.text, "", false, w.zeile,
-          w.probe)); });
-    }
-    Array.prototype.forEach.call(box.querySelectorAll(".aus-kachel"), function (b, i) {
+    werte = kachelnSetzen(box, werte, function (w) { return w.element || kachel(gruppe, w.wert, w.text, "", false,
+        w.zeile, w.probe); }, gewaehlt);
+    kachelnVon(box).forEach(function (b, i) {
       b.setAttribute("aria-checked", String(werte[i].wert === gewaehlt));
       if (werte[i].label && !werte[i].text) b.setAttribute("aria-label", werte[i].label); else b.removeAttribute("aria-label");
       var t = b.querySelector(".aus-name-text");
@@ -810,26 +885,13 @@
       if (m && m.dataset.svg !== svg) { m.innerHTML = svg; m.dataset.svg = svg; }  // eigenes SVG, keine Eingabe
     });
   }
-  // AP13.5g b1: Gruppen in Schritt 3 nacheinander. gruppenBis = Zahl der sichtbaren Gruppen; ein Klick in einer Gruppe
-  // zeigt die nächste, „Alle Einstellungen zeigen“ alle; nach „Weiter“ (mappe.aussehen) stehen alle
-  var GRUPPEN = ["familie", "farbe", "dichte", "kasten", "format", "bilder", "website"], gruppenBis = 1;
-  function gruppenZeigen() {
-    var n = Z.mappe && Z.mappe.aussehen ? GRUPPEN.length : gruppenBis;
-    // Familie mit fester Farbe: in der Gruppe Farbe ist nichts zu klicken, die nächste steht gleich
-    if (GRUPPEN[n - 1] === "farbe" && (familieInfo(familieJetzt()) || {}).akzent_fest) n += 1;
-    Array.prototype.forEach.call(document.querySelectorAll("#schritt-3 .aus-gruppe"), function (g) {
-      g.hidden = GRUPPEN.indexOf(g.dataset.gruppe) >= n;
-    });
-    $("alle-zeigen").hidden = n >= GRUPPEN.length;
-    return n > GRUPPEN.indexOf("format");
-  }
-  $("alle-zeigen").onclick = function () {
-    gruppenBis = GRUPPEN.length;
-    zeichneAussehen();
-    var g = document.querySelector("#schritt-3 .aus-gruppe[data-gruppe=farbe]");
-    if (g && g.hidden) g = document.querySelector("#schritt-3 .aus-gruppe[data-gruppe=dichte]");
-    var k = g && g.querySelector(".aus-kachel"); if (k) k.focus({ preventScroll: true });
-  };
+  // AP13.12 a1: der erste Blick zeigt „Standard nehmen und weiter“ und die Bilder; alle übrigen Gruppen liegen unter
+  // „Aussehen anpassen“ (ersetzt die Gruppen nacheinander aus AP13.5g b1). Offen ist der Teil, wenn die Lehrkraft ihn
+  // geöffnet hat; dann steht unten nur „Weiter“
+  $("aussehen-anpassen").addEventListener("toggle", function () {
+    zeichneSchritte();
+    if ($("aussehen-anpassen").open) vorschauMassstab();
+  });
   // Bilder (AP13.5g b5): eine Zahl im Steckbrief gehört zur Kachel „Benutzerdefiniert“ (wert zahl)
   function bilderKachel() { var w = String(bilderWert()); return /^\d+$/.test(w) && w !== "0" ? "zahl" : w; }
   function bilderZahl() { var n = parseInt($("bilder-zahl").value, 10); return n >= 1 && n <= 30 ? n : 10; }
@@ -858,7 +920,7 @@
     var format = S.angaben.format || "themen";
     kachelGruppe($("aus-format"), "format", o.format.map(function (w) {
       return { wert: w.wert, text: w.text, zeile: w.wert === "wochen" ? "braucht einen Kursbeginn" : "",
-        probe: FORMAT_PROBE[w.wert] };
+        probe: w.probe };
     }), function (w) { return miniFormat(w, hue); }, format);
     $("start-l").hidden = format !== "wochen";
     if (document.activeElement !== $("a-start")) $("a-start").value = S.angaben.start || "";
@@ -881,11 +943,10 @@
         S.angaben.bildbeschriftung || o.bildbeschriftung.filter(function (w) { return w.standard; })[0].wert);
     kachelGruppe($("aus-website"), "website", o.website, function (w) { return miniWebsite(w, hue); },
         S.angaben.website || "textfeld");
-    var mitFormat = gruppenZeigen();
-    $("format-karte").hidden = !mitFormat;
+    $("format-karte").hidden = false;
     if (S.familien) $("vorschau-name").textContent = [(familieInfo(familieJetzt()) || {}).text,
-      mitFormat ? oberText("format", format) : ""].filter(Boolean).join(" · ");
-    if (mitFormat) S.formatVorschau();
+      oberText("format", format)].filter(Boolean).join(" · ");
+    S.formatVorschau();
   }
   function miniBilder(wert) {
     var n = { "0": 0, "2-3": 2, "4-7": 4, "8+": 8 }[wert] || 0,
@@ -937,8 +998,6 @@
     var b = ev.target.closest(".aus-kachel");
     if (!b || !Z.mappe || b.hasAttribute("disabled") || ev.target.id === "farbe-eigen") return;
     var a = {}, wert = b.dataset.wert;
-    gruppenBis = Math.max(gruppenBis, GRUPPEN.indexOf(b.dataset.feld === "bildbeschriftung" ? "bilder" :
-        b.dataset.feld) + 2);
     if (b.dataset.feld === "farbe" && wert === "eigen") {
       if (!EIGEN.dataset.gewaehlt) { zeichneAussehen(); return; }
       wert = $("farbe-eigen").value.toUpperCase();
@@ -973,12 +1032,12 @@
     if (!Z.mappe) return;
     var w = $("farbe-eigen").value.toUpperCase();
     EIGEN.dataset.gewaehlt = "1";
-    gruppenBis = Math.max(gruppenBis, GRUPPEN.indexOf("farbe") + 2);
     S.angaben.farbe = w;
     zeichneAussehen(); felderFuellen();
     angabenSchreiben({ farbe: w }, true);
   });
-  $("weiter-3").onclick = function () { if (Z.mappe) { Z.mappe.aussehen = true; gehe(4); } };
+  $("weiter-3").onclick = $("standard-weiter").onclick = function () {
+    if (Z.mappe) { Z.mappe.aussehen = true; gehe(4); } };
 
   // Schreiben nacheinander: schnelle Klicks auf mehrere Kacheln und das erste Anlegen dürfen sich den Steckbrief nicht
   // überschreiben; neuPruefen liest die Angaben erst, wenn die Kette leer ist
@@ -1039,7 +1098,6 @@
   };
 
   var FELDER = { "a-thema": "thema", "a-jahrgang": "jahrgang", "a-zielgruppe": "jahrgang", "a-minuten": "minuten",
-      "a-fach": "fach",
       "a-schulart": "schulart",
     "a-format": "format", "a-familie": "familie", "a-farbe": "farbe", "a-farbe-hex": "farbe", "a-abschluss": "abschluss",
     "a-portionierung": "portionierung", "a-kontext": "kontext" };
@@ -1081,7 +1139,7 @@
         S.textSpaeter(); }, 400);
   }
   $("m-kontext").addEventListener("input", function () { kontextSchreiben("kontext", $("m-kontext").value); });
-  $("m-fach").addEventListener("input", function () { kontextSchreiben("fach", $("m-fach").value.trim()); });
+  $("fach").addEventListener("input", function () { kontextSchreiben("fach", $("fach").value.trim()); });
   $("a-material").addEventListener("input", function () {
     if (!Z.mappe) return;
     Z.mappe.material = $("a-material").value;
@@ -1118,7 +1176,8 @@
         /* ohne Speicher: nur diese Seite */ }
     schemaZeigen();
   };
-  Object.assign(S, { adresseLesen: adresseLesen, angabenSchreiben: angabenSchreiben, felderPruefen: felderPruefen,
+  Object.assign(S, { adresseLesen: adresseLesen, angabenSchreiben: angabenSchreiben, ausklapp: ausklapp,
+    felderPruefen: felderPruefen,
     akzent: akzent, gehe: gehe, jahrgangZahl: jahrgangZahl, nachZwei: nachZwei, neuStart: neuStart,
     schemaZeigen: schemaZeigen, steckbriefSicher: steckbriefSicher, vorlageNach: vorlageNach, vorschauLaden: vorschauLaden,
     vorlagenZeigen: vorlagenZeigen, weiterAnzeigen: weiterAnzeigen, zeichneAussehen: zeichneAussehen,

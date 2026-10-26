@@ -184,6 +184,7 @@ select { appearance: auto; }
 .vorsatz { font-size: 0.9rem; color: var(--leise); margin: 12px 0 0; }
 .start-form { display: grid; grid-template-columns: 1fr 9rem 7rem; gap: 12px; align-items: end; }
 .start-form .knopf { grid-column: 1 / -1; justify-self: start; min-width: 9rem; }
+.zeit-vorab { grid-column: 1 / -1; margin: -4px 0 0; font-size: 0.85rem; }
 
 /* 2 Zweige, Vorlagen, Mehr */
 .zweige { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
@@ -206,11 +207,20 @@ select { appearance: auto; }
 .mehr summary { cursor: pointer; color: var(--link); font-weight: 600; padding: 6px 0; }
 .mehr-felder { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 12px 0 4px; }
 
-/* 3 Aussehen: Gruppen nacheinander (AP13.5g b1), Kacheln, Familien ohne Miniatur */
+/* Ausklappteile (AP13.12): was nicht zum kürzesten Weg gehört, liegt zugeklappt dahinter */
+.ausklapp > summary, .ungeprueft > summary, .fuss-mehr > summary { cursor: pointer; color: var(--link); font-weight: 600;
+  padding: 6px 0; width: max-content; max-width: 100%; }
+.ausklapp[open] > summary { margin-bottom: 4px; }
+
+/* 3 Aussehen: Standard zuerst, Gruppen unter „Aussehen anpassen“ (AP13.12 a1), Kacheln, Familien ohne Miniatur */
 .aus-gruppe .unterkopf { margin-top: 6px; }
 .aus-gruppe { margin-top: 14px; }
-.aussehen > .aus-gruppe:first-child { margin-top: 0; }
-.alle-zeigen { display: block; margin-top: 10px; }
+.aussehen > .aus-gruppe:first-child, .aussehen-anpassen > .aus-gruppe:first-of-type { margin-top: 0; }
+.standard-weiter { display: flex; width: max-content; max-width: 100%; margin: 0 0 10px; }
+.aussehen-anpassen { margin-bottom: 4px; }
+.ungeprueft { margin-top: 10px; }
+.ungeprueft > summary { font-weight: 400; font-size: 0.93rem; }
+.ungeprueft > .kacheln-wahl { margin-top: 6px; }
 .kacheln-wahl { display: flex; flex-wrap: wrap; gap: 10px; }
 .aus-kachel { display: flex; flex-direction: column; align-items: stretch; gap: 6px; width: 148px; padding: 8px; border: 1px solid var(--linie);
   border-radius: var(--rund); background: var(--grund); font: inherit; font-size: 0.9rem; color: var(--text); cursor: pointer; text-align: center; }
@@ -331,6 +341,9 @@ select { appearance: auto; }
 .chat-knoepfe { display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
 .chat-gruppe { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .chat-gruppe-name { flex: 0 0 8.5rem; font-size: 0.85rem; color: var(--leise); }
+.ki-eigene > .chat-gruppe { margin-top: 6px; }
+.modell-rat { margin-bottom: 4px; }
+.modell-rat > summary { font-weight: 400; font-size: 0.93rem; }
 .text-art, .modus { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 0 0 10px; }
 .text-art label, .modus label { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 6px 12px; border-radius: 8px;
   background: var(--flaeche); border: 1px solid var(--linie); cursor: pointer; font-size: 0.95rem; }
@@ -351,6 +364,12 @@ select { appearance: auto; }
   border-radius: 8px; background: var(--warn-flaeche); color: var(--text); }
 .warnung-box p { margin: 0; flex: 1 1 16rem; }
 /* AP13.6: Lehrplan am Fach-Feld – Haken, Picker in vier Zeilen, Vermerk, Vorschlag */
+/* AP13.12c: ein Ort unter den drei Kacheln, zugeklappt nur der Knopf oder der Vermerk mit „×“ */
+.lehrplan-teil { margin-top: 14px; display: grid; gap: 6px; }
+.lehrplan-ausklapp > .feld { margin-bottom: 10px; max-width: 24rem; }
+.lehrplan-ausklapp > summary .lp-vermerk { display: inline-flex; vertical-align: middle; font-weight: 400; color: var(--text);
+  max-width: calc(100% - 1.5em); }
+.lehrplan-ausklapp > summary .lp-vermerk span { overflow-wrap: anywhere; }
 .lehrplan-ort { display: grid; gap: 6px; }
 .lp-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; }
 .lp-knopf { padding: 4px 0; }
@@ -369,6 +388,10 @@ select { appearance: auto; }
 .lp-lb-kopf { display: flex; align-items: flex-start; gap: 8px; }
 .lp-lb-kopf input, .lp-tb input, .lp-ziel input { width: 18px; height: 18px; accent-color: var(--ocker-tief); margin: 3px 0 0; flex: none; }
 .lp-titel { text-align: left; padding: 0; }
+/* AP13.12c: Lernbereich erkennbar aufklappbar – ▸/▾ vor dem Titel, Zahl der Teilbereiche dahinter */
+.lp-titel::before { content: "▸"; display: inline-block; width: 1.1em; text-decoration: none; color: var(--leise); }
+.lp-titel[aria-expanded=true]::before { content: "▾"; }
+.lp-tb-zahl { display: inline-block; margin-left: 8px; font-size: 0.85rem; color: var(--leise); text-decoration: none; }
 .lp-tbs { margin: 6px 0 6px 26px; display: grid; gap: 8px; }
 .lp-tb-kopf { display: flex; gap: 8px; font-weight: 600; }
 .lp-erws { margin: 4px 0 0 26px; display: grid; gap: 6px; font-size: 0.93rem; }
@@ -457,6 +480,8 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .klein:disabled { opacity: 0.35; cursor: default; }
 .k-hoch, .k-runter { font-size: 1.05rem; }
 .k-neu[aria-pressed=true] { color: var(--text); font-weight: 650; text-decoration: underline; }
+.k-sprache { min-height: 32px; padding: 4px 6px; color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+.k-sprache[aria-pressed=true] { font-weight: 650; }
 .k-loeschen { margin-left: auto; }
 .k-korrektur { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 6px; }
 .k-zur-korrektur { color: var(--fehler); font-size: 0.9rem; text-underline-offset: 3px; }
@@ -501,6 +526,22 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
   border: 1px dashed var(--chat-kante); border-radius: 8px; font-size: 0.9rem; color: var(--leise); }
 .bild-ablage.ueber { border-color: var(--text); background: var(--grund); }
 
+/* AP13.13 Material aus Dateien: Zeile „Datei lesen“, beim Ziehen umrandet; Liste je Datei mit Häkchen */
+.material-ort { border-radius: var(--rund); }
+.material-ort.ueber { outline: 2px dashed var(--text); outline-offset: 4px; }
+.material-datei { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 8px; }
+.material-datei .knopf:focus-within { outline: 3px solid var(--fokus); outline-offset: 2px; }
+.material-liste { margin-top: 10px; padding: 10px 14px; border: 1px solid var(--linie); border-radius: var(--rund);
+  background: var(--flaeche); }
+.material-datei-liste { margin: 0 0 10px; padding: 0; border: 0; min-width: 0; }
+.material-datei-liste legend { padding: 0; font-weight: 600; overflow-wrap: anywhere; }
+.material-alle { display: flex; gap: 14px; }
+.material-abschnitte { list-style: none; margin: 0; padding: 0; }
+.material-abschnitte li { margin: 2px 0; overflow-wrap: anywhere; }
+.material-abschnitte input { margin-right: 4px; }
+.material-knoepfe { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 8px; }
+.feld-zeile.fehler { color: var(--fehler); }
+
 /* 6 Fragen und Lösungen */
 .fragen-liste { list-style: none; margin: 0 0 12px; padding: 0; border: 1px solid var(--linie); border-radius: var(--rund); }
 .frage { padding: 12px 14px; border-top: 1px solid var(--linie); }
@@ -513,6 +554,11 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .f-marke { color: var(--ok); font-weight: 600; }
 .f-loesung { margin: 0; font-size: 0.95rem; }
 .durchsicht { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+.durchsicht .ohne-satz { flex-basis: 100%; margin: -4px 0 0; font-size: 0.9rem; }
+.offen-kasten { margin: 0 0 14px; padding: 10px 14px; border-radius: var(--rund); background: var(--creme); }
+.offen-kasten .unterkopf { margin: 0 0 4px; }
+.offen-liste { margin: 0; padding-left: 20px; font-size: 0.95rem; }
+.offen-liste li { margin-top: 4px; }
 .gegenpruefen { margin-top: 16px; }
 .gegenpruefen > summary { cursor: pointer; color: var(--link); padding: 6px 0; }
 .gegenpruefen .feld { margin-top: 14px; }
@@ -526,15 +572,25 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .wh-schritte { margin: 0 0 12px; padding-left: 22px; }
 .wh-schritte li { margin-bottom: 8px; }
 .importiert { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-weight: 600; }
+.wh-bilder { margin: 0 0 10px; }
+.wh-bilder-liste figure { margin: 8px 0 12px; }
+.wh-bilder-liste img { display: block; max-width: 100%; height: auto; border: 1px solid var(--linie); border-radius: 6px; }
+.ergebnis-wahl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 12px; }
+.ergebnis-wahl p { margin: 0; font-weight: 600; }
+.ergebnis-wahl [aria-pressed=true] { box-shadow: inset 0 0 0 2px var(--text); }
 .danach { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--linie); }
 
 /* Rückmeldung */
 .rueckmeldung { background: var(--flaeche); border-radius: var(--rund); padding: 16px; margin: 0 0 12px; box-shadow: 0 1px 2px var(--schatten); }
 .rueckmeldung textarea { margin-top: 10px; font-size: 15px; }
+.rm-felder { display: grid; gap: 8px; margin: 0 0 12px; }
+.rm-felder textarea { margin-top: 4px; }
+.rueckmeldung a.knopf { text-decoration: none; }
 
 /* Rand ab Schritt 5 */
 .spalte-rand { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 12px; }
 .rand-block { background: var(--creme); border-radius: var(--rund); padding: 14px 16px; }
+.kennzahlen > summary { padding-top: 0; }
 .zahlen { margin: 0; }
 .zahlen > div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--rand-linie); }
 .zahlen > div:last-of-type { border-bottom: 0; }
@@ -560,7 +616,10 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .fuss { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 22px; padding: 18px 16px 28px; font-size: 0.9rem; color: var(--leise); }
 .fuss a, .fuss .textlink { color: var(--leise); font-size: inherit; padding: 4px 0; }
 .fuss a { text-underline-offset: 3px; }
-.fuss .fuss-klein { font-size: 0.8rem; }          /* Impressum: klein, Seite liegt unter ../ (kursmuehle.de/impressum.html) */
+.fuss .fuss-klein { font-size: 0.8rem; }
+.fuss-mehr > summary { font-weight: 400; color: var(--leise); padding: 4px 0; }
+.fuss-mehr[open] { display: flex; flex-wrap: wrap; gap: 4px 22px; }
+.fuss-mehr[open] > summary { width: auto; }          /* Impressum: klein, Seite liegt unter ../ (kursmuehle.de/impressum.html) */
 
 @media (max-width: 900px) {
   .seite.mit-rand { display: block; max-width: 760px; }
