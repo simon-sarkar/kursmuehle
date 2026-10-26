@@ -458,6 +458,7 @@
     Z.bau = null;
     if (S.angaben.ki_hinweis === "ja") kursangabe({ ki_hinweis: "nein" });   // AP13.15: je Einheit neu gesetzt
     $("f-thema").value = ""; $("f-minuten").value = (Z.mappe.einheit && Z.mappe.einheit.minuten) || 45;
+    delete Z.mappe.material;                      // AP13.19 §1: das Material gehört zur vorigen Einheit
     gehe(1, "f-thema");
     $("s1-titel").textContent = "Worum geht es in der nächsten Einheit?";
   };

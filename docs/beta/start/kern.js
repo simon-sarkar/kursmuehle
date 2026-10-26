@@ -288,6 +288,7 @@ window.km = km;
   S.angaben = {};
   S.rueckgaengig = null;
   S.auf = {};
+  S.designer = null;              // AP13.19 §3: {y} solange „Zum Designer“ offen ist (schritte.js)
   S.chatWahlOffen = false;
   S.autosaveTimer = null;
   S.kennzahlTimer = null;

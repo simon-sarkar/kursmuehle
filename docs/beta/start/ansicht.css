@@ -205,6 +205,9 @@ select { appearance: auto; }
 .vorlage-phasen { font-size: 0.82rem; color: var(--leise); }
 .mehr { margin-top: 12px; }
 .mehr summary { cursor: pointer; color: var(--link); font-weight: 600; padding: 6px 0; }
+/* AP13.19 §3: Sprunglinks über den Feldern von „Mehr einstellen“, haften oben beim Scrollen */
+.sprung { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 4px 18px; padding: 8px 0;
+  background: var(--flaeche); border-bottom: 1px solid var(--linie); }
 .mehr-felder { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 12px 0 4px; }
 
 /* Ausklappteile (AP13.12): was nicht zum kürzesten Weg gehört, liegt zugeklappt dahinter */
@@ -212,12 +215,12 @@ select { appearance: auto; }
   padding: 6px 0; width: max-content; max-width: 100%; }
 .ausklapp[open] > summary { margin-bottom: 4px; }
 
-/* 3 Aussehen: Standard zuerst, Gruppen unter „Aussehen anpassen“ (AP13.12 a1), Kacheln, Familien ohne Miniatur */
+/* 3 Aussehen: Gruppen nacheinander, der Knopf unter der letzten sichtbaren (AP13.19 §2), Kacheln, Familien ohne
+   Miniatur */
 .aus-gruppe .unterkopf { margin-top: 6px; }
 .aus-gruppe { margin-top: 14px; }
-.aussehen > .aus-gruppe:first-child, .aussehen-anpassen > .aus-gruppe:first-of-type { margin-top: 0; }
-.standard-weiter { display: flex; width: max-content; max-width: 100%; margin: 0 0 10px; }
-.aussehen-anpassen { margin-bottom: 4px; }
+.aussehen > .aus-gruppe:first-child { margin-top: 0; }
+.standard-weiter { display: flex; width: max-content; max-width: 100%; margin: 18px 0 4px; }
 .ungeprueft { margin-top: 10px; }
 .ungeprueft > summary { font-weight: 400; font-size: 0.93rem; }
 .ungeprueft > .kacheln-wahl { margin-top: 6px; }

@@ -89,29 +89,32 @@
   });
 
   function zeichneSchritte() {
-    var s = schritt(), z = zweig();
+    var s = schritt(), z = zweig(), d = !!S.designer;
     // Bildwünsche inzwischen weg oder Bilder „keine“: weiter mit den Fragen
     if (s === 5.5 && Z.pruefung && sichtbareSchritte().indexOf(5.5) < 0) s = 6;
-    document.body.dataset.schritt = String(s);
+    document.body.dataset.schritt = d ? "3" : String(s);
     document.body.dataset.zweig = z;
     document.body.dataset.bildschirm = Z.mappe ? "ansicht" : "start";
     var sichtbar = sichtbareSchritte();
     SCHRITTE.forEach(function (n) {
       var sec = sektion(n);
       var stand = sichtbar.indexOf(n) < 0 ? "zu" : n < s ? "erledigt" : n === s ? "aktiv" : "zu";
+      // AP13.19 §3: im Designer ist Schritt 3 offen (mit Vorschau), alle übrigen sind zugeklappt
+      if (d && n === 3) stand = "aktiv";
+      else if (d && stand === "aktiv") stand = "erledigt";
       // Schritt 4 bleibt offen, solange ein gestückelter Text noch nicht ganz kopiert ist
       var teileKopieren = n === 4 && s === 5 && texte.teile.length > 1 && Object.keys(texte.kopiert)
           .length < texte.teile.length;
-      var offen = stand === "aktiv" || (stand === "erledigt" && (!!S.auf[n] || teileKopieren));
+      var offen = stand === "aktiv" || (!d && stand === "erledigt" && (!!S.auf[n] || teileKopieren));
       sec.hidden = stand === "zu";
       sec.dataset.stand = stand;
       sec.classList.toggle("auf", offen);
       var b = sec.querySelector(".s-zeile");
       b.setAttribute("aria-expanded", String(offen));
-      b.disabled = stand !== "erledigt";
+      b.disabled = stand !== "erledigt" || d;
       sec.querySelector(".s-fazit").textContent = stand === "erledigt" && Z.mappe ? fazit(n) : "";
       sec.querySelector(".s-nr").textContent = String(sichtbar.indexOf(n) + 1);
-      zeichneHinweis(sec, n, stand === "aktiv");
+      zeichneHinweis(sec, n, stand === "aktiv" && !d);
     });
     $("hinweise-an").checked = S.hinweise.an;
     ["mach", "richtung", "steuer"].forEach(function (w) { $("zweig-" + w).setAttribute("aria-pressed", String(z === w));
@@ -120,10 +123,10 @@
     $("mach-teil").hidden = z !== "mach" && z !== "richtung";
     $("richtung-teil").hidden = z !== "richtung";
     if (z === "richtung" || z === "steuer") zeichneRichtung();
+    materialOrt();
     $("vorlagen").hidden = inhalt();
     $("weiter-2").hidden = s > 2 || !z;
-    $("weiter-3").hidden = s > 3;
-    $("standard-weiter").hidden = s > 3 || $("aussehen-anpassen").open;
+    zeichneGruppen(s);
     // Karten: in „Ich steuere“ unter Schritt 2, bis die erste Antwort da ist; danach in beiden Zweigen unter Schritt 5
     var ort = inhalt() ? $("karten-ort-5") : $("karten-ort-2");
     if ($("tafel-bausteine").parentNode !== ort) ort.appendChild($("tafel-bausteine"));
@@ -155,9 +158,10 @@
 
   function gehe(n, fokus) {
     if (!Z.mappe) return;
+    if (n > schritt() && n > 2 && materialFehlt()) { materialZeigen(true); return; }
     if (n > schritt()) erledigtBis(n);
     Z.mappe.schritt = n;
-    S.auf = {};
+    S.auf = {}; S.designer = null;
     zeichne();
     autosave();
     var sec = sektion(n);
@@ -453,7 +457,7 @@
         S.korrekturen = []; S.spracheGelb = []; S.letzteAntwort = null;
     S.korrektur = { text: "", offen: false, stand: "", art: "" };
     $("korrektur-eingabe").value = ""; $("eingabe-stand").hidden = true;
-    S.chatWahlOffen = false; S.auf = {};
+    S.chatWahlOffen = false; S.auf = {}; S.designer = null;
     $("chat-text-feld").value = ""; $("gegen-text-feld").value = ""; $("gegen-antwort").value = "";
     $("gegen-ergebnis").innerHTML = ""; $("gegen-stand").textContent = ""; $("kopiert").textContent = "";
     $("eingabe-stand").textContent = ""; $("infobox").hidden = true; $("importiert-stand").hidden = true;
@@ -523,6 +527,7 @@
     var b = ev.target.closest("[data-zweig]"); if (!b || !Z.mappe) return;
     var vorher = zweig();
     Z.mappe.zweig = b.dataset.zweig;
+    S.designer = null;
     if (vorher === "richtung" && b.dataset.zweig === "steuer") typenUebernehmen();
     if (b.dataset.zweig === "mach" || b.dataset.zweig === "richtung") {
       if (schritt() <= 2) { zeichne(); geaendert(); $("m-kontext").focus({ preventScroll: true }); }
@@ -577,19 +582,44 @@
     ["r-differenzierung", "a-differenzierung"].forEach(function (id) { textKacheln($(id), "differenzierung",
         o.differenzierung, a.differenzierung ? "an" : "aus", false); });
     Array.prototype.forEach.call($("r-art").querySelectorAll(".aus-kachel"), function (b) { b.disabled = inhalt(); });
-    // Material: bei „Einheit aus eigenem Material“ als drittes Feld unter dem Fach, sonst zuletzt
-    var teil = $("richtung-teil"), feld = $("r-material-feld");
-    if ((e.vorlage === EIGENES) !== (teil.firstElementChild === feld)) {
-      if (e.vorlage === EIGENES) teil.insertBefore(feld, teil.firstElementChild); else teil.appendChild(feld);
-    }
     if (document.activeElement !== $("r-material")) $("r-material").value = Z.mappe.material || "";
+  }
+  // AP13.19 §1: „Einheit aus eigenem Material“ braucht Material (mindestens ein Zeichen außer Leerraum; übernommene
+  // Dateiabschnitte stehen schon als Text im Feld). Das Feld steht dann in jedem Weg sichtbar: in „Ich gebe die
+  // Richtung“ unter „Art der Einheit“, in „Mach du“ unter „Worum geht es genau?“, in „Ich steuere“ unter den Vorlagen;
+  // sonst an seinem alten Ort. Die Pflicht lebt nur hier, nicht in prompt.py, und nur bis die erste Antwort da ist
+  // (danach braucht der Text für den Chat kein Material mehr).
+  function materialPflicht() { return !!Z.mappe && (Z.mappe.einheit || {}).vorlage === EIGENES && !inhalt(); }
+  function materialFehlt() { return materialPflicht() && !/\S/.test(Z.mappe.material || ""); }
+  function materialFeld() { return zweig() === "steuer" ? $("a-material") : $("r-material"); }
+  function materialOrt() {
+    var p = materialPflicht(), z = zweig(), r = $("r-material-feld"), a = $("a-material-feld");
+    // nur verschieben, wenn es nicht schon dort steht: ein Verschieben nimmt dem Feld den Fokus
+    var nach = function (feld, anker) { if (feld.previousElementSibling !== anker) anker.after(feld); };
+    var zuletzt = function (feld, ort) { if (feld.parentNode !== ort || feld.nextElementSibling) ort.appendChild(feld); };
+    if (p && z === "mach") nach(r, $("m-kontext").closest("label"));
+    else if (p && z === "richtung") nach(r, $("r-art").closest(".aus-gruppe"));
+    else zuletzt(r, $("richtung-teil"));
+    if (p) nach(a, $("vorlagen")); else zuletzt(a, document.querySelector(".mehr-felder"));
+    $("r-material-zeile").textContent = p ? "für diese Art nötig" : "freiwillig";
+    $("a-material-zeile").hidden = !p;
+    if (!p) { feldOk($("r-material")); feldOk($("a-material")); }
+    if (Z.mappe && document.activeElement !== $("r-material")) $("r-material").value = Z.mappe.material || "";
+  }
+  // Feld in den Blick, Fokus hinein; mit meldung: Schritt 2 offen und der rote Satz unter dem Feld
+  function materialZeigen(meldung) {
+    if (meldung && schritt() > 2 && !S.auf[2]) { S.auf[2] = true; zeichneSchritte(); }
+    var f = materialFeld();
+    if (meldung) feldMeldung(f, "Füg dein Material ein oder lies eine Datei ein.");
+    f.scrollIntoView({ block: "center" });
+    f.focus({ preventScroll: true });
   }
   function richtungKlick(ev) {
     var b = ev.target.closest(".aus-kachel"); if (!b || !Z.mappe || b.disabled) return;
     var feld = b.dataset.feld, wert = b.dataset.wert, a = {};
     if (feld === "art") {
       var v = vorlageNach(wert);
-      if (v && !inhalt()) { karteVorlage(v); zeichne(); geaendert(); }
+      if (v && !inhalt()) { karteVorlage(v); zeichne(); geaendert(); if (wert === EIGENES) materialZeigen(false); }
       return;
     }
     if (b.dataset.mehrfach) {
@@ -623,6 +653,7 @@
   ["richtung-teil", "a-schwerpunkt", "a-sprache", "a-differenzierung"].forEach(function (id) {
     $(id).addEventListener("click", richtungKlick); });
   $("r-material").addEventListener("input", function () {
+    feldOk($("r-material"));
     if (!Z.mappe) return;
     Z.mappe.material = $("r-material").value;
     if (document.activeElement !== $("a-material")) $("a-material").value = Z.mappe.material;
@@ -649,6 +680,7 @@
         if (!Z.mappe || inhalt()) return;
         karteVorlage(v);
         zeichne(); geaendert();
+        if (v.name === EIGENES) materialZeigen(false);
       };
       box.appendChild(b);
     });
@@ -904,13 +936,47 @@
       if (m && m.dataset.svg !== svg) { m.innerHTML = svg; m.dataset.svg = svg; }  // eigenes SVG, keine Eingabe
     });
   }
-  // AP13.12 a1: der erste Blick zeigt „Standard nehmen und weiter“ und die Bilder; alle übrigen Gruppen liegen unter
-  // „Aussehen anpassen“ (ersetzt die Gruppen nacheinander aus AP13.5g b1). Offen ist der Teil, wenn die Lehrkraft ihn
-  // geöffnet hat; dann steht unten nur „Weiter“
-  $("aussehen-anpassen").addEventListener("toggle", function () {
-    zeichneSchritte();
-    if ($("aussehen-anpassen").open) vorschauMassstab();
-  });
+  // AP13.19 §2: Gruppen nacheinander (wie AP13.5g b1, statt des Ausklappteils aus AP13.12 a1). Beim ersten Erreichen
+  // Design und Bilder; jede Wahl blendet die Gruppe nach ihr ein. Wie weit, merkt sich die Mappe (`aussehen_bis`,
+  // Stelle in FOLGE; fehlt = noch keine eigene Wahl). Weicht eine verborgene Gruppe vom Standard ab (geöffnete Einheit,
+  // „Mehr einstellen“), sind alle Gruppen sichtbar; „Rest als Standard“ ändert darum nie eine Wahl.
+  var FOLGE = ["familie", "farbe", "dichte", "kasten", "format", "website"];
+  function standardWert(g) {
+    var o = S.katalog.oberflaeche;
+    return { familie: (S.familien && S.familien.standard) || "sachlich", farbe: o.farbe[0].wert, dichte: "normal",
+      kasten: "familie", format: o.format[0].wert, website: o.website[0].wert }[g];
+  }
+  function abweichung(g) { var std = standardWert(g); return (S.angaben[g] || std) !== std; }
+  function aussehenBis() {
+    var bis = Z.mappe && typeof Z.mappe.aussehen_bis === "number" ? Z.mappe.aussehen_bis : 0;
+    if (S.designer || !S.katalog || FOLGE.slice(bis + 1).some(abweichung)) return FOLGE.length - 1;
+    var f = familieInfo(familieJetzt());
+    return bis === 1 && f && f.akzent_fest ? 2 : bis;     // Farbe gesperrt: Dichte gleich mit, sonst ginge es nicht weiter
+  }
+  function aussehenGewaehlt(feld) {
+    if (!Z.mappe || S.designer) return;
+    var i = feld === "bilder" || feld === "bildbeschriftung" ? 0 : FOLGE.indexOf(feld);
+    if (i < 0) return;
+    var bis = Math.max(aussehenBis(), i + 1), f = familieInfo(familieJetzt());
+    if (bis === 1 && f && f.akzent_fest) bis = 2;          // bleibt, auch wenn danach ein anderes Design gilt
+    Z.mappe.aussehen_bis = Math.min(FOLGE.length - 1, bis);
+  }
+  function gruppe(g) { return document.querySelector('#schritt-3 .aus-gruppe[data-gruppe="' + g + '"]'); }
+  function zeichneGruppen(s) {
+    var bis = aussehenBis(), alle = bis >= FOLGE.length - 1, d = !!S.designer;
+    FOLGE.forEach(function (g, i) { gruppe(g).hidden = i > bis; });
+    $("feinheiten").hidden = bis < 1;
+    // der Knopf steht unter der letzten sichtbaren Gruppe (Farbe bis Ränder liegen in #feinheiten)
+    var letzte = gruppe(FOLGE[bis]), k = $("standard-weiter");
+    if (letzte.parentNode === $("feinheiten")) letzte = $("feinheiten");
+    if (bis === 0) letzte = gruppe("bilder");
+    if (letzte.nextElementSibling !== k) letzte.after(k);
+    k.textContent = Z.mappe && typeof Z.mappe.aussehen_bis === "number" ? "Rest als Standard und weiter" :
+        "Standard nehmen und weiter";
+    k.hidden = s > 3 || alle || d;
+    $("weiter-3").hidden = s > 3 || !alle || d;
+    $("designer-fertig").hidden = !d;
+  }
   // Bilder (AP13.5g b5): eine Zahl im Steckbrief gehört zur Kachel „Benutzerdefiniert“ (wert zahl)
   function bilderKachel() { var w = String(bilderWert()); return /^\d+$/.test(w) && w !== "0" ? "zahl" : w; }
   function bilderZahl() { var n = parseInt($("bilder-zahl").value, 10); return n >= 1 && n <= 30 ? n : 10; }
@@ -1024,7 +1090,8 @@
     if (b.dataset.feld === "bilder" && wert === "zahl") wert = String(bilderZahl());
     a[b.dataset.feld] = wert;
     S.angaben[b.dataset.feld] = wert;
-    zeichneAussehen(); felderFuellen();
+    aussehenGewaehlt(b.dataset.feld);
+    zeichneAussehen(); felderFuellen(); zeichneSchritte();
     angabenSchreiben(a, true);
     if (b.dataset.feld === "format" && wert === "wochen" && !S.angaben.start) $("a-start").focus();
     if (b.dataset.feld === "bilder" && b.dataset.wert === "zahl") $("bilder-zahl").focus();
@@ -1052,11 +1119,45 @@
     var w = $("farbe-eigen").value.toUpperCase();
     EIGEN.dataset.gewaehlt = "1";
     S.angaben.farbe = w;
-    zeichneAussehen(); felderFuellen();
+    aussehenGewaehlt("farbe");
+    zeichneAussehen(); felderFuellen(); zeichneSchritte();
     angabenSchreiben({ farbe: w }, true);
   });
+  // „Standard nehmen und weiter“: die verborgenen Gruppen tragen den Standard (sonst wären sie sichtbar, aussehenBis)
   $("weiter-3").onclick = $("standard-weiter").onclick = function () {
     if (Z.mappe) { Z.mappe.aussehen = true; gehe(4); } };
+
+  // AP13.19 §3: Sprunglinks in „Mehr einstellen“. „Zum Designer“ zeigt Schritt 3 mit allen Gruppen und der Vorschau,
+  // ohne den Fortschritt zu ändern (S.designer = {y}; kein gehe); „Fertig“ führt an die Stelle zurück.
+  $("zum-designer").onclick = function () {
+    if (!Z.mappe) return;
+    S.designer = { y: window.scrollY };
+    zeichne();
+    $("schritt-3").scrollIntoView({ block: "start" });
+    $("s3-titel").focus({ preventScroll: true });
+    vorschauMassstab();
+  };
+  $("designer-fertig").onclick = function () {
+    if (!S.designer) return;
+    var y = S.designer.y;
+    S.designer = null;
+    if (schritt() > 2) S.auf[2] = true;
+    $("mehr").open = true;
+    zeichne();
+    window.scrollTo(0, y);
+    $("zum-designer").focus({ preventScroll: true });
+  };
+  $("zum-material").onclick = function () {
+    var f = $("a-material");
+    f.scrollIntoView({ block: "center" });
+    f.focus({ preventScroll: true });
+  };
+  $("zum-lehrplan").onclick = function () {
+    var d = $("lehrplan-ausklapp");
+    d.open = true;
+    $("lehrplan-teil").scrollIntoView({ block: "start" });
+    $("fach").focus({ preventScroll: true });
+  };
 
   // Schreiben nacheinander: schnelle Klicks auf mehrere Kacheln und das erste Anlegen dürfen sich den Steckbrief nicht
   // überschreiben; neuPruefen liest die Angaben erst, wenn die Kette leer ist
@@ -1160,6 +1261,7 @@
   $("m-kontext").addEventListener("input", function () { kontextSchreiben("kontext", $("m-kontext").value); });
   $("fach").addEventListener("input", function () { kontextSchreiben("fach", $("fach").value.trim()); });
   $("a-material").addEventListener("input", function () {
+    feldOk($("a-material"));
     if (!Z.mappe) return;
     Z.mappe.material = $("a-material").value;
     geaendert();
@@ -1197,7 +1299,7 @@
   };
   Object.assign(S, { adresseLesen: adresseLesen, angabenSchreiben: angabenSchreiben, ausklapp: ausklapp,
     kursangabenMerken: kursangabenMerken,
-    felderPruefen: felderPruefen,
+    felderPruefen: felderPruefen, feldOk: feldOk,
     akzent: akzent, gehe: gehe, jahrgangZahl: jahrgangZahl, nachZwei: nachZwei, neuStart: neuStart,
     schemaZeigen: schemaZeigen, steckbriefSicher: steckbriefSicher, vorlageNach: vorlageNach, vorschauLaden: vorschauLaden,
     vorlagenZeigen: vorlagenZeigen, weiterAnzeigen: weiterAnzeigen, zeichneAussehen: zeichneAussehen,
