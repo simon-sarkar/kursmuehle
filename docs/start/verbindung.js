@@ -66,7 +66,9 @@
     catch (e) { if (e.art === "code") speichern(null); throw e; }
   };
   V.gespraech = async function (einheit, neu) {
-    if (neu || !gespraeche[einheit]) gespraeche[einheit] = (await rufen("POST", "/gespraech", {})).gespraech;
+    // Gegenprüfen meldet sich als solches: im Testbetrieb zählt es nicht als Einheit
+    if (neu || !gespraeche[einheit]) gespraeche[einheit] = (await rufen("POST", "/gespraech",
+      einheit.indexOf("gegen:") === 0 ? { zweck: "gegen" } : {})).gespraech;
     return gespraeche[einheit];
   };
   // Auftrag senden und alle 2 s nach der Antwort fragen, höchstens 10 min; Teil 2 und Korrekturen im selben Gespräch

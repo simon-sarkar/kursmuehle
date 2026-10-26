@@ -2,7 +2,8 @@
 Als Lehrkraft kopierst du in der Mühle unter „Eigene KI“ den Satz und fügst ihn in dein KI-Programm ein; der Rest ist für das Programm.
 
 Kursmühle (https://kursmuehle.de) baut im Browser Kurse für die ByCS-Lernplattform; sie schickt dir Aufträge, du
-antwortest mit einer Kursdatei. Die Lehrkraft hat dich gebeten, dich zu verbinden. So geht es:
+antwortest mit einer Kursdatei. Das klappt nur, wenn du auf dem Rechner mit dem Browser der Lehrkraft läufst; in einer
+Cloud-Sitzung oder Sandbox erreicht die Mühle die Brücke nicht: Sag das der Lehrkraft in einem Satz, starte nichts. So geht es:
 
 1. Lade `https://kursmuehle.de/bruecke.py` in einen leeren Ordner (HTTPS genügt, eine Prüfsumme brauchst du nicht).
 2. Starte sie im Hintergrund: `python3 bruecke.py --agent` (Windows: `py bruecke.py --agent`; fehlt Python dort,
