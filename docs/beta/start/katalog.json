@@ -431,6 +431,17 @@
     "text": "Anspruchsvoll"
    }
   ],
+  "differenzierung": [
+   {
+    "wert": "aus",
+    "text": "Aus"
+   },
+   {
+    "wert": "an",
+    "text": "An",
+    "zeile": "Bis zu zwei Hilfen je Übung auf der Kursseite und eine Zusatzaufgabe für Schnelle"
+   }
+  ],
   "farbe": [
    {
     "wert": "",

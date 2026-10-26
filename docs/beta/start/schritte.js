@@ -372,6 +372,16 @@
     Z.mappe.bausteine = vorlageKarten(v, e.minuten || 45);
     Z.mappe.bausteine.forEach(function (k) { if (alt[k.id]) k.auftrag = alt[k.id]; });
     e.vorlage = v.name;
+    if (S.angaben.differenzierung) zusatzKarte();     // AP13.14: neue Karten, Schalter an: Karte „Zusatz“ wieder dazu
+  }
+  async function zusatzKarte() {
+    try {
+      await km.bereit();
+      var gesendet = Z.mappe, neu = await km.mappeFn("zusatzaufgabe", [gesendet, true]);
+      if (Z.mappe !== gesendet) return;
+      km.mappeUebernehmen(gesendet, neu);
+      zeichne(); geaendert();
+    } catch (e) { zeigeFehler(e); }
   }
 
   async function steckbriefAnlegen() {
@@ -424,7 +434,7 @@
   function neuStart() {
     clearTimeout(S.kennzahlTimer); clearTimeout(S.textTimer); clearTimeout(S.eingabeTimer);
     texte.teile = []; texte.ids = []; texte.teil = 0; texte.art = "einheit"; texte.kopiert = {}; S.fragenListe = [];
-        S.korrekturen = []; S.letzteAntwort = null;
+        S.korrekturen = []; S.spracheGelb = []; S.letzteAntwort = null;
     S.korrektur = { text: "", offen: false, stand: "", art: "" };
     $("korrektur-eingabe").value = ""; $("eingabe-stand").hidden = true;
     S.chatWahlOffen = false; S.auf = {};
@@ -515,6 +525,7 @@
         return text("schwerpunkt", w); }).join(", "));
     if ((a.uebungstypen || []).length) t.push("Übungen: " + a.uebungstypen.join(", "));
     if (a.sprache && a.sprache !== "normal") t.push("Sprache: " + text("sprache", a.sprache));
+    if (a.differenzierung) t.push("Hilfen und Zusatzaufgaben");
     return t;
   }
   function textKacheln(box, feld, werte, gewaehlt, mehrfach) {
@@ -544,6 +555,8 @@
     textKacheln($("r-uebungen"), "uebungstypen", typen, a.uebungstypen || [], true);
     ["r-sprache", "a-sprache"].forEach(function (id) { textKacheln($(id), "sprache", o.sprache, a.sprache || "normal", false);
         });
+    ["r-differenzierung", "a-differenzierung"].forEach(function (id) { textKacheln($(id), "differenzierung",
+        o.differenzierung, a.differenzierung ? "an" : "aus", false); });
     Array.prototype.forEach.call($("r-art").querySelectorAll(".aus-kachel"), function (b) { b.disabled = inhalt(); });
     // Material: bei „Einheit aus eigenem Material“ als drittes Feld unter dem Fach, sonst zuletzt
     var teil = $("richtung-teil"), feld = $("r-material-feld");
@@ -567,12 +580,29 @@
       var reihe = Array.prototype.map.call(b.parentNode.querySelectorAll(".aus-kachel"), function (k) { return k.dataset.wert; });
       wert = reihe.filter(function (w) { return liste.indexOf(w) >= 0; });
     }
+    if (feld === "differenzierung") return differenzierung(wert === "an");
     S.angaben[feld] = wert; a[feld] = wert;
     zeichneRichtung(); zeichneSchritte();
     angabenSchreiben(a);
     S.textSpaeter();
   }
-  ["richtung-teil", "a-schwerpunkt", "a-sprache"].forEach(function (id) { $(id).addEventListener("click", richtungKlick); });
+  // AP13.14: Schalter „Hilfen und Zusatzaufgaben“ – Steckbrief und die Karte „Zusatz“ (gen/mappe.py zusatzaufgabe; aus:
+  // eine leere Karte fällt weg, eine mit Inhalt bleibt)
+  async function differenzierung(an) {
+    if (!!S.angaben.differenzierung === an) return;
+    S.angaben.differenzierung = an;
+    zeichneRichtung(); zeichneSchritte();
+    try {
+      await km.bereit();
+      var gesendet = Z.mappe, neu = await km.mappeFn("zusatzaufgabe", [gesendet, an]);
+      if (Z.mappe === gesendet) km.mappeUebernehmen(gesendet, neu);
+      await angabenSchreiben({ differenzierung: an });
+      zeichne();
+    } catch (e) { zeigeFehler(e); }
+    S.textSpaeter();
+  }
+  ["richtung-teil", "a-schwerpunkt", "a-sprache", "a-differenzierung"].forEach(function (id) {
+    $(id).addEventListener("click", richtungKlick); });
   $("r-material").addEventListener("input", function () {
     if (!Z.mappe) return;
     Z.mappe.material = $("r-material").value;

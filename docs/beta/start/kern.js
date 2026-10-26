@@ -292,6 +292,7 @@ window.km = km;
   var texte = { teile: [], ids: [], art: "einheit", teil: 0, laeuft: 0, kopiert: {} };
   S.fragenListe = [];
   S.korrekturen = [];
+  S.spracheGelb = [];             // AP13.14: ids mit „Sprache anpassen lassen“ (flüchtig, nicht in der Mappe)
   S.letzteAntwort = null;
   S.infoboxAus = false;
   S.schreibKette = Promise.resolve();
@@ -560,7 +561,10 @@ window.km = km;
   async function auswertung() {
     var pr = Z.pruefung || { bausteine: [], diagnosen: [] };
     S.fragenListe = await km.prompt("fragen", [pr]);
-    S.korrekturen = await km.prompt("korrektur", [pr]);
+    // AP13.14: gelbe Sprach-Hinweise nur für Karten mit „Sprache anpassen lassen“ (ids nur noch, wenn die Karte gelb ist)
+    S.spracheGelb = S.spracheGelb.filter(function (id) { return pr.diagnosen.some(function (d) {
+        return d.baustein === id && d.regel === "sprache.lang"; }); });
+    S.korrekturen = await km.prompt("korrektur", [pr, S.spracheGelb]);
     var fc = await km.prompt("fachcheck", [pr, Z.steckbrief_text]);
     $("gegen-text-feld").value = fc.text;
     Z.fragen = S.fragenListe; Z.korrekturen = S.korrekturen;

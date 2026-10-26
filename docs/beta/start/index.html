@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand b766561 vom 26.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 8824604 vom 26.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -143,6 +143,8 @@
           <div id="r-uebungen" class="kacheln-wahl text-wahl" role="group" aria-labelledby="r-uebungen-t"></div></div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="r-sprache-t">Sprache</h3>
           <div id="r-sprache" class="kacheln-wahl text-wahl" role="radiogroup" aria-labelledby="r-sprache-t"></div></div>
+        <div class="aus-gruppe"><h3 class="unterkopf" id="r-differenzierung-t">Hilfen und Zusatzaufgaben</h3>
+          <div id="r-differenzierung" class="kacheln-wahl text-wahl" role="radiogroup" aria-labelledby="r-differenzierung-t"></div></div>
       </div>
       <div id="steuer-teil" class="steuer-teil" hidden>
         <h3 class="unterkopf">Aufbau der Einheit</h3>
@@ -173,6 +175,8 @@
               <div id="a-schwerpunkt" class="kacheln-wahl text-wahl" role="group" aria-labelledby="a-schwerpunkt-t"></div></div>
             <div class="feld feld-breit"><span id="a-sprache-t">Sprache</span>
               <div id="a-sprache" class="kacheln-wahl text-wahl" role="radiogroup" aria-labelledby="a-sprache-t"></div></div>
+            <div class="feld feld-breit"><span id="a-differenzierung-t">Hilfen und Zusatzaufgaben</span>
+              <div id="a-differenzierung" class="kacheln-wahl text-wahl" role="radiogroup" aria-labelledby="a-differenzierung-t"></div></div>
             <label class="feld">Abschluss <select id="a-abschluss"></select></label>
             <label class="feld">Umfang <select id="a-portionierung"></select></label>
             <div class="feld-breit material-ort" data-material="a">
@@ -533,6 +537,7 @@
       <div><dt>Multiple Choice</dt><dd id="kz-mc">–</dd></div>
       <div><dt>Übungstypen</dt><dd id="kz-uebung">–</dd></div>
       <div><dt>Rückmeldung</dt><dd id="kz-rueckmeldung">–</dd></div>
+      <div id="kz-saetze-z" hidden><dt>Sätze</dt><dd id="kz-saetze">–</dd></div>
     </dl>
     </details>
     <ul id="hinweise" class="hinweise"></ul>

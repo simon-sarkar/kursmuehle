@@ -138,7 +138,7 @@ var PY_BRUECKE = [
   "    return {'pruefung': pr, 'mappe': m, 'kennzahlen': _M.kennzahlen(m, pr, steckbrief=e.get('steckbrief'))}",
   "",
   "_MAPPE = {'verschiebe', 'entferne', 'umbenennen', 'kennzahlen', 'angaben_lesen', 'angaben_schreiben', 'geplant',",
-  "          'planung', 'auffuellen', 'loesung_zulassen',",
+  "          'planung', 'auffuellen', 'loesung_zulassen', 'zusatzaufgabe',",
   "          'antwort', 'modus', 'einsetzen', 'anhaengen', 'dateiname', 'bild_verkleinert'}",
   "_PROMPT = {'einheit', 'baustein', 'korrektur', 'diagnose', 'fragen', 'fachcheck', 'vergleich', 'lehrplan'}",
   "",

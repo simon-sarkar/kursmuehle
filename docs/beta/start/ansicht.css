@@ -480,6 +480,8 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .klein:disabled { opacity: 0.35; cursor: default; }
 .k-hoch, .k-runter { font-size: 1.05rem; }
 .k-neu[aria-pressed=true] { color: var(--text); font-weight: 650; text-decoration: underline; }
+.k-sprache { min-height: 32px; padding: 4px 6px; color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+.k-sprache[aria-pressed=true] { font-weight: 650; }
 .k-loeschen { margin-left: auto; }
 .k-korrektur { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 6px; }
 .k-zur-korrektur { color: var(--fehler); font-size: 0.9rem; text-underline-offset: 3px; }
