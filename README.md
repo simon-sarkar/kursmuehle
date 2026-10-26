@@ -36,17 +36,43 @@ Der Auftrag ist eingerichtet für ByLKI, fobizz, AIS-Chat, MUCGPT, ChatGPT, Clau
 mit ByLKI, fobizz und einem Claude-Modell, nicht jeder kam ohne Korrekturrunde durch; wie die anderen Chats antworten,
 soll die Beta zeigen.
 
-## Woran gearbeitet wird
+## Bisher und als Nächstes
 
-- [x] Generator für Kurssicherungen: sechs Kursformate, acht Modultypen, H5P-Inhalte, Übungen als Website in einem
-      Abschnitt; Import auf der Plattform geprüft für Themen und Kacheln
-- [x] Die Seite im Browser: Schrittfolge, Antwort einfügen und prüfen, ein Satz für den Chat, wenn etwas fehlt, Bilder
-      hochladen oder per Bildauftrag erzeugen, hell und dunkel
-- [x] Mehr Einstellungen für das Aussehen des Kurses: elf Designs, Farbe, Dichte, Ränder, Übungsblöcke, mit Vorschau der Einheit und der Kursseite
-- [x] LehrplanPLUS: Lernbereich wählen, die Kompetenzerwartungen gehen in den Auftrag; zuerst Grund- und Mittelschule
-- [ ] 2.0 ohne Beta-Marke, nach Rückmeldungen von Lehrkräften
-- [x] Die eigene KI direkt anbinden, ohne Kopieren und Einfügen; der Schlüssel bleibt auf dem eigenen Rechner
+Kursmühle begann am 23. Oktober 2026 als Skill für KI-Assistenten mit Code-Ausführung (Alpha, Versionen 0.1 bis 1.0.3).
+Seit 2.0 läuft alles im Browser. Die Einzelheiten jeder Version stehen im [CHANGELOG](CHANGELOG.md).
+
+**Alpha: Skill für Assistenten mit Code-Ausführung (23.10.2026)**
+
+- [x] 0.1 Erste Fassung als Agentenskill: Generator für Kurssicherungen mit Abschnitten, Textfeldern, Seiten, Links,
+      Videos, Feedback, Badges, Abschlussverfolgung und H5P-Inhalten; Nachlieferung zu einem bestehenden Kurs
+- [x] 0.2 Kursdatei statt Programmcode: der Assistent schreibt Text, der Generator baut daraus die Sicherung
+- [x] 0.3 Prüfskript für jede Sicherung vor dem Import
+- [x] 0.4 Menüführung mit fünf Einstiegen, Kursbanner
+- [x] 0.5 Drei Designvorlagen und Textbausteine für Lesetexte
+- [x] 0.6 Test, Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung und Glossar
+- [x] 0.7 Sechs Kursformate, Kacheln mit Bild
+- [x] 0.8 Übungen als Website in einem Abschnitt
+- [x] 0.9 Didaktische Standardannahmen, Prüfdurchlauf gegen typische KI-Muster, Übungen als Block im Textfeld
+- [x] 1.0 Fremdtest mit einem frischen Assistenten, Release-Zip, Projektseite, Anleitung zum Wiederherstellen
+- [x] 1.0.3 Antworten von Chats ohne Code-Ausführung werden gelesen
+
+**Beta: im Browser unter kursmuehle.de (seit 24.10.2026)**
+
+- [x] 2.0.0-a1 Der Generator läuft in der Seite (Python über Pyodide), kein Server
+- [x] 2.0.0-a2 bis a4 Bausteine als Karten, Text für den Chat, eigene Bilder hochladen, Minuten je Baustein gerechnet
+- [x] 2.0.0-b1 Schrittfolge statt Formular, Startseite kursmuehle.de, erste öffentliche Beta
+- [x] 2.0.0-b2 bis b4 Korrekturschleife mit Sätzen für den Chat, Bilder in Stufen, Zählregeln, hell und dunkel
+- [x] 2.0.0-b5 Nachsichtiges Lesen der Antwort, Auswege, wenn der Chat dieselbe Antwort wiederholt
+- [x] 2.0.0-b6 Bilder in jedem Baustein, kürzerer Text für den Chat
+- [x] 2.0.0-b7 Elf Designs mit Vorschau, dritter Weg „Ich gebe die Richtung“, eigene KI direkt verbinden
       ([so geht es](docs/verbinden.md))
+- [x] 2.0.0-b8 LehrplanPLUS für Grund- und Mittelschule
+- [x] 2.0.0-b9 Vorschau läuft beim Scrollen mit, Motive und Titelschriften je Design, alle Kursformate in Schritt 3
+- [x] 2.0.0-b10 Überarbeitung nach dem ersten Durchlauf von außen: Schritt 3 neu geordnet, welliger Rand, Lösungen
+      gegenprüfen mit drei Wegen je Abweichung
+- [ ] Erste Testerinnen und Tester, Rückmeldungen einarbeiten
+- [ ] Prüfwoche: Sicherheit, Import aller Formate, Barrierefreiheit
+- [ ] 2.0 ohne Beta-Marke
 - [ ] Arbeitsblätter aus derselben Einheit, auf Papier und digital
 
 ## Datenschutz
