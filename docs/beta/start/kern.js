@@ -379,7 +379,7 @@ window.km = km;
     return !!(st && st.ids && st.ids.length > 1 && (st.eingefuegt || []).length < st.ids.length);
   }
   function bilderStandard() { var w = S.katalog && S.katalog.oberflaeche.bilder.filter(function (x) { return x.standard;
-      })[0]; return w ? w.wert : "2-3"; }
+      })[0]; return w ? w.wert : "0"; }
   function bilderWert() { return S.angaben.bilder || bilderStandard(); }
   function sichtbareSchritte() { return SCHRITTE.filter(function (n) { return n !== 5.5 || (bildwuensche().length > 0 &&
       bilderWert() !== "0"); }); }
