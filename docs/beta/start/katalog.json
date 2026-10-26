@@ -384,11 +384,11 @@
    },
    {
     "wert": "Realschule",
-    "text": "Realschule (nur als Angabe)"
+    "text": "Realschule"
    },
    {
     "wert": "Gymnasium",
-    "text": "Gymnasium (nur als Angabe)"
+    "text": "Gymnasium"
    },
    {
     "wert": "Wirtschaftsschule",
@@ -396,7 +396,7 @@
    },
    {
     "wert": "Förderschule",
-    "text": "Förderschule (nur als Angabe)"
+    "text": "Förderschule"
    },
    {
     "wert": "Berufliche Schule",

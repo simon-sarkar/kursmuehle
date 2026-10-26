@@ -1,7 +1,8 @@
-/* Kursmühle – LehrplanPLUS (AP13.6): Haken „Lehrplanbezug“, Picker Schulart → Fach → Zug/Variante → Lernbereiche am
+/* Kursmühle – LehrplanPLUS (AP13.6): Haken „Lehrplanbezug“, Picker Schulart → Fach → Fassung → Lernbereiche am
  * Fach-Feld, Vorschlag aus dem Thema. AP13.12c: ein Ort in Schritt 2 unter den drei Kacheln, in jedem Weg derselbe,
- * zugeklappt unter „Lehrplanbezug (optional)“. Die Daten liegen unter lehrplan/ (web_bundle.py); index.json lädt erst
- * mit dem Haken, wenn der Picker aufgeht oder der Vorschlag sucht, eine Fachdatei erst bei der Fachwahl. Die Suchen
+ * zugeklappt unter „Lehrplanbezug (optional)“. Die Daten liegen unter lehrplan/ (web_bundle.py); der Kopf index.json
+ * lädt erst mit dem Haken, wenn der Picker aufgeht, das Fach-Feld sucht oder der Vorschlag sucht; der Vorschlag lädt
+ * dazu einen Suchteil (Schulart und Stufe, AP13.18), eine Fachdatei lädt erst bei der Fachwahl. Die Suchen
  * gibt es auch in Python (scripts/lehrplan.py, test_lehrplan.py vergleicht beide). Texte gehen wörtlich in kurs.lehrplan, nie in den Kurs.
  * AP13.5f: der Haken ist standardmäßig aus und folgt der letzten Wahl im Browser (localStorage kursmuehle-lehrplan);
  * an und ohne Lernbereich steht der Picker offen, darunter eine gelbe Zeile; Kürzel und Wortanfänge im Fach-Feld. */
@@ -10,7 +11,8 @@
 (function () {
   // ---------------------------------------------------------------- Suche (Zwilling von scripts/lehrplan.py)
   var MIN_WORT = 5, ENDUNGEN = ["ern", "en", "er", "es", "e", "n", "s"];
-  var SCHULARTEN = { grundschule: "Grundschule", mittelschule: "Mittelschule" };
+  var SCHULARTEN = { grundschule: "Grundschule", mittelschule: "Mittelschule", realschule: "Realschule",
+    gymnasium: "Gymnasium", foerderschule: "Förderschule" };
   var WORT = /[A-Za-zÄÖÜäöüß]+/g, TEIL = /[A-ZÄÖÜ]?[a-zäöüß]+|[A-ZÄÖÜ]+(?![a-zäöüß])/g;
   function klein(w) { return w.toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue")
       .replace(/ß/g, "ss"); }
@@ -32,7 +34,7 @@
     var m = String(text || "").match(/\d+/);
     if (!m) return null;
     var n = parseInt(m[0], 10);
-    return n === 1 || n === 2 ? "1/2" : n === 3 || n === 4 ? "3/4" : n >= 5 && n <= 10 ? String(n) : null;
+    return n === 1 || n === 2 ? "1/2" : n === 3 || n === 4 ? "3/4" : n >= 5 && n <= 13 ? String(n) : null;
   }
   function schulartAnnahme(schulart, jahrgang) {
     var s = klein(String(schulart || "")).trim();
@@ -40,20 +42,25 @@
     if (s) return [null, false];
     var jg = stufe(jahrgang);
     if (!jg) return [null, false];
-    return [jg === "1/2" || jg === "3/4" ? "grundschule" : "mittelschule", true];
+    return [jg === "1/2" || jg === "3/4" ? "grundschule" : parseInt(jg, 10) >= 11 ? "gymnasium" : "mittelschule", true];
+  }
+  // Suchteil unter lehrplan/ für Schulart (gewählt oder angenommen) und Stufe aus Schritt 1, sonst null
+  function teilPfad(schulart, jahrgang) {
+    var s = schulartAnnahme(schulart, jahrgang)[0], jg = stufe(jahrgang);
+    return s && jg ? s + "/suche-" + jg.replace("/", "-") + ".json" : null;
   }
   var schatzCache = null;
-  function wortschatz(index) {
-    if (schatzCache && schatzCache.index === index) return schatzCache.w;
+  function wortschatz(teil) {
+    if (schatzCache && schatzCache.teil === teil) return schatzCache.w;
     var w = {};
-    Object.keys(index.schularten).forEach(function (s) { index.schularten[s].faecher.forEach(function (f) {
+    teil.faecher.forEach(function (f) {
       f.lernbereiche.forEach(function (lb) {
         woerter(lb.titel).forEach(function (x) { w[x] = 1; });
         lb.teilbereiche.forEach(function (t) { woerter(t).forEach(function (x) { w[x] = 1; }); });
         lb.stichwoerter.forEach(function (x) { w[x] = 1; });
       });
-    }); });
-    schatzCache = { index: index, w: w };
+    });
+    schatzCache = { teil: teil, w: w };
     return w;
   }
   function themenwoerter(thema, schatz) {
@@ -74,22 +81,21 @@
     });
     return out;
   }
-  function suche(index, thema, jahrgang, schulart) {
+  function suche(teil, thema, jahrgang, schulart) {
     var a = schulartAnnahme(schulart, jahrgang), s = a[0], jg = stufe(jahrgang);
     var erg = { schulart: s, angenommen: a[1], treffer: [] };
-    if (!s || !jg) return erg;
+    if (!s || !jg || !teil || teil.schulart !== s || teil.jahrgangsstufe !== jg) return erg;
     var tw = [];
-    themenwoerter(thema, wortschatz(index)).forEach(function (w) { var st = stamm(w); if (tw.indexOf(st) < 0) tw.push(st); });
+    themenwoerter(thema, wortschatz(teil)).forEach(function (w) { var st = stamm(w); if (tw.indexOf(st) < 0) tw.push(st); });
     if (!tw.length) return erg;
     var menge = function (liste) { var o = {}; liste.forEach(function (w) { o[stamm(w)] = 1; }); return o; };
     var treffer = [];
-    index.schularten[s].faecher.forEach(function (f) {
-      if (f.jahrgangsstufen.indexOf(jg) < 0) return;
+    teil.faecher.forEach(function (f) {
       f.lernbereiche.forEach(function (lb) {
         var titel = menge(woerter(lb.titel)), teil = menge([].concat.apply([], lb.teilbereiche.map(woerter))),
             stich = menge(lb.stichwoerter), p = 0;
         tw.forEach(function (w) { p += 3 * (titel[w] ? 1 : 0) + 2 * (teil[w] ? 1 : 0) + (stich[w] ? 1 : 0); });
-        if (p > 0) treffer.push({ schulart: s, fach: f.fach, zug: f.zug, variante: f.variante, datei: f.datei,
+        if (p > 0) treffer.push({ schulart: s, fach: f.fach, zug: f.zug, variante: f.variante, zusatz: f.zusatz, datei: f.datei,
           pfad: lb.pfad, kuerzel: lb.kuerzel, titel: lb.titel, jahrgangsstufe: jg, punkte: p });
       });
     });
@@ -98,44 +104,50 @@
     return erg;
   }
   // Fächer zur Eingabe im Fach-Feld: Kürzel aus index.aliase am Anfang, Fachname nur an Wortanfängen; Kürzel zuerst
-  function fachSuche(index, text, schulart) {
+  function fachSuche(kopf, text, schulart) {
     var q = klein(String(text || "").trim());
     if (!q) return [];
     var s = klein(String(schulart || "").trim());
-    var quellen = index.schularten[s] ? [index.schularten[s]] : Object.keys(index.schularten).map(function (k) {
-      return index.schularten[k]; });
+    var quellen = kopf.schularten[s] ? [kopf.schularten[s]] : Object.keys(kopf.schularten).map(function (k) {
+      return kopf.schularten[k]; });
     var namen = [];
     quellen.forEach(function (sa) { sa.faecher.forEach(function (f) { if (namen.indexOf(f.fach) < 0) namen.push(f.fach); }); });
     namen.sort(function (x, y) { x = klein(x); y = klein(y); return x < y ? -1 : x > y ? 1 : 0; });
-    var aliase = index.aliase || {};
+    var aliase = kopf.aliase || {};
     var perAlias = namen.filter(function (n) { return (aliase[n] || []).some(function (a) {
       return klein(a).indexOf(q) === 0; }); });
     var perName = namen.filter(function (n) { return perAlias.indexOf(n) < 0 && (klein(n).match(/[a-z0-9]+/g) || [])
       .some(function (w) { return w.indexOf(q) === 0; }); });
     return perAlias.concat(perName);
   }
-  km.lehrplan = { fachSuche: fachSuche, klein: klein, stamm: stamm, stufe: stufe, suche: suche,
-    themenwoerter: themenwoerter };
+  km.lehrplan = { fachSuche: fachSuche, klein: klein, stamm: stamm, stufe: stufe, suche: suche, teilPfad: teilPfad,
+    themenwoerter: themenwoerter, SCHULARTEN: SCHULARTEN };
 
   // ---------------------------------------------------------------- Oberfläche
   if (!document.getElementById("schritt-5") || !km.seite) return;
   var S = km.seite;
   var $ = S.$, Z = S.Z, el = S.el;
-  var ZUG = { R: "Regelklasse", M: "Mittlere-Reife-Klasse" };
-  var VARIANTE = { einstuendig: "einstündig", zweistuendig: "zweistündig", basis_sport: "Basissport",
-    diff_sport: "Differenzierter Sport" };
+  // Beschriftung der Fassungszeile je Schulart (AP13.18); die Kacheln tragen eintrag.zusatz
+  var FASSUNG = { mittelschule: "Zug", foerderschule: "Förderschwerpunkt" };
   var ZU_VIELE = "Das sind zu viele Ziele für einen Auftrag; hake weniger an.";
   var FEHLT = "Noch kein Lernbereich gewählt – der Text für den Chat enthält dann keine Kompetenzerwartungen";
   var NICHT_UEBERNOMMEN = "Noch nicht übernommen – klicke auf „Übernehmen“";
   var MERKEN = km.speicher("kursmuehle-lehrplan");   // letzte Wahl des Hakens: „ja“ oder „nein“ (fehlt = aus)
   function gemerkt() { try { return localStorage.getItem(MERKEN) === "ja"; } catch (e) { return false; } }
   function merken(an) { try { localStorage.setItem(MERKEN, an ? "ja" : "nein"); } catch (e) { /* nur diese Seite */ } }
-  var indexVersprechen = null, dateien = {};
+  var indexVersprechen = null, dateien = {}, teile = {};
   function ladeIndex() {
     if (!indexVersprechen) indexVersprechen = fetch("lehrplan/index.json").then(function (r) {
       if (!r.ok) throw new Error("lehrplan/index.json: " + r.status); return r.json(); })
       .catch(function (e) { indexVersprechen = null; throw e; });
     return indexVersprechen;
+  }
+  // Suchteil für den Vorschlag (Promise je Pfad, bei Fehler verworfen wie die Fachdateien)
+  function ladeTeil(pfad) {
+    if (!teile[pfad]) teile[pfad] = fetch("lehrplan/" + pfad).then(function (r) {
+      if (!r.ok) throw new Error("lehrplan/" + pfad + ": " + r.status); return r.json(); })
+      .catch(function (e) { delete teile[pfad]; throw e; });
+    return teile[pfad];
   }
   function ladeDatei(datei) {
     if (!dateien[datei]) dateien[datei] = fetch("lehrplan/" + datei).then(function (r) {
@@ -157,9 +169,8 @@
     return j && !/\d/.test(j) ? j : ""; }
   function zeichenName(eintrag, mitStufe) {
     var t = [];
-    if (mitStufe) t.push("Jahrgangsstufe " + eintrag.jahrgangsstufen.join(", "));
-    if (eintrag.zug) t.push(ZUG[eintrag.zug]);
-    if (eintrag.variante) t.push(VARIANTE[eintrag.variante] || eintrag.variante);
+    if (mitStufe) t.push("Jahrgangsstufe " + (eintrag.spanne || eintrag.jahrgangsstufen.join(", ")));
+    if (eintrag.zusatz) t.push(eintrag.zusatz);
     return t.join(" · ") || eintrag.fach;
   }
 
@@ -170,7 +181,7 @@
   var teil = $("lehrplan-teil"), box = $("lehrplan"), aus = $("lehrplan-ausklapp");
   box.appendChild(el("div", { cls: "lp-kopf" }, [
     el("label", { cls: "schalter lp-haken" }, [el("input", { id: "lehrplanbezug", type: "checkbox",
-      "data-lp": "bezug" }), " Lehrplanbezug Grund- und Mittelschulen Bayern"]),
+      "data-lp": "bezug" }), " Lehrplanbezug (LehrplanPLUS Bayern)"]),
     el("button", { type: "button", id: "lehrplan-knopf", cls: "textlink lp-knopf", "data-lp": "oeffnen",
       text: "Aus dem Lehrplan" })]));
   box.appendChild(el("p", { id: "lehrplan-zg", cls: "feld-zeile lp-zg", hidden: "hidden",
@@ -235,7 +246,8 @@
         (lbs.length === 2 ? " weiterer" : " weitere") : "");
   }
 
-  // Lehrplan aus der Fachdatei und der Wahl: Lernbereich ganz oder gewählte Teilbereiche, Ziele wörtlich, Rest Rahmen
+  // Lehrplan aus der Fachdatei und der Wahl: Lernbereich ganz oder gewählte Teilbereiche, Ziele wörtlich, Rest Rahmen;
+  // Jahrgangsstufe aus Schritt 1, sonst die Spanne des Lehrplans („5-9“), sonst seine erste Stufe
   function lehrplanBauen(index, eintrag, daten, wahl, jg) {
     var lbs = [];
     daten.lernbereiche.forEach(function (lb, i) {
@@ -251,8 +263,8 @@
       }) });
     });
     return { quelle: daten.quelle || "", stand: index.stand, schulart: P ? P.schulart : "", fach: eintrag.fach,
-      zug: eintrag.zug, variante: eintrag.variante, jahrgangsstufe: jg || eintrag.jahrgangsstufen[0],
-      lernbereiche: lbs };
+      zug: eintrag.zug, variante: eintrag.variante, zusatz: eintrag.zusatz || "",
+      jahrgangsstufe: jg || eintrag.spanne || eintrag.jahrgangsstufen[0], lernbereiche: lbs };
   }
 
   function eintraege(index, schulart, fach, jg) {
@@ -298,6 +310,9 @@
           text: SCHULARTEN[s] })]));
     });
     feld.appendChild(el("div", { cls: "lp-reihe" }, [el("span", { cls: "lp-nr", text: "Schulart" }), reihe]));
+    // AP13.18: Lehrpläne nur für die Förderschwerpunkte Lernen und geistige Entwicklung
+    if (P.schulart === "foerderschule") feld.appendChild(el("p", { cls: "feld-zeile lp-fsp", text: "Andere " +
+        "Förderschwerpunkte: Lehrplan der Grund- oder Mittelschule wählen." }));
     if (P.schulart) {
       // 2 Fach: je Fach ein Eintrag, nach der Jahrgangsstufe aus Schritt 1 gefiltert
       var jgDa = jgImPicker(), namen = namenImPicker();
@@ -310,17 +325,17 @@
           "Liste." }));
       feld.appendChild(r2);
       if (P.fach) {
-        // 3 Zug und Variante nur bei mehr als einem Eintrag
-        var liste = eintraege(P.index, P.schulart, P.fach, jgDa);
+        // 3 Fassung (Zug, Förderschwerpunkt) nur bei mehr als einem Eintrag
+        var liste = eintraege(P.index, P.schulart, P.fach, jgDa), wort = FASSUNG[P.schulart] || "Fassung";
         if (liste.length === 1) P.datei = liste[0].datei;
         else if (liste.length > 1) {
-          var r3 = el("div", { cls: "kacheln-wahl text-wahl lp-zug", role: "radiogroup", "aria-label": "Zug oder Variante" });
+          var r3 = el("div", { cls: "kacheln-wahl text-wahl lp-zug", role: "radiogroup", "aria-label": wort });
           liste.forEach(function (f) {
             r3.appendChild(el("button", { type: "button", cls: "aus-kachel", role: "radio", "data-lp": "datei",
               "data-wert": f.datei, "aria-checked": String(P.datei === f.datei) }, [el("span", { cls: "aus-name",
                 text: zeichenName(f, !jgDa) })]));
           });
-          feld.appendChild(el("div", { cls: "lp-reihe" }, [el("span", { cls: "lp-nr", text: "Zug" }), r3]));
+          feld.appendChild(el("div", { cls: "lp-reihe" }, [el("span", { cls: "lp-nr", text: wort }), r3]));
         }
         if (P.datei && P.daten) feld.appendChild(lernbereiche());
         else if (P.datei) feld.appendChild(el("p", { cls: "leise", text: "Lernbereiche werden geladen …" }));
@@ -508,10 +523,17 @@
     vorschlag.schluessel = schluessel; vorschlag.erg = null;
     zeichneVorschlag();
     if (!schluessel) return;
-    ladeIndex().then(function (index) {
+    var kopf = null, pfad = teilPfad(S.angaben.schulart || "", jahrgangText());
+    ladeIndex().then(function (k) {
+      kopf = k;
+      var a = schulartAnnahme(S.angaben.schulart || "", jahrgangText());
+      // AP13.18: der Suchteil nur, wenn der Kopf die Stufe für diese Schulart kennt (sonst kein Vorschlag)
+      return pfad && k.schularten[a[0]] && k.schularten[a[0]].jahrgangsstufen.indexOf(stufe(jahrgangText())) >= 0 ?
+        ladeTeil(pfad) : null;
+    }).then(function (teil) {
       if (vorschlag.schluessel !== schluessel) return;
-      vorschlag.index = index;
-      vorschlag.erg = suche(index, e.thema, jahrgangText(), S.angaben.schulart || "");
+      vorschlag.index = kopf;
+      vorschlag.erg = suche(teil, e.thema, jahrgangText(), S.angaben.schulart || "");
       zeichneVorschlag();
       // AP13.5f: mit Haken und ohne Wahl ist der beste Treffer vorbelegt (einmal je Thema; nach „×“ bleiben die Knöpfe)
       var einmal = e.thema + "|" + jahrgangText();        // ohne Schulart: die setzt der Vorschlag selbst
@@ -533,8 +555,7 @@
         " angenommen)" : "") + ":" }));
     r.treffer.forEach(function (t, i) {
       p.appendChild(el("button", { type: "button", cls: "knopf lp-treffer", "data-lp": "vorschlag", "data-nr": i,
-        text: t.fach + " " + t.jahrgangsstufe + (t.zug ? " " + ZUG[t.zug] : "") + (t.variante ? " " +
-            (VARIANTE[t.variante] || t.variante) : "") + ", " + t.kuerzel + " " + t.titel }));
+        text: t.fach + " " + t.jahrgangsstufe + (t.zusatz ? " " + t.zusatz : "") + ", " + t.kuerzel + " " + t.titel }));
     });
   }
   function vorschlagNehmen(nr, auto) {
