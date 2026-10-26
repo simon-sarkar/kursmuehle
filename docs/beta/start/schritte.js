@@ -384,12 +384,28 @@
     } catch (e) { zeigeFehler(e); }
   }
 
+  // AP13.15: zuletzt gewählte Lizenz und Name für die Namensnennung (JSON {lizenz, name}); eine neue Einheit übernimmt
+  // beides, den KI-Hinweis nicht (er ist eine Aussage über diese Einheit)
+  var KURSANGABEN = km.speicher("kursmuehle-kursangaben");
+  function kursangabenGemerkt() {
+    var v = null;
+    try { v = JSON.parse(localStorage.getItem(KURSANGABEN) || "null"); } catch (e) { /* ohne Speicher */ }
+    var lizenz = v && typeof v.lizenz === "string" ? v.lizenz : "";
+    if (!S.katalog || !S.katalog.oberflaeche.lizenz.some(function (w) { return w.wert === lizenz; })) lizenz = "";
+    return { lizenz: lizenz, name: v && typeof v.name === "string" ? v.name : "" };
+  }
+  function kursangabenMerken(lizenz, name) {
+    try { localStorage.setItem(KURSANGABEN, JSON.stringify({ lizenz: lizenz || "", name: name || "" })); }
+    catch (e) { /* ohne Speicher gilt die Wahl nur für diese Einheit */ }
+  }
+
   async function steckbriefAnlegen() {
-    var o = S.katalog.oberflaeche, e = (Z.mappe && Z.mappe.einheit) || {};
+    var o = S.katalog.oberflaeche, e = (Z.mappe && Z.mappe.einheit) || {}, g = kursangabenGemerkt();
     Z.steckbrief_text = await km.mappeFn("angaben_schreiben", ["", {
       thema: e.thema || "", jahrgang: e.jahrgang || "", minuten: e.minuten || "", fach: "", bilder: bilderStandard(),
       format: o.format[0].wert, familie: S.familien.standard, farbe: o.farbe[0].wert, website: o.website[0].wert,
-      abschluss: o.abschluss[0].wert, portionierung: o.portionierung[0].wert }]);
+      abschluss: o.abschluss[0].wert, portionierung: o.portionierung[0].wert, lizenz: g.lizenz,
+      lizenz_name: g.lizenz ? g.name : "" }]);
   }
 
   function einheitAnlegen(e, v) {
@@ -449,6 +465,7 @@
     status(text || "Wird geöffnet …", "lauf");
     try {
       await km.bereit();
+      Z.gespeichert = null;
       await laden();
       neuStart();
       await neuPruefen();
@@ -460,7 +477,9 @@
       }
       zeichne();
       gehe(Z.mappe.schritt);
-      status("Bereit", "ok");
+      // AP13.15: Mappe aus einer neueren Mühle oder aus der Testversion: ein Satz statt „Bereit“, nichts gesperrt
+      var satz = Z.gespeichert ? await km.mappeFn("herkunft_hinweis", [Z.gespeichert, km.kanal]) : "";
+      if (satz) status(satz, "lauf"); else status("Bereit", "ok");
     } catch (e) { zeigeFehler(e); }
   }
   function zeigeFehler(e) { status("Das hat nicht geklappt: " + fehlerText(e), "fehler"); }
@@ -1177,6 +1196,7 @@
     schemaZeigen();
   };
   Object.assign(S, { adresseLesen: adresseLesen, angabenSchreiben: angabenSchreiben, ausklapp: ausklapp,
+    kursangabenMerken: kursangabenMerken,
     felderPruefen: felderPruefen,
     akzent: akzent, gehe: gehe, jahrgangZahl: jahrgangZahl, nachZwei: nachZwei, neuStart: neuStart,
     schemaZeigen: schemaZeigen, steckbriefSicher: steckbriefSicher, vorlageNach: vorlageNach, vorschauLaden: vorschauLaden,

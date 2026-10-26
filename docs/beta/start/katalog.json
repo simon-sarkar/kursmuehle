@@ -560,7 +560,28 @@
     "wert": "wochen",
     "text": "Wochenweise sichtbar"
    }
-  ]
+  ],
+  "lizenz": [
+   {
+    "wert": "",
+    "text": "Keine Angabe"
+   },
+   {
+    "wert": "cc-by-4.0",
+    "text": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/deed.de"
+   },
+   {
+    "wert": "cc-by-sa-4.0",
+    "text": "CC BY-SA 4.0",
+    "url": "https://creativecommons.org/licenses/by-sa/4.0/deed.de"
+   },
+   {
+    "wert": "alle-rechte",
+    "text": "Alle Rechte vorbehalten"
+   }
+  ],
+  "ki_hinweis": "Mit KI erstellt, von der Lehrkraft geprüft."
  },
  "chats": [
   {

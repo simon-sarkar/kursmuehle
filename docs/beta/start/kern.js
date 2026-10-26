@@ -9,7 +9,7 @@ var km = (function () {
   var zustand = {
     geladen: false, ladeInfo: null, ladeFehler: null,
     mappe: null, kurs_md: "", steckbrief_text: "", assets: {},   // assets: {name: Uint8Array}
-    pruefung: null, kennzahlen: null, bau: null, beispiel: null,
+    pruefung: null, kennzahlen: null, bau: null, beispiel: null, gespeichert: null,
   };
   var messungen = [];
 
@@ -162,19 +162,24 @@ var km = (function () {
 
   function uebernehmeMappe(m, beispiel) {
     zustand.mappe = m.mappe; zustand.kurs_md = m.kurs_md; zustand.steckbrief_text = m.steckbrief_text;
+    zustand.gespeichert = m.gespeichert || null;          // AP13.15: Version und Kanal aus der Datei, vor der Migration
     zustand.assets = {};
     Object.keys(m.assets || {}).forEach(function (k) { zustand.assets[k] = m.assets[k]; });
     zustand.beispiel = beispiel; zustand.pruefung = null; zustand.kennzahlen = null; zustand.bau = null;
   }
 
   function neueMappe(titel, einheit, bausteine) {
-    var m = { format: 2, kursmuehle: zustand.ladeInfo ? zustand.ladeInfo.version : "", titel: titel || "",
+    var m = { format: zustand.ladeInfo && zustand.ladeInfo.format || 2,
+      kursmuehle: zustand.ladeInfo ? zustand.ladeInfo.version : "", titel: titel || "",
       erzeugt: new Date().toISOString().slice(0, 10), bausteine: bausteine || [] };
     if (einheit) m.einheit = einheit;
     return m;
   }
 
+  // AP13.15: unter /beta/ trägt die Mappe `kanal: beta`; der stabile Stand sagt beim Öffnen, dass sie aus der Testversion
+  // kommt (mappe.herkunft_hinweis). Nur hier gesetzt, mappeUebernehmen übernimmt den Schlüssel nicht aus dem Worker.
   async function mappeSchreiben() {
+    if (zustand.mappe) { if (ZUSATZ) zustand.mappe.kanal = "beta"; else delete zustand.mappe.kanal; }
     var a = await anfrage("mappe_schreiben", { mappe: zustand.mappe, kurs_md: zustand.kurs_md,
         steckbrief: zustand.steckbrief_text, assets: assetsKopie() });
     return { zip: new Uint8Array(a.ergebnis.zip), dateiname: a.ergebnis.dateiname };
@@ -267,7 +272,7 @@ var km = (function () {
     mappeUebernehmen: mappeUebernehmen,
     neueMappe: neueMappe, heap: heap, beenden: beenden, sha256: sha256, autosaveSchreiben: autosaveSchreiben,
     autosaveLesen: autosaveLesen, autosaveLoeschen: autosaveLoeschen, einstellung: einstellung, speicher: speicher,
-    zustand: zustand,
+    kanal: ZUSATZ ? "beta" : "", zustand: zustand,
         messungen: messungen,
     bauOptionen: null, setStatus: function (cb) { statusCb = cb; } };
 })();
@@ -621,6 +626,7 @@ window.km = km;
     S.zeichneBilder();
     S.zeichneFragen();
     S.zeichneWiederherstellen();
+    S.zeichneKursangaben();
     S.zeichneLehrplan();
     S.rueckmeldungFuellen();
     S.knoepfe();
