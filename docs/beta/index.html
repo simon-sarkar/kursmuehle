@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Kursmühle – Unterrichtseinheiten für die ByCS-Lernplattform</title>
+<meta name="description" content="Kursmühle macht aus deinem Thema eine Unterrichtseinheit für die ByCS-Lernplattform. Den Inhalt schreibt ein KI-Chat, die Datei entsteht in deinem Browser.">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<!-- Startseite: Schritt 1 der Mühle. Lädt nichts von außen und von der Mühle nur start/themen.js (Platzhalter); liest
+     nur, ob die Mühle eine Einheit gesichert hat (IndexedDB „kursmuehle“, unter /beta/ „kursmuehle-beta“, Speicher „mappe“,
+     Schlüssel „aktuell“). Das Logo der Kacheln schreibt docs/make_logo.py zwischen die beiden Logo-Marken. -->
+<script>
+// Hell ist Standard; die Wahl „Dunkel“ liegt im localStorage dieses Browsers.
+(function () { try { if (localStorage.getItem("kursmuehle-schema") === "dunkel") document.documentElement.dataset.theme = "dark"; } catch (e) {} })();
+</script>
+<style>
+  :root { color-scheme: light;
+          --grund: #faf6ee; --band: #f3e9d8; --flaeche: #ffffff; --feld: #ffffff; --kachel: #ffffff;
+          --text: #2a2a2a; --text2: #3d3833; --leise: #6b6458; --linie: #e4d8c3; --ocker: #d9a441; --ocker-text: #8a6416; --fokus: #8a6416;
+          --fuss: #2a2a2a; --fuss-text: #f3e9d8; --fuss-leise: #cfc4b2;
+          --wz: #2a2a2a; --wz-deckung: 1; --schatten: rgba(42,42,42,.10); --fehler: #b42318;
+          --logo-grund: #2a2a2a; --logo-muehle: #f3e9d8; --logo-rand: 5px; --breite: 1040px; }
+  :root[data-theme="dark"] { color-scheme: dark;
+          --grund: #262522; --band: #2a2a2a; --flaeche: #1b1a18; --feld: #1b1a18; --kachel: #35332f;
+          --text: #f3e9d8; --text2: #e6dccb; --leise: #b9ae9c; --linie: #423e37;
+          --ocker-text: #d9a441; --fokus: #d9a441;
+          --fuss: #141312; --fuss-text: #f3e9d8; --fuss-leise: #b9ae9c;
+          --wz: #f3e9d8; --wz-deckung: .9; --schatten: rgba(0,0,0,.35); --fehler: #ff9a8b;
+          --logo-grund: #f3e9d8; --logo-muehle: #2a2a2a; --logo-rand: 4px; }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--grund); color: var(--text);
+         font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  [hidden] { display: none !important; }
+  a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  :focus-visible { outline: 3px solid var(--fokus); outline-offset: 3px; }
+  p { margin: 0 0 .8em; }
+  .innen { max-width: var(--breite); margin: 0 auto; padding: 0 16px; }
+
+  /* Logo; das Rad dreht sich bei Hover und Fokus. Gleich in impressum.html. */
+  .logo { display: block; }
+  .logo .l-g { fill: var(--logo-grund); }
+  .logo .l-m { fill: var(--logo-muehle); }
+  .logo .l-a { fill: var(--ocker); }
+  .logo .l-k { stroke: var(--logo-grund); stroke-width: var(--logo-rand); stroke-linejoin: round; }
+  .logo .l-kf { stroke: var(--logo-grund); stroke-width: calc(2 * var(--logo-rand)); stroke-linejoin: round;
+                paint-order: stroke; }
+  .logo .rad { transform-box: view-box; transform-origin: 128px 98px; }
+  @keyframes anlauf { from { transform: rotate(0deg); } to { transform: rotate(-36deg); } }
+  @keyframes drehen { from { transform: rotate(-36deg); } to { transform: rotate(-396deg); } }
+  .dreh:hover .rad, .dreh:focus-visible .rad, .dreh.dreht .rad {
+    animation: anlauf 2s cubic-bezier(.333, 0, .667, .333) forwards, drehen 10s linear 2s infinite; }
+  @media (prefers-reduced-motion: reduce) { .logo .rad { animation: none !important; } }
+
+  /* Kopfzeile: klebt oben, höchstens 56 px. Gleich in impressum.html. */
+  .kopfzeile { position: sticky; top: 0; z-index: 10; background: var(--band); border-bottom: 1px solid var(--linie); }
+  .kopfzeile .innen { height: 55px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .kopfzeile .rechts { display: flex; align-items: center; gap: 16px; }
+  .schema { background: none; border: 0; padding: 4px 0; font: inherit; font-size: .9rem; color: var(--leise); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .schema:hover { color: var(--text); }
+  .marke { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; text-decoration: none; }
+  .marke img { width: 28px; height: 28px; border-radius: 7px; display: block; }
+  .marke span { font-weight: 400; color: var(--leise); font-size: .9rem; }
+  .mini { display: inline-flex; align-items: center; gap: 10px; padding: 4px 14px 4px 4px; border-radius: 12px;
+          background: var(--kachel); text-decoration: none; font-weight: 650; font-size: .95rem;
+          box-shadow: 0 1px 2px var(--schatten), 0 4px 12px var(--schatten); transition: opacity .2s, visibility .2s; }
+  .mini .logo { width: 34px; height: 34px; }
+  .io .mini:not(.zeigen) { opacity: 0; visibility: hidden; }
+  @media (max-width: 520px) { .mini { padding: 4px; } .mini span { display: none; } }
+
+  /* Wasserzeichen beginnt immer rechts von der Kachel (Lesebreite 1040 = 50 % + 520 px) */
+  .hero { position: relative; overflow: hidden; background: var(--band); padding: 64px 0 76px;
+          display: flex; align-items: center; }
+  @media (min-width: 820px) { .hero { min-height: min(56vh, 600px); } }
+  .hero > .innen { width: 100%; }
+  .hero::after { content: ""; position: absolute; left: max(calc(50% + 540px), calc(100% - 530px)); top: 50%; width: 760px; height: 760px;
+                 transform: translateY(-50%); background: var(--wz); opacity: var(--wz-deckung);
+                 -webkit-mask: url("wasserzeichen.svg") center / contain no-repeat;
+                 mask: url("wasserzeichen.svg") center / contain no-repeat; pointer-events: none; }
+  .hero .innen { position: relative; z-index: 1; display: grid; gap: 36px 64px; grid-template-columns: 1fr;
+                 align-items: center; }
+  @media (min-width: 820px) { .hero .innen { grid-template-columns: minmax(0, 740px) 184px; justify-content: space-between; } }
+  h1 { font-size: clamp(1.6rem, 2.6vw, 2.1rem); line-height: 1.15; letter-spacing: -.015em; font-weight: 750;
+       margin: 0 0 22px; }
+
+  /* Felder wie Schritt 1 der Mühle (web/ansicht.css) */
+  .start-form { display: grid; grid-template-columns: 1fr 9rem 7rem; gap: 12px; align-items: end; }
+  .feld { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: var(--leise); }
+  input[type=text], input[type=number] { font: inherit; font-size: 16px; color: var(--text); background: var(--feld);
+    border: 1px solid var(--linie); border-radius: 8px; padding: 9px 10px; min-height: 44px; width: 100%; }
+  input::placeholder { color: var(--leise); opacity: 1; }
+  .knopf { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 9px 16px;
+    border-radius: 8px; border: 1px solid var(--linie); font: inherit; font-weight: 600; cursor: pointer; text-align: center; }
+  .knopf.haupt { background: var(--ocker); border-color: var(--ocker); color: #2a2a2a; }
+  .knopf.haupt:hover { background: #cf9632; }
+  .start-form .knopf { grid-column: 1 / -1; justify-self: start; min-width: 9rem; }
+  /* Meldung statt Blase des Browsers (wie Schritt 1 der Mühle): leer ohne Höhe, sonst eine Zeile mit roter Mühle */
+  .meldung { grid-column: 1 / -1; margin: -12px 0 0; display: flex; align-items: center; gap: 6px;
+             color: var(--fehler); font-size: .9rem; font-weight: 600; }
+  .meldung:not(:empty) { margin-top: -4px; }
+  .meldung .logo { width: 16px; height: 16px; flex: none; --logo-grund: var(--fehler); --logo-muehle: var(--band);
+                   --ocker: var(--band); --logo-rand: 8px; }
+  .vorsatz { font-size: 0.9rem; color: var(--leise); margin: 14px 0 0; }
+  @media (max-width: 640px) {
+    .start-form { grid-template-columns: 1fr 1fr; }
+    .feld-thema { grid-column: 1 / -1; }
+    .start-form .knopf { justify-self: stretch; }
+  }
+
+  .start { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+  @media (min-width: 820px) { .start { align-items: stretch; } }
+  .kachel { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 22px 18px 18px;
+            background: var(--kachel); border-radius: 24px; text-decoration: none; color: var(--text); width: 184px;
+            box-shadow: 0 1px 2px var(--schatten), 0 10px 28px var(--schatten); }
+  .kachel .logo { width: 104px; height: 104px; }
+  .kachel span { font-size: 1.02rem; font-weight: 700; }
+  .weiter { width: 184px; text-align: center; font-size: .95rem; margin: 0; }
+  .weiter a { display: block; padding: 6px 8px; text-decoration: none; font-weight: 650; }
+  .weiter a::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+                      background: var(--ocker); margin-right: 8px; vertical-align: 1px; }
+  .weiter small { display: block; font-weight: 400; color: var(--leise); margin-top: 2px; overflow-wrap: anywhere; }
+  @media (max-width: 819px) {                       /* Handy und schmale Fenster: Kachel als flache Zeile */
+    .kachel { flex-direction: row; width: auto; gap: 14px; padding: 10px 20px 10px 10px; border-radius: 18px; }
+    .kachel .logo { width: 56px; height: 56px; }
+    .weiter { width: auto; text-align: left; }
+    .weiter a { padding: 4px 0; }
+  }
+
+  .ergebnis { background: var(--flaeche); padding: 72px 0; }
+  .ergebnis .innen { display: grid; gap: 40px 64px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 820px) { .ergebnis .innen { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); } }
+  @media (max-width: 819px) { .ergebnis .bilder { order: 2; } }   /* Handy: erst der Text, dann die Bilder */
+  figure { margin: 0; }
+  figure img { display: block; width: 100%; height: auto; border-radius: 10px;
+               box-shadow: 0 0 0 1px var(--linie); }
+  figcaption { font-size: .92rem; color: var(--leise); margin-top: 12px; max-width: 60ch; }
+  .ergebnis .aussehen-bild { grid-column: 1 / -1; }   /* volle Breite unter dem Textblock, Maßstab 0,9 */
+  @media (max-width: 819px) { .ergebnis .aussehen-bild { order: 3; max-width: 420px; width: 100%; justify-self: center; } }
+  h2 { font-size: 1.45rem; line-height: 1.2; margin: 0 0 22px; letter-spacing: -.01em; }
+  p + h2 { margin-top: 36px; }
+  ol.ablauf { list-style: none; counter-reset: s; padding: 0; margin: 0 0 32px; }
+  ol.ablauf li { counter-increment: s; position: relative; padding-left: 40px; margin-bottom: 14px; }
+  ol.ablauf li::before { content: counter(s); position: absolute; left: 0; top: -4px; font-size: 1.6rem;
+                         font-weight: 750; line-height: 1.2; color: var(--ocker-text); }
+  .chats { font-size: .98rem; color: var(--text2); padding-top: 4px; }
+
+  footer { background: var(--fuss); color: var(--fuss-text); padding: 36px 0 44px; font-size: .9rem; }
+  footer p { margin: 0 0 10px; max-width: 72ch; }
+  footer .links { display: flex; flex-wrap: wrap; gap: 4px 20px; list-style: none; padding: 0; margin: 0 0 18px; }
+  footer .leise { color: var(--fuss-leise); }
+  @media (max-width: 420px) { .hero { padding: 36px 0 48px; } .ergebnis { padding: 52px 0; } }
+</style>
+</head>
+<body>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand c6905e5 vom 26.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+
+<header class="kopfzeile">
+  <div class="innen">
+    <a class="marke" href="./"><img src="logo.svg" alt="" width="28" height="28">Kursmühle <span>Beta</span></a>
+    <div class="rechts"><button type="button" id="schema" class="schema" aria-pressed="false">Dunkel</button><a class="mini dreh" href="start/" id="mini" aria-label="Mahlwerk starten"><!-- logo --><svg class="logo" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><rect width="256" height="256" rx="56" class="l-g"/><path d="M100,236 L156,236 L147,150 L109,150 Z" class="l-m"/>
+  <rect x="115" y="170" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="131" y="170" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="115" y="188" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="131" y="188" width="12" height="12" rx="3" class="l-a"/>
+  <g class="rad"><g transform="rotate(45 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(135 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(225 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(315 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g>
+  <path d="M158.7,120.3 L155.7,124.0 L162.2,134.4 L152.1,141.8 L144.2,132.4 L139.7,134.1 L135.1,135.3 L134.3,147.6 L121.7,147.6 L120.9,135.3 L116.3,134.1 L111.8,132.4 L103.9,141.8 L93.8,134.4 L100.3,124.0 L97.3,120.3 L94.7,116.3 L82.8,119.3 L78.9,107.4 L90.3,102.8 L90.0,98.0 L90.3,93.2 L78.9,88.6 L82.8,76.7 L94.7,79.7 L97.3,75.7 L100.3,72.0 L93.8,61.6 L103.9,54.2 L111.8,63.6 L116.3,61.9 L120.9,60.7 L121.7,48.4 L134.3,48.4 L135.1,60.7 L139.7,61.9 L144.2,63.6 L152.1,54.2 L162.2,61.6 L155.7,72.0 L158.7,75.7 L161.3,79.7 L173.2,76.7 L177.1,88.6 L165.7,93.2 L166.0,98.0 L165.7,102.8 L177.1,107.4 L173.2,119.3 L161.3,116.3 Z" class="l-m l-k"/></g>
+  <circle cx="128" cy="98" r="22" class="l-g"/>
+  <circle cx="128" cy="98" r="9" class="l-a"/></svg><!-- /logo --><span>Mahlwerk starten</span></a></div>
+  </div>
+</header>
+
+<main>
+<section class="hero" aria-labelledby="s1-titel">
+  <div class="innen">
+    <div>
+      <h1 id="s1-titel">Worum geht es?</h1>
+      <form id="start-form" class="start-form" action="start/" method="get" autocomplete="off" novalidate>
+        <label class="feld feld-thema">Thema
+          <input id="f-thema" name="thema" type="text" placeholder="Bruchrechnen" maxlength="120">
+        </label>
+        <label class="feld feld-klein">Jahrgangsstufe
+          <input id="f-jahrgang" name="jahrgang" type="text" inputmode="numeric" maxlength="12" placeholder="7">
+        </label>
+        <label class="feld feld-klein">Minuten
+          <input id="f-minuten" name="minuten" type="number" min="10" max="300" step="5" value="45" inputmode="numeric">
+        </label>
+        <p id="start-meldung" class="meldung" aria-live="polite"></p>
+        <button type="submit" class="knopf haupt">Weiter</button>
+      </form>
+      <template id="fehler-muehle"><!-- logo --><svg class="logo" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><rect width="256" height="256" rx="56" class="l-g"/><path d="M100,236 L156,236 L147,150 L109,150 Z" class="l-m"/>
+  <rect x="115" y="170" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="131" y="170" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="115" y="188" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="131" y="188" width="12" height="12" rx="3" class="l-a"/>
+  <g class="rad"><g transform="rotate(45 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(135 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(225 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(315 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g>
+  <path d="M158.7,120.3 L155.7,124.0 L162.2,134.4 L152.1,141.8 L144.2,132.4 L139.7,134.1 L135.1,135.3 L134.3,147.6 L121.7,147.6 L120.9,135.3 L116.3,134.1 L111.8,132.4 L103.9,141.8 L93.8,134.4 L100.3,124.0 L97.3,120.3 L94.7,116.3 L82.8,119.3 L78.9,107.4 L90.3,102.8 L90.0,98.0 L90.3,93.2 L78.9,88.6 L82.8,76.7 L94.7,79.7 L97.3,75.7 L100.3,72.0 L93.8,61.6 L103.9,54.2 L111.8,63.6 L116.3,61.9 L120.9,60.7 L121.7,48.4 L134.3,48.4 L135.1,60.7 L139.7,61.9 L144.2,63.6 L152.1,54.2 L162.2,61.6 L155.7,72.0 L158.7,75.7 L161.3,79.7 L173.2,76.7 L177.1,88.6 L165.7,93.2 L166.0,98.0 L165.7,102.8 L177.1,107.4 L173.2,119.3 L161.3,116.3 Z" class="l-m l-k"/></g>
+  <circle cx="128" cy="98" r="22" class="l-g"/>
+  <circle cx="128" cy="98" r="9" class="l-a"/></svg><!-- /logo --></template>
+      <p class="vorsatz">Aus deinem Thema wird eine Einheit für die ByCS-Lernplattform. Die Mühle
+      kostet nichts und läuft in deinem Browser; den Inhalt schreibt ein KI-Chat.</p>
+    </div>
+    <div class="start">
+      <p class="weiter" id="weiter" hidden><a href="start/?weiter=1">Weiter mit deiner Einheit<small id="weiter-titel"></small></a></p>
+      <a class="kachel dreh" href="start/" id="kachel"><!-- logo --><svg class="logo" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><rect width="256" height="256" rx="56" class="l-g"/><path d="M100,236 L156,236 L147,150 L109,150 Z" class="l-m"/>
+  <rect x="115" y="170" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="131" y="170" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="115" y="188" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="131" y="188" width="12" height="12" rx="3" class="l-a"/>
+  <g class="rad"><g transform="rotate(45 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(135 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(225 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(315 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g>
+  <path d="M158.7,120.3 L155.7,124.0 L162.2,134.4 L152.1,141.8 L144.2,132.4 L139.7,134.1 L135.1,135.3 L134.3,147.6 L121.7,147.6 L120.9,135.3 L116.3,134.1 L111.8,132.4 L103.9,141.8 L93.8,134.4 L100.3,124.0 L97.3,120.3 L94.7,116.3 L82.8,119.3 L78.9,107.4 L90.3,102.8 L90.0,98.0 L90.3,93.2 L78.9,88.6 L82.8,76.7 L94.7,79.7 L97.3,75.7 L100.3,72.0 L93.8,61.6 L103.9,54.2 L111.8,63.6 L116.3,61.9 L120.9,60.7 L121.7,48.4 L134.3,48.4 L135.1,60.7 L139.7,61.9 L144.2,63.6 L152.1,54.2 L162.2,61.6 L155.7,72.0 L158.7,75.7 L161.3,79.7 L173.2,76.7 L177.1,88.6 L165.7,93.2 L166.0,98.0 L165.7,102.8 L177.1,107.4 L173.2,119.3 L161.3,116.3 Z" class="l-m l-k"/></g>
+  <circle cx="128" cy="98" r="22" class="l-g"/>
+  <circle cx="128" cy="98" r="9" class="l-a"/></svg><!-- /logo --><span>Mahlwerk starten</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="ergebnis" aria-labelledby="ablauf-titel">
+  <div class="innen">
+    <!-- Bild: python3 scripts/tests/test_landing.py --bilder docs (drei Bausteine aus dem Generator) -->
+    <div class="bilder">
+      <figure>
+        <img src="landing-einheit.png" alt="Ausschnitt einer Einheit: Überschrift „Wohin verschwindet die Pfütze?“, zwei Absätze Lesetext, ein Merkkasten mit einem kleinen Zeichen an der Ecke und eine Übung mit drei Antworten, die gewählte als richtig markiert." width="808" height="923" loading="lazy">
+        <figcaption>So sieht ein Ausschnitt einer Einheit aus.</figcaption>
+      </figure>
+    </div>
+    <div>
+      <h2 id="ablauf-titel">Was herauskommt</h2>
+      <p>Die Einheit enthält Lesetexte und Übungen mit Rückmeldung, wenn du willst im Kachelformat. Auf Wunsch nennt die Mühle dem
+      Chat Ziele aus dem LehrplanPLUS, der ihr für Grund- und Mittelschule vorliegt; das Aussehen wählst du aus elf
+      Designs.</p>
+      <h2>So läuft es</h2>
+      <ol class="ablauf">
+        <li>Du gibst Thema, Jahrgangsstufe und Minuten ein und klickst auf „Weiter“.</li>
+        <li>Du kopierst den Text für den Chat aus der Mühle in deinen KI-Chat und die Antwort zurück. Fehlt
+          etwas, bekommst du eine Korrekturbitte für den Chat. Mit einem KI-Programm auf deinem Rechner
+          (<a href="verbinden.md">eigene KI</a>) entfällt das Kopieren.</li>
+        <li>Du lädst die Datei für die Lernplattform herunter und stellst sie nach Anleitung der Mühle über
+          „Wiederherstellen“ wieder her, zum Beispiel als neuen Kurs.</li>
+      </ol>
+      <p>Die Mühle ist für gängige KI-Chats eingerichtet; Konto, Kosten und Nutzungsbedingungen regelt der Anbieter, und
+      ob du einen Chat dienstlich nutzen darfst, klärst du mit deiner Schule.</p>
+      <p>Nimm das neueste Modell ohne Zusatz; Namen mit mini, fast, flash, lite, nano oder small sind die kleinen, und
+      solche Modelle brauchen öfter eine Korrekturbitte. Steht
+      „Auto“ voreingestellt, stell um, denn „Auto“ lässt den Dienst raten, und bei einem langen Text rät er oft klein. Gibt
+      es einen Schalter wie „Denken“ oder „ausführlich“, schalte ihn ein.</p>
+      <p class="chats">In den automatischen Tests klappt es meist ohne Korrekturbitte, in echten Chats noch nicht
+      immer.</p>
+    </div>
+    <!-- Bild: python3 scripts/tests/test_landing.py --bilder docs (Schritt 3 der Mühle, Natur und Grün) -->
+    <figure class="aussehen-bild">
+      <picture>
+        <source media="(max-width: 819px)" srcset="landing-aussehen-schmal.png" width="1170" height="2532">
+        <img src="landing-aussehen.png" alt="Schritt 3 der Mühle: Kacheln mit den Namen der elf Designs, Natur ist gewählt; darunter Farbkreise, Grün ist gewählt; rechts die Vorschau einer Einheit mit Überschrift, Merkkasten und einer kurzen Übung." width="1132" height="432" loading="lazy">
+      </picture>
+      <figcaption>Schritt 3: Design, Farbe und die Vorschau der Einheit.</figcaption>
+    </figure>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="innen">
+    <ul class="links">
+      <li><a href="impressum.html">Impressum und Datenschutz</a></li>
+      <li><a href="verbinden.md">Eigene KI verbinden</a></li>
+      <li><a href="https://github.com/simon-sarkar/kursmuehle/tree/main/docs/kachel">Kachel fürs Schulportal</a></li>
+      <li><a href="https://github.com/simon-sarkar/kursmuehle">GitHub</a></li>
+      <li><a href="https://github.com/simon-sarkar/kursmuehle/blob/main/docs/erfahrungen.md">Erfahrungen</a></li>
+      <li><a href="https://github.com/simon-sarkar/kursmuehle/blob/main/CHANGELOG.md">Änderungen</a></li>
+    </ul>
+    <p>Kursmühle ist mein privates, nicht kommerzielles Projekt und kein Angebot der ByCS-Lernplattform.
+    Rückmeldungen an kursmuehle@pm.me.</p>
+    <!-- Datenschutz: derselbe Wortlaut in impressum.html (test_landing.py vergleicht) -->
+    <p class="leise datenschutz">Deine Eingaben bleiben in deinem Browser. Der KI-Chat bekommt nur den Text, den du kopierst; eine eigene KI oder, in
+    der Testphase, mein Dienst ki.kursmühle.de bekommt ihn direkt. Gib keine Namen von Schülerinnen und Schülern ein.</p>
+  </div>
+</footer>
+
+<script src="start/themen.js"></script>
+<script>
+// „Weiter“ baut die Adresse start/#thema=…&jahrgang=…&minuten=…; das Fragment verlässt den Browser nicht.
+// Ohne Skript schickt das Formular dieselben Felder als ?thema=…, die Mühle liest beides.
+// Leeres Thema oder Minuten außerhalb 10 bis 300: eine Zeile mit roter Mühle unter den Feldern, keine Blase des Browsers.
+(function () {
+  var f = document.getElementById("start-form"), meldung = document.getElementById("start-meldung");
+  function melden(id, text) {
+    var feld = document.getElementById(id);
+    meldung.textContent = "";
+    meldung.appendChild(document.getElementById("fehler-muehle").content.cloneNode(true));
+    meldung.appendChild(document.createTextNode(text));
+    feld.setAttribute("aria-invalid", "true");
+    feld.setAttribute("aria-describedby", "start-meldung");
+    feld.focus();
+  }
+  function aufheben() {
+    meldung.textContent = "";
+    [].forEach.call(f.querySelectorAll("[aria-invalid]"), function (e) {
+      e.removeAttribute("aria-invalid"); e.removeAttribute("aria-describedby"); });
+  }
+  function pruefen() {
+    var minuten = document.getElementById("f-minuten").value.trim(), m = Number(minuten);
+    if (!document.getElementById("f-thema").value.trim()) { melden("f-thema", "Gib ein Thema ein."); return false; }
+    if (minuten && !(m >= 10 && m <= 300)) {
+      melden("f-minuten", "Gib bei Minuten eine Zahl von 10 bis 300 ein."); return false; }
+    return true;
+  }
+  f.addEventListener("input", function (e) { if (e.target.getAttribute("aria-invalid")) aufheben(); });
+  function adresse() {
+    var wert = function (id) { return document.getElementById(id).value.trim(); };
+    var thema = wert("f-thema"), jahrgang = wert("f-jahrgang"), minuten = wert("f-minuten");
+    var q = thema ? "thema=" + encodeURIComponent(thema) : "";
+    if (q && jahrgang) q += "&jahrgang=" + encodeURIComponent(jahrgang);
+    if (q && minuten) q += "&minuten=" + encodeURIComponent(minuten);
+    return "start/" + (q ? "#" + q : "");
+  }
+  f.addEventListener("submit", function (e) { e.preventDefault(); if (pruefen()) location.href = adresse(); });
+  // Die Kacheln nehmen Eingaben in den Feldern mit.
+  [].forEach.call(document.querySelectorAll("#kachel, #mini"), function (a) {
+    a.addEventListener("click", function (e) {
+      if (e.ctrlKey || e.metaKey || e.shiftKey || e.button) return;   // neuer Tab o. ä.: Standard
+      var z = adresse();
+      if (z !== "start/") { e.preventDefault(); location.href = z; }
+    });
+  });
+})();
+
+// Kleine Kachel in der Kopfzeile erst, wenn die große aus dem Bild ist.
+(function () {
+  if (!("IntersectionObserver" in window)) return;
+  var mini = document.getElementById("mini");
+  document.documentElement.classList.add("io");
+  new IntersectionObserver(function (e) { mini.classList.toggle("zeigen", !e[e.length - 1].isIntersecting); },
+                           { rootMargin: "-56px 0px 0px 0px" }).observe(document.getElementById("kachel"));
+})();
+
+// Beim Verlassen läuft das Rad bis zur nächsten halben Umdrehung aus (Bild ist 180° symmetrisch). Gleich in impressum.html.
+(function () {
+  var ruhig = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)");
+  [].forEach.call(document.querySelectorAll(".dreh"), function (a) {
+    var rad = a.querySelector(".rad"), aus = null;
+    if (!rad || !rad.animate) return;
+    function an() { if (aus) { aus.cancel(); aus = null; } a.classList.add("dreht"); }
+    function bleibt() { try { return a.matches(":hover") || a.matches(":focus-visible"); } catch (e) { return false; } }
+    function ab() {
+      if (bleibt()) return;
+      if (!a.classList.contains("dreht") || (ruhig && ruhig.matches)) { a.classList.remove("dreht"); return; }
+      var m = getComputedStyle(rad).transform, w = 0;
+      if (m && m !== "none") {                             // matrix(a, b, …); Werte wie 1.74533e-05 knapp neben 180° ganz lesen
+        var z = m.slice(m.indexOf("(") + 1).match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi).map(parseFloat);
+        w = Math.atan2(z[1], z[0]) * 180 / Math.PI;
+        if (!isFinite(w)) w = 0;
+      }
+      a.classList.remove("dreht");
+      if (w > 0) w -= 360;                                 // (-360, 0]
+      var ziel = Math.floor(w / 180 - 1e-6) * 180;         // nächste halbe Umdrehung gegen den Uhrzeigersinn
+      aus = rad.animate([{ transform: "rotate(" + w + "deg)" }, { transform: "rotate(" + ziel + "deg)" }],
+                        { duration: 400 + (w - ziel) * 8, easing: "cubic-bezier(.25,.6,.4,1)" });
+      aus.onfinish = function () { aus = null; };
+    }
+    a.addEventListener("mouseenter", an);
+    a.addEventListener("focus", function () { if (bleibt()) an(); });
+    a.addEventListener("mouseleave", ab);
+    a.addEventListener("blur", ab);
+  });
+})();
+
+// „Weiter mit deiner Einheit“: nur lesen; gibt es die Datenbank nicht, kein Anlegen (das macht die Mühle).
+(function () {
+  var r;
+  // unter kursmuehle.de/beta/ die Datenbank der Beta-Vorschau (dieselbe Regel wie in start/kern.js, AP13.10)
+  var name = "kursmuehle" + (/(^|\/)beta\//.test(location.pathname) ? "-beta" : "");
+  try { r = window.indexedDB && indexedDB.open(name); } catch (e) { return; }
+  if (!r) return;
+  r.onupgradeneeded = function () { r.transaction.abort(); };
+  r.onerror = function (e) { if (e && e.preventDefault) e.preventDefault(); };
+  r.onsuccess = function () {
+    var d = r.result;
+    if (!d.objectStoreNames.contains("mappe")) { d.close(); return; }
+    var g = d.transaction("mappe", "readonly").objectStore("mappe").get("aktuell");
+    g.onsuccess = function () {
+      var w = g.result;
+      d.close();
+      if (!w || !w.zip) return;
+      var t = w.titel || w.dateiname || "";
+      if (t) document.getElementById("weiter-titel").textContent = "„" + t + "“";
+      document.getElementById("weiter").hidden = false;
+    };
+  };
+})();
+
+(function () {
+  var b = document.getElementById("schema");
+  if (!b) return;
+  function zeige() { var d = document.documentElement.dataset.theme === "dark"; b.textContent = d ? "Hell" : "Dunkel"; b.setAttribute("aria-pressed", d ? "true" : "false"); }
+  b.addEventListener("click", function () {
+    var d = document.documentElement.dataset.theme !== "dark";
+    if (d) document.documentElement.dataset.theme = "dark"; else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem("kursmuehle-schema", d ? "dunkel" : "hell"); } catch (e) {}
+    zeige();
+  });
+  zeige();
+})();
+
+// Platzhalter: bei jedem Laden ein anderes Paar aus Thema und Jahrgangsstufe, nur das Thema, ohne „zum Beispiel“.
+// Die Paare kommen aus start/themen.js (AP13.8, aus references/themen.yaml): window.KM_THEMEN als Liste von
+// [Thema, Jahrgangsstufe] oder {thema, jahrgang}. Fehlt die Datei, gilt die Liste hier.
+(function () {
+  var aus = window.KM_THEMEN, paare = [];
+  if (Array.isArray(aus)) paare = aus.map(function (x) { return Array.isArray(x) ? x : [x && x.thema, x && x.jahrgang]; })
+      .filter(function (x) { return x[0]; });
+  if (!paare.length) paare = [["Bruchrechnen", 6], ["Satz des Pythagoras", 9], ["Das Ohr", 7], ["Photosynthese", 8],
+    ["Die Französische Revolution", 8], ["Wetter und Klima", 5], ["Der Wasserkreislauf", 4], ["Nomen und Verben", 3],
+    ["Simple past", 6], ["Prozentrechnung", 7], ["Das Eichhörnchen", 2], ["Der einfache Stromkreis", 5],
+    ["Lineare Funktionen", 8], ["Eine Bewerbung schreiben", 9], ["Die mittelalterliche Stadt", 7], ["Aufbau der Zelle", 9],
+    ["Die Lunge", 7], ["Netzwerke und IP-Adressen", 9], ["Säuren und Basen", 9], ["Die Uhr lesen", 2]];
+  var p = paare[Math.floor(Math.random() * paare.length)];
+  var t = document.getElementById("f-thema"), j = document.getElementById("f-jahrgang");
+  if (t && !t.value) t.placeholder = String(p[0]);
+  if (j && !j.value && p[1] != null) j.placeholder = String(p[1]);
+})();
+</script>
+</body>
+</html>

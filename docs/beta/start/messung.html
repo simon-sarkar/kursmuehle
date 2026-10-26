@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kursmühle – Messseite</title>
+<style>
+  body { font: 15px/1.45 system-ui, sans-serif; margin: 0; padding: 12px 16px; color: #1f2937; background: #fff; }
+  h1 { font-size: 1.25em; margin: 0 0 6px; }
+  p.hinweis { color: #5b6475; margin: 0 0 12px; }
+  .reihe { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+  button { font: inherit; padding: 8px 14px; border: 1px solid #94a3b8; border-radius: 6px; background: #f8fafc; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  select, input[type=file] { font: inherit; }
+  #status { padding: 8px 10px; border-radius: 6px; background: #f1f5f9; min-height: 1.4em; word-break: break-word; }
+  #status.ok, #pruefstand.ok { background: #dcfce7; }
+  #status.fehler, #pruefstand.fehler { background: #fee2e2; }
+  #status.warnung, #pruefstand.warnung { background: #fef3c7; }
+  #status.lauf { background: #dbeafe; }
+  textarea { width: 100%; box-sizing: border-box; min-height: 220px; font: 13px/1.4 ui-monospace, Menlo, Consolas, monospace; padding: 8px; }
+  ul { padding-left: 18px; margin: 6px 0; font-size: 14px; }
+  li.fehler { color: #b91c1c; } li.warnung { color: #b45309; } li.hinweis { color: #475569; } li.ok { color: #166534; }
+  pre { background: #f8fafc; padding: 10px; overflow: auto; font-size: 12px; white-space: pre; }
+  details { margin: 8px 0; } summary { cursor: pointer; font-weight: 600; }
+  .klein { font-size: 13px; color: #5b6475; }
+  #pruefstand { padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+</style>
+</head>
+<body>
+<h1>Kursmühle – Messseite für den Autor</h1>
+<p class="hinweis">Ohne Design. Alles bleibt in diesem Browser, nichts wird hochgeladen. Reihenfolge: 1 laden, Kursdatei öffnen oder eine Chat-Antwort einfügen, 2 prüfen, 3 bauen, 4 herunterladen. „Kursdateien messen“ prüft und baut jede gewählte Kursdatei (etwa die Fixtures aus scripts/tests/fixtures/).</p>
+
+<div class="reihe">
+  <button id="laden">1 · Pyodide laden</button>
+  <button id="pruefen" disabled>2 · Prüfen</button>
+  <button id="bauen" disabled>3 · Bauen</button>
+  <button id="herunterladen" disabled>4 · Herunterladen</button>
+  <button id="miniaturen" disabled>Miniaturen der Familien</button>
+  <label>Kursdateien messen <input id="messen-dateien" type="file" multiple accept=".zip,application/zip"></label>
+</div>
+<div id="status">Pyodide ist nicht geladen.</div>
+<div id="mappenstand" class="klein"></div>
+<div id="autosave" class="klein"></div>
+
+<h2 style="font-size:1.05em;margin:14px 0 4px">Antwort des Chats einfügen (mit Vorrede und ``` erlaubt)</h2>
+<textarea id="eingabe" disabled placeholder="Hier die ganze Antwort des Chats einfügen; die Prüfung läuft sofort."></textarea>
+<div id="pruefstand" class="klein"></div>
+
+<details open><summary>Diagnosen</summary><ul id="diagnosen"></ul></details>
+<details><summary>Bausteine (ID · Typ · Titel · Abschnitt · Zeile · Status)</summary><ul id="bausteine"></ul></details>
+
+<div class="reihe">
+  <button id="mappe-speichern">Mappe speichern (ZIP)</button>
+  <label>Mappe öffnen <input id="mappe-oeffnen" type="file" accept=".zip,application/zip"></label>
+  <label>1.x-Ordner importieren <input id="ordner-import" type="file" multiple webkitdirectory></label>
+  <button id="worker-beenden">Worker beenden</button>
+</div>
+<p class="klein">Auf dem iPad hat die Ordnerauswahl keine Wirkung; dort kurs.md, steckbrief.yaml und die Bilder als mehrere Dateien wählen.</p>
+
+<h2 style="font-size:1.05em;margin:14px 0 4px">Messwerte</h2>
+<div class="reihe"><button id="messung-kopieren">Messwerte kopieren</button><span class="klein" id="browser"></span></div>
+<pre id="messung">Noch keine Messung.</pre>
+
+<script src="kern.js"></script>
+<script src="messung.js"></script>
+</body>
+</html>

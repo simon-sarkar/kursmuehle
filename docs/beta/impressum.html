@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kursmühle – Impressum und Datenschutz</title>
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<!-- Impressum und Datenschutz; nur über die Fußzeilen verlinkt. Tatsachen, keine Rechtsberatung. -->
+<script>
+// Hell ist Standard; die Wahl „Dunkel“ liegt im localStorage dieses Browsers.
+(function () { try { if (localStorage.getItem("kursmuehle-schema") === "dunkel") document.documentElement.dataset.theme = "dark"; } catch (e) {} })();
+</script>
+<style>
+  :root { color-scheme: light;
+          --grund: #faf6ee; --band: #f3e9d8; --flaeche: #ffffff; --kachel: #ffffff;
+          --text: #2a2a2a; --leise: #6b6458; --linie: #e4d8c3; --ocker: #d9a441; --fokus: #8a6416;
+          --fuss: #2a2a2a; --fuss-text: #f3e9d8; --schatten: rgba(42,42,42,.10);
+          --logo-grund: #2a2a2a; --logo-muehle: #f3e9d8; --logo-rand: 5px; }
+  :root[data-theme="dark"] { color-scheme: dark;
+          --grund: #262522; --band: #2a2a2a; --flaeche: #1b1a18; --kachel: #35332f;
+          --text: #f3e9d8; --leise: #b9ae9c; --linie: #423e37; --fokus: #d9a441;
+          --fuss: #141312; --fuss-text: #f3e9d8; --schatten: rgba(0,0,0,.35);
+          --logo-grund: #f3e9d8; --logo-muehle: #2a2a2a; --logo-rand: 4px; }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--grund); color: var(--text);
+         font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  :focus-visible { outline: 3px solid var(--fokus); outline-offset: 3px; }
+  .innen { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+  main .innen, .kopfzeile .innen { max-width: 760px; }
+
+  /* Logo; das Rad dreht sich bei Hover und Fokus. Wie in index.html. */
+  .logo { display: block; }
+  .logo .l-g { fill: var(--logo-grund); }
+  .logo .l-m { fill: var(--logo-muehle); }
+  .logo .l-a { fill: var(--ocker); }
+  .logo .l-k { stroke: var(--logo-grund); stroke-width: var(--logo-rand); stroke-linejoin: round; }
+  .logo .l-kf { stroke: var(--logo-grund); stroke-width: calc(2 * var(--logo-rand)); stroke-linejoin: round;
+                paint-order: stroke; }
+  .logo .rad { transform-box: view-box; transform-origin: 128px 98px; }
+  @keyframes anlauf { from { transform: rotate(0deg); } to { transform: rotate(-36deg); } }
+  @keyframes drehen { from { transform: rotate(-36deg); } to { transform: rotate(-396deg); } }
+  .dreh:hover .rad, .dreh:focus-visible .rad, .dreh.dreht .rad {
+    animation: anlauf 2s cubic-bezier(.333, 0, .667, .333) forwards, drehen 10s linear 2s infinite; }
+  @media (prefers-reduced-motion: reduce) { .logo .rad { animation: none !important; } }
+
+  /* Kopfzeile: klebt oben, höchstens 56 px. Wie in index.html. */
+  .kopfzeile { position: sticky; top: 0; z-index: 10; background: var(--band); border-bottom: 1px solid var(--linie); }
+  .kopfzeile .innen { height: 55px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .kopfzeile .rechts { display: flex; align-items: center; gap: 16px; }
+  .schema { background: none; border: 0; padding: 4px 0; font: inherit; font-size: .9rem; color: var(--leise); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .schema:hover { color: var(--text); }
+  .marke { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; text-decoration: none; }
+  .marke img { width: 28px; height: 28px; border-radius: 7px; display: block; }
+  .marke span { font-weight: 400; color: var(--leise); font-size: .9rem; }
+  .mini { display: inline-flex; align-items: center; gap: 10px; padding: 4px 14px 4px 4px; border-radius: 12px;
+          background: var(--kachel); text-decoration: none; font-weight: 650; font-size: .95rem;
+          box-shadow: 0 1px 2px var(--schatten), 0 4px 12px var(--schatten); transition: opacity .2s, visibility .2s; }
+  .mini .logo { width: 34px; height: 34px; }
+  .io .mini:not(.zeigen) { opacity: 0; visibility: hidden; }
+  @media (max-width: 520px) { .mini { padding: 4px; } .mini span { display: none; } }
+
+  main { padding: 40px 0 56px; }
+  h1 { font-size: 1.9rem; line-height: 1.15; margin: 0 0 28px; letter-spacing: -.01em; }
+  h2 { font-size: 1.2rem; margin: 36px 0 10px; }
+  p, ul { margin: 0 0 .9em; max-width: 68ch; }
+  ul { padding-left: 22px; }
+  address { font-style: normal; margin: 0 0 .9em; }
+  table { width: 100%; border-collapse: collapse; background: var(--flaeche); font-size: .95rem; margin: 6px 0 1em; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--linie); }
+  th { font-weight: 650; }
+  thead th { background: var(--band); }
+  td:first-child { width: 42%; }
+  footer { background: var(--fuss); color: var(--fuss-text); padding: 24px 0 32px; font-size: .9rem; }
+  @media (max-width: 520px) { td:first-child { width: auto; } th, td { padding: 8px; } }
+</style>
+</head>
+<body>
+<header class="kopfzeile">
+  <div class="innen">
+    <a class="marke" href="./"><img src="logo.svg" alt="" width="28" height="28">Kursmühle <span>Beta</span></a>
+    <div class="rechts"><button type="button" id="schema" class="schema" aria-pressed="false">Dunkel</button><a class="mini dreh" href="start/" id="mini" aria-label="Mahlwerk starten"><!-- logo --><svg class="logo" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><rect width="256" height="256" rx="56" class="l-g"/><path d="M100,236 L156,236 L147,150 L109,150 Z" class="l-m"/>
+  <rect x="115" y="170" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="131" y="170" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="115" y="188" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="131" y="188" width="12" height="12" rx="3" class="l-a"/>
+  <g class="rad"><g transform="rotate(45 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(135 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(225 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(315 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g>
+  <path d="M158.7,120.3 L155.7,124.0 L162.2,134.4 L152.1,141.8 L144.2,132.4 L139.7,134.1 L135.1,135.3 L134.3,147.6 L121.7,147.6 L120.9,135.3 L116.3,134.1 L111.8,132.4 L103.9,141.8 L93.8,134.4 L100.3,124.0 L97.3,120.3 L94.7,116.3 L82.8,119.3 L78.9,107.4 L90.3,102.8 L90.0,98.0 L90.3,93.2 L78.9,88.6 L82.8,76.7 L94.7,79.7 L97.3,75.7 L100.3,72.0 L93.8,61.6 L103.9,54.2 L111.8,63.6 L116.3,61.9 L120.9,60.7 L121.7,48.4 L134.3,48.4 L135.1,60.7 L139.7,61.9 L144.2,63.6 L152.1,54.2 L162.2,61.6 L155.7,72.0 L158.7,75.7 L161.3,79.7 L173.2,76.7 L177.1,88.6 L165.7,93.2 L166.0,98.0 L165.7,102.8 L177.1,107.4 L173.2,119.3 L161.3,116.3 Z" class="l-m l-k"/></g>
+  <circle cx="128" cy="98" r="22" class="l-g"/>
+  <circle cx="128" cy="98" r="9" class="l-a"/></svg><!-- /logo --><span>Mahlwerk starten</span></a></div>
+  </div>
+</header>
+<main><div class="innen">
+<h1>Impressum und Datenschutz</h1>
+
+<h2>Impressum</h2>
+<address>Simon Sarkar<br>Chiemgaustr. 140<br>81549 München<br>kursmuehle@pm.me</address>
+<p>Kursmühle ist mein privates, nicht kommerzielles Projekt. Es gehört nicht zur ByCS-Lernplattform und ist kein
+Angebot ihres Betreibers.</p>
+
+<h2>Datenschutz</h2>
+<!-- Datenschutz: derselbe Wortlaut in index.html (test_landing.py vergleicht) -->
+<p class="datenschutz">Deine Eingaben bleiben in deinem Browser. Der KI-Chat bekommt nur den Text, den du kopierst; eine eigene KI oder, in
+der Testphase, mein Dienst ki.kursmühle.de bekommt ihn direkt. Gib keine Namen von Schülerinnen und Schülern ein.</p>
+<p><strong>Seite.</strong> Die Mühle läuft in deinem Browser; kein Server wertet deine Eingaben aus. Die Seiten setzen keine Cookies,
+haben kein Tracking und laden nichts von fremden Servern, außer in den zwei Fällen unten. Eine angefangene Einheit
+legt die Mühle in deinem Browser ab, bis eine andere sie ersetzt, du sie mit „×“ verwirfst oder den Browserspeicher
+löschst.</p>
+<p><strong>GitHub.</strong> Die Seiten liefert GitHub Pages aus (GitHub, Inc., USA; nach eigener Angabe Teilnehmer am EU-US Data
+Privacy Framework, <a href="https://docs.github.com/de/site-policy/privacy-policies/github-general-privacy-statement">Datenschutzerklärung
+von GitHub</a>). GitHub speichert Zugriffsdaten wie die
+IP-Adresse in Protokollen, auf die ich keinen Zugriff habe. Darin steht auch, welche Lehrplandatei die Mühle beim
+Haken „Lehrplanbezug“ nachlädt, und bei ausgeschaltetem JavaScript Thema, Jahrgangsstufe und Minuten, weil das
+Startformular sie dann als Teil der Adresse schickt.</p>
+<p><strong>KI-Chat.</strong> Was du in einen Chat einfügst, unterliegt den Bedingungen seines Anbieters; ich sehe davon nichts.</p>
+<p><strong>Eigene KI.</strong> Adresse und Zugangscode liegen in deinem Browser. Erst wenn du die Verbindung eingerichtet hast, ruft
+die Seite ein Programm auf deinem Rechner auf (Adresse 127.0.0.1); von dort geht der Text an den Anbieter oder das
+Programm, das du gewählt hast.</p>
+<p><strong>Testphase mit Code.</strong> Mit einem Testcode von mir geht der Text von deinem Browser an ki.kursmühle.de (Cloudflare,
+Inc., USA) und von dort an Anthropic (USA), das die Anfragen nach seinen API-Bedingungen verarbeitet; die Kosten trage
+ich. Der Dienst hält Text und Antwort höchstens zwei Stunden nach der letzten Anfrage im Zwischenspeicher, damit
+Korrekturbitten anknüpfen können, protokolliert keine Inhalte und zählt nur Anfragen je Code und Tag; nach fünf
+falschen Codes ist die IP-Adresse eine Minute gesperrt. Er endet mit der Testphase. Gib in der Testphase keine
+personenbezogenen Daten ein.</p>
+
+<table>
+  <thead><tr><th>Daten</th><th>Wo sie bleiben</th></tr></thead>
+  <tbody>
+    <tr><td>Thema, Jahrgangsstufe, Minuten, Einstellungen</td><td>in deinem Browser</td></tr>
+    <tr><td>Antwort des Chats, Bilder, die du in der Einheit einsetzt</td><td>in deinem Browser</td></tr>
+    <tr><td>Angefangene Einheit</td><td>im Browserspeicher, bis eine andere Einheit sie ersetzt oder du sie verwirfst</td></tr>
+    <tr><td>Gespeicherte Einheit und Datei für die Lernplattform</td><td>als Download auf deinem Rechner</td></tr>
+    <tr><td>Text für den Chat</td><td>in deiner Zwischenablage; nach dem Einfügen beim Anbieter des Chats</td></tr>
+    <tr><td>Adresse und Zugangscode der eigenen KI</td><td>in deinem Browser; der Text geht von deinem Rechner an den Anbieter oder das Programm, das du eingerichtet hast</td></tr>
+    <tr><td>Text in der Testphase mit Code</td><td>höchstens zwei Stunden nach der letzten Anfrage bei ki.kursmühle.de (Cloudflare), dann gelöscht; bei Anthropic nach dessen Bedingungen</td></tr>
+    <tr><td>Rückmeldung</td><td>bei mir, wenn du sie selbst per Mail schickst</td></tr>
+    <tr><td>Abruf der Seite und der Lehrplantexte</td><td>in den Zugriffsprotokollen von GitHub</td></tr>
+  </tbody>
+</table>
+
+<h2>Lizenz</h2>
+<p>Code unter PolyForm Noncommercial 1.0.0, Texte und Vorlagen unter CC BY-NC-SA 4.0; der Wortlaut steht im
+<a href="https://github.com/simon-sarkar/kursmuehle">Projekt auf GitHub</a>. Die mitgelieferten Programmteile Pyodide,
+PyYAML und tzdata sowie die Titelschriften der Designs stehen unter eigenen Lizenzen
+(<a href="https://github.com/simon-sarkar/kursmuehle/blob/main/docs/start/vendor/LIZENZEN.md">Liste der Lizenzen</a>).</p>
+<p>Für Kurse,
+die du mit Kursmühle erstellst, gelten die Lizenzen dieses Projekts nicht; eine Titelschrift, die die Mühle in den Kurs
+einbettet, bleibt unter der SIL Open Font License.</p>
+<p>Die Lehrplantexte in der Mühle stammen aus dem LehrplanPLUS des Staatsinstituts für
+Schulqualität und Bildungsforschung (ISB), <a href="https://www.lehrplanplus.bayern.de">lehrplanplus.bayern.de</a>. Sie
+sind amtliche Werke und stehen wörtlich in der Mühle; die Lizenzen dieses Projekts gelten für sie nicht.</p>
+</div></main>
+<footer><div class="innen"><a href="./">Startseite</a> · <a href="start/">Mahlwerk starten</a></div></footer>
+<script>
+// Beim Verlassen läuft das Rad bis zur nächsten halben Umdrehung aus (Bild ist 180° symmetrisch). Wie in index.html.
+(function () {
+  var ruhig = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)");
+  [].forEach.call(document.querySelectorAll(".dreh"), function (a) {
+    var rad = a.querySelector(".rad"), aus = null;
+    if (!rad || !rad.animate) return;
+    function an() { if (aus) { aus.cancel(); aus = null; } a.classList.add("dreht"); }
+    function bleibt() { try { return a.matches(":hover") || a.matches(":focus-visible"); } catch (e) { return false; } }
+    function ab() {
+      if (bleibt()) return;
+      if (!a.classList.contains("dreht") || (ruhig && ruhig.matches)) { a.classList.remove("dreht"); return; }
+      var m = getComputedStyle(rad).transform, w = 0;
+      if (m && m !== "none") {                             // matrix(a, b, …); Werte wie 1.74533e-05 knapp neben 180° ganz lesen
+        var z = m.slice(m.indexOf("(") + 1).match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi).map(parseFloat);
+        w = Math.atan2(z[1], z[0]) * 180 / Math.PI;
+        if (!isFinite(w)) w = 0;
+      }
+      a.classList.remove("dreht");
+      if (w > 0) w -= 360;                                 // (-360, 0]
+      var ziel = Math.floor(w / 180 - 1e-6) * 180;         // nächste halbe Umdrehung gegen den Uhrzeigersinn
+      aus = rad.animate([{ transform: "rotate(" + w + "deg)" }, { transform: "rotate(" + ziel + "deg)" }],
+                        { duration: 400 + (w - ziel) * 8, easing: "cubic-bezier(.25,.6,.4,1)" });
+      aus.onfinish = function () { aus = null; };
+    }
+    a.addEventListener("mouseenter", an);
+    a.addEventListener("focus", function () { if (bleibt()) an(); });
+    a.addEventListener("mouseleave", ab);
+    a.addEventListener("blur", ab);
+  });
+})();
+
+(function () {
+  var b = document.getElementById("schema");
+  if (!b) return;
+  function zeige() { var d = document.documentElement.dataset.theme === "dark"; b.textContent = d ? "Hell" : "Dunkel"; b.setAttribute("aria-pressed", d ? "true" : "false"); }
+  b.addEventListener("click", function () {
+    var d = document.documentElement.dataset.theme !== "dark";
+    if (d) document.documentElement.dataset.theme = "dark"; else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem("kursmuehle-schema", d ? "dunkel" : "hell"); } catch (e) {}
+    zeige();
+  });
+  zeige();
+})();
+</script>
+</body>
+</html>

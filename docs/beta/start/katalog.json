@@ -1,0 +1,701 @@
+{
+ "typen": [
+  {
+   "typ": "Banner",
+   "formularname": "Kursbanner",
+   "rolle": "rahmen",
+   "minuten": false
+  },
+  {
+   "typ": "Textfeld",
+   "formularname": "Text",
+   "rolle": "lesen",
+   "minuten": true
+  },
+  {
+   "typ": "Seite",
+   "formularname": "Seite",
+   "rolle": "lesen",
+   "minuten": true
+  },
+  {
+   "typ": "Überblick",
+   "formularname": "Überblick",
+   "rolle": "rahmen",
+   "minuten": false
+  },
+  {
+   "typ": "Link",
+   "formularname": "Link",
+   "rolle": "lesen",
+   "minuten": true
+  },
+  {
+   "typ": "Video",
+   "formularname": "Video",
+   "rolle": "lesen",
+   "minuten": true
+  },
+  {
+   "typ": "Lesebuch",
+   "formularname": "Lesebuch mit Fragen",
+   "rolle": "lesen",
+   "minuten": true
+  },
+  {
+   "typ": "Quiz",
+   "formularname": "Quiz",
+   "rolle": "üben",
+   "minuten": true
+  },
+  {
+   "typ": "Zuordnen",
+   "formularname": "Zuordnen",
+   "rolle": "üben",
+   "minuten": true
+  },
+  {
+   "typ": "Lernkarten",
+   "formularname": "Lernkarten",
+   "rolle": "üben",
+   "minuten": true
+  },
+  {
+   "typ": "Geschichte",
+   "formularname": "Geschichte",
+   "rolle": "üben",
+   "minuten": true
+  },
+  {
+   "typ": "Lückentext",
+   "formularname": "Lückentext",
+   "rolle": "üben",
+   "minuten": true
+  },
+  {
+   "typ": "Umfrage",
+   "formularname": "Selbsteinschätzung",
+   "rolle": "rahmen",
+   "minuten": true
+  },
+  {
+   "typ": "Badge",
+   "formularname": "Abzeichen",
+   "rolle": "rahmen",
+   "minuten": false
+  },
+  {
+   "typ": "Unterabschnitt",
+   "formularname": "Unterabschnitt",
+   "rolle": "rahmen",
+   "minuten": false
+  },
+  {
+   "typ": "Test",
+   "formularname": "Test (bewertet)",
+   "rolle": "sichern",
+   "minuten": true
+  },
+  {
+   "typ": "Aufgabe",
+   "formularname": "Aufgabe (Abgabe)",
+   "rolle": "sichern",
+   "minuten": true
+  },
+  {
+   "typ": "Datei",
+   "formularname": "Datei",
+   "rolle": "lesen",
+   "minuten": false
+  },
+  {
+   "typ": "Verzeichnis",
+   "formularname": "Dateiordner",
+   "rolle": "lesen",
+   "minuten": false
+  },
+  {
+   "typ": "Forum",
+   "formularname": "Forum",
+   "rolle": "rahmen",
+   "minuten": false
+  },
+  {
+   "typ": "Buch",
+   "formularname": "Buch",
+   "rolle": "lesen",
+   "minuten": true
+  },
+  {
+   "typ": "Abstimmung",
+   "formularname": "Abstimmung",
+   "rolle": "rahmen",
+   "minuten": false
+  },
+  {
+   "typ": "Glossar",
+   "formularname": "Glossar",
+   "rolle": "lesen",
+   "minuten": false
+  }
+ ],
+ "vorlagen": [
+  {
+   "name": "Einführung",
+   "zeile": "neues Thema",
+   "phasen": [
+    {
+     "phase": "Einstieg",
+     "anteil": 17,
+     "rolle": "einstieg",
+     "zusammen": [
+      "Einstieg",
+      "Hinführung",
+      "Zielangabe"
+     ],
+     "bausteine": [
+      "Textfeld: Einstieg | Ein Text: Fall oder Frage aus dem Alltag, Hinführung zum Thema, am Ende das Ziel der Stunde als Frage an die Lernenden, ohne die Kernaussage zu verraten."
+     ]
+    },
+    {
+     "phase": "Erarbeitung",
+     "anteil": 35,
+     "rolle": "lesen",
+     "dehnbar": true,
+     "bausteine": [
+      "automatisch: Lesetext mit Fragen | Eine Seite: neue Begriffe einführen, jeden an einem Fall; Fragen zum Anwenden der Begriffe als Quiz direkt nach der Seite (id mit -2); die Kernaussage im Merke-Kasten; hat das Thema ein Verfahren, die Kernaussage Schritt für Schritt an Fällen."
+     ]
+    },
+    {
+     "phase": "Übung",
+     "anteil": 30,
+     "rolle": "üben",
+     "dehnbar": true,
+     "bausteine": [
+      "automatisch: Übung zum Zuordnen | Die Kernaussage an leichten Fällen erkennen.",
+      "automatisch: Übung zum Anwenden | Die Kernaussage auf neue Fälle anwenden (Eingabe, Lückentext oder Fall)."
+     ]
+    },
+    {
+     "phase": "Sicherung",
+     "anteil": 13,
+     "rolle": "sichern",
+     "bausteine": [
+      "Seite: Hefteintrag | Hefteintrag zum Abschreiben: Begriffe, Kernaussage, ein Beispiel."
+     ]
+    },
+    {
+     "phase": "Vertiefung",
+     "anteil": 5,
+     "rolle": "sichern",
+     "optional": true,
+     "bausteine": [
+      "automatisch: Der Fall vom Anfang | Den Fall aus dem Einstieg mit der Kernaussage lösen."
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Übung und Vertiefung",
+   "zeile": "Thema ist bekannt",
+   "phasen": [
+    {
+     "phase": "Einstieg",
+     "anteil": 10,
+     "rolle": "einstieg",
+     "bausteine": [
+      "automatisch: Aufwärmen | Kurze Aufgaben zum Vorwissen."
+     ]
+    },
+    {
+     "phase": "Vorwissensaktivierung",
+     "anteil": 10,
+     "rolle": "lesen",
+     "bausteine": [
+      "automatisch: Kurz erinnern | Kernaussage und ein Beispiel in wenigen Sätzen."
+     ]
+    },
+    {
+     "phase": "Übung",
+     "anteil": 55,
+     "rolle": "üben",
+     "dehnbar": true,
+     "bausteine": [
+      "automatisch: Stufe 1 | Üben in Stufen, Stufe 1: erkennen, leichte Fälle.",
+      "automatisch: Stufe 2 | Üben in Stufen, Stufe 2: anwenden auf Fälle, mit Eingabe."
+     ]
+    },
+    {
+     "phase": "Lernzielkontrolle",
+     "anteil": 15,
+     "rolle": "sichern",
+     "bausteine": [
+      "automatisch: Selbstkontrolle | Gemischte Aufgaben mit Lösung."
+     ]
+    },
+    {
+     "phase": "Vertiefung",
+     "anteil": 10,
+     "rolle": "sichern",
+     "optional": true,
+     "bausteine": [
+      "automatisch: Neuer Fall | Ein Fall, der vorher nicht vorkam."
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Wiederholung und Prüfungsvorbereitung",
+   "zeile": "Fragenkatalog oder Stoffliste liegt vor",
+   "phasen": [
+    {
+     "phase": "Zielangabe",
+     "anteil": 5,
+     "rolle": "rahmen",
+     "bausteine": [
+      "Textfeld: Was geprüft wird"
+     ]
+    },
+    {
+     "phase": "Wiederholung",
+     "anteil": 25,
+     "rolle": "lesen",
+     "dehnbar": true,
+     "bausteine": [
+      "automatisch: Erinnern | Das Wichtigste je Teilthema knapp."
+     ]
+    },
+    {
+     "phase": "Übung",
+     "anteil": 45,
+     "rolle": "üben",
+     "dehnbar": true,
+     "bausteine": [
+      "automatisch: Teilthemen üben | Üben nach Teilthemen: Aufgaben je Teilthema."
+     ]
+    },
+    {
+     "phase": "Lernzielkontrolle",
+     "anteil": 20,
+     "rolle": "sichern",
+     "bausteine": [
+      "Test: Probelauf"
+     ]
+    },
+    {
+     "phase": "Reflexion",
+     "anteil": 5,
+     "rolle": "sichern",
+     "optional": true,
+     "bausteine": [
+      "Umfrage: Was noch unsicher ist"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Einheit aus eigenem Material",
+   "zeile": "Folien, Heftbilder, Arbeitsblatt",
+   "phasen": [
+    {
+     "phase": "Einstieg",
+     "anteil": 10,
+     "rolle": "einstieg",
+     "bausteine": [
+      "Textfeld: Einstieg"
+     ]
+    },
+    {
+     "phase": "Erarbeitung",
+     "anteil": 35,
+     "rolle": "lesen",
+     "dehnbar": true,
+     "bausteine": [
+      "automatisch: Lesetext aus deinem Material"
+     ]
+    },
+    {
+     "phase": "Übung",
+     "anteil": 30,
+     "rolle": "üben",
+     "dehnbar": true,
+     "bausteine": [
+      "automatisch: Übung 1",
+      "automatisch: Übung 2"
+     ]
+    },
+    {
+     "phase": "Sicherung",
+     "anteil": 20,
+     "rolle": "sichern",
+     "bausteine": [
+      "Seite: Hefteintrag"
+     ]
+    },
+    {
+     "phase": "Transfer",
+     "anteil": 5,
+     "rolle": "sichern",
+     "optional": true,
+     "bausteine": [
+      "automatisch: Anwendung"
+     ]
+    }
+   ]
+  }
+ ],
+ "oberflaeche": {
+  "format": [
+   {
+    "wert": "themen",
+    "text": "Themen untereinander"
+   },
+   {
+    "wert": "kacheln",
+    "text": "Kacheln"
+   },
+   {
+    "wert": "komprimiert",
+    "text": "Themen zum Aufklappen"
+   },
+   {
+    "wert": "einthemen",
+    "text": "Ein Thema je Reiter"
+   },
+   {
+    "wert": "wochen",
+    "text": "Wochen"
+   }
+  ],
+  "schulart": [
+   {
+    "wert": "",
+    "text": "Nicht angegeben"
+   },
+   {
+    "wert": "Grundschule",
+    "text": "Grundschule"
+   },
+   {
+    "wert": "Mittelschule",
+    "text": "Mittelschule"
+   },
+   {
+    "wert": "Realschule",
+    "text": "Realschule"
+   },
+   {
+    "wert": "Gymnasium",
+    "text": "Gymnasium"
+   },
+   {
+    "wert": "Wirtschaftsschule",
+    "text": "Wirtschaftsschule"
+   },
+   {
+    "wert": "Förderschule",
+    "text": "Förderschule"
+   },
+   {
+    "wert": "Berufliche Schule",
+    "text": "Berufliche Schule"
+   }
+  ],
+  "schwerpunkt": [
+   {
+    "wert": "begriffe",
+    "text": "Begriffe verstehen"
+   },
+   {
+    "wert": "verfahren",
+    "text": "Ein Verfahren können"
+   },
+   {
+    "wert": "faelle",
+    "text": "Fälle beurteilen"
+   }
+  ],
+  "sprache": [
+   {
+    "wert": "einfach",
+    "text": "Einfach"
+   },
+   {
+    "wert": "normal",
+    "text": "Normal"
+   },
+   {
+    "wert": "anspruchsvoll",
+    "text": "Anspruchsvoll"
+   }
+  ],
+  "farbe": [
+   {
+    "wert": "",
+    "text": "Standard"
+   },
+   {
+    "wert": "blau",
+    "text": "Blau"
+   },
+   {
+    "wert": "grün",
+    "text": "Grün"
+   },
+   {
+    "wert": "rot",
+    "text": "Rot"
+   },
+   {
+    "wert": "orange",
+    "text": "Orange"
+   },
+   {
+    "wert": "lila",
+    "text": "Lila"
+   }
+  ],
+  "website": [
+   {
+    "wert": "textfeld",
+    "text": "Auf der Kursseite",
+    "zeile": "Quiz, Zuordnen, Lernkarten und Lückentext stehen als Blöcke im Textfeld; nichts lädt nach."
+   },
+   {
+    "wert": "nein",
+    "text": "Als eigene Aktivitäten",
+    "zeile": "Je Übung eine H5P-Aktivität mit H5P-Optik; jede lädt einzeln."
+   }
+  ],
+  "bilder": [
+   {
+    "wert": "0",
+    "text": "keine",
+    "min": 0,
+    "max": 0
+   },
+   {
+    "wert": "2-3",
+    "text": "2 bis 3",
+    "min": 2,
+    "max": 3,
+    "standard": true
+   },
+   {
+    "wert": "4-7",
+    "text": "4 bis 7",
+    "min": 4,
+    "max": 7
+   },
+   {
+    "wert": "8+",
+    "text": "viele",
+    "min": 8,
+    "max": null
+   },
+   {
+    "wert": "zahl",
+    "text": "Benutzerdefiniert",
+    "min": 1,
+    "max": 30
+   }
+  ],
+  "bildbeschriftung": [
+   {
+    "wert": "woerter",
+    "text": "Wörter im Bild",
+    "zeile": "Für gute Bildgeneratoren; die Begriffe stehen direkt im Bild."
+   },
+   {
+    "wert": "ziffern",
+    "text": "Ziffern an Pfeilen",
+    "standard": true,
+    "zeile": "Für Generatoren, die Wörter verschreiben; die Begriffe stehen in der Bildunterschrift."
+   }
+  ],
+  "bild_hochladen": {
+   "kante": 1200,
+   "qualitaet": 85
+  },
+  "bild_pruefung": "Passt, wenn Text im Bild lesbar ist (oder keiner da ist), Pfeile auf das Richtige zeigen und keine fremden Symbole oder Gesten zu sehen sind.",
+  "abschluss": [
+   {
+    "wert": "keiner",
+    "text": "Kein Abschlusstest"
+   },
+   {
+    "wert": "test",
+    "text": "Abschlusstest"
+   },
+   {
+    "wert": "test und abzeichen",
+    "text": "Abschlusstest mit Abzeichen"
+   }
+  ],
+  "portionierung": [
+   {
+    "wert": "keine",
+    "text": "Alles sofort sichtbar"
+   },
+   {
+    "wert": "etappen",
+    "text": "In Etappen sichtbar"
+   },
+   {
+    "wert": "wochen",
+    "text": "Wochenweise sichtbar"
+   }
+  ]
+ },
+ "chats": [
+  {
+   "wert": "bylki",
+   "text": "ByLKI",
+   "gruppe": "dienstlich",
+   "codeblock": true,
+   "teil_bausteine": 6,
+   "eingabe_kb": null,
+   "bilder": true,
+   "bilder_hinweis": "Das Bildguthaben ist klein; ist es leer, meldet der Generator eine Inhaltswarnung, auch bei harmlosen Aufträgen. Dann ein anderer Generator oder morgen.",
+   "aufwand": "Wähl in ByLKI das neueste Modell ohne Zusatz wie mini oder flash im Namen."
+  },
+  {
+   "wert": "ais",
+   "text": "AIS-Chat",
+   "gruppe": "dienstlich",
+   "codeblock": true,
+   "teil_bausteine": null,
+   "eingabe_kb": 68,
+   "bilder": false,
+   "aufwand": "Wähl im AIS-Chat oben links das Modell; nimm keins mit nano oder 8B im Namen, das sind kleine Modelle."
+  },
+  {
+   "wert": "fobizz",
+   "text": "fobizz",
+   "gruppe": "dienstlich",
+   "codeblock": true,
+   "teil_bausteine": null,
+   "eingabe_kb": 68,
+   "bilder": false,
+   "aufwand": "Stell in fobizz „Auto“ um und nimm unter „Mehr Modelle“ das neueste Modell ohne Zusatz wie mini oder flash im Namen."
+  },
+  {
+   "wert": "mucgpt",
+   "text": "MUCGPT",
+   "gruppe": "dienstlich",
+   "codeblock": true,
+   "teil_bausteine": 6,
+   "eingabe_kb": null,
+   "bilder": false,
+   "aufwand": "Bietet MUCGPT eine Modellwahl, nimm das neueste Modell ohne Zusatz wie mini oder flash im Namen."
+  },
+  {
+   "wert": "chatgpt",
+   "text": "ChatGPT",
+   "gruppe": "privat",
+   "codeblock": true,
+   "teil_bausteine": null,
+   "eingabe_kb": null,
+   "bilder": true,
+   "aufwand": "Stell in ChatGPT vor dem Senden den Aufwand auf „Extra High“, das geht auch im kostenlosen Konto."
+  },
+  {
+   "wert": "claude",
+   "text": "Claude",
+   "gruppe": "privat",
+   "codeblock": true,
+   "teil_bausteine": null,
+   "eingabe_kb": null,
+   "bilder": false,
+   "aufwand": "Nimm in Claude das neueste Modell ohne Zusatz und schalte das Denken ein, wenn es den Schalter gibt."
+  },
+  {
+   "wert": "gemini",
+   "text": "Gemini",
+   "gruppe": "privat",
+   "codeblock": true,
+   "teil_bausteine": null,
+   "eingabe_kb": null,
+   "bilder": true,
+   "aufwand": "Nimm in Gemini das neueste Modell ohne Zusatz wie flash oder lite im Namen und schalte das Denken ein, wenn es den Schalter gibt."
+  },
+  {
+   "wert": "eigene",
+   "text": "Eigene KI",
+   "gruppe": "verbunden",
+   "codeblock": false,
+   "teil_bausteine": 6,
+   "eingabe_kb": null,
+   "bilder": false
+  },
+  {
+   "wert": "anderer",
+   "text": "Anderer Chat",
+   "gruppe": "anderer",
+   "codeblock": true,
+   "teil_bausteine": 6,
+   "eingabe_kb": null,
+   "bilder": false,
+   "aufwand": "Nimm das neueste Modell ohne Zusatz wie mini oder flash im Namen; steht „Auto“ voreingestellt, stell um."
+  }
+ ],
+ "chat_gruppen": {
+  "dienstlich": "Dienstlich",
+  "privat": "Privates Konto",
+  "anderer": "Anderer",
+  "verbunden": "Verbunden"
+ },
+ "typgruppen": [
+  {
+   "name": "Lesen",
+   "typen": [
+    "Textfeld",
+    "Seite",
+    "Lesebuch",
+    "Video",
+    "Link"
+   ]
+  },
+  {
+   "name": "Üben",
+   "typen": [
+    "Quiz",
+    "Zuordnen",
+    "Lernkarten",
+    "Lückentext",
+    "Geschichte",
+    "Umfrage"
+   ]
+  },
+  {
+   "name": "Sichern und bewerten",
+   "typen": [
+    "Test",
+    "Aufgabe",
+    "Abstimmung",
+    "Forum"
+   ]
+  },
+  {
+   "name": "Material und Struktur",
+   "typen": [
+    "Datei",
+    "Verzeichnis",
+    "Buch",
+    "Glossar",
+    "Überblick"
+   ]
+  }
+ ],
+ "automatisch": [
+  "Textfeld",
+  "Seite",
+  "Quiz",
+  "Zuordnen",
+  "Lernkarten",
+  "Lückentext",
+  "Geschichte",
+  "Lesebuch"
+ ],
+ "version": "2.0.0-b11"
+}
