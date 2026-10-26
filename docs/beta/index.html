@@ -146,6 +146,9 @@
   ol.ablauf li::before { content: counter(s); position: absolute; left: 0; top: -4px; font-size: 1.6rem;
                          font-weight: 750; line-height: 1.2; color: var(--ocker-text); }
   .chats { font-size: .98rem; color: var(--text2); padding-top: 4px; }
+  details.mehr { margin: -18px 0 28px; }
+  details.mehr summary { cursor: pointer; font-weight: 650; }
+  details.mehr p { margin: 8px 0 0; }
 
   footer { background: var(--fuss); color: var(--fuss-text); padding: 36px 0 44px; font-size: .9rem; }
   footer p { margin: 0 0 10px; max-width: 72ch; }
@@ -155,7 +158,7 @@
 </style>
 </head>
 <body>
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 619bcb3 vom 26.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 3dfefb9 vom 26.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 
 <header class="kopfzeile">
   <div class="innen">
@@ -235,11 +238,15 @@
       <ol class="ablauf">
         <li>Du gibst Thema, Jahrgangsstufe und Minuten ein und klickst auf „Weiter“.</li>
         <li>Du kopierst den Text für den Chat aus der Mühle in deinen KI-Chat und die Antwort zurück. Fehlt
-          etwas, bekommst du eine Korrekturbitte für den Chat. Mit einem KI-Programm auf deinem Rechner
-          (<a href="verbinden.md">eigene KI</a>) entfällt das Kopieren.</li>
-        <li>Du lädst die Datei für die Lernplattform herunter und stellst sie nach Anleitung der Mühle über
-          „Wiederherstellen“ wieder her, zum Beispiel als neuen Kurs.</li>
+          etwas, bekommst du eine Korrekturbitte für den Chat.</li>
+        <li>Du lädst die Datei für die Lernplattform herunter und stellst sie in einem leeren Kurs wieder her: Mehr →
+          Kurs wiederverwenden → Sicherung wiederherstellen, als Ziel „In diesen Kurs wiederherstellen“ → „Alle Inhalte
+          dieses Kurses löschen und dann wiederherstellen“. Die Mühle zeigt dir jeden Schritt.</li>
       </ol>
+      <details class="mehr">
+        <summary>Für Fortgeschrittene</summary>
+        <p>Mit einem KI-Programm auf deinem Rechner (<a href="verbinden.md">eigene KI</a>) entfällt das Kopieren.</p>
+      </details>
       <p>Die Mühle ist für gängige KI-Chats eingerichtet; Konto, Kosten und Nutzungsbedingungen regelt der Anbieter, und
       ob du einen Chat dienstlich nutzen darfst, klärst du mit deiner Schule.</p>
       <p>Nimm das neueste Modell ohne Zusatz; Namen mit mini, fast, flash, lite, nano oder small sind die kleinen, und
@@ -266,6 +273,7 @@
   <div class="innen">
     <ul class="links">
       <li><a href="impressum.html">Impressum und Datenschutz</a></li>
+      <li><a href="schule.html">Für Schulleitung und Datenschutz</a></li>
       <li><a href="verbinden.md">Eigene KI verbinden</a></li>
       <li><a href="https://github.com/simon-sarkar/kursmuehle/tree/main/docs/kachel">Kachel fürs Schulportal</a></li>
       <li><a href="https://github.com/simon-sarkar/kursmuehle">GitHub</a></li>

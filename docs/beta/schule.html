@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kursmühle – Für Schulleitung und Datenschutz</title>
+<meta name="description" content="Datenfluss, Speicher und Verantwortung bei der Kursmühle, für Schulleitung und Datenschutzbeauftragte.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<!-- Für Schulleitung und Datenschutzbeauftragte (AP13.12 b5); verlinkt in der Fußzeile der Landingpage.
+     Tatsachen, keine Rechtsberatung; gleiche Angaben wie impressum.html. -->
+<script>
+// Hell ist Standard; die Wahl „Dunkel“ liegt im localStorage dieses Browsers.
+(function () { try { if (localStorage.getItem("kursmuehle-schema") === "dunkel") document.documentElement.dataset.theme = "dark"; } catch (e) {} })();
+</script>
+<style>
+  :root { color-scheme: light;
+          --grund: #faf6ee; --band: #f3e9d8; --flaeche: #ffffff; --kachel: #ffffff;
+          --text: #2a2a2a; --leise: #6b6458; --linie: #e4d8c3; --ocker: #d9a441; --fokus: #8a6416;
+          --fuss: #2a2a2a; --fuss-text: #f3e9d8; --schatten: rgba(42,42,42,.10);
+          --logo-grund: #2a2a2a; --logo-muehle: #f3e9d8; --logo-rand: 5px; }
+  :root[data-theme="dark"] { color-scheme: dark;
+          --grund: #262522; --band: #2a2a2a; --flaeche: #1b1a18; --kachel: #35332f;
+          --text: #f3e9d8; --leise: #b9ae9c; --linie: #423e37; --fokus: #d9a441;
+          --fuss: #141312; --fuss-text: #f3e9d8; --schatten: rgba(0,0,0,.35);
+          --logo-grund: #f3e9d8; --logo-muehle: #2a2a2a; --logo-rand: 4px; }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--grund); color: var(--text);
+         font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  :focus-visible { outline: 3px solid var(--fokus); outline-offset: 3px; }
+  .innen { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+  main .innen, .kopfzeile .innen { max-width: 760px; }
+
+  /* Logo; das Rad dreht sich bei Hover und Fokus. Wie in index.html. */
+  .logo { display: block; }
+  .logo .l-g { fill: var(--logo-grund); }
+  .logo .l-m { fill: var(--logo-muehle); }
+  .logo .l-a { fill: var(--ocker); }
+  .logo .l-k { stroke: var(--logo-grund); stroke-width: var(--logo-rand); stroke-linejoin: round; }
+  .logo .l-kf { stroke: var(--logo-grund); stroke-width: calc(2 * var(--logo-rand)); stroke-linejoin: round;
+                paint-order: stroke; }
+  .logo .rad { transform-box: view-box; transform-origin: 128px 98px; }
+  @keyframes anlauf { from { transform: rotate(0deg); } to { transform: rotate(-36deg); } }
+  @keyframes drehen { from { transform: rotate(-36deg); } to { transform: rotate(-396deg); } }
+  .dreh:hover .rad, .dreh:focus-visible .rad, .dreh.dreht .rad {
+    animation: anlauf 2s cubic-bezier(.333, 0, .667, .333) forwards, drehen 10s linear 2s infinite; }
+  @media (prefers-reduced-motion: reduce) { .logo .rad { animation: none !important; } }
+
+  /* Kopfzeile: klebt oben, höchstens 56 px. Wie in index.html. */
+  .kopfzeile { position: sticky; top: 0; z-index: 10; background: var(--band); border-bottom: 1px solid var(--linie); }
+  .kopfzeile .innen { height: 55px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .kopfzeile .rechts { display: flex; align-items: center; gap: 16px; }
+  .schema { background: none; border: 0; padding: 4px 0; font: inherit; font-size: .9rem; color: var(--leise); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .schema:hover { color: var(--text); }
+  .marke { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; text-decoration: none; }
+  .marke img { width: 28px; height: 28px; border-radius: 7px; display: block; }
+  .marke span { font-weight: 400; color: var(--leise); font-size: .9rem; }
+  .mini { display: inline-flex; align-items: center; gap: 10px; padding: 4px 14px 4px 4px; border-radius: 12px;
+          background: var(--kachel); text-decoration: none; font-weight: 650; font-size: .95rem;
+          box-shadow: 0 1px 2px var(--schatten), 0 4px 12px var(--schatten); transition: opacity .2s, visibility .2s; }
+  .mini .logo { width: 34px; height: 34px; }
+  .io .mini:not(.zeigen) { opacity: 0; visibility: hidden; }
+  @media (max-width: 520px) { .mini { padding: 4px; } .mini span { display: none; } }
+
+  main { padding: 40px 0 56px; }
+  h1 { font-size: 1.9rem; line-height: 1.15; margin: 0 0 28px; letter-spacing: -.01em; }
+  h2 { font-size: 1.2rem; margin: 36px 0 10px; }
+  p, ul, ol { margin: 0 0 .9em; max-width: 68ch; }
+  ul, ol { padding-left: 22px; }
+  li { margin-bottom: .35em; }
+  address { font-style: normal; margin: 0 0 .9em; }
+  table { width: 100%; border-collapse: collapse; background: var(--flaeche); font-size: .95rem; margin: 6px 0 1em; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--linie); }
+  th { font-weight: 650; }
+  thead th { background: var(--band); }
+  td:first-child { width: 28%; }
+  footer { background: var(--fuss); color: var(--fuss-text); padding: 24px 0 32px; font-size: .9rem; }
+  @media (max-width: 520px) { td:first-child { width: auto; } th, td { padding: 8px; } }
+</style>
+</head>
+<body>
+<header class="kopfzeile">
+  <div class="innen">
+    <a class="marke" href="./"><img src="logo.svg" alt="" width="28" height="28">Kursmühle <span>Beta</span></a>
+    <div class="rechts"><button type="button" id="schema" class="schema" aria-pressed="false">Dunkel</button><a class="mini dreh" href="start/" id="mini" aria-label="Mahlwerk starten"><!-- logo --><svg class="logo" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><rect width="256" height="256" rx="56" class="l-g"/><path d="M100,236 L156,236 L147,150 L109,150 Z" class="l-m"/>
+  <rect x="115" y="170" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="131" y="170" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="115" y="188" width="12" height="12" rx="3" class="l-g"/>
+  <rect x="131" y="188" width="12" height="12" rx="3" class="l-a"/>
+  <g class="rad"><g transform="rotate(45 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(135 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(225 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g><g transform="rotate(315 128 98)"><path d="M121,58 L135,58 L143,2 Q128,-10 113,2 Z" class="l-m l-kf"/></g>
+  <path d="M158.7,120.3 L155.7,124.0 L162.2,134.4 L152.1,141.8 L144.2,132.4 L139.7,134.1 L135.1,135.3 L134.3,147.6 L121.7,147.6 L120.9,135.3 L116.3,134.1 L111.8,132.4 L103.9,141.8 L93.8,134.4 L100.3,124.0 L97.3,120.3 L94.7,116.3 L82.8,119.3 L78.9,107.4 L90.3,102.8 L90.0,98.0 L90.3,93.2 L78.9,88.6 L82.8,76.7 L94.7,79.7 L97.3,75.7 L100.3,72.0 L93.8,61.6 L103.9,54.2 L111.8,63.6 L116.3,61.9 L120.9,60.7 L121.7,48.4 L134.3,48.4 L135.1,60.7 L139.7,61.9 L144.2,63.6 L152.1,54.2 L162.2,61.6 L155.7,72.0 L158.7,75.7 L161.3,79.7 L173.2,76.7 L177.1,88.6 L165.7,93.2 L166.0,98.0 L165.7,102.8 L177.1,107.4 L173.2,119.3 L161.3,116.3 Z" class="l-m l-k"/></g>
+  <circle cx="128" cy="98" r="22" class="l-g"/>
+  <circle cx="128" cy="98" r="9" class="l-a"/></svg><!-- /logo --><span>Mahlwerk starten</span></a></div>
+  </div>
+</header>
+<main><div class="innen">
+<h1>Für Schulleitung und Datenschutz</h1>
+
+<p>Diese Seite fasst zusammen, welche Daten bei der Kursmühle wohin gehen und was beim Einspielen in die
+ByCS-Lernplattform passiert. Du kannst sie an deine Schulleitung oder die Datenschutzbeauftragten deiner Schule
+weitergeben. Sie beschreibt Tatsachen und ist keine Rechtsberatung; ob und mit welchem Chat du die Kursmühle dienstlich
+nutzt, klärst du mit deiner Schule.</p>
+
+<h2>Was die Mühle tut</h2>
+<p>Die Mühle ist eine Webseite. Sie schreibt aus Thema, Jahrgangsstufe und Minuten einen Text für einen KI-Chat, liest
+dessen Antwort und baut daraus eine Kurssicherung (.mbz) für die Lernplattform. Das Programm dafür läuft in deinem
+Browser; kein Server der Mühle wertet deine Eingaben aus. Nur im Weg „Testphase mit Code“ geht der Text an einen
+Dienst (unten).</p>
+<p>Die Seiten setzen keine Cookies und haben kein Tracking. Ausgeliefert werden sie von GitHub Pages (GitHub, Inc.,
+USA); GitHub speichert dabei Zugriffsdaten wie die IP-Adresse
+(<a href="impressum.html">Impressum und Datenschutz</a>).</p>
+
+<h2>Wohin der Text geht</h2>
+<p>Hinaus geht nur der Text für die Einheit: Thema, Jahrgangsstufe, Minuten, deine Angaben zur Einheit und, mit dem Haken
+„Lehrplanbezug“, Ziele aus dem LehrplanPLUS; dazu später Korrekturbitten und Nachfragen, die
+Teile der Chat-Antwort enthalten. Welcher Weg genutzt wird, wählst du in
+der Mühle.</p>
+<table>
+  <thead><tr><th>Weg</th><th>Wohin der Text geht</th></tr></thead>
+  <tbody>
+    <tr><td>Kopieren</td><td>in deine Zwischenablage; du fügst ihn selbst in einen KI-Chat ein. Dort verarbeitet ihn der
+      Anbieter des Chats nach seinen Bedingungen. Die Kursmühle sieht davon nichts.</td></tr>
+    <tr><td>Testphase mit Code</td><td>mit einem Testcode vom Betreiber der Kursmühle (siehe Impressum) von deinem Browser an ki.kursmühle.de (Cloudflare, Inc.,
+      USA) und von dort an Anthropic (USA), das ihn nach seinen API-Bedingungen verarbeitet. Der Dienst hält Text und
+      Antwort höchstens zwei Stunden nach der letzten Anfrage im Zwischenspeicher, protokolliert keine Inhalte und endet
+      mit der Testphase.</td></tr>
+    <tr><td>Eigene KI</td><td>von deinem Browser an ein Programm auf deinem Rechner (Adresse 127.0.0.1), das du selbst
+      eingerichtet hast, und von dort an den Anbieter oder das Programm, das du dort gewählt hast
+      (<a href="verbinden.md">Anleitung</a>).</td></tr>
+  </tbody>
+</table>
+
+<h2>Was im Browser bleibt</h2>
+<p>Die Mühle legt deine Eingaben im Speicher deines Browsers für diese Seite ab.</p>
+<ul>
+  <li>Die angefangene Einheit mit der Antwort des Chats und deinen Bildern, bis eine andere sie ersetzt, du sie mit „×“
+    verwirfst oder den Browserspeicher löschst.</li>
+  <li>Einstellungen wie hell oder dunkel, den Haken „Lehrplanbezug“ und, falls eingerichtet, Adresse und Zugangscode der
+    eigenen KI.</li>
+  <li>Die Programmdateien der Mühle, damit der nächste Aufruf schneller lädt; darin
+    stehen keine Eingaben.</li>
+</ul>
+<p>Die gespeicherte Einheit (Zip-Datei) und die Kurssicherung landen als Download auf deinem Rechner. Wer den
+Browserspeicher der Seite löscht, löscht damit alles, was die Mühle abgelegt hat.</p>
+
+<h2>Keine Schülerdaten</h2>
+<p>Die Mühle fragt nach keinen Daten von Schülerinnen und Schülern, und in den Text für den Chat gehören keine. Die
+Kurssicherung enthält keine Nutzerdaten, also keine Teilnehmenden, Bewertungen oder Beiträge.</p>
+<p>Übungen baut die Mühle als Aktivitäten der Lernplattform (interaktive Inhalte, Test, Feedback, Abstimmung, Aufgabe,
+Forum) oder als kleine Übung direkt im Text des Kurses (Textfeld). Aktivitäten speichern Antworten und Ergebnisse auf der Plattform wie jede von Hand angelegte.</p>
+<p>Eine Übung im Textfeld wertet Antworten im Browser der Schülerinnen und Schüler aus und schickt sie nirgendwohin; eine Einheit als
+Website merkt sich dort nur, welche Kapitel schon geöffnet waren.</p>
+
+<h2>Verantwortung für den Inhalt</h2>
+<p>Die Texte und Aufgaben schreibt der KI-Chat. Die Mühle prüft Form und Umfang und zeigt vor dem Download die Fragen
+mit ihren Lösungen zur Durchsicht; ob der Inhalt fachlich stimmt und zur Klasse passt, prüfst du, wie bei jedem
+anderen Material. Für Bilder, die du hochlädst, brauchst du wie sonst im Kurs die Rechte.</p>
+
+<h2>Was beim Wiederherstellen passiert</h2>
+<p>Vor jedem Download prüft die Mühle die Sicherung gegen den Aufbau, den die Plattform erwartet. Ein Skript, das nicht
+von der Mühle stammt, ein Skript in einem Attribut oder ein eingebetteter Rahmen zu einem anderen Dienst als YouTube
+oder Vimeo verhindern den Download.</p>
+<p>Die Übungen im Textfeld sind JavaScript; die Nutzungsbedingungen der Plattform
+erlauben Lehrkräften Beiträge mit JavaScript (Abschnitt 4.1.3).</p>
+<p>Eine neue Einheit wird in einen leeren Kurs eingespielt, nie in einen Kurs mit Klasse; nur eine Nachlieferung kommt in
+den bestehenden Kurs.</p>
+<ol>
+  <li>Im leeren Kurs: Mehr → Kurs wiederverwenden → Sicherung wiederherstellen. Datei hochladen, Wiederherstellen,
+    Weiter.</li>
+  <li>Ziel: „In diesen Kurs wiederherstellen“ → „Alle Inhalte dieses Kurses löschen und dann wiederherstellen“. Die
+    Plattform löscht dabei die Inhalte des Zielkurses; deshalb nur im leeren Kurs. Bei einer Nachlieferung stattdessen
+    „Den gesicherten Kurs mit diesem Kurs verschmelzen“; die neue Einheit kommt hinten an.</li>
+  <li>Beim ersten Import „Kurseinstellungen überschreiben: Ja“; der Kurs übernimmt dann Kursformat und Kachelbilder aus der
+    Sicherung.</li>
+</ol>
+<p>Die Plattform legt Abschnitte, Aktivitäten und Dateien im Kurs an. Abzeichen kommen deaktiviert an. Was eingespielt
+ist, kannst du im Kurs bearbeiten oder löschen wie von Hand Angelegtes.</p>
+
+<h2>Lizenz</h2>
+<p>Code unter PolyForm Noncommercial 1.0.0, Texte und Vorlagen unter CC BY-NC-SA 4.0; die Nutzung an Schulen und in
+Fortbildungen ist erlaubt, der Einbau in kommerzielle Produkte nicht. Der Wortlaut steht im
+<a href="https://github.com/simon-sarkar/kursmuehle">Projekt auf GitHub</a>.</p>
+<p>Für die Kurse, die du mit der Kursmühle baust, gelten die Lizenzen dieses Projekts nicht; eine eingebettete
+Titelschrift bleibt unter der SIL Open Font License. Kursmühle ist ein privates, nicht kommerzielles Projekt und kein Angebot der
+ByCS-Lernplattform. Fragen an kursmuehle@pm.me.</p>
+</div></main>
+<footer><div class="innen"><a href="./">Startseite</a> · <a href="impressum.html">Impressum und Datenschutz</a> · <a href="start/">Mahlwerk starten</a></div></footer>
+<script>
+// Beim Verlassen läuft das Rad bis zur nächsten halben Umdrehung aus (Bild ist 180° symmetrisch). Wie in index.html.
+(function () {
+  var ruhig = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)");
+  [].forEach.call(document.querySelectorAll(".dreh"), function (a) {
+    var rad = a.querySelector(".rad"), aus = null;
+    if (!rad || !rad.animate) return;
+    function an() { if (aus) { aus.cancel(); aus = null; } a.classList.add("dreht"); }
+    function bleibt() { try { return a.matches(":hover") || a.matches(":focus-visible"); } catch (e) { return false; } }
+    function ab() {
+      if (bleibt()) return;
+      if (!a.classList.contains("dreht") || (ruhig && ruhig.matches)) { a.classList.remove("dreht"); return; }
+      var m = getComputedStyle(rad).transform, w = 0;
+      if (m && m !== "none") {                             // matrix(a, b, …); Werte wie 1.74533e-05 knapp neben 180° ganz lesen
+        var z = m.slice(m.indexOf("(") + 1).match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi).map(parseFloat);
+        w = Math.atan2(z[1], z[0]) * 180 / Math.PI;
+        if (!isFinite(w)) w = 0;
+      }
+      a.classList.remove("dreht");
+      if (w > 0) w -= 360;                                 // (-360, 0]
+      var ziel = Math.floor(w / 180 - 1e-6) * 180;         // nächste halbe Umdrehung gegen den Uhrzeigersinn
+      aus = rad.animate([{ transform: "rotate(" + w + "deg)" }, { transform: "rotate(" + ziel + "deg)" }],
+                        { duration: 400 + (w - ziel) * 8, easing: "cubic-bezier(.25,.6,.4,1)" });
+      aus.onfinish = function () { aus = null; };
+    }
+    a.addEventListener("mouseenter", an);
+    a.addEventListener("focus", function () { if (bleibt()) an(); });
+    a.addEventListener("mouseleave", ab);
+    a.addEventListener("blur", ab);
+  });
+})();
+
+(function () {
+  var b = document.getElementById("schema");
+  if (!b) return;
+  function zeige() { var d = document.documentElement.dataset.theme === "dark"; b.textContent = d ? "Hell" : "Dunkel"; b.setAttribute("aria-pressed", d ? "true" : "false"); }
+  b.addEventListener("click", function () {
+    var d = document.documentElement.dataset.theme !== "dark";
+    if (d) document.documentElement.dataset.theme = "dark"; else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem("kursmuehle-schema", d ? "dunkel" : "hell"); } catch (e) {}
+    zeige();
+  });
+  zeige();
+})();
+</script>
+</body>
+</html>
