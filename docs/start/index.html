@@ -105,7 +105,7 @@
             placeholder="Was sollen die Lernenden danach können? Was ist vorausgesetzt, was nicht?"></textarea>
         </label>
         <label class="feld">Fach <span class="feld-zeile">freiwillig</span>
-          <input id="m-fach" type="text" maxlength="60" list="faecher-liste" autocomplete="off"></label>
+          <input id="m-fach" type="text" maxlength="60" autocomplete="off"></label>
         <!-- AP13.6: Haken „Lehrplanbezug“, Picker, Vorschlag (lehrplan.js) -->
         <div id="m-lehrplan" class="lehrplan-ort feld-breit"></div>
       </div>
@@ -141,7 +141,7 @@
             <label class="feld">Zielgruppe statt Jahrgangsstufe <input id="a-zielgruppe" type="text" maxlength="40"
               placeholder="Lehrerkonferenz, Elternabend" autocomplete="off"></label>
             <label class="feld feld-klein">Minuten <input id="a-minuten" type="number" min="10" max="300" step="5"></label>
-            <label class="feld">Fach <input id="a-fach" type="text" maxlength="60" list="faecher-liste" autocomplete="off"></label>
+            <label class="feld">Fach <input id="a-fach" type="text" maxlength="60" autocomplete="off"></label>
             <div id="a-lehrplan" class="lehrplan-ort feld-breit"></div>
             <label class="feld feld-breit">Worum geht es genau?
               <textarea id="a-kontext" class="von-lehrkraft" rows="3" maxlength="600" spellcheck="true"
@@ -204,7 +204,12 @@
         <div class="aus-gruppe" data-gruppe="bilder"><h3 class="unterkopf" id="aus-bilder-t">Bilder</h3>
           <div id="aus-bilder" class="kacheln-wahl bilder-wahl" role="radiogroup" aria-labelledby="aus-bilder-t"></div>
           <label id="bilder-zahl-l" class="feld feld-klein bilder-zahl" hidden>Zahl der Bilder (1 bis 30)
-            <input id="bilder-zahl" type="number" inputmode="numeric" min="1" max="30" step="1" value="10"></label></div>
+            <input id="bilder-zahl" type="number" inputmode="numeric" min="1" max="30" step="1" value="10"></label>
+          <!-- AP13.5h a8: Beschriftung im Bild (Steckbrief kurs.bildbeschriftung), nur mit Bildern -->
+          <div id="bildbeschriftung-l" class="bildbeschriftung" hidden>
+            <h4 class="unterkopf" id="aus-bildbeschriftung-t">Beschriftung im Bild</h4>
+            <div id="aus-bildbeschriftung" class="kacheln-wahl breit" role="radiogroup"
+                 aria-labelledby="aus-bildbeschriftung-t"></div></div></div>
         <div class="aus-gruppe" data-gruppe="website"><h3 class="unterkopf" id="aus-website-t">Wie erscheinen Übungen?</h3>
           <div id="aus-website" class="kacheln-wahl breit" role="radiogroup" aria-labelledby="aus-website-t"></div></div>
         <button type="button" id="alle-zeigen" class="textlink alle-zeigen" hidden>Alle Einstellungen zeigen</button>
@@ -493,7 +498,6 @@
  <input id="datei-oeffnen" class="unsichtbar" type="file" multiple accept=".zip,application/zip,.md,.yaml,.yml,image/png,image/jpeg">
  <input id="ordner-oeffnen" class="unsichtbar" type="file" multiple webkitdirectory>
  <datalist id="phasen"></datalist>
- <datalist id="faecher-liste"></datalist>
 </main>
 <footer class="fuss">
   <button type="button" id="fuss-rueckmeldung" class="textlink">Rückmeldung</button>

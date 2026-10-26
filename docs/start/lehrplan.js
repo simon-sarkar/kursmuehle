@@ -563,7 +563,6 @@
       var v = $(o + "-lehrplan-vermerk");
       v.hidden = !lp || !(lp.lernbereiche || []).length;
       if (!v.hidden) v.firstChild.textContent = vermerkText(lp);
-      if (an) $(o + "-fach").removeAttribute("list"); else $(o + "-fach").setAttribute("list", "faecher-liste");
       if (!an) $(o + "-fach-treffer").hidden = true;
     });
     if (!an && P) { P = null; zeichnePicker(); }

@@ -77,6 +77,7 @@
       ".abw.uebergangen .abw-marke, .abw.uebergangen .abw-frage { color: var(--leise); }",
       ".abw-wege { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }",
       ".abw-wege [aria-pressed=true] { box-shadow: inset 0 0 0 2px var(--text); }",
+      ".abw-luecke .klein-knopf { margin-left: 8px; }",
       ".gegen-gleich { margin-top: 10px; font-size: 0.93rem; }",
       ".gegen-gleich summary { cursor: pointer; color: var(--link); padding: 4px 0; }",
       ".gegen-gleich ul { margin: 4px 0 0; padding-left: 20px; }"
@@ -160,17 +161,30 @@
       };
       var marke = ent === "gilt" ? "Deine Lösung gilt" : ent === "uebergangen" ? "Übergangen" : korr ?
           "Wird korrigiert" : "";
+      // AP13.5h a9: bei Lücken nur die abweichenden, mit allen erlaubten Lösungen; „Als weitere Lösung zulassen“
+      // schreibt die Antwort in die Kursdatei, bei mehreren Lücken je Lücke
+      var zulassen = function (nr) {
+        return el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": "zulassen", "data-key": k,
+          "data-luecke": nr, text: "Als weitere Lösung zulassen" });
+      };
+      var mehrere = !!(a.luecken && a.luecken.length > 1);
+      var loesungen = a.luecken && a.luecken.length ? a.luecken.map(function (l) {
+        return el("p", { cls: "abw-luecke" }, ["Lücke " + l.nr + ": ",
+          el("span", { cls: "leise", text: "laut Kursdatei " }), l.kursdatei.join(" oder "), ", ",
+          el("span", { cls: "leise", text: ki ? "deine KI " : "der Chat " }), l.chat,
+          a.zulassen && mehrere ? zulassen(l.nr) : null]);
+      }) : [el("p", {}, [el("span", { cls: "leise", text: "Lösung laut Kursdatei: " }), a.kursdatei]),
+        el("p", {}, [el("span", { cls: "leise", text: (ki ? "Antwort deiner KI: " : "Antwort des Chats: ") }),
+          a.chat_anzeige || a.chat])];
       ul.appendChild(el("li", { cls: "abw" + (ent ? " " + ent : korr ? " korrigieren" : ""), "data-key": k }, [
         el("p", {}, [el("button", { type: "button", cls: "hinweis-link", "data-ziel": a.baustein,
             text: "Aufgabe " + a.nr + " in „" + a.titel + "“" }), marke ? el("span", { cls: "abw-marke",
             text: " · " + marke }) : null]),
-        el("p", { cls: "abw-frage", text: a.frage }),
-        el("p", {}, [el("span", { cls: "leise", text: "Lösung laut Kursdatei: " }), a.kursdatei]),
-        el("p", {}, [el("span", { cls: "leise", text: (ki ? "Antwort deiner KI: " : "Antwort des Chats: ") }),
-          a.chat_anzeige || a.chat]),
+        el("p", { cls: "abw-frage", text: a.frage })].concat(loesungen, [
         el("div", { cls: "abw-wege" }, [knopf("korrigieren", "Aufgabe korrigieren lassen", korr),
-          knopf("gilt", "Meine Lösung gilt", ent === "gilt"), knopf("uebergehen", "Übergehen", ent === "uebergangen")])
-      ]));
+          knopf("gilt", "Meine Lösung gilt", ent === "gilt"), knopf("uebergehen", "Übergehen", ent === "uebergangen"),
+          a.zulassen && !mehrere ? zulassen(a.luecken && a.luecken.length ? a.luecken[0].nr : 1) : null])
+      ])));
     });
     var gl = $("gegen-gleich-liste"); gl.innerHTML = "";
     $("gegen-gleich-titel").textContent = v.gleich.length === 1 ? "1 Aufgabe stimmt" : v.gleich.length +
@@ -236,6 +250,7 @@
     if (z) { zuKarte(z.dataset.ziel); return; }
     var b = ev.target.closest("[data-aktion]");
     if (!b || !Z.mappe) return;
+    if (b.dataset.aktion === "zulassen") { zulassen(b.dataset.key, parseInt(b.dataset.luecke, 10)); return; }
     var k = b.dataset.key, e = entschieden(), wert = { gilt: "gilt", uebergehen: "uebergangen" }[b.dataset.aktion];
     if (!wert) { if (korrigieren[k]) delete korrigieren[k]; else { korrigieren[k] = true; delete e[k]; } }
     else {
@@ -249,6 +264,21 @@
         b.dataset.aktion + "']");
     if (neu) neu.focus({ preventScroll: true });
   };
+  // AP13.5h a9: Antwort als weitere Lösung in die Kursdatei (gen/mappe.py loesung_zulassen); die neue Prüfung vergleicht
+  // die Antwort im Feld noch einmal, die Abweichung ist dann weg
+  async function zulassen(k, nr) {
+    var v = vergleichJetzt(), a = v && v.abweichungen.filter(function (x) { return schluessel(x) === k; })[0];
+    if (!a) return;
+    var l = a.luecken && a.luecken.filter(function (x) { return x.nr === nr; })[0];
+    try {
+      await km.bereit();
+      Z.kurs_md = await km.mappeFn("loesung_zulassen", [Z.kurs_md, a.baustein, a.aufgabe, nr, l ? l.chat : a.chat]);
+      delete korrigieren[k];
+      await km.stand(Z.kurs_md);
+      await S.auswertung();
+      zeichne(); geaendert();
+    } catch (e) { zeigeFehler(e); }
+  }
   // Korrekturen gehen in das Gespräch der Einheit (nicht in das Prüfgespräch); die Antwort setzt Schritt 5 ein wie eine
   // Korrekturrunde: ein Baustein mit `id:` ersetzt den Baustein
   $("gegen-korrektur").onclick = function () {

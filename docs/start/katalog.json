@@ -500,33 +500,24 @@
     "max": 30
    }
   ],
+  "bildbeschriftung": [
+   {
+    "wert": "woerter",
+    "text": "Wörter im Bild",
+    "zeile": "Für gute Bildgeneratoren; die Begriffe stehen direkt im Bild."
+   },
+   {
+    "wert": "ziffern",
+    "text": "Ziffern an Pfeilen",
+    "standard": true,
+    "zeile": "Für Generatoren, die Wörter verschreiben; die Begriffe stehen in der Bildunterschrift."
+   }
+  ],
   "bild_hochladen": {
    "kante": 1200,
    "qualitaet": 85
   },
   "bild_pruefung": "Passt, wenn Text im Bild lesbar ist (oder keiner da ist), Pfeile auf das Richtige zeigen und keine fremden Symbole oder Gesten zu sehen sind.",
-  "faecher": [
-   "Biologie",
-   "Chemie",
-   "Deutsch",
-   "Englisch",
-   "Erdkunde",
-   "Ethik",
-   "Französisch",
-   "Geschichte",
-   "Heimat- und Sachunterricht",
-   "Informatik",
-   "Kunst",
-   "Latein",
-   "Mathematik",
-   "Musik",
-   "Natur und Technik",
-   "Physik",
-   "Religion",
-   "Sozialkunde",
-   "Sport",
-   "Wirtschaft und Recht"
-  ],
   "abschluss": [
    {
     "wert": "keiner",
@@ -706,5 +697,5 @@
   "Geschichte",
   "Lesebuch"
  ],
- "version": "2.0.0-b10"
+ "version": "2.0.0-b11"
 }

@@ -32,8 +32,8 @@
     if (n === 3) return [oberText("familie", S.angaben.familie || "sachlich"), feinheitenText(),
       oberText("format", S.angaben.format), bilderText(), oberText("website", S.angaben.website ||
           "textfeld")].filter(Boolean).join(" · ");
-    if (n === 4) { var c = chatInfo(Z.mappe.chat); return c ? c.text + (Z.mappe.kopiert ? " · Text kopiert" : "") : "";
-        }
+    if (n === 4) { var c = chatInfo(Z.mappe.chat); return c ? c.text + (!Z.mappe.kopiert ? "" : S.textGesendet &&
+        S.textGesendet() ? " · Text gesendet" : " · Text kopiert") : ""; }
     if (n === 5) {
       var voll = Z.mappe.bausteine.filter(function (k) { return !k.geplant && (k.einheit || "") === einheitTag(); })
           .length, f = fehlerZahl();
@@ -54,6 +54,9 @@
   function zeichneHinweis(sec, n, aktiv) {
     var schluessel = n === 2 && zweig() === "richtung" && S.hinweisTexte["2-richtung"] ? "2-richtung" : String(n);
     var box = sec.querySelector(".s-hinweis"), text = S.hinweisTexte[schluessel];
+    // AP13.5h a3: mit Verbindung nennt der Hinweis zu Schritt 6 auch den Weg über die eigene KI
+    if (n === 6 && text && S.anKiAktiv && S.anKiAktiv()) text = text.replace(", in einem neuen Chat",
+        ", mit deiner KI, in einem neuen Chat");
     var zeigen = aktiv && S.hinweiseGeladen && S.hinweise.an && !!text && S.hinweise.gesehen.indexOf(String(n)) < 0;
     if (!zeigen) { if (box) box.remove(); return; }
     if (!box) {
@@ -873,6 +876,9 @@
     kachelGruppe($("aus-bilder"), "bilder", o.bilder, miniBilder, bilderKachel());
     $("bilder-zahl-l").hidden = bilderKachel() !== "zahl";
     if (bilderKachel() === "zahl" && document.activeElement !== $("bilder-zahl")) $("bilder-zahl").value = bilderWert();
+    $("bildbeschriftung-l").hidden = String(bilderWert()) === "0";
+    kachelGruppe($("aus-bildbeschriftung"), "bildbeschriftung", o.bildbeschriftung, miniBeschriftung,
+        S.angaben.bildbeschriftung || o.bildbeschriftung.filter(function (w) { return w.standard; })[0].wert);
     kachelGruppe($("aus-website"), "website", o.website, function (w) { return miniWebsite(w, hue); },
         S.angaben.website || "textfeld");
     var mitFormat = gruppenZeigen();
@@ -897,6 +903,18 @@
     }
     return s + "</svg>";
   }
+  // Beschriftung im Bild (AP13.5h a8): kurze Wortbalken an den Teilen oder Ziffern an dünnen Pfeilen
+  function miniBeschriftung(wert) {
+    var s = '<svg viewBox="0 0 120 50" aria-hidden="true" focusable="false"><rect width="120" height="50" fill="#fff"/>' +
+        '<rect x="40" y="10" width="40" height="30" rx="4" fill="#D5DAE3"/>';
+    if (wert === "woerter") return s + '<line x1="40" y1="18" x2="30" y2="18" stroke="#0B1220"/><rect x="6" y="15" ' +
+        'width="22" height="5" rx="1" fill="#0B1220"/><line x1="80" y1="32" x2="90" y2="32" stroke="#0B1220"/><rect ' +
+        'x="92" y="29" width="22" height="5" rx="1" fill="#0B1220"/></svg>';
+    return s + '<line x1="40" y1="18" x2="24" y2="18" stroke="#0B1220"/><line x1="80" y1="32" x2="96" y2="32" ' +
+        'stroke="#0B1220"/><text x="18" y="22" text-anchor="middle" font-size="11" font-weight="700" fill="#0B1220" ' +
+        'font-family="system-ui, sans-serif">1</text><text x="102" y="36" text-anchor="middle" font-size="11" ' +
+        'font-weight="700" fill="#0B1220" font-family="system-ui, sans-serif">2</text></svg>';      // nur Ziffern
+  }
   function miniWebsite(wert, hue) {
     var s = '<svg viewBox="0 0 120 50" aria-hidden="true" focusable="false"><rect width="120" height="50" fill="#fff"/>'
       + '<rect x="8" y="6" width="70" height="4" rx="1" fill="#0B1220"/>';
@@ -919,7 +937,8 @@
     var b = ev.target.closest(".aus-kachel");
     if (!b || !Z.mappe || b.hasAttribute("disabled") || ev.target.id === "farbe-eigen") return;
     var a = {}, wert = b.dataset.wert;
-    gruppenBis = Math.max(gruppenBis, GRUPPEN.indexOf(b.dataset.feld) + 2);
+    gruppenBis = Math.max(gruppenBis, GRUPPEN.indexOf(b.dataset.feld === "bildbeschriftung" ? "bilder" :
+        b.dataset.feld) + 2);
     if (b.dataset.feld === "farbe" && wert === "eigen") {
       if (!EIGEN.dataset.gewaehlt) { zeichneAussehen(); return; }
       wert = $("farbe-eigen").value.toUpperCase();

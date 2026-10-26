@@ -1,11 +1,20 @@
 # Changelog
 
-## Unveröffentlicht
+## 2.0.0-b11 – 2026-10-26 (AP13.5h: Bilder-Schritt, Gegenprüfen mit Alternativen, Testphase mit Einheiten, Sehr wellig)
 
 - „Eigene KI“: neben der Kachel steht „Trennen“, sobald eine Verbindung gemerkt ist.
 - Die Wörterzählung des Hefteintrags schneidet Paare wie „play → played“ nicht mehr ab; nur Rückmeldungen hinter Antworten zählen nicht.
 - Testphase mit Code: Aufträge, bei denen die KI länger als 100 Sekunden schreibt, kommen an statt mit „524“ abzubrechen; der Worker liest die Antwort als Strom (Worker neu ausrollen).
 - Testphase mit Code: jeder Code reicht für drei Einheiten; Korrekturen, Folgeteile und Gegenprüfen zählen nicht extra.
+- Das Feld „Fach“ zeigt keine Vorschlagsliste mehr; jedes eingetippte Fach gilt.
+- Eine Datei, die du für ein Bild wählst, geht nicht mehr verloren, wenn die Seite die Bilderliste gerade neu zeichnet.
+- Im Bilder-Schritt ist nur eine Bildkarte offen; nach „Passt“ öffnet sich die nächste ohne geprüftes Bild, ohne dass die Seite springt, und ein Bild lässt sich auf eine zugeklappte Zeile ziehen.
+- Bildkarten zeigen nur den Auftrag für den Bildgenerator; der Text für den Chat verlangt je Bild nur noch die Zeile `Bildprompt:`.
+- In Schritt 3 wählst du unter „Bilder“, ob Begriffe als Wörter im Bild stehen oder als Ziffern an Pfeilen mit Legende in der Bildunterschrift; die Ziffern sehen in allen Bildern gleich aus.
+- Der Hinweis zu Schritt 6 nennt die Wege, die Lösungen zu prüfen.
+- Testphase mit Code: neben der Kachel „Eigene KI“ stehen das Modell und die übrigen Einheiten.
+- Nach einer Antwort der eigenen KI klappt das Einfügefeld zu wie im Kopierweg, und Schritt 4 sagt „Text gesendet“.
+- Beim Gegenprüfen stehen bei Lücken nur die abweichenden mit allen erlaubten Lösungen; „Als weitere Lösung zulassen“ trägt die Antwort als Alternative ein, auch bei Kurzantworten.
 - Ränder: neue Wahl „Sehr wellig“ mit deutlicher Welle, die sich auf breiten Kästen wiederholt statt sich zu dehnen (Steckbrief `design.kasten: sehr_wellig`).
 
 ## 2.0.0-b10 – 2026-10-25 (AP13.5g: Befunde des Erstnutzer-Tests)

@@ -531,8 +531,6 @@ window.km = km;
     var neu = $("neu-typ"), auswahl = S.typAuswahl(AUTO, "");
     neu.innerHTML = auswahl.innerHTML;
     neu.value = AUTO;
-    var fl = $("faecher-liste"); fl.innerHTML = "";
-    (o.faecher || []).forEach(function (f) { fl.appendChild(el("option", { value: f })); });
     var phasen = $("phasen"), gesehen = {};
     phasen.innerHTML = "";
     S.katalog.vorlagen.forEach(function (v) { v.phasen.forEach(function (p) {

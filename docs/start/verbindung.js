@@ -17,6 +17,7 @@
   };
   var V = km.verbindung = { takt: 2000, grenze: 10 * 60 * 1000, info: null, fehler: null };
   var gespraeche = {};                       // Einheit -> Gespräch bei der Brücke (nur im Speicher)
+  var beantwortet = {};                      // Gespräche mit erster Antwort (Testbetrieb: dann zählt die Einheit)
 
   function gespeichert() {
     try { var v = JSON.parse(localStorage.getItem(SCHLUESSEL) || "null"); return v && v.code ? v : null; }
@@ -46,6 +47,8 @@
     if (r.status === 204) return null;
     var d = await r.json().catch(function () { return {}; });
     if (r.status === 429 && !d.kontingent) throw fehler("gesperrt");   // Kontingent der Testphase: Meldung wie Anbieter
+    if (r.status === 429 && /Einheiten aufgebraucht/.test(d.fehler || "") && V.info && V.info.einheiten)
+      V.info.einheiten.genutzt = V.info.einheiten.von;                   // die Zeile an der Kachel sagt es auch
     if (r.status === 404) throw fehler("weg");
     if (!r.ok) { var e = new Error(d.fehler || TEXT.netz); e.art = "anbieter"; throw e; }
     return d;
@@ -57,11 +60,16 @@
     finally { zeichne(); }
     return V.info;
   };
+  // Testbetrieb (AP13.5h a4): nach der ersten Antwort eines Gesprächs zählt der Worker eine Einheit; der Stand an der
+  // Kachel wird still nachgeladen, ein Fehler dabei ändert nichts an der Verbindung
+  function einheitenNachladen() {
+    rufen("GET", "/status").then(function (i) { if (i && V.info) { V.info = i; zeichne(); } }).catch(function () {});
+  }
   V.istTest = function () { return !!(V.gemerkt && V.gemerkt.adresse); };
   V.verbinden = async function (code, port) {
     code = String(code).trim();
     speichern(TESTCODE.test(code) ? { adresse: TESTADRESSE, code: code } : { port: parseInt(port, 10) || PORT, code: code });
-    gespraeche = {};
+    gespraeche = {}; beantwortet = {};
     try { return await V.status(); }
     catch (e) { if (e.art === "code") speichern(null); throw e; }
   };
@@ -83,7 +91,12 @@
     for (var t0 = Date.now(); Date.now() - t0 < V.grenze;) {
       var d = await rufen("GET", "/antwort/" + a.auftrag);
       if (d && d.fehler) { var e = new Error(d.fehler); e.art = "anbieter"; throw e; }
-      if (d) return d.text;
+      if (d) {
+        var g = gespraeche[einheit];
+        if (V.istTest() && einheit.indexOf("gegen:") !== 0 && g && !beantwortet[g]) einheitenNachladen();
+        if (g) beantwortet[g] = true;
+        return d.text;
+      }
       await warte(V.takt);
     }
     throw fehler("zeit");
@@ -112,8 +125,19 @@
   S.anKiAktiv = function () { return !!Z.mappe && Z.mappe.chat === "eigene" && !S.kopierStatt; };
   S.kiName = V.name;
 
+  // Testbetrieb: Modell aus dem Status (nur Sonnet oder Haiku) und die Einheiten, wenn der Code eine Grenze hat
+  function modellWort(m) {
+    m = String(m || "").toLowerCase();
+    return m.indexOf("sonnet") >= 0 ? "Sonnet" : m.indexOf("haiku") >= 0 ? "Haiku" : "";
+  }
+  function einheitenText(e) {
+    if (!e || !(e.von > 0)) return "";
+    var n = Math.max(0, e.von - (e.genutzt || 0));
+    return n ? "noch " + n + " von " + e.von + (e.von === 1 ? " Einheit" : " Einheiten") : "keine Einheit mehr übrig";
+  }
   function zustandText() {
-    if (V.info && V.info.modus === "test") return "verbunden · Kursmühle-KI (Testphase)";
+    if (V.info && V.info.modus === "test") return ["verbunden · Kursmühle-KI (Testphase)", modellWort(V.info.modell),
+      einheitenText(V.info.einheiten)].filter(Boolean).join(" · ");
     if (V.info) return "verbunden · " + (V.info.modus === "agent" ? agentName() + (V.info.bereit ? "" :
         " (holt gerade nichts ab)") : V.info.modell);
     if (V.fehler === "code") return "Code stimmt nicht";

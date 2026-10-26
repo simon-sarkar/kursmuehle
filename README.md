@@ -26,7 +26,7 @@ und einzelne Chats antworten noch in einer Form, die die Seite nicht lesen kann.
 | H5P-Inhalte: Interactive Book, Branching Scenario, Question Set, Drag and Drop, Lückentext, Lernkarten und weitere | Weitere H5P-Typen wie Interactive Video oder Image Hotspots |
 | Übungen als Website in einem Abschnitt oder als Block im Textfeld: Quiz, Zuordnen, Lückentext, Markieren, Lernkarten, Geschichte, mit Rückmeldung zur ganzen Übung | Bewertung und Abschluss je Übung in der Website, eigene Spiele und Simulationen |
 | Feedback-Umfragen, Links und Videos, Badges, Kursbild, Abschlussverfolgung, Sichtbarkeit ab Datum | Gruppen, Termine, andere Zugriffsbedingungen |
-| Kursbanner und Kachelbilder (ohne Bild als Fläche im Design), Zahl der Bilder je Einheit (Stufe oder genaue Zahl), Bilder in jedem Baustein, Bildwunsch mit Auftrag für einen Bildgenerator, eigene Bilder hochladen (verkleinert, mit Prüffragen) | Abschnitts- und Kachelbilder automatisch aus dem Material |
+| Kursbanner und Kachelbilder (ohne Bild als Fläche im Design), Zahl der Bilder je Einheit (Stufe oder genaue Zahl), Bilder in jedem Baustein, je Bild ein Auftrag für einen Bildgenerator, Beschriftung im Bild als Wörter oder als Ziffern mit Legende, eigene Bilder hochladen (verkleinert, mit Prüffragen) | Abschnitts- und Kachelbilder automatisch aus dem Material |
 | Einheit speichern und später weiterbauen, nächste Einheit anhängen, Nachlieferung zu einem bestehenden Kurs; eine zu lange Antwort endet mit „Fortsetzung folgt“, die Mühle bittet um den Rest | Abbruch einer Antwort erkennen, wenn der Chat die Schlusszeile nicht schreibt |
 | Eigene KI direkt anbinden: ein Programm wie Claude Code oder Codex (mit seinem Namen in der Mühle), ein eigener Zugangsschlüssel (OpenAI, Anthropic, Mistral) oder Ollama; Teile gehen von selbst nacheinander, Korrekturen ohne Kopieren | Bilder über die Verbindung, Verbindung vom iPad oder aus dem Schulnetz |
 | Prüfung der Antwort vor dem Bau mit Sätzen, was im Chat zu korrigieren ist, und Auswegen, wenn der Chat dieselbe Antwort wiederholt | Fachliche Prüfung des Inhalts; die bleibt bei der Lehrkraft |
@@ -70,6 +70,8 @@ Seit 2.0 läuft alles im Browser. Die Einzelheiten jeder Version stehen im [CHAN
 - [x] 2.0.0-b9 Vorschau läuft beim Scrollen mit, Motive und Titelschriften je Design, alle Kursformate in Schritt 3
 - [x] 2.0.0-b10 Überarbeitung nach dem ersten Durchlauf von außen: Schritt 3 neu geordnet, welliger Rand, Lösungen
       gegenprüfen mit drei Wegen je Abweichung
+- [x] 2.0.0-b11 Bilder-Schritt mit einer offenen Karte, Beschriftung im Bild oder als Ziffern, Testcodes mit drei
+      Einheiten, Rand „Sehr wellig“
 - [ ] Erste Testerinnen und Tester, Rückmeldungen einarbeiten
 - [ ] Prüfwoche: Sicherheit, Import aller Formate, Barrierefreiheit
 - [ ] 2.0 ohne Beta-Marke

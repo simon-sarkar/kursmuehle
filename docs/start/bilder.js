@@ -1,5 +1,5 @@
 /* Kursmühle – Bilder: Hochladen mit Verkleinern, Schritt Bilder mit Vorschau, Format aus dem Prompt, Zuschneiden und
- * „Passt“ (klappt die Karte zu). */
+ * „Passt“ (klappt die Karte zu, die nächste öffnet sich; AP13.5h a7: immer nur eine Karte offen). */
 "use strict";
 
 (function () {
@@ -120,15 +120,21 @@
       [el("img", { src: url, alt: "", style: "display: block; max-width: min(240px, 100%); max-height: 240px; " +
           "margin-top: 10px; border: 1px solid var(--linie); cursor: zoom-in;" })]);
   }
-  var aufgeklappt = {};                             // „Ändern“ an einer geprüften Karte: offen bis „Passt“
+  // AP13.5h a7: genau eine Karte offen; `offenWahl` = Schlüssel der Karte, die die Lehrkraft geöffnet hat, sonst die
+  // erste ohne geprüftes Bild
+  var offenWahl = null;
   function stil() {
     if (document.getElementById("stil-bilder")) return;
     document.head.appendChild(el("style", { id: "stil-bilder", text: [
       ".bild-format { color: var(--leise); font-size: 0.9rem; }",
       ".bild-zeile.zu { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding-top: 8px;",
-      "  padding-bottom: 8px; }",
+      "  padding-bottom: 8px; cursor: pointer; }",
+      ".bild-zeile.zu:hover, .bild-zeile.zu.ueber { background: var(--grund); }",
+      ".bild-zeile.zu.ueber { outline: 2px dashed var(--linie); outline-offset: -2px; }",
       ".bild-zeile.zu img { display: block; width: 48px; height: 48px; object-fit: cover; border-radius: 4px;",
       "  border: 1px solid var(--linie); }",
+      ".bild-zeile.zu .bild-oeffnen { font-weight: 600; }",
+      ".bild-zeile.zu .bild-baustein { color: var(--leise); font-size: 0.9rem; }",
       ".bild-zeile.zu .bild-status { margin-left: auto; }",
       ".bild-format-frage { margin-top: 10px; padding: 8px 12px; border-left: 3px solid var(--warn);",
       "  background: var(--warn-flaeche); font-size: 0.93rem; }",
@@ -137,50 +143,88 @@
       ".bilder-hinweis { margin: 8px 0; }"
     ].join("\n") }));
   }
-  function zeichneBilder() {
-    stil();
-    var ol = $("bilder-liste"), w = bildwuensche();
-    ol.innerHTML = "";
-    // c8: Hinweis des gewählten Chats zu seinem Bildgenerator (katalog.yaml chats.bilder_hinweis)
-    var hw = $("bilder-hinweis"), chat = S.chatInfo(Z.mappe.chat);
-    if (!hw) { hw = el("p", { id: "bilder-hinweis", cls: "leise bilder-hinweis" }); $("bilder-stufe").before(hw); }
-    hw.textContent = (chat && chat.bilder_hinweis) || "";
-    hw.hidden = !hw.textContent;
-    var fehlen = 0, mitDatei = 0, geprueftZahl = 0;
-    w.forEach(function (b, i) {
-      var da = !!(b.datei && Z.assets[b.datei]), geprueft = da && bildGeprueft(b.datei), f = format(b);
-      if (b.datei && !da) fehlen += 1;
-      if (b.datei) mitDatei += 1;
-      if (geprueft) geprueftZahl += 1;
-      if (geprueft && !aufgeklappt[b.datei]) {
-        ol.appendChild(el("li", { cls: "bild-zeile da zu", "data-datei": b.datei }, [
-          el("img", { src: vorschauUrl(b.datei), alt: "" }),
-          el("span", { cls: "bild-name", text: b.datei }),
+  function schluesselListe(w) {
+    var gesehen = {};
+    return w.map(function (b, i) {
+      var k = b.datei || "#" + i;
+      if (gesehen[k]) k += "#" + i;
+      gesehen[k] = 1;
+      return k;
+    });
+  }
+  function bildDa(b) { return !!(b.datei && Z.assets[b.datei]); }
+  function offenSchluessel(w, keys) {
+    if (offenWahl !== null && keys.indexOf(offenWahl) >= 0) return offenWahl;
+    offenWahl = null;
+    var i = w.findIndex(function (b) { return !(bildDa(b) && bildGeprueft(b.datei)); });
+    return i >= 0 ? keys[i] : null;
+  }
+  // nach „Passt“: die nächste Karte ohne geprüftes Bild hinter dieser, sonst davor; keine = alle zu
+  function naechsteOffen(key) {
+    var w = bildwuensche(), keys = schluesselListe(w), i = keys.indexOf(key);
+    var reihe = keys.slice(i + 1).concat(keys.slice(0, Math.max(i, 0)));
+    var n = reihe.filter(function (k) { var b = w[keys.indexOf(k)]; return !(bildDa(b) && bildGeprueft(b.datei)); })[0];
+    offenWahl = n === undefined ? null : n;
+  }
+  // Datei gewählt: direkt am Eingabefeld, damit eine Wahl auch dann ankommt, wenn die Zeile inzwischen ersetzt wurde
+  function dateiGewaehlt(ev) {
+    var inp = ev.target, f = inp.files && inp.files[0], li = inp.closest(".bild-zeile");
+    if (li) delete li.dataset.waehlt;
+    inp.value = "";
+    if (f) bildSetzen(f, inp.dataset.datei);
+  }
+  // eine Zeile, deren Dateiwahl läuft oder deren Eingabefeld den Fokus hat, wird nicht ersetzt
+  function geschuetzt(li) {
+    var a = document.activeElement;
+    return (a && a.classList && a.classList.contains("bild-datei") && li.contains(a)) ||
+        (li.dataset.waehlt && Date.now() - +li.dataset.waehlt < 120000);
+  }
+  function statusText(da, geprueft) { return da ? (geprueft ? "da" : "da, ungeprüft") : "fehlt"; }
+  function bausteinText(b, nr) {
+    return nr ? "zu Baustein " + nr + " „" + b.titel + "“" : "kein Baustein nennt dieses Bild";
+  }
+  // Zustand und Bau je Zeile; der Neuaufbau tauscht nur Zeilen, deren Zustand sich geändert hat (AP13.5h a1)
+  function zeileBeschreiben(b, i, key, offen) {
+    var da = bildDa(b), geprueft = da && bildGeprueft(b.datei), f = format(b), url = da ? vorschauUrl(b.datei) : "";
+    var nr = b.baustein ? Z.mappe.bausteine.findIndex(function (k) { return k.id === b.baustein; }) + 1 : 0;
+    var auftrag = b.prompt || b.wunsch || "", frage = offen && da ? formatFrage(b) : null;
+    var stand = (b.datei && bildGroesse[b.datei]) || "";
+    var zustand = JSON.stringify([offen, i, b.datei || "", nr, b.titel || "", auftrag, da, geprueft, f, url,
+      frage && frage.ist, stand]);
+    var kl = "bild-zeile" + (da ? (geprueft ? " da" : " da ungeprueft") : "");
+    function bau() {
+      if (!offen) {
+        return el("li", { cls: kl + " zu", "data-datei": b.datei || "", "data-key": key, "data-zustand": zustand }, [
+          da ? el("img", { src: url, alt: "" }) : null,
+          el("button", { type: "button", cls: "textlink bild-name bild-oeffnen", "aria-expanded": "false",
+              "aria-label": "Bild „" + (b.datei || "ohne Dateinamen") + "“ öffnen", text: b.datei ||
+              "Bild ohne Dateinamen" }),
           el("span", { cls: "bild-format", text: formatText(f) }),
-          el("span", { cls: "bild-status" }, [el("span", { cls: "punkt", "aria-hidden": "true" }), "da"]),
-          el("button", { type: "button", cls: "textlink bild-aendern", "data-datei": b.datei,
-              "aria-label": "Bild „" + b.datei + "“ ändern", text: "Ändern" })]));
-        return;
+          el("span", { cls: "bild-baustein", text: bausteinText(b, nr) }),
+          el("span", { cls: "bild-status" }, [el("span", { cls: "punkt", "aria-hidden": "true" }),
+            statusText(da, geprueft)])]);
       }
-      var frage = da ? formatFrage(b) : null;
-      var nr = b.baustein ? Z.mappe.bausteine.findIndex(function (k) { return k.id === b.baustein; }) + 1 : 0;
-      var text = function (art, titel, inhalt, knopf) {
-        return inhalt ? el("div", { cls: "bild-text" }, [
-          el("div", { cls: "bild-text-kopf" }, [el("span", { text: titel }),
-            el("button", { type: "button", cls: "klein bild-kopieren", "data-nr": i, "data-art": art, text: knopf })]),
-          el("p", { cls: art === "wunsch" ? "" : "von-chat", text: inhalt })]) : null;
-      };
-      ol.appendChild(el("li", { cls: "bild-zeile" + (da ? (geprueft ? " da" : " da ungeprueft") : ""),
-          "data-datei": b.datei || "" }, [
+      var eingabe = b.datei ? el("input", { type: "file", cls: "unsichtbar bild-datei",
+          accept: "image/png,image/jpeg", "data-datei": b.datei }) : null;
+      if (eingabe) {
+        eingabe.addEventListener("change", dateiGewaehlt);
+        eingabe.addEventListener("cancel", function () { delete eingabe.closest(".bild-zeile").dataset.waehlt; });
+        eingabe.addEventListener("click", function () {
+          var li = eingabe.closest(".bild-zeile"); if (li) li.dataset.waehlt = String(Date.now()); });
+      }
+      return el("li", { cls: kl, "data-datei": b.datei || "", "data-key": key, "data-zustand": zustand }, [
         el("p", { cls: "bild-kopf" }, [
           el("span", { cls: "bild-name", text: b.datei || "Bild ohne Dateinamen" }),
           el("span", { cls: "bild-format", text: formatText(f) }),
-          el("span", { cls: "bild-baustein", text: nr ? "zu Baustein " + nr + " „" + b.titel +
-              "“" : "kein Baustein nennt dieses Bild" }),
+          el("span", { cls: "bild-baustein", text: bausteinText(b, nr) }),
           el("span", { cls: "bild-status" }, [el("span", { cls: "punkt", "aria-hidden": "true" }),
-            da ? (geprueft ? "da" : "da, ungeprüft") : "fehlt"])]),
-        text("wunsch", "Was zu sehen ist", b.wunsch, "Beschreibung kopieren"),
-        text("prompt", "Auftrag für einen Bildgenerator", b.prompt, "Auftrag kopieren"),
+            statusText(da, geprueft)])]),
+        // a6: nur der Auftrag für den Bildgenerator; ältere Antworten ohne Bildprompt zeigen hier den Bildwunsch
+        auftrag ? el("div", { cls: "bild-text" }, [
+          el("div", { cls: "bild-text-kopf" }, [el("span", { text: "Auftrag für einen Bildgenerator" }),
+            el("button", { type: "button", cls: "klein bild-kopieren", "data-nr": i, "data-art": "prompt",
+                text: "Auftrag kopieren" })]),
+          el("p", { cls: "von-chat", text: auftrag })]) : null,
         da ? el("div", { cls: "kopieren bild-pruefung" }, [vorschau(b.datei),
           el("button", { type: "button", cls: "knopf klein-knopf bild-passt", "data-datei": b.datei,
               "aria-pressed": String(geprueft), text: "Passt" })]) : null,
@@ -193,10 +237,39 @@
           : null,
         b.datei ? el("div", { cls: "bild-ablage", "data-datei": b.datei }, [
           el("span", { text: "Bild hierher ziehen oder" }),
-          el("label", { cls: "knopf klein-knopf" }, [da ? "Bild ersetzen" : "Bild hochladen",
-            el("input", { type: "file", cls: "unsichtbar bild-datei", accept: "image/png,image/jpeg",
-                "data-datei": b.datei })])]) : null,
-        el("p", { cls: "stand bild-stand", role: "status", text: (b.datei && bildGroesse[b.datei]) || "" })]));
+          el("label", { cls: "knopf klein-knopf" }, [da ? "Bild ersetzen" : "Bild hochladen", eingabe])]) : null,
+        el("p", { cls: "stand bild-stand", role: "status", text: stand })]);
+    }
+    return { key: key, zustand: zustand, bau: bau };
+  }
+  function zeichneBilder() {
+    stil();
+    var ol = $("bilder-liste"), w = bildwuensche(), keys = schluesselListe(w), offen = offenSchluessel(w, keys);
+    // c8: Hinweis des gewählten Chats zu seinem Bildgenerator (katalog.yaml chats.bilder_hinweis)
+    var hw = $("bilder-hinweis"), chat = S.chatInfo(Z.mappe.chat);
+    if (!hw) { hw = el("p", { id: "bilder-hinweis", cls: "leise bilder-hinweis" }); $("bilder-stufe").before(hw); }
+    hw.textContent = (chat && chat.bilder_hinweis) || "";
+    hw.hidden = !hw.textContent;
+    var alt = {};
+    Array.prototype.forEach.call(ol.children, function (li) { alt[li.dataset.key] = li; });
+    var vorher = null;
+    w.forEach(function (b, i) {
+      var d = zeileBeschreiben(b, i, keys[i], keys[i] === offen), li = alt[d.key];
+      delete alt[d.key];
+      if (!li) li = d.bau();
+      else if (li.dataset.zustand !== d.zustand && !geschuetzt(li)) {
+        var neu = d.bau(); li.replaceWith(neu); li = neu;
+      }
+      var soll = vorher ? vorher.nextSibling : ol.firstChild;
+      if (soll !== li) ol.insertBefore(li, soll);
+      vorher = li;
+    });
+    Object.keys(alt).forEach(function (k) { alt[k].remove(); });
+    var fehlen = 0, mitDatei = 0, geprueftZahl = 0;
+    w.forEach(function (b) {
+      if (b.datei && !bildDa(b)) fehlen += 1;
+      if (b.datei) mitDatei += 1;
+      if (bildDa(b) && bildGeprueft(b.datei)) geprueftZahl += 1;
     });
     var bz = Z.kennzahlen && Z.kennzahlen.bilder;
     $("bilder-stufe").textContent = bz ? bz.stufe.charAt(0).toUpperCase() + bz.stufe.slice(1) + " gewählt, " + bz.zahl +
@@ -208,59 +281,78 @@
       : geprueftZahl + " von " + mitDatei + " Bildern geprüft";
     $("bilder-stand").className = "stand " + (fehlen ? "" : "ok");
   }
+  // Wechsel der offenen Karte: die Liste bleibt, wo sie im Fenster steht (kein Sprung durch das Zuklappen); steht die
+  // neue Karte dann über dem Fensterrand, rückt sie an den oberen Rand. Wird die Liste kürzer, hält eine Mindesthöhe
+  // die Seite so lang, dass der Browser nicht nach oben rutscht; sie schwindet, sobald unter dem Fenster Platz ist
+  function reserveKuerzen() {
+    var ol = $("bilder-liste"); if (!ol.style.minHeight) return;
+    var natur = 2 + Array.prototype.reduce.call(ol.children, function (n, li) { return n + li.offsetHeight; }, 0);
+    var jetzt = ol.offsetHeight, unten = document.documentElement.scrollHeight - window.scrollY - window.innerHeight;
+    var neu = jetzt - Math.min(Math.max(0, unten), Math.max(0, jetzt - natur));
+    ol.style.minHeight = neu > natur ? neu + "px" : "";
+  }
+  window.addEventListener("scroll", reserveKuerzen, { passive: true });
+  function wechseln(fn) {
+    var ol = $("bilder-liste"), oben = ol.getBoundingClientRect().top;
+    ol.style.minHeight = ol.offsetHeight + "px";
+    fn();
+    var d = ol.getBoundingClientRect().top - oben;
+    if (Math.abs(d) >= 1) window.scrollBy(0, d);
+    reserveKuerzen();
+    var auf = ol.querySelector(".bild-zeile:not(.zu)");
+    if (auf && auf.getBoundingClientRect().top < 0) auf.scrollIntoView({ block: "start" });
+    return auf;
+  }
+  function oeffnen(key) {
+    var auf = wechseln(function () { offenWahl = key; zeichneBilder(); });
+    var k = auf && auf.querySelector(".bild-kopieren, .bild-passt, .bild-datei");
+    if (k) k.focus({ preventScroll: true });
+  }
   $("bilder-liste").addEventListener("click", function (ev) {
     var passt = ev.target.closest(".bild-passt");
-    if (passt) {                                   // „Passt“ prüft das Bild und klappt die Karte zu
+    if (passt) {                         // „Passt“ prüft das Bild, klappt die Karte zu und öffnet die nächste
       var p = Z.mappe.bildpruefung = Z.mappe.bildpruefung || {}, d = passt.dataset.datei;
-      p[d] = true; delete aufgeklappt[d];
-      zeichneBilder(); geaendert();
-      var neu = $("bilder-liste").querySelector(".bild-aendern[data-datei='" + CSS.escape(d) + "']");
-      if (neu) neu.focus({ preventScroll: true });
+      p[d] = true;
+      var auf = wechseln(function () { naechsteOffen(passt.closest(".bild-zeile").dataset.key); zeichneBilder(); });
+      geaendert();
+      var k = auf ? auf.querySelector(".bild-kopieren, .bild-passt, .bild-datei") :
+          $("bilder-liste").querySelector(".bild-oeffnen[aria-label*='" + CSS.escape(d) + "']");
+      if (k) k.focus({ preventScroll: true });
       return;
     }
-    var aendern = ev.target.closest(".bild-aendern");
-    if (aendern) {
-      aufgeklappt[aendern.dataset.datei] = true;
-      zeichneBilder();
-      var pk = $("bilder-liste").querySelector(".bild-passt[data-datei='" + CSS.escape(aendern.dataset.datei) + "']");
-      if (pk) pk.focus({ preventScroll: true });
-      return;
-    }
-    var zu = ev.target.closest(".bild-zuschneiden, .bild-lassen");
-    if (zu) {
-      var dz = zu.dataset.datei, wz = bildwuensche().filter(function (x) { return x.datei === dz; })[0];
-      if (zu.classList.contains("bild-lassen")) { formatMerken(dz, "belassen"); zeichneBilder(); geaendert(); }
+    var zu = ev.target.closest(".bild-zeile.zu");
+    if (zu) { oeffnen(zu.dataset.key); return; }
+    var zs = ev.target.closest(".bild-zuschneiden, .bild-lassen");
+    if (zs) {
+      var dz = zs.dataset.datei, wz = bildwuensche().filter(function (x) { return x.datei === dz; })[0];
+      if (zs.classList.contains("bild-lassen")) { formatMerken(dz, "belassen"); zeichneBilder(); geaendert(); }
       else if (wz && format(wz)) zuschneiden(dz, format(wz));
       return;
     }
     var b = ev.target.closest(".bild-kopieren"); if (!b) return;
     var w = bildwuensche()[parseInt(b.dataset.nr, 10)]; if (!w) return;
-    var t = b.dataset.art === "wunsch" ? w.wunsch : w.prompt;
+    var t = w.prompt || w.wunsch;
     $("bild-feld").value = t;
     kopieren(t, $("bild-feld"), b.closest(".bild-zeile").querySelector(".bild-stand"),
-      b.dataset.art === "wunsch" ?
-          "Kopiert. Damit findest du ein freies Bild oder zeichnest " +
-          "es." : "Kopiert. Füge den Auftrag in einen Bildgenerator ein.");
+      "Kopiert. Füge den Auftrag in einen Bildgenerator ein.");
   });
-  $("bilder-liste").addEventListener("change", function (ev) {
-    if (!ev.target.classList.contains("bild-datei")) return;
-    var f = ev.target.files && ev.target.files[0], name = ev.target.dataset.datei;
-    ev.target.value = "";
-    if (f) bildSetzen(f, name);
-  });
+  // Ablegen: auf die Fläche einer offenen Karte oder auf eine zugeklappte Zeile (öffnet sie)
+  function ablage(ev) { return ev.target.closest(".bild-ablage, .bild-zeile.zu:not([data-datei=''])"); }
   ["dragenter", "dragover"].forEach(function (art) {
     $("bilder-liste").addEventListener(art, function (ev) {
-      var z = ev.target.closest(".bild-ablage"); if (!z) return;
+      var z = ablage(ev); if (!z) return;
       ev.preventDefault(); z.classList.add("ueber");
     });
   });
-  $("bilder-liste").addEventListener("dragleave", function (ev) { var z = ev.target.closest(".bild-ablage");
-      if (z) z.classList.remove("ueber"); });
+  $("bilder-liste").addEventListener("dragleave", function (ev) { var z = ablage(ev);
+      if (z && !z.contains(ev.relatedTarget)) z.classList.remove("ueber"); });
   $("bilder-liste").addEventListener("drop", function (ev) {
-    var z = ev.target.closest(".bild-ablage"); if (!z) return;
+    var z = ablage(ev); if (!z) return;
     ev.preventDefault(); z.classList.remove("ueber");
     var f = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
-    if (f && /^image\/(png|jpeg)$/.test(f.type)) bildSetzen(f, z.dataset.datei);
+    if (!f || !/^image\/(png|jpeg)$/.test(f.type)) return;
+    if (z.classList.contains("zu")) oeffnen(z.dataset.key);
+    bildSetzen(f, z.dataset.datei);
   });
   Object.assign(S, { bildSetzen: bildSetzen, bildnamen: bildnamen, zeichneBilder: zeichneBilder, bildMasse: masse });
 })();

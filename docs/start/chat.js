@@ -134,12 +134,20 @@
     texte.teil = parseInt(b.dataset.teil, 10); $("kopiert").textContent = ""; zeichneChat();
   });
 
+  // AP13.5h a5: ging der Text an die eigene KI, sagt das Fazit von Schritt 4 „Text gesendet“; ohne Merker (neu
+  // geladen) gilt der gewählte Chat
+  var gesendetAn = new WeakMap();
+  function textGesendet() {
+    var m = Z.mappe;
+    return !!m && (gesendetAn.has(m) ? gesendetAn.get(m) : m.chat === "eigene");
+  }
   function textKopiert(gesendet) {
     var kopierterTeil = texte.teil + 1;
     eingabeZu(false);                              // neuer Text: das Einfügefeld gehört wieder dazu
     texte.kopiert[texte.teil] = true;
     if (!Z.mappe) return;
     Z.mappe.kopiert = true;
+    gesendetAn.set(Z.mappe, !!gesendet);
     // beim ersten Kopieren eines gestückelten Textes Teilzahl und Zuordnung der Karten einfrieren
     if (texte.teile.length > 1 && !Z.mappe.stueckelung) {
       Z.mappe.stueckelung = { einheit: einheitTag() || null, leer: texte.art === "leer", ids: texte.ids,
@@ -481,7 +489,7 @@
         $("teil-weiter").focus({ preventScroll: true });
         return;
       }
-      if (!ki()) eingabeZu(true);                   // c6: fertig eingefügt, das Feld klappt zu
+      eingabeZu(true);                              // c6: fertig eingefügt, das Feld klappt zu (auch mit eigener KI)
       var rot = Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler" && (!e.ids ||
           e.ids.indexOf(b.id) >= 0); }).length;
       var aussen = Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler" && !d.baustein; }).length;
@@ -524,6 +532,6 @@
   });
   Object.assign(S, { EIGEN: EIGEN, kiBesetzt: besetzt, wartezeichen: wartezeichen, diagnoseKarte: diagnoseKarte, eigenerText: eigenerText,
     eingabeUebernehmen: eingabeUebernehmen, eingabeZu: eingabeZu, muehleSymbol: muehleSymbol, standKarte: standKarte,
-    textGroesse: textGroesse, textSpaeter: textSpaeter, zeichneChat: zeichneChat, zeichnePlanung: zeichnePlanung,
-    zeichneTeile: zeichneTeile });
+    textGesendet: textGesendet, textGroesse: textGroesse, textSpaeter: textSpaeter, zeichneChat: zeichneChat,
+    zeichnePlanung: zeichnePlanung, zeichneTeile: zeichneTeile });
 })();
