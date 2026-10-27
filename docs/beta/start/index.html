@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 2d7fdbc vom 27.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 289f32f vom 27.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -39,6 +39,20 @@
   <button type="button" id="verwerfen-nein" class="textlink">Nein</button>
 </div>
 <p id="testfassung" class="testfassung" hidden></p>
+
+<!-- AP13.23: Bitte um Rückmeldung nach dem Download, nur in der Testphase (oberflaeche.rueckmeldung_bitte_bis) -->
+<dialog id="rm-bitte" class="rm-bitte" aria-labelledby="rm-bitte-titel">
+  <div class="rm-bitte-innen">
+    <h2 id="rm-bitte-titel">Hat dir die Mühle Zeit gespart?</h2>
+    <p>Dann schenk mir bitte fünf Minuten und hilf mir, sie besser zu machen. Die Rückmeldung ist schon vorbereitet; du
+      ergänzt drei kurze Antworten und schickst sie per Mail.</p>
+    <div class="rm-bitte-knoepfe">
+      <button type="button" id="rm-bitte-geben" class="knopf haupt" autofocus>Rückmeldung geben</button>
+      <button type="button" id="rm-bitte-spaeter" class="knopf">Später</button>
+      <button type="button" id="rm-bitte-nie" class="textlink">Nicht mehr fragen</button>
+    </div>
+  </div>
+</dialog>
 
 <!-- Schrittfolge. Jeder Schritt erscheint erst, wenn der vorige getan ist; erledigte Schritte stehen als eine
      aufklappbare Zeile darüber. Die Kursdatei ist in beiden Zweigen („Mach du“, „Ich steuere“) dieselbe. Schritt
