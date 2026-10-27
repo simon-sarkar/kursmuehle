@@ -230,11 +230,16 @@
   function feldSatz(feld) {
     var w = feld.value.trim(), art = feld.id.slice(2);
     if (art === "thema" && !w) return "Gib ein Thema ein.";
+    // AP13.20: Pflicht nur beim Anlegen oder Anhängen einer Einheit; mit Zielgruppe ist das Feld gesperrt und frei
+    if (art === "schulart" && !w && !feld.disabled && neueEinheit()) return "Wähl die Schulart.";
     if (art === "minuten" && w && !(/^\d+$/.test(w) && +w >= 10 && +w <= 300))
       return "Die Minuten liegen zwischen 10 und 300.";
     if (art === "jahrgang" && w && !jahrgangZahl(w)) return "Die Jahrgangsstufe ist eine Zahl von 1 bis 13.";
     if (art === "zielgruppe" && /\d/.test(w)) return "Ohne Zahl; die Jahrgangsstufe gehört ins Feld oben.";
     return "";
+  }
+  function neueEinheit() {
+    return !Z.mappe || !!(Z.mappe.anhaengen && !Z.mappe.bausteine.some(function (k) { return k.einheit === Z.mappe.anhaengen; }));
   }
   function feldMeldung(feld, satz) {
     if (!document.getElementById("stil-meldung")) {
@@ -276,6 +281,7 @@
   ["f-thema", "f-jahrgang", "f-minuten", "a-thema", "a-jahrgang", "a-minuten"].forEach(function (id) {
     $(id).addEventListener("input", function () { feldOk($(id)); });
   });
+  $("f-schulart").addEventListener("change", function () { feldOk($("f-schulart")); });
   // c2: Zielgruppe statt Jahrgangsstufe. Ein Text ohne Zahl im Feld Jahrgangsstufe der Einheit ist die Zielgruppe; ist
   // sie gefüllt, ist das Jahrgangsfeld leer und gesperrt (letzter Wert in `einheit.jahrgang_zuletzt`), lehrplan.js
   // schaltet den Lehrplanbezug aus
@@ -294,6 +300,14 @@
     else if (!zg && j.disabled) j.placeholder = j.dataset.platz || "";
     j.disabled = !!zg;
     $(o + "-jahrgang-zeile").hidden = !zg;
+    // AP13.20: mit Zielgruppe ist auch die Schulart frei (gesperrt, letzter Wert in dataset.zuletzt)
+    var sa = $(o + "-schulart");
+    if (nurAnzeige) { if (!zg && sa.value) sa.dataset.zuletzt = sa.value; }
+    else if (zg && !sa.disabled) { if (sa.value) sa.dataset.zuletzt = sa.value; sa.value = ""; feldOk(sa); }
+    else if (!zg && sa.disabled) sa.value = sa.dataset.zuletzt || schulartGemerkt();
+    if (sa.selectedIndex < 0) sa.selectedIndex = 0;
+    sa.disabled = !!zg;
+    $(o + "-schulart-zeile").hidden = !zg;
   }
   ["f", "a"].forEach(function (o) {
     $(o + "-zielgruppe").addEventListener("input", function () {
@@ -314,13 +328,15 @@
   $("start-form").onsubmit = function (ev) { ev.preventDefault(); startAbsenden(); };
   function startAbsenden() {
     var thema = $("f-thema").value.trim();
-    if (!felderPruefen(["f-thema", "f-jahrgang", "f-minuten", "f-zielgruppe"])) return;
-    var zg = $("f-zielgruppe").value.trim();
+    if (!felderPruefen(["f-thema", "f-schulart", "f-jahrgang", "f-minuten", "f-zielgruppe"])) return;
+    var zg = $("f-zielgruppe").value.trim(), schulart = zg ? "" : $("f-schulart").value;
+    if (schulart) schulartMerken(schulart);
     var e = { thema: thema, jahrgang: zg || $("f-jahrgang").value.trim(), minuten: parseInt($("f-minuten").value, 10) || 45 };
     if (zg) e.jahrgang_zuletzt = $("f-jahrgang").dataset.zuletzt || ((Z.mappe && Z.mappe.einheit) || {}).jahrgang_zuletzt || "";
     if (!S.katalog) return;
-    if (!Z.mappe) { einheitAnlegen(e, S.katalog.vorlagen[0]); return; }
-    if (Z.mappe.anhaengen && !Z.mappe.bausteine.some(function (k) { return k.einheit === Z.mappe.anhaengen; })) {
+    if (!Z.mappe) { einheitAnlegen(e, S.katalog.vorlagen[0], schulart); return; }
+    if (neueEinheit()) {
+      S.angaben.schulart = schulart; angabenSchreiben({ schulart: schulart });
       einheitAnhaengen(e); return;
     }
     // Schritt 1 nachträglich geändert: Angaben übernehmen; ohne Inhalt die Bausteine der Vorlage neu rechnen
@@ -329,11 +345,14 @@
     var v = vorlageNach(Z.mappe.einheit.vorlage);
     if (v && !inhalt() && Z.mappe.bausteine.every(function (k) { return k.geplant; })) karteVorlage(v);
     S.angaben.thema = thema; S.angaben.jahrgang = e.jahrgang; S.angaben.minuten = e.minuten;
+    // AP13.20 §3: eine ältere Mappe ohne Schulart bleibt ohne, solange die Lehrkraft keine wählt
+    var sa = zg || schulart ? { schulart: schulart } : {};
+    Object.assign(S.angaben, sa);
     Z.mappe.schritt = Math.max(schritt(), 2);
     S.auf = {};
     zeichne();
-    angabenSchreiben(Z.mappe.anhaengen ? { jahrgang: e.jahrgang } : { thema: thema, jahrgang: e.jahrgang,
-        minuten: e.minuten });
+    angabenSchreiben(Object.assign(Z.mappe.anhaengen ? { jahrgang: e.jahrgang } : { thema: thema, jahrgang: e.jahrgang,
+        minuten: e.minuten }, sa));
   }
 
   function vorlageNach(name) { return S.katalog && S.katalog.vorlagen.filter(function (v) { return v.name === name;
@@ -403,16 +422,28 @@
     catch (e) { /* ohne Speicher gilt die Wahl nur für diese Einheit */ }
   }
 
+  // AP13.20: zuletzt gewählte Schulart (Text aus katalog.yaml); eine neue Einheit und das Feld in Schritt 1 übernehmen sie
+  var SCHULART = km.speicher("kursmuehle-schulart");
+  function schulartGemerkt() {
+    var v = "";
+    try { v = localStorage.getItem(SCHULART) || ""; } catch (e) { /* ohne Speicher */ }
+    return S.katalog && S.katalog.oberflaeche.schulart.some(function (w) { return w.wert && w.wert === v; }) ? v : "";
+  }
+  function schulartMerken(wert) {
+    try { localStorage.setItem(SCHULART, wert); } catch (e) { /* ohne Speicher gilt die Wahl nur für diese Seite */ }
+  }
+
   async function steckbriefAnlegen() {
     var o = S.katalog.oberflaeche, e = (Z.mappe && Z.mappe.einheit) || {}, g = kursangabenGemerkt();
     Z.steckbrief_text = await km.mappeFn("angaben_schreiben", ["", {
-      thema: e.thema || "", jahrgang: e.jahrgang || "", minuten: e.minuten || "", fach: "", bilder: bilderStandard(),
+      thema: e.thema || "", jahrgang: e.jahrgang || "", minuten: e.minuten || "", fach: "",
+      schulart: S.angaben.schulart || "", bilder: bilderStandard(),
       format: o.format[0].wert, familie: S.familien.standard, farbe: o.farbe[0].wert, website: o.website[0].wert,
       abschluss: o.abschluss[0].wert, portionierung: o.portionierung[0].wert, lizenz: g.lizenz,
       lizenz_name: g.lizenz ? g.name : "" }]);
   }
 
-  function einheitAnlegen(e, v) {
+  function einheitAnlegen(e, v, schulart) {
     e.vorlage = v.name;
     Z.mappe = km.neueMappe(e.thema, e, vorlageKarten(v, e.minuten));
     Z.mappe.schritt = 2;
@@ -420,7 +451,7 @@
     Z.mappe.zeit_start = new Date().toISOString();  // AP13.12 a11: Minuten bis zum Download für die Rückmeldung
     Z.kurs_md = ""; Z.steckbrief_text = ""; Z.assets = {}; Z.pruefung = null; Z.kennzahlen = null; Z.bau = null;
         Z.beispiel = null;
-    S.angaben = { thema: e.thema, jahrgang: e.jahrgang, minuten: e.minuten, familie: "sachlich", dichte: "normal",
+    S.angaben = { thema: e.thema, jahrgang: e.jahrgang, minuten: e.minuten, schulart: schulart || "", familie: "sachlich", dichte: "normal",
         kasten: "familie", format: "themen", farbe: "" };
     neuStart();
     gehe(2, "zweig-mach");
@@ -1177,6 +1208,7 @@
       if (!Z.steckbrief_text) await steckbriefAnlegen();
       Z.steckbrief_text = await km.mappeFn("angaben_schreiben", [Z.steckbrief_text, a]);
       Object.assign(S.angaben, a);
+      if (a.schulart) schulartMerken(a.schulart);
       // die Bilder-Stufe ändert die Prüfung
       if (mitStand) { await km.stand(Z.kurs_md); if (inhalt()) { await auswertung(); zeichne(); } }
       zeichneAussehen(); zeichneSchritte();
@@ -1248,6 +1280,10 @@
     S.angaben[feld] = wert;
     zeichne();
     var a = {}; a[feld] = wert;
+    if (ev.target.id === "a-zielgruppe") {            // AP13.20: Zielgruppe macht die Schulart frei, ohne sie kommt sie zurück
+      var sa = zielgruppeAus(wert) ? "" : $("a-schulart").value;
+      if (sa !== (S.angaben.schulart || "")) { a.schulart = sa; S.angaben.schulart = sa; }
+    }
     angabenSchreiben(a, feld === "farbe" || feld === "familie");
   });
   var kontextTimer = null, kontextOffen = {};
@@ -1297,7 +1333,7 @@
         /* ohne Speicher: nur diese Seite */ }
     schemaZeigen();
   };
-  Object.assign(S, { adresseLesen: adresseLesen, angabenSchreiben: angabenSchreiben, ausklapp: ausklapp,
+  Object.assign(S, { schulartGemerkt: schulartGemerkt, adresseLesen: adresseLesen, angabenSchreiben: angabenSchreiben, ausklapp: ausklapp,
     kursangabenMerken: kursangabenMerken,
     felderPruefen: felderPruefen, feldOk: feldOk,
     akzent: akzent, gehe: gehe, jahrgangZahl: jahrgangZahl, nachZwei: nachZwei, neuStart: neuStart,

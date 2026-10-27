@@ -528,6 +528,11 @@ window.km = km;
       var s = $(p[0]); s.innerHTML = "";
       p[1].forEach(function (w) { s.appendChild(el("option", { value: w.wert, text: w.text })); });
     });
+    // AP13.20: Schritt 1 bietet die Schularten ohne „Nicht angegeben“; die leere Option ist „noch keine“ (Pflicht beim Anlegen)
+    var fs = $("f-schulart"); fs.innerHTML = "";
+    fs.appendChild(el("option", { value: "", text: "Noch keine Schulart" }));
+    o.schulart.forEach(function (w) { if (w.wert) fs.appendChild(el("option", { value: w.wert, text: w.text })); });
+    if (!Z.mappe && S.schulartGemerkt) fs.value = S.schulartGemerkt();
     var gruppen = S.katalog.chat_gruppen;
     var chat = $("a-chat"); chat.innerHTML = "";
     chat.appendChild(el("option", { value: "", text: "Noch nicht gewählt" }));
@@ -643,7 +648,8 @@ window.km = km;
     var jgA = String(e.jahrgang || S.angaben.jahrgang || ""), jgF = String(e.jahrgang || "");
     var zgA = /\d/.test(jgA) ? "" : jgA.trim(), zgF = /\d/.test(jgF) ? "" : jgF.trim();
     var werte = { "a-thema": e.thema || S.angaben.thema || "", "a-jahrgang": zgA ? "" : jgA, "a-zielgruppe": zgA,
-      "a-minuten": e.minuten || S.angaben.minuten || "", "a-schulart": S.angaben.schulart || "",
+      "a-minuten": e.minuten || S.angaben.minuten || "", "a-schulart": zgA ? "" : S.angaben.schulart || "",
+      "f-schulart": zgF ? "" : S.angaben.schulart || "",
       "fach": S.angaben.fach || "", "a-kontext": S.angaben.kontext || "", "m-kontext": S.angaben.kontext || "",
       "a-format": S.angaben.format, "a-familie": S.angaben.familie,
       "a-farbe": /^#/.test(S.angaben.farbe || "") ? "eigen" : S.angaben.farbe,

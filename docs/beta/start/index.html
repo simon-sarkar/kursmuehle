@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 1f84aeb vom 27.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 2d7fdbc vom 27.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -53,7 +53,7 @@
     <span id="weiter-zeit" class="leise"></span>
   </div>
 
-  <!-- 1 Thema, Jahrgangsstufe, Minuten -->
+  <!-- 1 Thema, Schulart, Jahrgangsstufe, Minuten -->
   <section id="start" class="schritt" data-nr="1" aria-labelledby="s1-titel">
     <h2 class="s-kopf"><button type="button" class="s-zeile" data-nr="1"><span class="s-nr">1</span>
       <span class="s-titel" id="s1-titel">Worum geht es?</span><span class="s-fazit"></span></button></h2>
@@ -61,6 +61,10 @@
       <form id="start-form" class="start-form" autocomplete="off" novalidate>
         <label class="feld feld-thema">Thema
           <input id="f-thema" type="text" aria-required="true" placeholder="Terme und Gleichungen" maxlength="120">
+        </label>
+        <label class="feld feld-schulart">Schulart
+          <select id="f-schulart" aria-required="true"></select>
+          <span id="f-schulart-zeile" class="feld-zeile" hidden>Zielgruppe gewählt</span>
         </label>
         <label class="feld feld-klein"><span id="f-jahrgang-t">Jahrgangsstufe</span>
           <input id="f-jahrgang" type="text" inputmode="numeric" maxlength="12" placeholder="7">
@@ -171,7 +175,8 @@
               <textarea id="a-kontext" class="von-lehrkraft" rows="3" maxlength="600" spellcheck="true"
                 placeholder="Was sollen die Lernenden danach können? Was ist vorausgesetzt, was nicht?"></textarea>
             </label>
-            <label class="feld">Schulart <select id="a-schulart"></select></label>
+            <label class="feld">Schulart <select id="a-schulart"></select>
+              <span id="a-schulart-zeile" class="feld-zeile" hidden>Zielgruppe gewählt</span></label>
             <label class="feld">Chat <select id="a-chat"></select></label>
             <label class="feld">Kursformat <select id="a-format"></select></label>
             <label class="feld">Design <select id="a-familie"></select></label>

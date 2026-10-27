@@ -490,6 +490,7 @@
     S.rueckgaengig = null; $("rueckgaengig").hidden = true; S.angaben = {};
     neuStart();
     $("f-thema").value = ""; $("f-jahrgang").value = ""; $("f-minuten").value = 45;
+    $("f-schulart").value = S.schulartGemerkt();
     $("s1-titel").textContent = "Worum geht es?";
     S.gespeichert = false;
     zeichne();

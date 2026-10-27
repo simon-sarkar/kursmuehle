@@ -182,7 +182,7 @@ select { appearance: auto; }
 
 /* 1 */
 .vorsatz { font-size: 0.9rem; color: var(--leise); margin: 12px 0 0; }
-.start-form { display: grid; grid-template-columns: 1fr 9rem 7rem; gap: 12px; align-items: end; }
+.start-form { display: grid; grid-template-columns: 1fr 12rem 9rem 7rem; gap: 12px; align-items: end; }
 .start-form .knopf { grid-column: 1 / -1; justify-self: start; min-width: 9rem; }
 .zeit-vorab { grid-column: 1 / -1; margin: -4px 0 0; font-size: 0.85rem; }
 
