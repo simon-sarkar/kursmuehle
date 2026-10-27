@@ -698,3 +698,14 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .ausweg-pruefung .fehler { color: var(--fehler); }
 .ausweg-pruefung .ok { color: var(--ok); }
 .karte.status-weggelassen .k-titel { text-decoration: line-through; }
+
+/* AP13.24: graue Zeile „aus dem Lehrplan“, Infoknopf am Materialfeld, Zeile zur Art der Einheit in „Mach du“ */
+.vorschlag-zeile { margin: 4px 0 0; }
+.m-vorlage { display: grid; gap: 8px; }
+.m-vorlage .feld-zeile { margin: 0; }
+.m-vorlage .textlink { padding: 0; font-size: inherit; }
+.feld-kopf { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.info-knopf { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; border-radius: 50%;
+  color: var(--link); cursor: pointer; font-size: 1rem; line-height: 1; user-select: none; }
+.info-knopf:hover, .info-knopf[aria-expanded=true] { background: var(--creme); }
+.info-text { background: var(--creme); border-radius: var(--rund); padding: 10px 12px; line-height: 1.45; }

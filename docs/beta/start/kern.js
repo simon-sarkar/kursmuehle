@@ -122,6 +122,12 @@ var km = (function () {
     return a.ergebnis;
   }
 
+  // AP13.24: Schwerpunkt, Übungen und Art der Einheit aus dem gewählten Lehrplan (gen.api.lehrplan_vorschlag), null ohne Lernbereich
+  async function lehrplanVorschlag(lehrplan, fach) {
+    var a = await anfrage("vorschlag", { lehrplan: lehrplan || null, fach: fach || "" });
+    return a.ergebnis;
+  }
+
   // Vorschau der Designfamilien (AP13.5): mit familie das HTML dieser Familie, ohne alle Familien als {name: html}
   async function designVorschau(hebel, familie) {
     var a = await anfrage("design_vorschau", { hebel: hebel || {}, familie: familie || null });
@@ -267,7 +273,7 @@ var km = (function () {
   }
 
   return { anfrage: anfrage, laden: laden, bereit: bereit, pruefe: pruefe, stand: stand, mappeFn: mappeFn,
-      prompt: prompt, baue: baue, designVorschau: designVorschau,
+      prompt: prompt, baue: baue, designVorschau: designVorschau, lehrplanVorschlag: lehrplanVorschlag,
     mappeAusBytes: mappeAusBytes, mappeAusDateien: mappeAusDateien, mappeSchreiben: mappeSchreiben,
     mappeUebernehmen: mappeUebernehmen,
     neueMappe: neueMappe, heap: heap, beenden: beenden, sha256: sha256, autosaveSchreiben: autosaveSchreiben,
@@ -303,6 +309,7 @@ window.km = km;
   S.infoboxAus = false;
   S.schreibKette = Promise.resolve();
   S.angabenFuer = null;            // Mappe, deren Angaben aus dem Steckbrief gelesen sind (neuPruefen)
+  S.schwerpunktFolge = null;       // AP13.24: Reihenfolge der Klicks auf die Schwerpunkt-Kacheln {mappe, liste}
   S.korrektur = { text: "", offen: false, stand: "", art: "" };
   S.korrekturTimer = null;
   S.hinweise = { an: true, gesehen: [] };

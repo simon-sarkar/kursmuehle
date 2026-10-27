@@ -208,10 +208,24 @@
   aus.addEventListener("toggle", function () { if (!aus.open) zuMitWahl(); });
 
   function schreiben(a) {
+    var alt = S.angaben.lehrplan;
     Object.assign(S.angaben, a);
     S.angabenSchreiben(a);
     S.textSpaeter();
     zeichneLehrplan();
+    if ("lehrplan" in a && !gleich(alt, a.lehrplan)) vorbelegen();
+  }
+  // AP13.24: Schwerpunkt, Übungen und Art der Einheit aus den Kompetenzerwartungen (Python, gen/zielart.py); die Seite schreibt
+  // sie nur in Felder, die die Lehrkraft nicht selbst gesetzt hat (schritte.js vorschlagAnwenden). Ohne Lehrplan geht, was er
+  // vorbelegt hat, wieder weg.
+  var vorbelegenNr = 0;
+  function vorbelegen() {
+    var lp = gewaehlt() && bezug() ? S.angaben.lehrplan : null, gesendet = Z.mappe, nr = ++vorbelegenNr;
+    if (!gesendet) return;
+    if (!lp) { S.vorschlagLoesen(); return; }
+    km.lehrplanVorschlag(lp, S.angaben.fach || "").then(function (r) {
+      if (nr === vorbelegenNr && Z.mappe === gesendet) S.vorschlagAnwenden(r);
+    }).catch(function (e) { S.zeigeFehler(e); });
   }
 
   // Trefferzeile unter dem Fach-Feld: Kürzel vor Namen, höchstens acht; steht das Fach schon genau da, keine Zeile
@@ -608,6 +622,7 @@
     var a = { lehrplanbezug: an ? "ja" : "nein" };
     if (!an) { a.lehrplan = null; S.angaben.lehrplan = null; vorschlag.auto = null; }
     schreiben(a);                  // an und ohne Wahl öffnet zeichneLehrplan den Picker sofort
+    if (!an) vorbelegen();         // S.angaben.lehrplan war schon leer: der Vorschlag geht trotzdem mit dem Lehrplan
     S.zeichneSchritte();
   }
 
@@ -697,6 +712,7 @@
       P = null; zeichnePicker();
       var ohne = { lehrplanbezug: "nein", lehrplan: null };
       Object.assign(S.angaben, ohne); S.angabenSchreiben(ohne); S.textSpaeter();
+      vorbelegen();
     } else if (!zg && zgStand.zg && zgStand.mappe === Z.mappe) {
       var wie = { lehrplanbezug: gemerkt() ? "ja" : "nein" };
       Object.assign(S.angaben, wie); S.angabenSchreiben(wie); S.textSpaeter();
@@ -756,5 +772,5 @@
     if (neu !== fazit1.textContent) fazit1.textContent = neu;
   }
   new MutationObserver(fazitErgaenzen).observe(fazit1, { childList: true, characterData: true, subtree: true });
-  Object.assign(S, { zeichneLehrplan: zeichneLehrplan });
+  Object.assign(S, { zeichneLehrplan: zeichneLehrplan, lehrplanVorbelegen: vorbelegen });
 })();

@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 254522a vom 27.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand b5fc8f7 vom 27.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -135,6 +135,12 @@
           <textarea id="m-kontext" class="von-lehrkraft" rows="3" maxlength="600" spellcheck="true"
             placeholder="Was sollen die Lernenden danach können? Was ist vorausgesetzt, was nicht?"></textarea>
         </label>
+        <!-- AP13.24: schlägt der Lehrplan eine Art der Einheit vor, übernimmt „Mach du“ sie und sagt es; „ändern“ zeigt die Kacheln -->
+        <div id="m-vorlage" class="m-vorlage" hidden>
+          <p class="feld-zeile"><span id="m-vorlage-text"></span> · <button type="button" id="m-vorlage-aendern" class="textlink"
+            aria-expanded="false" aria-controls="m-art">ändern</button></p>
+          <div id="m-art" class="kacheln-wahl breit" role="radiogroup" aria-label="Art der Einheit" hidden></div>
+        </div>
       </div>
       <!-- AP13.5b: Eingabekarte „Ich gebe die Richtung“, alle Felder freiwillig; AP13.19 §1: bei „Einheit aus eigenem
            Material“ ist das Material nötig und steht direkt unter „Art der Einheit“ (in „Mach du“ unter „Worum geht es
@@ -142,7 +148,11 @@
       <div id="richtung-teil" class="richtung-teil" hidden>
         <!-- AP13.13: Dateien lesen (web/material.js); Liste der Abschnitte unter dem Feld, nicht gespeichert -->
         <div id="r-material-feld" class="r-material-feld material-ort" data-material="r">
-          <label class="feld feld-breit">Dein Material (Text, Stichpunkte oder Dateien) <span id="r-material-zeile" class="feld-zeile">freiwillig</span>
+          <label class="feld feld-breit"><span class="feld-kopf">Dein Material (Text, Stichpunkte oder Dateien)
+              <span class="info-knopf" role="button" tabindex="0" aria-expanded="false" aria-label="Hinweis zum Material im Chat"
+                data-info="material_info">ⓘ</span></span>
+            <span class="info-text feld-zeile" data-info-text="material_info" hidden></span>
+            <span id="r-material-zeile" class="feld-zeile">freiwillig</span>
             <textarea id="r-material" class="von-lehrkraft" rows="4" spellcheck="true"></textarea>
             <span class="feld-zeile">Nur Material, an dem du die Rechte hast.</span>
             <span id="r-material-grenze" class="feld-zeile"></span>
@@ -155,11 +165,14 @@
           <div id="r-material-liste" class="material-liste" hidden></div>
         </div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="r-art-t">Art der Einheit</h3>
-          <div id="r-art" class="kacheln-wahl breit" role="radiogroup" aria-labelledby="r-art-t"></div></div>
+          <div id="r-art" class="kacheln-wahl breit" role="radiogroup" aria-labelledby="r-art-t"></div>
+          <p id="r-art-vz" class="feld-zeile vorschlag-zeile" hidden>aus dem Lehrplan</p></div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="r-schwerpunkt-t">Schwerpunkt</h3>
-          <div id="r-schwerpunkt" class="kacheln-wahl text-wahl" role="group" aria-labelledby="r-schwerpunkt-t"></div></div>
+          <div id="r-schwerpunkt" class="kacheln-wahl text-wahl" role="group" aria-labelledby="r-schwerpunkt-t"></div>
+          <p id="r-schwerpunkt-vz" class="feld-zeile vorschlag-zeile" hidden>aus dem Lehrplan</p></div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="r-uebungen-t">Übungen bevorzugt</h3>
-          <div id="r-uebungen" class="kacheln-wahl text-wahl" role="group" aria-labelledby="r-uebungen-t"></div></div>
+          <div id="r-uebungen" class="kacheln-wahl text-wahl" role="group" aria-labelledby="r-uebungen-t"></div>
+          <p id="r-uebungen-vz" class="feld-zeile vorschlag-zeile" hidden>aus dem Lehrplan</p></div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="r-sprache-t">Sprache</h3>
           <div id="r-sprache" class="kacheln-wahl text-wahl" role="radiogroup" aria-labelledby="r-sprache-t"></div></div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="r-differenzierung-t">Hilfen und Zusatzaufgaben</h3>
@@ -198,7 +211,8 @@
             <label class="feld feld-klein">Eigene Farbe <input id="a-farbe-hex" type="text" maxlength="7"
               placeholder="#1D5FD1" pattern="#[0-9A-Fa-f]{6}" autocomplete="off" spellcheck="false"></label>
             <div class="feld feld-breit"><span id="a-schwerpunkt-t">Schwerpunkt</span>
-              <div id="a-schwerpunkt" class="kacheln-wahl text-wahl" role="group" aria-labelledby="a-schwerpunkt-t"></div></div>
+              <div id="a-schwerpunkt" class="kacheln-wahl text-wahl" role="group" aria-labelledby="a-schwerpunkt-t"></div>
+              <p id="a-schwerpunkt-vz" class="feld-zeile vorschlag-zeile" hidden>aus dem Lehrplan</p></div>
             <div class="feld feld-breit"><span id="a-sprache-t">Sprache</span>
               <div id="a-sprache" class="kacheln-wahl text-wahl" role="radiogroup" aria-labelledby="a-sprache-t"></div></div>
             <div class="feld feld-breit"><span id="a-differenzierung-t">Hilfen und Zusatzaufgaben</span>
@@ -207,7 +221,11 @@
             <label class="feld">Umfang <select id="a-portionierung"></select></label>
             <!-- AP13.19 §1: bei „Einheit aus eigenem Material“ steht dieser Block unter den Vorlagen -->
             <div id="a-material-feld" class="feld-breit material-ort" data-material="a">
-              <label class="feld">Dein Material (Text, Stichpunkte oder Dateien) <span id="a-material-zeile" class="feld-zeile"
+              <label class="feld"><span class="feld-kopf">Dein Material (Text, Stichpunkte oder Dateien)
+                  <span class="info-knopf" role="button" tabindex="0" aria-expanded="false" aria-label="Hinweis zum Material im Chat"
+                    data-info="material_info">ⓘ</span></span>
+                <span class="info-text feld-zeile" data-info-text="material_info" hidden></span>
+                <span id="a-material-zeile" class="feld-zeile"
                   hidden>für diese Art nötig</span>
                 <textarea id="a-material" class="von-lehrkraft" rows="4" spellcheck="true"></textarea>
                 <span class="feld-zeile">Nur Material, an dem du die Rechte hast.</span>

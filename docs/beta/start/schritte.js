@@ -123,6 +123,7 @@
     $("mach-teil").hidden = z !== "mach" && z !== "richtung";
     $("richtung-teil").hidden = z !== "richtung";
     if (z === "richtung" || z === "steuer") zeichneRichtung();
+    if (S.katalog) { vorlagenZeigen(); zeichneMachArt(); }
     materialOrt();
     $("vorlagen").hidden = inhalt();
     $("weiter-2").hidden = s > 2 || !z;
@@ -559,6 +560,7 @@
     var vorher = zweig();
     Z.mappe.zweig = b.dataset.zweig;
     S.designer = null;
+    if (vorher !== b.dataset.zweig && S.lehrplanVorbelegen) S.lehrplanVorbelegen();   // AP13.24: Felder des neuen Wegs
     if (vorher === "richtung" && b.dataset.zweig === "steuer") typenUebernehmen();
     if (b.dataset.zweig === "mach" || b.dataset.zweig === "richtung") {
       if (schritt() <= 2) { zeichne(); geaendert(); $("m-kontext").focus({ preventScroll: true }); }
@@ -584,7 +586,8 @@
     return t;
   }
   function textKacheln(box, feld, werte, gewaehlt, mehrfach) {
-    if (box.querySelectorAll(".aus-kachel").length !== werte.length) {
+    var da = Array.prototype.map.call(box.querySelectorAll(".aus-kachel"), function (b) { return b.dataset.wert; });
+    if (da.join("|") !== werte.map(function (w) { return w.wert; }).join("|")) {
       box.innerHTML = "";
       werte.forEach(function (w) {
         var b = el("button", { type: "button", cls: "aus-kachel", role: mehrfach ? "checkbox" : "radio",
@@ -594,19 +597,26 @@
         box.appendChild(b);
       });
     }
-    Array.prototype.forEach.call(box.querySelectorAll(".aus-kachel"), function (b) {
+    Array.prototype.forEach.call(box.querySelectorAll(".aus-kachel"), function (b, i) {
       b.setAttribute("aria-checked", String(mehrfach ? gewaehlt.indexOf(b.dataset.wert) >= 0 : b.dataset.wert === gewaehlt));
+      var z = werte[i].zeile, ze = b.querySelector(".aus-zeile");        // AP13.24: die Zeile hängt am Fach
+      if (z && !ze) b.appendChild(el("span", { cls: "aus-zeile", text: z }));
+      else if (z && ze.textContent !== z) ze.textContent = z;
+      else if (!z && ze) b.removeChild(ze);
     });
   }
   function zeichneRichtung() {
     if (!S.katalog || !Z.mappe) return;
     var o = S.katalog.oberflaeche, a = S.angaben, e = Z.mappe.einheit || {};
-    var art = S.katalog.vorlagen.map(function (v) { return { wert: v.name, text: v.name, zeile: v.zeile }; });
+    var art = artKacheln();
     var typen = S.katalog.automatisch.filter(function (t) { return t !== "Textfeld" && t !== "Seite"; })
         .map(function (t) { return { wert: t, text: t }; });
     textKacheln($("r-art"), "art", art, e.vorlage || S.katalog.vorlagen[0].name, false);
-    [["r-schwerpunkt", "a-schwerpunkt"]].forEach(function (ids) { ids.forEach(function (id) {
-      textKacheln($(id), "schwerpunkt", o.schwerpunkt, a.schwerpunkt || [], true); }); });
+    // AP13.24: Material und Gestalten tragen das Wort des Fachs in der Zeile unter der Kachel
+    var fw = fachWoerter(), sp = o.schwerpunkt.map(function (w) { return w.wort ? { wert: w.wert, text: w.text,
+        zeile: fw[w.wort] } : w; });
+    ["r-schwerpunkt", "a-schwerpunkt"].forEach(function (id) { textKacheln($(id), "schwerpunkt", sp,
+        a.schwerpunkt || [], true); });
     textKacheln($("r-uebungen"), "uebungstypen", typen, a.uebungstypen || [], true);
     ["r-sprache", "a-sprache"].forEach(function (id) { textKacheln($(id), "sprache", o.sprache, a.sprache || "normal", false);
         });
@@ -614,6 +624,121 @@
         o.differenzierung, a.differenzierung ? "an" : "aus", false); });
     Array.prototype.forEach.call($("r-art").querySelectorAll(".aus-kachel"), function (b) { b.disabled = inhalt(); });
     if (document.activeElement !== $("r-material")) $("r-material").value = Z.mappe.material || "";
+    vorschlagZeilen();
+  }
+
+  // ---------------------------------------------------------------- AP13.24: Fach, Wörter, Vorlagen je Fach, Vorschlag
+  // Zwilling der Tabelle in gen/zielart.py (fachgruppe, fachwoerter); test_ansicht.py vergleicht beide an denselben Fächern.
+  // Die Regeln für den Vorschlag selbst leben nur in Python.
+  function fachPasst(fach, namen) {
+    var f = String(fach || "").toLowerCase().split(/\s+/).filter(Boolean).join(" ");
+    return namen.some(function (n) { var k = n.toLowerCase();
+      return f.indexOf(k) === 0 || f.length >= 3 && n.indexOf("/") < 0 && k.indexOf(f) === 0; });
+  }
+  function fachJetzt() {
+    var lp = S.angaben.lehrplan;
+    return lp && lp.fach ? lp.fach : S.angaben.fach || "";
+  }
+  function lehrplanTitel() {
+    var out = [], lp = S.angaben.lehrplan;
+    ((lp && lp.lernbereiche) || []).forEach(function (lb) { out.push(lb.titel); (lb.teilbereiche || []).forEach(function (tb) {
+      out.push(tb.titel); }); });
+    return out.map(function (x) { return String(x || "").toLowerCase(); });
+  }
+  function fachgruppe(fach, titel) {
+    var gruppen = S.katalog.zielarten.faecher;
+    for (var i = 0; i < gruppen.length; i++) {
+      var g = gruppen[i];
+      if (!g.namen) return g;
+      if (fachPasst(fach, g.namen) && (!g.lb || titel.some(function (x) { return new RegExp(g.lb).test(x); }))) return g;
+    }
+    return gruppen[gruppen.length - 1];
+  }
+  function fachWoerter() {
+    var z = S.katalog.zielarten;
+    return z.woerter[fachgruppe(fachJetzt(), lehrplanTitel()).wort];
+  }
+  // Kachel nur, wenn Fach oder Schulart passen (`wann`), die Vorlage schon gewählt ist oder es kein `wann` gibt
+  function vorlageSichtbar(v) {
+    var w = v.wann;
+    if (!w || ((Z.mappe && Z.mappe.einheit) || {}).vorlage === v.name) return true;
+    return !!(w.faecher && fachPasst(fachJetzt(), w.faecher)) || (w.schularten || []).indexOf(S.angaben.schulart || "") >= 0;
+  }
+  function artKacheln() {
+    return S.katalog.vorlagen.filter(vorlageSichtbar).map(function (v) { return { wert: v.name, text: v.name, zeile: v.zeile }; });
+  }
+  function vorschlagZeilen() {
+    var v = S.angaben.vorschlag || [], a = S.angaben;
+    [["r-schwerpunkt-vz", "schwerpunkt"], ["a-schwerpunkt-vz", "schwerpunkt"], ["r-uebungen-vz", "uebungstypen"],
+      ["r-art-vz", "vorlage"]].forEach(function (x) {
+      $(x[0]).hidden = v.indexOf(x[1]) < 0 || (x[1] !== "vorlage" && !(a[x[1]] || []).length);
+    });
+  }
+  // „Mach du“: die vorgeschlagene Art der Einheit mit „ändern“ (öffnet die Kacheln)
+  function zeichneMachArt() {
+    var e = (Z.mappe && Z.mappe.einheit) || {}, an = !!Z.mappe && zweig() === "mach" && (S.angaben.vorschlag || [])
+        .indexOf("vorlage") >= 0 && !inhalt() && !!e.vorlage;
+    $("m-vorlage").hidden = !an;
+    if (!an) { $("m-art").hidden = true; $("m-vorlage-aendern").setAttribute("aria-expanded", "false"); return; }
+    $("m-vorlage-text").textContent = "Art der Einheit: " + e.vorlage + " (Vorschlag aus dem Lehrplan)";
+    textKacheln($("m-art"), "art", artKacheln(), e.vorlage, false);
+  }
+  $("m-vorlage-aendern").addEventListener("click", function () {
+    var auf = $("m-art").hidden;
+    $("m-art").hidden = !auf;
+    $("m-vorlage-aendern").setAttribute("aria-expanded", String(auf));
+  });
+  function vorschlagWeg(feld) {
+    var alt = S.angaben.vorschlag || [], neu = alt.filter(function (f) { return f !== feld; });
+    if (neu.length === alt.length) return null;
+    S.angaben.vorschlag = neu;
+    return { vorschlag: neu };
+  }
+  // Vorschlag aus dem Lehrplan (gen/zielart.py) in die Felder schreiben, die die Lehrkraft nicht selbst gesetzt hat:
+  // Schwerpunkt und Übungen in „Ich gebe die Richtung“, in „Ich steuere“ nur der Schwerpunkt (dort stehen die Übungen an den
+  // Karten), in „Mach du“ bleiben die Felder der Richtung unberührt (AP13.5b §3); die Art der
+  // Einheit in „Mach du“ und „Ich gebe die Richtung“, nur solange keine Karte Inhalt hat
+  function vorschlagAnwenden(r) {
+    if (!Z.mappe || !r || !S.katalog) return;
+    var a = S.angaben, v = (a.vorschlag || []).slice(), neu = {}, z = zweig(), geaendert_ = false;
+    var frei = function (f) { return v.indexOf(f) >= 0 || !(a[f] || []).length; };
+    (z === "richtung" ? ["schwerpunkt", "uebungstypen"] : z === "steuer" ? ["schwerpunkt"] : []).forEach(function (f) {
+      if (!frei(f)) return;
+      var reihe = f === "schwerpunkt" ? S.katalog.oberflaeche.schwerpunkt.map(function (w) { return w.wert; }) :
+          S.katalog.automatisch;                              // Reihenfolge wie die Kacheln, wie nach einem Klick
+      neu[f] = reihe.filter(function (w) { return r[f].indexOf(w) >= 0; });
+      if (v.indexOf(f) < 0) v.push(f);
+    });
+    var e = Z.mappe.einheit || (Z.mappe.einheit = {}), std = S.katalog.vorlagen[0].name;
+    if (z !== "steuer" && !inhalt() && (v.indexOf("vorlage") >= 0 || e.vorlage === std && !e.vorlage_selbst)) {
+      var vl = vorlageNach(r.vorlage || std);
+      if (vl && vl.name !== e.vorlage) { karteVorlage(vl); geaendert_ = true; }
+      if (r.vorlage) { if (v.indexOf("vorlage") < 0) v.push("vorlage"); }
+      else v = v.filter(function (f) { return f !== "vorlage"; });
+    }
+    neu.vorschlag = v;
+    Object.assign(a, neu);
+    zeichne();
+    if (geaendert_) geaendert();
+    angabenSchreiben(neu);
+    S.textSpaeter();
+  }
+  // Lehrplan gelöst: was er vorbelegt hat, geht mit ihm
+  function vorschlagLoesen() {
+    var a = S.angaben, v = a.vorschlag || [];
+    if (!Z.mappe || !v.length) return;
+    var neu = { vorschlag: [] };
+    ["schwerpunkt", "uebungstypen"].forEach(function (f) { if (v.indexOf(f) >= 0) neu[f] = []; });
+    var geaendert_ = false;
+    if (v.indexOf("vorlage") >= 0 && !inhalt()) {
+      var vl = S.katalog.vorlagen[0];
+      if (((Z.mappe.einheit || {}).vorlage) !== vl.name) { karteVorlage(vl); geaendert_ = true; }
+    }
+    Object.assign(a, neu);
+    zeichne();
+    if (geaendert_) geaendert();
+    angabenSchreiben(neu);
+    S.textSpaeter();
   }
   // AP13.19 §1: „Einheit aus eigenem Material“ braucht Material (mindestens ein Zeichen außer Leerraum; übernommene
   // Dateiabschnitte stehen schon als Text im Feld). Das Feld steht dann in jedem Weg sichtbar: in „Ich gebe die
@@ -650,18 +775,39 @@
     var feld = b.dataset.feld, wert = b.dataset.wert, a = {};
     if (feld === "art") {
       var v = vorlageNach(wert);
-      if (v && !inhalt()) { karteVorlage(v); zeichne(); geaendert(); if (wert === EIGENES) materialZeigen(false); }
+      if (v && !inhalt()) {
+        karteVorlage(v);
+        Z.mappe.einheit.vorlage_selbst = true;               // AP13.24: die Wahl der Lehrkraft, kein Vorschlag mehr
+        var vw = vorschlagWeg("vorlage");
+        zeichne(); geaendert(); if (vw) angabenSchreiben(vw);
+        if (wert === EIGENES) materialZeigen(false);
+      }
       return;
     }
     if (b.dataset.mehrfach) {
       var liste = (S.angaben[feld] || []).slice(), i = liste.indexOf(wert);
       if (i >= 0) liste.splice(i, 1); else liste.push(wert);
+      // AP13.24: höchstens zwei Schwerpunkte, ein dritter Klick löst den zuerst gewählten
+      if (feld === "schwerpunkt") {
+        var folge = S.schwerpunktFolge && S.schwerpunktFolge.mappe === Z.mappe ? S.schwerpunktFolge.liste : [];
+        folge = folge.filter(function (w) { return w !== wert; });
+        if (i < 0) folge.push(wert);
+        S.schwerpunktFolge = { mappe: Z.mappe, liste: folge };
+        var hoechstens = S.katalog.zielarten.hoechstens;
+        while (liste.length > hoechstens) {
+          var aelter = liste.filter(function (w) { return w !== wert; }).sort(function (x, y) {
+            return folge.indexOf(x) - folge.indexOf(y); })[0];
+          liste.splice(liste.indexOf(aelter), 1);
+        }
+      }
       // Reihenfolge wie die Kacheln (der erste bevorzugte Typ geht an die erste Übungskarte)
       var reihe = Array.prototype.map.call(b.parentNode.querySelectorAll(".aus-kachel"), function (k) { return k.dataset.wert; });
       wert = reihe.filter(function (w) { return liste.indexOf(w) >= 0; });
     }
     if (feld === "differenzierung") return differenzierung(wert === "an");
     S.angaben[feld] = wert; a[feld] = wert;
+    var vf = vorschlagWeg(feld);                              // AP13.24: ein Klick macht aus dem Vorschlag die Wahl der Lehrkraft
+    if (vf) Object.assign(a, vf);
     zeichneRichtung(); zeichneSchritte();
     angabenSchreiben(a);
     S.textSpaeter();
@@ -681,7 +827,7 @@
     } catch (e) { zeigeFehler(e); }
     S.textSpaeter();
   }
-  ["richtung-teil", "a-schwerpunkt", "a-sprache", "a-differenzierung"].forEach(function (id) {
+  ["richtung-teil", "a-schwerpunkt", "a-sprache", "a-differenzierung", "m-art"].forEach(function (id) {
     $(id).addEventListener("click", richtungKlick); });
   $("r-material").addEventListener("input", function () {
     feldOk($("r-material"));
@@ -702,20 +848,42 @@
   }
 
   function vorlagenZeigen() {
-    var box = $("vorlagen"); box.innerHTML = "";
+    var box = $("vorlagen"), namen = S.katalog.vorlagen.filter(vorlageSichtbar).map(function (v) { return v.name; }).join("|");
+    if (box.dataset.namen === namen) return;                  // AP13.24: nur neu zeichnen, wenn sich die Kacheln ändern
+    box.dataset.namen = namen; box.innerHTML = "";
     S.katalog.vorlagen.forEach(function (v, i) {
+      if (!vorlageSichtbar(v)) return;
       var b = el("button", { type: "button", cls: "vorlage", "data-vorlage": i, "aria-pressed": "false" }, [
         el("span", { cls: "vorlage-name", text: v.name }), el("span", { cls: "vorlage-zeile", text: v.zeile }),
         el("span", { cls: "vorlage-phasen", text: v.phasen.map(function (p) { return p.phase; }).join(" · ") })]);
       b.onclick = function () {
         if (!Z.mappe || inhalt()) return;
         karteVorlage(v);
-        zeichne(); geaendert();
+        Z.mappe.einheit.vorlage_selbst = true;               // AP13.24: Wahl der Lehrkraft
+        var vw = vorschlagWeg("vorlage");
+        zeichne(); geaendert(); if (vw) angabenSchreiben(vw);
         if (v.name === EIGENES) materialZeigen(false);
       };
       box.appendChild(b);
     });
   }
+
+  // AP13.24 §9: Infoknopf ⓘ am Materialfeld; der Text steht in katalog.yaml (oberflaeche.material_info) und kommt erst beim
+  // Öffnen in die Seite. Das Feld sitzt in einem Label: ein Klick auf ⓘ soll weder das Feld fokussieren noch absenden.
+  function infoUmschalten(k) {
+    var t = k.closest("label").querySelector(".info-text"), auf = t.hidden;
+    if (auf && S.katalog) t.textContent = S.katalog.oberflaeche[k.dataset.info] || "";
+    t.hidden = !auf;
+    k.setAttribute("aria-expanded", String(auf));
+  }
+  document.addEventListener("click", function (ev) {
+    var k = ev.target.closest && ev.target.closest(".info-knopf"); if (!k) return;
+    ev.preventDefault(); infoUmschalten(k);
+  });
+  document.addEventListener("keydown", function (ev) {
+    var k = ev.target.classList && ev.target.classList.contains("info-knopf") ? ev.target : null;
+    if (k && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); infoUmschalten(k); }
+  });
 
   function mischen(hex, anteil) {      // Akzent auf Weiß getönt (wie gen/html.py tint)
     var h = hex.replace("#", ""), r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16),
@@ -1295,7 +1463,10 @@
         S.textSpaeter(); }, 400);
   }
   $("m-kontext").addEventListener("input", function () { kontextSchreiben("kontext", $("m-kontext").value); });
-  $("fach").addEventListener("input", function () { kontextSchreiben("fach", $("fach").value.trim()); });
+  $("fach").addEventListener("input", function () {
+    kontextSchreiben("fach", $("fach").value.trim());
+    if (Z.mappe && S.katalog) { zeichneRichtung(); vorlagenZeigen(); zeichneMachArt(); }   // AP13.24: Wörter und Arten nach dem Fach
+  });
   $("a-material").addEventListener("input", function () {
     feldOk($("a-material"));
     if (!Z.mappe) return;
@@ -1338,6 +1509,7 @@
     felderPruefen: felderPruefen, feldOk: feldOk,
     akzent: akzent, gehe: gehe, jahrgangZahl: jahrgangZahl, nachZwei: nachZwei, neuStart: neuStart,
     schemaZeigen: schemaZeigen, steckbriefSicher: steckbriefSicher, vorlageNach: vorlageNach, vorschauLaden: vorschauLaden,
-    vorlagenZeigen: vorlagenZeigen, weiterAnzeigen: weiterAnzeigen, zeichneAussehen: zeichneAussehen,
+    vorlagenZeigen: vorlagenZeigen, vorschlagAnwenden: vorschlagAnwenden, vorschlagLoesen: vorschlagLoesen,
+    fachWoerter: fachWoerter, fachJetzt: fachJetzt, weiterAnzeigen: weiterAnzeigen, zeichneAussehen: zeichneAussehen,
     zeichneSchritte: zeichneSchritte, zeigeFehler: zeigeFehler });
 })();

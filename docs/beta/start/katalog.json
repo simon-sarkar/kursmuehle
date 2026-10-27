@@ -342,10 +342,181 @@
      ]
     }
    ]
+  },
+  {
+   "name": "Text erschließen",
+   "zeile": "Lesetext, Gedicht oder Sachtext im Mittelpunkt",
+   "wann": {
+    "faecher": [
+     "Deutsch",
+     "Deutsch als Zweitsprache",
+     "Englisch"
+    ]
+   },
+   "phasen": [
+    {
+     "phase": "Einstieg",
+     "anteil": 10,
+     "rolle": "einstieg",
+     "bausteine": [
+      "Textfeld: Einstieg | Ein Satz, eine Überschrift oder ein Bild aus dem Text und eine Frage dazu; Vermutungen, worum es geht."
+     ]
+    },
+    {
+     "phase": "Erarbeitung",
+     "anteil": 35,
+     "rolle": "lesen",
+     "dehnbar": true,
+     "bausteine": [
+      "automatisch: Der Text | Der Text selbst (aus dem Material oder neu geschrieben) in nummerierten Abschnitten; schwierige Wörter im Kasten darunter."
+     ]
+    },
+    {
+     "phase": "Übung",
+     "anteil": 30,
+     "rolle": "üben",
+     "dehnbar": true,
+     "bausteine": [
+      "automatisch: Den Text verstehen | Fragen zu Einzelheiten mit Abschnittsnummer.",
+      "automatisch: Den Text deuten | Absicht, Gründe und Wirkung; jede Antwort mit einer Stelle im Text belegt."
+     ]
+    },
+    {
+     "phase": "Sicherung",
+     "anteil": 20,
+     "rolle": "sichern",
+     "bausteine": [
+      "Seite: Hefteintrag | Lesestrategie oder Textmerkmale als Merke, je ein Beispiel aus dem Text."
+     ]
+    },
+    {
+     "phase": "Vertiefung",
+     "anteil": 5,
+     "rolle": "sichern",
+     "optional": true,
+     "bausteine": [
+      "automatisch: Eigene Meinung | Stellung zu einer Frage aus dem Text."
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Schreiben",
+   "zeile": "eigener Text wie Bericht, Brief oder Beschreibung",
+   "wann": {
+    "faecher": [
+     "Deutsch",
+     "Deutsch als Zweitsprache",
+     "Englisch"
+    ]
+   },
+   "phasen": [
+    {
+     "phase": "Einstieg",
+     "anteil": 10,
+     "rolle": "einstieg",
+     "bausteine": [
+      "Textfeld: Einstieg | Schreibanlass: wer den Text liest und wozu."
+     ]
+    },
+    {
+     "phase": "Erarbeitung",
+     "anteil": 35,
+     "rolle": "lesen",
+     "dehnbar": true,
+     "bausteine": [
+      "automatisch: Mustertext | Ein Mustertext der Textsorte; Aufbau und typische Formulierungen im Kasten."
+     ]
+    },
+    {
+     "phase": "Übung",
+     "anteil": 30,
+     "rolle": "üben",
+     "dehnbar": true,
+     "bausteine": [
+      "automatisch: Aufbau erkennen | Sätze eines Textes den Teilen des Aufbaus zuordnen.",
+      "automatisch: Formulieren | Sätze ergänzen oder verbessern."
+     ]
+    },
+    {
+     "phase": "Sicherung",
+     "anteil": 20,
+     "rolle": "sichern",
+     "dehnbar": true,
+     "bausteine": [
+      "Aufgabe: Mein Text | Schreibauftrag mit Checkliste zum Überarbeiten; Abgabe als Text."
+     ]
+    },
+    {
+     "phase": "Reflexion",
+     "anteil": 5,
+     "rolle": "sichern",
+     "optional": true,
+     "bausteine": [
+      "automatisch: Checkliste | Den eigenen Text Punkt für Punkt prüfen."
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Lebenspraktische Übung",
+   "zeile": "Handlung aus dem Alltag Schritt für Schritt",
+   "wann": {
+    "schularten": [
+     "Förderschule"
+    ]
+   },
+   "phasen": [
+    {
+     "phase": "Einstieg",
+     "anteil": 10,
+     "rolle": "einstieg",
+     "bausteine": [
+      "Textfeld: Einstieg | Eine Alltagssituation mit Bild; die Frage, was zu tun ist."
+     ]
+    },
+    {
+     "phase": "Erarbeitung",
+     "anteil": 35,
+     "rolle": "lesen",
+     "dehnbar": true,
+     "bausteine": [
+      "automatisch: Schritt für Schritt | Der Handlungsplan: je Schritt ein kurzer Satz und ein Bild."
+     ]
+    },
+    {
+     "phase": "Übung",
+     "anteil": 30,
+     "rolle": "üben",
+     "dehnbar": true,
+     "bausteine": [
+      "automatisch: Was kommt zuerst? | Schritte ordnen oder den nächsten Schritt wählen.",
+      "automatisch: In der Situation | Entscheidungen in der Situation, je Weg eine Folge."
+     ]
+    },
+    {
+     "phase": "Sicherung",
+     "anteil": 20,
+     "rolle": "sichern",
+     "bausteine": [
+      "Seite: Mein Plan | Der Handlungsplan als Checkliste mit Kästchen und Bildern zum Ausdrucken."
+     ]
+    },
+    {
+     "phase": "Transfer",
+     "anteil": 5,
+     "rolle": "sichern",
+     "optional": true,
+     "bausteine": [
+      "automatisch: Neue Situation | Derselbe Ablauf an einem anderen Ort."
+     ]
+    }
+   ]
   }
  ],
  "oberflaeche": {
   "rueckmeldung_bitte_bis": "",
+  "material_info": "Du kannst Material auch direkt im Chat anhängen, zum Beispiel ein Foto einer Seite oder ein PDF. Die KI nutzt es; der Text für den Chat sagt ihr das. Häng nur Material an, an dem du die Rechte hast, und nichts mit Daten von Schülerinnen und Schülern.",
   "format": [
    {
     "wert": "themen",
@@ -414,8 +585,18 @@
     "text": "Ein Verfahren können"
    },
    {
+    "wert": "material",
+    "text": "Material auswerten",
+    "wort": "material"
+   },
+   {
     "wert": "faelle",
     "text": "Fälle beurteilen"
+   },
+   {
+    "wert": "gestalten",
+    "text": "Eigenes gestalten",
+    "wort": "produkt"
    }
   ],
   "sprache": [
@@ -734,5 +915,176 @@
   "Geschichte",
   "Lesebuch"
  ],
+ "zielarten": {
+  "hoechstens": 2,
+  "woerter": {
+   "texte": {
+    "material": "Texte erschließen",
+    "produkt": "einen eigenen Text"
+   },
+   "englisch": {
+    "material": "englische Texte verstehen",
+    "produkt": "einen kurzen Text oder Dialog"
+   },
+   "versuche": {
+    "material": "Versuche und Beobachtungen auswerten",
+    "produkt": "eine Präsentation oder ein Plakat"
+   },
+   "quellen": {
+    "material": "Quellen, Karten und Diagramme auswerten",
+    "produkt": "eine Präsentation oder ein Plakat"
+   },
+   "daten": {
+    "material": "Daten und Diagramme auswerten",
+    "produkt": "eine Präsentation oder ein Plakat"
+   },
+   "werke": {
+    "material": "Bilder, Werke und Musikstücke betrachten",
+    "produkt": "ein eigenes Werk planen"
+   },
+   "alltag": {
+    "material": "Alltagsmaterial lesen (Plan, Preisliste, Rezept)",
+    "produkt": "einen Handlungsplan"
+   },
+   "sonst": {
+    "material": "Texte, Bilder und Tabellen auswerten",
+    "produkt": "eine Präsentation oder ein Plakat"
+   }
+  },
+  "faecher": [
+   {
+    "gruppe": "deutsch",
+    "namen": [
+     "Deutsch",
+     "DaZ"
+    ],
+    "wort": "texte"
+   },
+   {
+    "gruppe": "englisch",
+    "namen": [
+     "Englisch"
+    ],
+    "wort": "englisch"
+   },
+   {
+    "gruppe": "naturwissenschaft",
+    "namen": [
+     "Geschichte/Politik/Geographie und Natur und Technik",
+     "Natur und Technik",
+     "NT",
+     "Physik",
+     "Chemie",
+     "Biologie"
+    ],
+    "wort": "versuche"
+   },
+   {
+    "gruppe": "hsu_raum_zeit",
+    "namen": [
+     "Heimat- und Sachunterricht",
+     "HSU"
+    ],
+    "lb": "zeit|wandel|raum|karte",
+    "wort": "quellen"
+   },
+   {
+    "gruppe": "hsu",
+    "namen": [
+     "Heimat- und Sachunterricht",
+     "HSU"
+    ],
+    "wort": "versuche"
+   },
+   {
+    "gruppe": "gpg",
+    "namen": [
+     "Geschichte",
+     "Geographie",
+     "Politik",
+     "GPG"
+    ],
+    "wort": "quellen"
+   },
+   {
+    "gruppe": "mathematik",
+    "namen": [
+     "Mathematik"
+    ],
+    "wort": "daten"
+   },
+   {
+    "gruppe": "informatik",
+    "namen": [
+     "Informatik",
+     "Informationstechnologie",
+     "Wirtschaftsinformatik"
+    ],
+    "wort": "sonst"
+   },
+   {
+    "gruppe": "technik",
+    "namen": [
+     "Wirtschaft und Beruf",
+     "Wirtschaft und Kommunikation",
+     "Technik",
+     "Buchführung",
+     "Betriebswirtschaftslehre",
+     "Tastschreiben"
+    ],
+    "wort": "sonst"
+   },
+   {
+    "gruppe": "lebenspraxis",
+    "namen": [
+     "Wohnen",
+     "Mobilität",
+     "Freizeit",
+     "Beruf und Arbeit",
+     "Persönlichkeit und soziale Beziehungen",
+     "Grundlegender entwicklungsbezogener Unterricht",
+     "Berufs- und Lebensorientierung",
+     "Ernährung",
+     "ES"
+    ],
+    "wort": "alltag"
+   },
+   {
+    "gruppe": "religion",
+    "namen": [
+     "Katholische Religionslehre",
+     "Evangelische Religionslehre",
+     "Orthodoxe Religionslehre",
+     "Islamischer Unterricht",
+     "Israelitische Religionslehre",
+     "Ethik"
+    ],
+    "wort": "sonst"
+   },
+   {
+    "gruppe": "kunst",
+    "namen": [
+     "Kunst",
+     "Musik",
+     "Werken",
+     "Textiles Gestalten"
+    ],
+    "wort": "werke"
+   },
+   {
+    "gruppe": "sport",
+    "namen": [
+     "Sport",
+     "Basissport",
+     "Differenzierter Sport"
+    ],
+    "wort": "sonst"
+   },
+   {
+    "gruppe": "sonst",
+    "wort": "sonst"
+   }
+  ]
+ },
  "version": "2.0.0-b14"
 }
