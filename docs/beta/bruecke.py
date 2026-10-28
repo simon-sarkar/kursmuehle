@@ -92,7 +92,9 @@ def anfrage_bauen(a, modell, verlauf):
     kopf.update(a.get("kopf", {}))
     if a["format"] == "anthropic":
         kopf["x-api-key"] = a["key"]
-        rumpf = {"model": modell, "max_tokens": MAX_TOKENS, "system": SYSTEM, "messages": verlauf}
+        # cache_control oben: der Verlauf wird 5 Minuten gecacht (günstiger bei Korrekturen), auch mit 2023-06-01
+        rumpf = {"model": modell, "max_tokens": MAX_TOKENS, "system": SYSTEM, "messages": verlauf,
+                 "cache_control": {"type": "ephemeral"}}
     elif a["format"] == "ollama":
         rumpf = {"model": modell, "stream": False, "messages": [{"role": "system", "content": SYSTEM}] + verlauf,
                  "options": {"num_ctx": 32768, "num_predict": MAX_TOKENS}}
