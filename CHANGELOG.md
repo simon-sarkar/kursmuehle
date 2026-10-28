@@ -2,6 +2,44 @@
 
 ## Unveröffentlicht
 
+## 2.0.0-b15 – 2026-10-28 (AP13.18 B, AP13.19 bis AP13.25: Schulart, Lehrplan für alle Schularten, Schwerpunkte, Anhänge)
+
+* Lehrplanbezug auch für Realschule, Gymnasium und Förderschule
+* Schritt 1 fragt nach der Schulart; der Lehrplan-Picker öffnet mit deiner bisherigen Wahl
+* Fünf Schwerpunkte und neue Arten der Einheit, vorgeschlagen aus dem Lehrplan
+* Dateien und Bilder kannst du im Chat als Material anhängen
+* Brüche, Wurzeln und Hochzahlen stehen im Lehrplantext wieder richtig
+- In der Testphase bittet die Mühle nach dem Download einmal am Tag um eine Rückmeldung, bis du eine geschickt hast.
+- Schritt 1 fragt neben der Jahrgangsstufe nach der Schulart; die Mühle merkt sich die letzte Wahl.
+- Mit gewählter Schulart nimmt der Lehrplan-Vorschlag keine Schulart mehr an.
+- Lehrplanbezug auch für Realschule, Gymnasium (Jahrgangsstufen 5 bis 13) und Förderschule (Lernen, geistige Entwicklung)
+- Hat ein Fach mehrere Fassungen, nennt der Picker sie mit dem Namen aus dem Lehrplan; der Text für den Chat nennt sie im Lehrplankopf
+- Der Haken heißt „Lehrplanbezug (LehrplanPLUS Bayern)“
+- Realschule, Gymnasium und Förderschule stehen in der Auswahl ohne „(nur als Angabe)“
+- Mit Förderschwerpunkt Lernen oder geistige Entwicklung verlangt der Text für den Chat kurze Sätze und Aufträge in Schritten
+- Mit Förderschwerpunkt geistige Entwicklung fehlt keine Jahrgangsstufe mehr; es gilt die Stufenspanne des Lehrplans
+- Der Vorschlag in „Mach du“ nimmt bei Jahrgangsstufe 11 bis 13 das Gymnasium an
+- Bei „Einheit aus eigenem Material“ steht das Materialfeld gleich unter der Wahl und ist nötig, bevor es weitergeht.
+- „Nächste Einheit anhängen“ beginnt mit leerem Materialfeld.
+- Schritt 3 zeigt zuerst das Design und blendet die übrigen Gruppen nach jeder Wahl ein; „Rest als Standard und weiter“ steht immer darunter.
+- „Mehr einstellen“ hat Sprunglinks; „Zum Designer“ öffnet das Aussehen, „Fertig“ führt zurück.
+- Der Rand „Sehr wellig“ bleibt in der Vorschau geschlossen, auch bei skaliertem Bildschirm.
+- Die Brücke lädt beim ersten Start nur die Mühle und den Lehrplan erst, wenn er gebraucht wird
+- Der Lehrplan-Picker öffnet mit der bisherigen Wahl: Fach, Fassung, Lernbereiche und Ziele sind angehakt und die gewählten aufgeklappt.
+- Gewählte Lernbereiche stehen oben im Picker als Zeile mit „×“; „Übernehmen“ klebt am unteren Rand.
+- Ein automatischer Vorschlag aus dem Thema ist als „Vorschlag“ gekennzeichnet; die anderen Treffer bleiben mit einem Klick wählbar.
+- Lernbereiche mit einem Teilbereich stehen nicht mehr alle aufgeklappt; die Liste ist kürzer.
+- Auf dem Handy scrollt die Seite mit gewähltem Lehrplan nicht mehr seitlich.
+- Mit Zielen aus dem Lehrplan schlägt „Ich gebe die Richtung“ Schwerpunkt, Übungen und Art der Einheit vor.
+- Neue Schwerpunkte „Material auswerten“ und „Eigenes gestalten“, mit Wörtern je Fach.
+- Neue Arten der Einheit: Text erschließen, Schreiben, Lebenspraktische Übung.
+- Höchstens zwei Schwerpunkte je Einheit.
+- „Mach du“ übernimmt die vorgeschlagene Art der Einheit aus dem Lehrplan und zeigt sie als Vorschlag.
+- Der Text für den Chat erlaubt angehängte Dateien und Bilder als Material.
+- Am Materialfeld erklärt ein Infoknopf, dass du Material auch direkt im Chat anhängen kannst.
+- Im Lehrplan stehen Brüche, Wurzeln und Hochzahlen wieder im Text (zum Beispiel ½ und x² statt „(;;)“ und „x2“)
+- Deutsch als Zweitsprache, Differenzierter Sport und Informationstechnologie erscheinen in allen Jahrgangsstufen, für die der Lehrplan gilt
+
 ## 2.0.0-b14 – 2026-10-26 (AP13.13b, AP13.15, AP13.16, AP13.18 A: Lizenz und KI-Hinweis, Übungen ohne JavaScript, Materialleser)
 
 * Lizenz und KI-Hinweis im Kurs wählbar

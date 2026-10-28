@@ -13,6 +13,8 @@
  *           | prompt {funktion, args}  gen.prompt: einheit, baustein, korrektur, fragen, fachcheck, vergleich, lehrplan
  *           | design_vorschau {familie, hebel}  gen.api.design_vorschau: Miniatur einer Familie als HTML; ohne familie
  *             alle Familien als {name: html} (AP13.5)
+ *           | vorschlag {lehrplan, fach}  gen.api.lehrplan_vorschlag: Schwerpunkt, Übungen und Art der Einheit aus den
+ *             Kompetenzerwartungen des gewählten Lehrplans (AP13.24); ohne Lernbereich null
  *           | material_lesen {name, daten}  gen.api.material_lesen: eigenes Material aus einer Datei (AP13.13); pypdf
  *             lädt erst beim ersten PDF
  * Bytes laufen als ArrayBuffer/Uint8Array (Assets: {name: Uint8Array}); die .mbz kommt als übertragener ArrayBuffer.
@@ -159,6 +161,9 @@ var PY_BRUECKE = [
   "    d = e.get('daten')",
   "    return api.material_lesen(e.get('name') or '', bytes(d.tobytes() if isinstance(d, memoryview) else d or b''))",
   "",
+  "def km_vorschlag(e):",
+  "    return api.lehrplan_vorschlag(e.get('lehrplan'), e.get('fach') or '')",
+  "",
   "def km_design_vorschau(e):",
   "    if e.get('familie'):",
   "        return api.design_vorschau(e.get('familie'), e.get('hebel'))",
@@ -263,6 +268,7 @@ self.onmessage = async function (ev) {
       else if (m.aktion === "stand") ergebnis = aufruf("km_stand", { text: m.text, assets: m.assets, steckbrief: m.steckbrief, mappe: m.mappe });
       else if (m.aktion === "mappe") ergebnis = aufruf("km_mappe", { funktion: m.funktion, args: m.args });
       else if (m.aktion === "prompt") ergebnis = aufruf("km_prompt", { funktion: m.funktion, args: m.args });
+      else if (m.aktion === "vorschlag") ergebnis = aufruf("km_vorschlag", { lehrplan: m.lehrplan, fach: m.fach });
       else if (m.aktion === "design_vorschau") ergebnis = aufruf("km_design_vorschau", { familie: m.familie, hebel: m.hebel });
       else if (m.aktion === "material_lesen") {
         if (!pypdfGeladen && /\.pdf$/i.test(m.name || "")) {

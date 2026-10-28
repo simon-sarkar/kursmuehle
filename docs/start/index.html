@@ -38,6 +38,20 @@
 </div>
 <p id="testfassung" class="testfassung" hidden></p>
 
+<!-- AP13.23: Bitte um Rückmeldung nach dem Download, nur in der Testphase (oberflaeche.rueckmeldung_bitte_bis) -->
+<dialog id="rm-bitte" class="rm-bitte" aria-labelledby="rm-bitte-titel">
+  <div class="rm-bitte-innen">
+    <h2 id="rm-bitte-titel">Hat dir die Mühle Zeit gespart?</h2>
+    <p>Dann schenk mir bitte fünf Minuten und hilf mir, sie besser zu machen. Die Rückmeldung ist schon vorbereitet; du
+      ergänzt drei kurze Antworten und schickst sie per Mail.</p>
+    <div class="rm-bitte-knoepfe">
+      <button type="button" id="rm-bitte-geben" class="knopf haupt" autofocus>Rückmeldung geben</button>
+      <button type="button" id="rm-bitte-spaeter" class="knopf">Später</button>
+      <button type="button" id="rm-bitte-nie" class="textlink">Nicht mehr fragen</button>
+    </div>
+  </div>
+</dialog>
+
 <!-- Schrittfolge. Jeder Schritt erscheint erst, wenn der vorige getan ist; erledigte Schritte stehen als eine
      aufklappbare Zeile darüber. Die Kursdatei ist in beiden Zweigen („Mach du“, „Ich steuere“) dieselbe. Schritt
      „Bilder“ (data-nr 5.5) nur, wenn die Antwort Bildwünsche hat; die Nummern zählt schritte.js; je Schritt beim ersten
@@ -51,7 +65,7 @@
     <span id="weiter-zeit" class="leise"></span>
   </div>
 
-  <!-- 1 Thema, Jahrgangsstufe, Minuten -->
+  <!-- 1 Thema, Schulart, Jahrgangsstufe, Minuten -->
   <section id="start" class="schritt" data-nr="1" aria-labelledby="s1-titel">
     <h2 class="s-kopf"><button type="button" class="s-zeile" data-nr="1"><span class="s-nr">1</span>
       <span class="s-titel" id="s1-titel">Worum geht es?</span><span class="s-fazit"></span></button></h2>
@@ -59,6 +73,10 @@
       <form id="start-form" class="start-form" autocomplete="off" novalidate>
         <label class="feld feld-thema">Thema
           <input id="f-thema" type="text" aria-required="true" placeholder="Terme und Gleichungen" maxlength="120">
+        </label>
+        <label class="feld feld-schulart">Schulart
+          <select id="f-schulart" aria-required="true"></select>
+          <span id="f-schulart-zeile" class="feld-zeile" hidden>Zielgruppe gewählt</span>
         </label>
         <label class="feld feld-klein"><span id="f-jahrgang-t">Jahrgangsstufe</span>
           <input id="f-jahrgang" type="text" inputmode="numeric" maxlength="12" placeholder="7">
@@ -115,13 +133,24 @@
           <textarea id="m-kontext" class="von-lehrkraft" rows="3" maxlength="600" spellcheck="true"
             placeholder="Was sollen die Lernenden danach können? Was ist vorausgesetzt, was nicht?"></textarea>
         </label>
+        <!-- AP13.24: schlägt der Lehrplan eine Art der Einheit vor, übernimmt „Mach du“ sie und sagt es; „ändern“ zeigt die Kacheln -->
+        <div id="m-vorlage" class="m-vorlage" hidden>
+          <p class="feld-zeile"><span id="m-vorlage-text"></span> · <button type="button" id="m-vorlage-aendern" class="textlink"
+            aria-expanded="false" aria-controls="m-art">ändern</button></p>
+          <div id="m-art" class="kacheln-wahl breit" role="radiogroup" aria-label="Art der Einheit" hidden></div>
+        </div>
       </div>
-      <!-- AP13.5b: Eingabekarte „Ich gebe die Richtung“, alle Felder freiwillig; Material steht bei „Einheit aus eigenem
-           Material“ direkt unter dem Fach, sonst zuletzt -->
+      <!-- AP13.5b: Eingabekarte „Ich gebe die Richtung“, alle Felder freiwillig; AP13.19 §1: bei „Einheit aus eigenem
+           Material“ ist das Material nötig und steht direkt unter „Art der Einheit“ (in „Mach du“ unter „Worum geht es
+           genau?“), sonst zuletzt (schritte.js materialOrt) -->
       <div id="richtung-teil" class="richtung-teil" hidden>
         <!-- AP13.13: Dateien lesen (web/material.js); Liste der Abschnitte unter dem Feld, nicht gespeichert -->
         <div id="r-material-feld" class="r-material-feld material-ort" data-material="r">
-          <label class="feld feld-breit">Dein Material (Text, Stichpunkte oder Dateien) <span class="feld-zeile">freiwillig</span>
+          <label class="feld feld-breit"><span class="feld-kopf">Dein Material (Text, Stichpunkte oder Dateien)
+              <span class="info-knopf" role="button" tabindex="0" aria-expanded="false" aria-label="Hinweis zum Material im Chat"
+                data-info="material_info">ⓘ</span></span>
+            <span class="info-text feld-zeile" data-info-text="material_info" hidden></span>
+            <span id="r-material-zeile" class="feld-zeile">freiwillig</span>
             <textarea id="r-material" class="von-lehrkraft" rows="4" spellcheck="true"></textarea>
             <span class="feld-zeile">Nur Material, an dem du die Rechte hast.</span>
             <span id="r-material-grenze" class="feld-zeile"></span>
@@ -134,11 +163,14 @@
           <div id="r-material-liste" class="material-liste" hidden></div>
         </div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="r-art-t">Art der Einheit</h3>
-          <div id="r-art" class="kacheln-wahl breit" role="radiogroup" aria-labelledby="r-art-t"></div></div>
+          <div id="r-art" class="kacheln-wahl breit" role="radiogroup" aria-labelledby="r-art-t"></div>
+          <p id="r-art-vz" class="feld-zeile vorschlag-zeile" hidden>aus dem Lehrplan</p></div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="r-schwerpunkt-t">Schwerpunkt</h3>
-          <div id="r-schwerpunkt" class="kacheln-wahl text-wahl" role="group" aria-labelledby="r-schwerpunkt-t"></div></div>
+          <div id="r-schwerpunkt" class="kacheln-wahl text-wahl" role="group" aria-labelledby="r-schwerpunkt-t"></div>
+          <p id="r-schwerpunkt-vz" class="feld-zeile vorschlag-zeile" hidden>aus dem Lehrplan</p></div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="r-uebungen-t">Übungen bevorzugt</h3>
-          <div id="r-uebungen" class="kacheln-wahl text-wahl" role="group" aria-labelledby="r-uebungen-t"></div></div>
+          <div id="r-uebungen" class="kacheln-wahl text-wahl" role="group" aria-labelledby="r-uebungen-t"></div>
+          <p id="r-uebungen-vz" class="feld-zeile vorschlag-zeile" hidden>aus dem Lehrplan</p></div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="r-sprache-t">Sprache</h3>
           <div id="r-sprache" class="kacheln-wahl text-wahl" role="radiogroup" aria-labelledby="r-sprache-t"></div></div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="r-differenzierung-t">Hilfen und Zusatzaufgaben</h3>
@@ -151,6 +183,12 @@
         <div id="karten-ort-2" class="karten-ort"></div>
         <details id="mehr" class="mehr">
           <summary>Mehr einstellen</summary>
+          <!-- AP13.19 §3: Sprunglinks als Zeile über den Feldern, bleibt beim Scrollen oben stehen -->
+          <nav id="sprung" class="sprung" aria-label="Springen zu">
+            <button type="button" id="zum-designer" class="textlink">Zum Designer</button>
+            <button type="button" id="zum-material" class="textlink">Zum Material</button>
+            <button type="button" id="zum-lehrplan" class="textlink">Zum Lehrplan</button>
+          </nav>
           <div class="mehr-felder">
             <label class="feld">Thema <input id="a-thema" type="text" maxlength="120"></label>
             <label class="feld feld-klein"><span id="a-jahrgang-t">Jahrgangsstufe</span> <input id="a-jahrgang" type="text" inputmode="numeric" maxlength="12">
@@ -162,7 +200,8 @@
               <textarea id="a-kontext" class="von-lehrkraft" rows="3" maxlength="600" spellcheck="true"
                 placeholder="Was sollen die Lernenden danach können? Was ist vorausgesetzt, was nicht?"></textarea>
             </label>
-            <label class="feld">Schulart <select id="a-schulart"></select></label>
+            <label class="feld">Schulart <select id="a-schulart"></select>
+              <span id="a-schulart-zeile" class="feld-zeile" hidden>Zielgruppe gewählt</span></label>
             <label class="feld">Chat <select id="a-chat"></select></label>
             <label class="feld">Kursformat <select id="a-format"></select></label>
             <label class="feld">Design <select id="a-familie"></select></label>
@@ -170,15 +209,22 @@
             <label class="feld feld-klein">Eigene Farbe <input id="a-farbe-hex" type="text" maxlength="7"
               placeholder="#1D5FD1" pattern="#[0-9A-Fa-f]{6}" autocomplete="off" spellcheck="false"></label>
             <div class="feld feld-breit"><span id="a-schwerpunkt-t">Schwerpunkt</span>
-              <div id="a-schwerpunkt" class="kacheln-wahl text-wahl" role="group" aria-labelledby="a-schwerpunkt-t"></div></div>
+              <div id="a-schwerpunkt" class="kacheln-wahl text-wahl" role="group" aria-labelledby="a-schwerpunkt-t"></div>
+              <p id="a-schwerpunkt-vz" class="feld-zeile vorschlag-zeile" hidden>aus dem Lehrplan</p></div>
             <div class="feld feld-breit"><span id="a-sprache-t">Sprache</span>
               <div id="a-sprache" class="kacheln-wahl text-wahl" role="radiogroup" aria-labelledby="a-sprache-t"></div></div>
             <div class="feld feld-breit"><span id="a-differenzierung-t">Hilfen und Zusatzaufgaben</span>
               <div id="a-differenzierung" class="kacheln-wahl text-wahl" role="radiogroup" aria-labelledby="a-differenzierung-t"></div></div>
             <label class="feld">Abschluss <select id="a-abschluss"></select></label>
             <label class="feld">Umfang <select id="a-portionierung"></select></label>
-            <div class="feld-breit material-ort" data-material="a">
-              <label class="feld">Dein Material (Text, Stichpunkte oder Dateien)
+            <!-- AP13.19 §1: bei „Einheit aus eigenem Material“ steht dieser Block unter den Vorlagen -->
+            <div id="a-material-feld" class="feld-breit material-ort" data-material="a">
+              <label class="feld"><span class="feld-kopf">Dein Material (Text, Stichpunkte oder Dateien)
+                  <span class="info-knopf" role="button" tabindex="0" aria-expanded="false" aria-label="Hinweis zum Material im Chat"
+                    data-info="material_info">ⓘ</span></span>
+                <span class="info-text feld-zeile" data-info-text="material_info" hidden></span>
+                <span id="a-material-zeile" class="feld-zeile"
+                  hidden>für diese Art nötig</span>
                 <textarea id="a-material" class="von-lehrkraft" rows="4" spellcheck="true"></textarea>
                 <span class="feld-zeile">Nur Material, an dem du die Rechte hast.</span>
                 <span id="material-grenze" class="feld-zeile"></span>
@@ -200,18 +246,27 @@
   <!-- 3 Aussehen -->
   <section id="schritt-3" class="schritt" data-nr="3" aria-labelledby="s3-titel" hidden>
     <h2 class="s-kopf"><button type="button" class="s-zeile" data-nr="3"><span class="s-nr">3</span>
-      <span class="s-titel" id="s3-titel">Wie soll der Kurs aussehen?</span><span class="s-fazit"></span></button></h2>
+      <span class="s-titel" id="s3-titel" tabindex="-1">Wie soll der Kurs aussehen?</span><span class="s-fazit"></span></button></h2>
     <div class="s-inhalt">
       <div class="aus-raster">
-      <!-- AP13.12 a1: zuerst der Standard („Standard nehmen und weiter“), alle Gruppen des Aussehens zugeklappt unter
-           „Aussehen anpassen“; die Gruppe Bilder bleibt sichtbar (Inhaltsentscheidung). Optionen mit Dreieck stehen je
-           Gruppe in einem eigenen Ausklappteil am Ende (a3, schritte.js). -->
+      <!-- AP13.19 §2: Gruppen nacheinander. Beim ersten Erreichen Design und Bilder; jede Wahl blendet die nächste
+           Gruppe ein (Farbe, Dichte, Ränder, Kursformat, Übungen; schritte.js aussehenBis, Mappe `aussehen_bis`).
+           „Standard nehmen und weiter“ steht unter der letzten sichtbaren Gruppe, nach der ersten Wahl als „Rest als
+           Standard und weiter“; sind alle Gruppen sichtbar, nur „Weiter“. Optionen mit Dreieck stehen je Gruppe in einem
+           eigenen Ausklappteil am Ende (AP13.12 a3). -->
       <div class="aussehen">
-        <button type="button" id="standard-weiter" class="knopf haupt standard-weiter">Standard nehmen und weiter</button>
-        <details id="aussehen-anpassen" class="ausklapp aussehen-anpassen" data-merken="aussehen">
-        <summary>Aussehen anpassen</summary>
         <div class="aus-gruppe" data-gruppe="familie"><h3 class="unterkopf" id="aus-familie-t">Design</h3>
           <div id="aus-familie" class="kacheln-wahl familien vierer" role="radiogroup" aria-labelledby="aus-familie-t"></div></div>
+        <!-- Zahl der Bilder (Steckbrief kurs.bilder: Stufe oder Zahl 1 bis 30) -->
+        <div class="aus-gruppe" data-gruppe="bilder"><h3 class="unterkopf" id="aus-bilder-t">Bilder</h3>
+          <div id="aus-bilder" class="kacheln-wahl bilder-wahl" role="radiogroup" aria-labelledby="aus-bilder-t"></div>
+          <label id="bilder-zahl-l" class="feld feld-klein bilder-zahl" hidden>Zahl der Bilder (1 bis 30)
+            <input id="bilder-zahl" type="number" inputmode="numeric" min="1" max="30" step="1" value="10"></label>
+          <!-- AP13.5h a8: Beschriftung im Bild (Steckbrief kurs.bildbeschriftung), nur mit Bildern -->
+          <div id="bildbeschriftung-l" class="bildbeschriftung" hidden>
+            <h4 class="unterkopf" id="aus-bildbeschriftung-t">Beschriftung im Bild</h4>
+            <div id="aus-bildbeschriftung" class="kacheln-wahl breit" role="radiogroup"
+                 aria-labelledby="aus-bildbeschriftung-t"></div></div></div>
         <div id="feinheiten" class="feinheiten">
           <div class="aus-gruppe" data-gruppe="farbe"><h3 class="unterkopf" id="aus-farbe-t">Farbe</h3>
             <div id="aus-farbe" class="kacheln-wahl farben" role="radiogroup" aria-labelledby="aus-farbe-t"></div>
@@ -230,17 +285,7 @@
           <label id="start-l" class="feld feld-klein start-feld" hidden>Kursbeginn <input id="a-start" type="date"></label></div>
         <div class="aus-gruppe" data-gruppe="website"><h3 class="unterkopf" id="aus-website-t">Wie erscheinen Übungen?</h3>
           <div id="aus-website" class="kacheln-wahl breit" role="radiogroup" aria-labelledby="aus-website-t"></div></div>
-        </details>
-        <!-- Zahl der Bilder (Steckbrief kurs.bilder: Stufe oder Zahl 1 bis 30); Übungen (kurs.website) oben im Ausklappteil -->
-        <div class="aus-gruppe" data-gruppe="bilder"><h3 class="unterkopf" id="aus-bilder-t">Bilder</h3>
-          <div id="aus-bilder" class="kacheln-wahl bilder-wahl" role="radiogroup" aria-labelledby="aus-bilder-t"></div>
-          <label id="bilder-zahl-l" class="feld feld-klein bilder-zahl" hidden>Zahl der Bilder (1 bis 30)
-            <input id="bilder-zahl" type="number" inputmode="numeric" min="1" max="30" step="1" value="10"></label>
-          <!-- AP13.5h a8: Beschriftung im Bild (Steckbrief kurs.bildbeschriftung), nur mit Bildern -->
-          <div id="bildbeschriftung-l" class="bildbeschriftung" hidden>
-            <h4 class="unterkopf" id="aus-bildbeschriftung-t">Beschriftung im Bild</h4>
-            <div id="aus-bildbeschriftung" class="kacheln-wahl breit" role="radiogroup"
-                 aria-labelledby="aus-bildbeschriftung-t"></div></div></div>
+        <button type="button" id="standard-weiter" class="knopf haupt standard-weiter">Standard nehmen und weiter</button>
       </div>
       <!-- Vorschau: ab 1100 px Spalte rechts, die beim Scrollen stehen bleibt (eigener Bildlauf), darunter Leiste am
            unteren Rand; zwei Karten: die Einheit im Design (gen/api.design_vorschau) und die Kursseite im Format
@@ -258,6 +303,8 @@
       </aside>
       </div>
       <button type="button" id="weiter-3" class="knopf haupt">Weiter</button>
+      <!-- AP13.19 §3: im Designer statt „Weiter“; führt zurück zu „Mehr einstellen“ -->
+      <button type="button" id="designer-fertig" class="knopf haupt" hidden>Fertig</button>
     </div>
   </section>
 

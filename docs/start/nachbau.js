@@ -428,6 +428,7 @@
       S.bauLaeuft = false;
       if (Z.bau && Z.bau.mbz) {
         herunterladen(); status("Bereit", "ok");
+        rueckmeldungBitteSpaeter();
         // AP13.12 a11: erster Download der Einheit, für die Minuten in der Rückmeldung
         if (Z.mappe && !Z.mappe.zeit_download) { Z.mappe.zeit_download = new Date().toISOString(); autosave(); }
       }
@@ -458,6 +459,7 @@
     Z.bau = null;
     if (S.angaben.ki_hinweis === "ja") kursangabe({ ki_hinweis: "nein" });   // AP13.15: je Einheit neu gesetzt
     $("f-thema").value = ""; $("f-minuten").value = (Z.mappe.einheit && Z.mappe.einheit.minuten) || 45;
+    delete Z.mappe.material;                      // AP13.19 §1: das Material gehört zur vorigen Einheit
     gehe(1, "f-thema");
     $("s1-titel").textContent = "Worum geht es in der nächsten Einheit?";
   };
@@ -489,6 +491,7 @@
     S.rueckgaengig = null; $("rueckgaengig").hidden = true; S.angaben = {};
     neuStart();
     $("f-thema").value = ""; $("f-jahrgang").value = ""; $("f-minuten").value = 45;
+    $("f-schulart").value = S.schulartGemerkt();
     $("s1-titel").textContent = "Worum geht es?";
     S.gespeichert = false;
     zeichne();
@@ -580,6 +583,8 @@
   }
   $("rueckmeldung-auf").onclick = rueckmeldungOeffnen;
   $("fuss-rueckmeldung").onclick = rueckmeldungOeffnen;
+  $("rm-mail").addEventListener("click", function () { bitteMerken({ nie: true }); });
+  $("rm-text-kopieren").addEventListener("click", function () { bitteMerken({ nie: true }); });
   $("rm-text-kopieren").onclick = function () {
     kopieren($("rm-text").value, $("rm-text"), $("rm-stand"),
         "Kopiert. Füge den Text in eine Mail an kursmuehle@pm.me ein und ergänze die drei Antworten.");
@@ -587,6 +592,52 @@
   $("rm-adresse-kopieren").onclick = function () {
     kopieren("kursmuehle@pm.me", $("rm-adresse-feld"), $("rm-stand"), "Adresse kopiert.");
   };
+
+  // Bitte um Rückmeldung (AP13.23, Testphase): nach dem Download, höchstens einmal je Kalendertag, nur bis zum Datum
+  // oberflaeche.rueckmeldung_bitte_bis und nie mehr nach „Text kopieren“, „Per Mail senden“ oder „Nicht mehr fragen“.
+  // Gemerkt wird nur im Browser: { zuletzt: "JJJJ-MM-TT", nie: true }; die Bitte wird nirgends gezählt.
+  var BITTE = km.speicher("kursmuehle-rueckmeldung-bitte");
+  function bitteLesen() {
+    try { return JSON.parse(localStorage.getItem(BITTE)) || {}; } catch (e) { return {}; }
+  }
+  function bitteMerken(neu) {
+    try { localStorage.setItem(BITTE, JSON.stringify(Object.assign(bitteLesen(), neu))); } catch (e) { /* ohne Speicher */ }
+  }
+  function tagHeute() {
+    var d = new Date(), z = function (n) { return (n < 10 ? "0" : "") + n; };
+    return d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate());
+  }
+  function bitteFrist() {
+    var bis = S.katalog && S.katalog.oberflaeche.rueckmeldung_bitte_bis;
+    return /^\d{4}-\d{2}-\d{2}$/.test(bis || "") ? bis : "";
+  }
+  var bitteDavor = null;
+  function bitteSchliessen(zurueck) {
+    var d = $("rm-bitte");
+    if (d.open) d.close();
+    if (zurueck && bitteDavor && document.contains(bitteDavor) && !bitteDavor.disabled && !bitteDavor.hidden) {
+      bitteDavor.focus({ preventScroll: true });
+    }
+    bitteDavor = null;
+  }
+  function rueckmeldungBitteSpaeter() {
+    setTimeout(function () {     // der Speichern-Dialog des Browsers soll zuerst kommen
+      var d = $("rm-bitte"), bis = bitteFrist(), m = bitteLesen(), heute = tagHeute();
+      if (!bis || heute > bis || m.nie || m.zuletzt === heute || d.open || typeof d.showModal !== "function") return;
+      bitteMerken({ zuletzt: heute });
+      // während des Bauens ist der Knopf gesperrt und verliert den Fokus; dann kehrt er zum Knopf zurück
+      bitteDavor = document.activeElement && document.activeElement !== document.body ? document.activeElement : $("herunterladen");
+      d.showModal();
+      $("rm-bitte-geben").focus({ preventScroll: true });
+    }, 1500);
+  }
+  $("rm-bitte-geben").onclick = function () { bitteSchliessen(false); rueckmeldungOeffnen(); };
+  $("rm-bitte-spaeter").onclick = function () { bitteSchliessen(true); };
+  $("rm-bitte-nie").onclick = function () { bitteMerken({ nie: true }); bitteSchliessen(true); };
+  $("rm-bitte").addEventListener("click", function (ev) { if (ev.target === ev.currentTarget) bitteSchliessen(true); });
+  $("rm-bitte").addEventListener("cancel", function () {   // Escape wirkt wie „Später“
+    setTimeout(function () { bitteSchliessen(true); }, 0);
+  });
 
   // Erst wenn alle Skripte der Seite geladen sind: Pyodide, Katalog und Hinweise laden, Adresse lesen, zeichnen
   function starten() {

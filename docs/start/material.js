@@ -72,6 +72,7 @@
     if (!Z.mappe) return;
     Z.mappe.material = text;
     $("r-material").value = text; $("a-material").value = text;
+    if (/\S/.test(text)) { S.feldOk($("r-material")); S.feldOk($("a-material")); }   // AP13.19 §1: Pflichtsatz geht
     geaendert();
     S.felderFuellen();
   }

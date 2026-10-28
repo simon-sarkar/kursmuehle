@@ -10,7 +10,8 @@ Start (Python 3.9 oder neuer, nichts zu installieren; Windows: `py` statt `pytho
 
 Die Brücke zeigt eine Adresse und einen Code aus sechs Ziffern. Den Code gibst du in der Mühle unter „Eigene KI“ ein.
 Sie lauscht nur auf 127.0.0.1 (andere Rechner erreichen sie nicht) und schreibt nichts auf die Platte außer einer Kopie
-der Mühle in ~/.kursmuehle/start/ (beim ersten Start geladen, etwa 15 MB; `--aktualisieren` holt sie neu). Unter
+der Mühle in ~/.kursmuehle/start/ (beim ersten Start geladen, etwa 16 MB, den Lehrplan erst bei Bedarf;
+`--aktualisieren` holt sie neu). Unter
 http://127.0.0.1:48127/start/ läuft dann die Mühle selbst, in jedem Browser.
 
 Der Schlüssel kommt aus der Umgebungsvariable (OPENAI_API_KEY, ANTHROPIC_API_KEY, MISTRAL_API_KEY) oder aus einer
@@ -393,7 +394,8 @@ class Handler(BaseHTTPRequestHandler):
         return self.senden(404, {"fehler": "Unbekannt"})
 
     def muehle(self, pfad):
-        """Die Mühle aus dem Cache: nur Dateien aus der geladenen Liste, gleiche Herkunft wie die Brücke."""
+        """Die Mühle aus dem Cache: nur Dateien aus der geladenen Liste, gleiche Herkunft wie die Brücke; Dateien aus
+        `bei_bedarf` beim ersten Abruf von der Quelle (ohne Netz 404, die Seite zeigt dann keinen Lehrplan)."""
         m = self.server.muehle
         if pfad in ("/", "/start"):
             return self.senden(302 if m else 404, b"" if m else {"fehler": "Mühle nicht geladen"},
@@ -401,7 +403,10 @@ class Handler(BaseHTTPRequestHandler):
         rel = urllib.parse.unquote(pfad[len("/start/"):]) or "index.html"
         if not m or rel not in m["dateien"]:
             return self.senden(404, {"fehler": "Nicht gefunden"})
-        with open(os.path.join(m["ordner"], *rel.split("/")), "rb") as f:
+        datei = os.path.join(m["ordner"], *rel.split("/"))
+        if rel in m["bei_bedarf"] and not nachladen(m, rel, datei):
+            return self.senden(404, {"fehler": "Nicht gefunden"})
+        with open(datei, "rb") as f:
             roh = f.read()
         ext = os.path.splitext(rel)[1].lower()
         self.senden(200, roh, TYPEN.get(ext) or mimetypes.guess_type(rel)[0] or "application/octet-stream")
@@ -414,20 +419,47 @@ def sicherer_pfad(rel):
         all(t not in ("", ".", "..") for t in rel.split("/")) and "\\" not in rel and ":" not in rel
 
 
-def holen(url):
-    with urllib.request.urlopen(url, timeout=120) as r:
+def holen(url, timeout=120):
+    with urllib.request.urlopen(url, timeout=timeout) as r:
         return r.read()
 
 
+def muehle_stand(ordner, dateien, bei_bedarf, version, quelle):
+    return {"ordner": ordner, "dateien": set(dateien), "bei_bedarf": set(bei_bedarf), "version": version,
+            "quelle": quelle, "sperren": {}, "sperre": threading.Lock()}
+
+
+def nachladen(m, rel, ziel):
+    """Datei aus bei_bedarf (Lehrplan) beim ersten Abruf von der Quelle holen; eine Anfrage je Datei gleichzeitig."""
+    if os.path.exists(ziel):
+        return True
+    with m["sperre"]:
+        sperre = m["sperren"].setdefault(rel, threading.Lock())
+    with sperre:
+        if os.path.exists(ziel):
+            return True
+        try:
+            roh = holen(m["quelle"] + urllib.parse.quote(rel), timeout=30)
+            os.makedirs(os.path.dirname(ziel), exist_ok=True)
+            with open(ziel + ".teil", "wb") as f:
+                f.write(roh)
+            os.replace(ziel + ".teil", ziel)
+            return True
+        except (urllib.error.URLError, OSError, ValueError, ssl.SSLError):
+            return False
+
+
 def muehle_laden(quelle, aktualisieren):
-    """Mühle nach ~/.kursmuehle/start/ laden (Liste aus dateien.json); vorhandener Stand bleibt ohne --aktualisieren."""
+    """Mühle nach ~/.kursmuehle/start/ laden (Liste aus dateien.json, ohne `bei_bedarf`: die holt muehle() beim ersten
+    Abruf von derselben Quelle); vorhandener Stand bleibt ohne --aktualisieren."""
     basis = os.path.join(os.path.expanduser("~"), ".kursmuehle")
     ordner, stand = os.path.join(basis, "start"), os.path.join(basis, "stand.json")
     if not aktualisieren and os.path.exists(stand):
         try:
             with open(stand, encoding="utf-8") as f:
                 s = json.load(f)
-            if all(os.path.exists(os.path.join(ordner, *p.split("/"))) for p in s["dateien"]):
+            bedarf = set(s.get("bei_bedarf") or [])
+            if all(os.path.exists(os.path.join(ordner, *p.split("/"))) for p in s["dateien"] if p not in bedarf):
                 try:
                     neu = json.loads(holen(quelle.rstrip("/") + "/dateien.json").decode("utf-8")).get("version")
                     if neu and neu != s.get("version"):
@@ -435,17 +467,20 @@ def muehle_laden(quelle, aktualisieren):
                               "mit --aktualisieren holst du sie.", flush=True)
                 except (urllib.error.URLError, OSError, ValueError, AttributeError):
                     pass
-                return {"ordner": ordner, "dateien": set(s["dateien"]), "version": s.get("version")}
+                return muehle_stand(ordner, s["dateien"], bedarf, s.get("version"),
+                                    s.get("quelle") or quelle.rstrip("/") + "/")
         except (ValueError, KeyError, OSError):
             pass
     quelle = quelle.rstrip("/") + "/"
     try:
         liste = json.loads(holen(quelle + "dateien.json").decode("utf-8"))
         dateien = [p for p in liste["dateien"] if sicherer_pfad(p)]
-        print(f"Lade die Mühle ({len(dateien)} Dateien) nach {ordner} …", flush=True)
+        bedarf = set(liste.get("bei_bedarf") or []) & set(dateien)
+        sofort = [p for p in dateien if p not in bedarf]
+        print(f"Lade die Mühle ({len(sofort)} Dateien) nach {ordner} …", flush=True)
         neu = ordner + ".neu"
         shutil.rmtree(neu, ignore_errors=True)
-        for p in dateien:
+        for p in sofort:
             ziel = os.path.join(neu, *p.split("/"))
             os.makedirs(os.path.dirname(ziel), exist_ok=True)
             with open(ziel, "wb") as f:
@@ -453,8 +488,9 @@ def muehle_laden(quelle, aktualisieren):
         shutil.rmtree(ordner, ignore_errors=True)
         os.replace(neu, ordner)
         with open(stand, "w", encoding="utf-8") as f:
-            json.dump({"version": liste.get("version"), "quelle": quelle, "dateien": dateien}, f)
-        return {"ordner": ordner, "dateien": set(dateien), "version": liste.get("version")}
+            json.dump({"version": liste.get("version"), "quelle": quelle, "dateien": dateien,
+                       "bei_bedarf": sorted(bedarf)}, f)
+        return muehle_stand(ordner, dateien, bedarf, liste.get("version"), quelle)
     except (urllib.error.URLError, OSError, ValueError, KeyError, ssl.SSLError) as e:
         grund = str(getattr(e, "reason", e))
         tipp = " (macOS: im Ordner von Python „Install Certificates.command“ öffnen)" if "CERTIFICATE" in grund else ""

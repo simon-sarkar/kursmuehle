@@ -33,7 +33,7 @@ und einzelne Chats antworten noch in einer Form, die die Seite nicht lesen kann.
 | Prüfung der Antwort vor dem Bau mit Sätzen, was im Chat zu korrigieren ist, und Auswegen, wenn der Chat dieselbe Antwort wiederholt | Fachliche Prüfung des Inhalts; die bleibt bei der Lehrkraft |
 | Satzlänge und Lesbarkeitswert (LIX) je Lesetext gegen einen Richtwert der Jahrgangsstufe, auf Wunsch mit Satz für den Chat | Lesbarkeitsformeln mit Silben, Texte selbst vereinfachen |
 | Material aus Word, LibreOffice, PowerPoint, PDF und Textdateien einlesen; die Dateien bleiben auf dem Rechner | Scans und Fotos von Arbeitsblättern |
-| Lehrplan: Grundschule, Mittelschule (LehrplanPLUS, Lernbereiche mit Kompetenzerwartungen als Ziel der Einheit im Auftrag) | Realschule, Gymnasium, Förderschule, berufliche Schulen |
+| Lehrplan: Grundschule, Mittelschule, Realschule, Gymnasium, Förderschule (Lernen, geistige Entwicklung) (LehrplanPLUS, Lernbereiche mit Kompetenzerwartungen als Ziel der Einheit im Auftrag) | Wirtschaftsschule, berufliche Schulen, weitere Förderschwerpunkte als eigene Lehrpläne |
 
 Der Auftrag ist eingerichtet für ByLKI, fobizz, AIS-Chat, MUCGPT, ChatGPT, Claude und Gemini. Durchläufe gab es bisher
 mit ByLKI, fobizz und einem Claude-Modell, nicht jeder kam ohne Korrekturrunde durch; wie die anderen Chats antworten,
@@ -81,6 +81,8 @@ Seit 2.0 läuft alles im Browser. Die Einzelheiten jeder Version stehen im [CHAN
       und PDF einlesen; Satzlänge je Lesetext, Hilfen und Zusatzaufgaben
 - [x] 2.0.0-b14 Lizenz und Zeile „mit KI erstellt, von der Lehrkraft geprüft“ im Kurs wählbar; Übungen ohne
       JavaScript lesbar; Versionsnummer in der Kursmappe; Materialleser meldet Bilddateien
+- [x] 2.0.0-b15 Schulart in Schritt 1; Lehrplanbezug für Realschule, Gymnasium und Förderschule; fünf
+      Schwerpunkte mit Vorschlag aus dem Lehrplan; Dateien und Bilder im Chat als Material
 - [ ] Erste Testerinnen und Tester (Testphase mit Code seit 26.10.2026), Rückmeldungen einarbeiten
 - [ ] Prüfwoche: Sicherheit, Import aller Formate, Barrierefreiheit
 - [ ] 2.0 ohne Beta-Marke
@@ -89,7 +91,7 @@ Seit 2.0 läuft alles im Browser. Die Einzelheiten jeder Version stehen im [CHAN
 
 - [ ] Kurs ansehen und Texte direkt darin ändern, ohne neue Runde im Chat
 - [ ] Regelmäßige Importprobe auf der Plattform
-- [ ] LehrplanPLUS für Realschule, Gymnasium und Förderschule
+- [x] LehrplanPLUS für Realschule, Gymnasium und Förderschule
 - [ ] Material für Fortbildungen, damit andere die Mühle vorstellen können
 - [ ] 3.0: Testphase mit Code beendet, Fortbildungsmodul, Rückmeldungen aus vielen Schulen eingearbeitet
 

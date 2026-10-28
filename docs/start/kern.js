@@ -122,6 +122,12 @@ var km = (function () {
     return a.ergebnis;
   }
 
+  // AP13.24: Schwerpunkt, Übungen und Art der Einheit aus dem gewählten Lehrplan (gen.api.lehrplan_vorschlag), null ohne Lernbereich
+  async function lehrplanVorschlag(lehrplan, fach) {
+    var a = await anfrage("vorschlag", { lehrplan: lehrplan || null, fach: fach || "" });
+    return a.ergebnis;
+  }
+
   // Vorschau der Designfamilien (AP13.5): mit familie das HTML dieser Familie, ohne alle Familien als {name: html}
   async function designVorschau(hebel, familie) {
     var a = await anfrage("design_vorschau", { hebel: hebel || {}, familie: familie || null });
@@ -267,7 +273,7 @@ var km = (function () {
   }
 
   return { anfrage: anfrage, laden: laden, bereit: bereit, pruefe: pruefe, stand: stand, mappeFn: mappeFn,
-      prompt: prompt, baue: baue, designVorschau: designVorschau,
+      prompt: prompt, baue: baue, designVorschau: designVorschau, lehrplanVorschlag: lehrplanVorschlag,
     mappeAusBytes: mappeAusBytes, mappeAusDateien: mappeAusDateien, mappeSchreiben: mappeSchreiben,
     mappeUebernehmen: mappeUebernehmen,
     neueMappe: neueMappe, heap: heap, beenden: beenden, sha256: sha256, autosaveSchreiben: autosaveSchreiben,
@@ -288,6 +294,7 @@ window.km = km;
   S.angaben = {};
   S.rueckgaengig = null;
   S.auf = {};
+  S.designer = null;              // AP13.19 §3: {y} solange „Zum Designer“ offen ist (schritte.js)
   S.chatWahlOffen = false;
   S.autosaveTimer = null;
   S.kennzahlTimer = null;
@@ -302,6 +309,7 @@ window.km = km;
   S.infoboxAus = false;
   S.schreibKette = Promise.resolve();
   S.angabenFuer = null;            // Mappe, deren Angaben aus dem Steckbrief gelesen sind (neuPruefen)
+  S.schwerpunktFolge = null;       // AP13.24: Reihenfolge der Klicks auf die Schwerpunkt-Kacheln {mappe, liste}
   S.korrektur = { text: "", offen: false, stand: "", art: "" };
   S.korrekturTimer = null;
   S.hinweise = { an: true, gesehen: [] };
@@ -527,6 +535,11 @@ window.km = km;
       var s = $(p[0]); s.innerHTML = "";
       p[1].forEach(function (w) { s.appendChild(el("option", { value: w.wert, text: w.text })); });
     });
+    // AP13.20: Schritt 1 bietet die Schularten ohne „Nicht angegeben“; die leere Option ist „noch keine“ (Pflicht beim Anlegen)
+    var fs = $("f-schulart"); fs.innerHTML = "";
+    fs.appendChild(el("option", { value: "", text: "Noch keine Schulart" }));
+    o.schulart.forEach(function (w) { if (w.wert) fs.appendChild(el("option", { value: w.wert, text: w.text })); });
+    if (!Z.mappe && S.schulartGemerkt) fs.value = S.schulartGemerkt();
     var gruppen = S.katalog.chat_gruppen;
     var chat = $("a-chat"); chat.innerHTML = "";
     chat.appendChild(el("option", { value: "", text: "Noch nicht gewählt" }));
@@ -642,7 +655,8 @@ window.km = km;
     var jgA = String(e.jahrgang || S.angaben.jahrgang || ""), jgF = String(e.jahrgang || "");
     var zgA = /\d/.test(jgA) ? "" : jgA.trim(), zgF = /\d/.test(jgF) ? "" : jgF.trim();
     var werte = { "a-thema": e.thema || S.angaben.thema || "", "a-jahrgang": zgA ? "" : jgA, "a-zielgruppe": zgA,
-      "a-minuten": e.minuten || S.angaben.minuten || "", "a-schulart": S.angaben.schulart || "",
+      "a-minuten": e.minuten || S.angaben.minuten || "", "a-schulart": zgA ? "" : S.angaben.schulart || "",
+      "f-schulart": zgF ? "" : S.angaben.schulart || "",
       "fach": S.angaben.fach || "", "a-kontext": S.angaben.kontext || "", "m-kontext": S.angaben.kontext || "",
       "a-format": S.angaben.format, "a-familie": S.angaben.familie,
       "a-farbe": /^#/.test(S.angaben.farbe || "") ? "eigen" : S.angaben.farbe,
