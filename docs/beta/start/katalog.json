@@ -516,6 +516,14 @@
  ],
  "oberflaeche": {
   "rueckmeldung_bitte_bis": "",
+  "hinweis_aufbau": {
+   "titel": "Die Kursmühle ist noch im Aufbau",
+   "text": "Ich entwickle die Kursmühle gerade weiter. Manches funktioniert noch nicht so, wie es soll. Neue Funktionen kommen zuerst in die Testversion; den Link findest du unten auf der Seite. Wenn dir etwas auffällt, schick mir bitte eine Rückmeldung. Nur so kann ich die Mühle verbessern.",
+   "text_beta": "Ich entwickle die Kursmühle gerade weiter. Manches funktioniert noch nicht so, wie es soll. Wenn dir etwas auffällt, schick mir bitte eine Rückmeldung. Nur so kann ich die Mühle verbessern.",
+   "rueckmeldung": "Rückmeldung geben",
+   "schliessen": "Schließen",
+   "nicht_mehr": "Nicht mehr anzeigen"
+  },
   "material_info": "Du kannst Material auch direkt im Chat anhängen, zum Beispiel ein Foto einer Seite oder ein PDF. Die KI nutzt es; der Text für den Chat sagt ihr das. Häng nur Material an, an dem du die Rechte hast, und nichts mit Daten von Schülerinnen und Schülern.",
   "format": [
    {
@@ -1086,5 +1094,5 @@
    }
   ]
  },
- "version": "2.0.0-b15"
+ "version": "2.0.0-b16"
 }
