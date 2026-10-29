@@ -52,6 +52,19 @@
   </div>
 </dialog>
 
+<!-- AP13.32: Hinweis beim Öffnen, Wortlaut aus oberflaeche.hinweis_aufbau (nachbau.js); „Nicht mehr anzeigen“ merkt der Browser -->
+<dialog id="hinweis-aufbau" class="rm-bitte" aria-labelledby="hinweis-aufbau-titel">
+  <div class="rm-bitte-innen">
+    <h2 id="hinweis-aufbau-titel"></h2>
+    <p id="hinweis-aufbau-text"></p>
+    <div class="rm-bitte-knoepfe">
+      <button type="button" id="hinweis-aufbau-geben" class="knopf haupt" autofocus></button>
+      <button type="button" id="hinweis-aufbau-zu" class="knopf"></button>
+      <label class="hinweis-aufbau-nie"><input type="checkbox" id="hinweis-aufbau-nie"> <span id="hinweis-aufbau-nie-text"></span></label>
+    </div>
+  </div>
+</dialog>
+
 <!-- Schrittfolge. Jeder Schritt erscheint erst, wenn der vorige getan ist; erledigte Schritte stehen als eine
      aufklappbare Zeile darüber. Die Kursdatei ist in beiden Zweigen („Mach du“, „Ich steuere“) dieselbe. Schritt
      „Bilder“ (data-nr 5.5) nur, wenn die Antwort Bildwünsche hat; die Nummern zählt schritte.js; je Schritt beim ersten

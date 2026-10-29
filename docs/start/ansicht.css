@@ -123,6 +123,7 @@ p { margin: 0 0 10px; }
 .rm-bitte h2 { margin: 0 0 10px; font-size: 1.15rem; }
 .rm-bitte p { margin: 0 0 16px; }
 .rm-bitte-knoepfe { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.hinweis-aufbau-nie { flex: 1 0 100%; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: var(--leise); font-size: 0.9rem; }
 
 .seite { max-width: 760px; margin: 0 auto; padding: 24px 16px 40px; }
 .seite.mit-rand { max-width: 1180px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 0 36px; align-items: start; }

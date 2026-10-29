@@ -1,14 +1,19 @@
 # Changelog
 
-## Unveröffentlicht
+## 2.0.0-b16 – 2026-10-29 (AP13.27, AP13.32: Prompt-Caching, Hinweis im Aufbau)
+
+* Hinweis beim Öffnen: Die Kursmühle ist noch im Aufbau
+* Korrekturrunden mit der Kursmühle-KI werden günstiger
+
+- Die Kursmühle-KI in der Testphase lässt den Verlauf eines Gesprächs beim Anbieter bis zu fünf Minuten zwischenspeichern; Korrekturrunden kosten laut Preisliste weniger.
+- Die Brücke tut das bei einem Anthropic-Schlüssel ebenfalls.
+- Beim Öffnen der Mühle weist ein Hinweis darauf hin, dass sie noch im Aufbau ist, und bittet um Rückmeldung; „Nicht mehr anzeigen“ merkt der Browser.
 
 ## 2.0.0-b15 – 2026-10-28 (AP13.18 B, AP13.19 bis AP13.25: Schulart, Lehrplan für alle Schularten, Schwerpunkte, Anhänge)
 
 * Lehrplanbezug auch für Realschule, Gymnasium und Förderschule
-* Schritt 1 fragt nach der Schulart; der Lehrplan-Picker öffnet mit deiner bisherigen Wahl
-* Fünf Schwerpunkte und neue Arten der Einheit, vorgeschlagen aus dem Lehrplan
-* Dateien und Bilder kannst du im Chat als Material anhängen
-* Brüche, Wurzeln und Hochzahlen stehen im Lehrplantext wieder richtig
+* Schulart in Schritt 1, Schwerpunkte mit Vorschlag aus dem Lehrplan
+* Dateien und Bilder im Chat als Material anhängen
 - In der Testphase bittet die Mühle nach dem Download einmal am Tag um eine Rückmeldung, bis du eine geschickt hast.
 - Schritt 1 fragt neben der Jahrgangsstufe nach der Schulart; die Mühle merkt sich die letzte Wahl.
 - Mit gewählter Schulart nimmt der Lehrplan-Vorschlag keine Schulart mehr an.

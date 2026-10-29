@@ -623,7 +623,7 @@
   function rueckmeldungBitteSpaeter() {
     setTimeout(function () {     // der Speichern-Dialog des Browsers soll zuerst kommen
       var d = $("rm-bitte"), bis = bitteFrist(), m = bitteLesen(), heute = tagHeute();
-      if (!bis || heute > bis || m.nie || m.zuletzt === heute || d.open || typeof d.showModal !== "function") return;
+      if (!bis || heute > bis || m.nie || m.zuletzt === heute || d.open || $("hinweis-aufbau").open || typeof d.showModal !== "function") return;
       bitteMerken({ zuletzt: heute });
       // während des Bauens ist der Knopf gesperrt und verliert den Fokus; dann kehrt er zum Knopf zurück
       bitteDavor = document.activeElement && document.activeElement !== document.body ? document.activeElement : $("herunterladen");
@@ -639,6 +639,45 @@
     setTimeout(function () { bitteSchliessen(true); }, 0);
   });
 
+  // Hinweis „noch im Aufbau“ (AP13.32): beim Laden von start/, sobald der Katalog da ist, außer der Browser hat „Nicht mehr
+  // anzeigen“ gemerkt (Wert `aus`; unter beta/ mit dem Zusatz -beta). Ohne localStorage kommt er bei jedem Laden. Wartet,
+  // wenn die Bitte um Rückmeldung offen ist; die Bitte kommt nicht, solange der Hinweis offen ist.
+  var HINWEIS = km.speicher("kursmuehle-hinweis-aufbau");
+  function hinweisAus() {
+    try { return localStorage.getItem(HINWEIS) === "aus"; } catch (e) { return false; }
+  }
+  function hinweisSchliessen(zurueck) {
+    var d = $("hinweis-aufbau");
+    if ($("hinweis-aufbau-nie").checked) {
+      try { localStorage.setItem(HINWEIS, "aus"); } catch (e) { /* ohne Speicher */ }
+    }
+    if (d.open) d.close();
+    if (zurueck && hinweisDavor && document.contains(hinweisDavor) && !hinweisDavor.disabled && !hinweisDavor.hidden) {
+      hinweisDavor.focus({ preventScroll: true });
+    }
+    hinweisDavor = null;
+  }
+  var hinweisDavor = null;
+  function hinweisZeigen() {
+    var h = S.katalog && S.katalog.oberflaeche.hinweis_aufbau, d = $("hinweis-aufbau");
+    if (!h || hinweisAus() || d.open || $("rm-bitte").open || typeof d.showModal !== "function") return;
+    $("hinweis-aufbau-titel").textContent = h.titel;
+    $("hinweis-aufbau-text").textContent = km.kanal === "beta" ? h.text_beta : h.text;
+    $("hinweis-aufbau-geben").textContent = h.rueckmeldung;
+    $("hinweis-aufbau-zu").textContent = h.schliessen;
+    $("hinweis-aufbau-nie-text").textContent = h.nicht_mehr;
+    $("hinweis-aufbau-nie").checked = false;
+    hinweisDavor = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
+    d.showModal();
+    $("hinweis-aufbau-geben").focus({ preventScroll: true });
+  }
+  $("hinweis-aufbau-geben").onclick = function () { hinweisSchliessen(false); rueckmeldungOeffnen(); };
+  $("hinweis-aufbau-zu").onclick = function () { hinweisSchliessen(true); };
+  $("hinweis-aufbau").addEventListener("click", function (ev) { if (ev.target === ev.currentTarget) hinweisSchliessen(true); });
+  $("hinweis-aufbau").addEventListener("cancel", function () {   // Escape wirkt wie „Schließen“
+    setTimeout(function () { hinweisSchliessen(true); }, 0);
+  });
+
   // Erst wenn alle Skripte der Seite geladen sind: Pyodide, Katalog und Hinweise laden, Adresse lesen, zeichnen
   function starten() {
     ladenStarten();
@@ -647,6 +686,7 @@
     schemaZeigen();
     rueckmeldungFuellen();
     zeichne();
+    if (S.katalogDa) S.katalogDa.then(hinweisZeigen);
   }
   Object.assign(S, { leeren: leeren, rueckmeldungFuellen: rueckmeldungFuellen, rueckmeldungOeffnen: rueckmeldungOeffnen,
     zeichneKursangaben: zeichneKursangaben, zeichneFragen: zeichneFragen, zeichneGegen: zeichneGegen,

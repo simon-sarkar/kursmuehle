@@ -83,6 +83,8 @@ Seit 2.0 läuft alles im Browser. Die Einzelheiten jeder Version stehen im [CHAN
       JavaScript lesbar; Versionsnummer in der Kursmappe; Materialleser meldet Bilddateien
 - [x] 2.0.0-b15 Schulart in Schritt 1; Lehrplanbezug für Realschule, Gymnasium und Förderschule; fünf
       Schwerpunkte mit Vorschlag aus dem Lehrplan; Dateien und Bilder im Chat als Material
+- [x] 2.0.0-b16 Hinweis „Die Kursmühle ist noch im Aufbau“ mit Bitte um Rückmeldung; Korrekturrunden mit der
+      Kursmühle-KI günstiger
 - [ ] Erste Testerinnen und Tester (Testphase mit Code seit 26.10.2026), Rückmeldungen einarbeiten
 - [ ] Prüfwoche: Sicherheit, Import aller Formate, Barrierefreiheit
 - [ ] 2.0 ohne Beta-Marke
