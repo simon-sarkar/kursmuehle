@@ -90,6 +90,19 @@ var km = (function () {
   function mappeUebernehmen(gesendet, antwort) {
     if (zustand.mappe !== gesendet) { zustand.mappe = antwort; return; }
     ["bausteine", "format", "kursmuehle"].forEach(function (k) { gesendet[k] = antwort[k]; });
+    // AP13.11: Handänderungen ohne Baustein fallen weg (wie gen/mappe.py abgleich); was die Seite inzwischen gesetzt hat, bleibt
+    if (gesendet.hand) {
+      var da = {}, titel = {};
+      var falte = function (t) { return String(t || "").replace(/\s*·\s*(?:ca\.\s*)?\d+\s*min\.?\s*$/, "")
+          .replace(/\s+/g, " ").trim().toLowerCase(); };
+      antwort.bausteine.forEach(function (b) { if (!b.geplant) { da[b.id] = 1; titel[falte(b.abschnitt)] = 1; } });
+      Object.keys(gesendet.hand).forEach(function (id) {
+        var v = gesendet.hand[id] || {};
+        var abschnitt = id.indexOf("abschnitt:") === 0 && titel[falte(String(v.nachher || "").split("\n")[0]
+            .replace(/^##\s*/, ""))];
+        if (!da[id] && id !== "kopf" && !abschnitt) delete gesendet.hand[id];
+      });
+    }
   }
 
   // Prüfen, Mappe abgleichen und Kennzahlen in einem Lauf; leere Kursdatei = nur geplante Bausteine
@@ -132,6 +145,14 @@ var km = (function () {
   async function designVorschau(hebel, familie) {
     var a = await anfrage("design_vorschau", { hebel: hebel || {}, familie: familie || null });
     messen("design_vorschau", familie || "alle", a);
+    return a.ergebnis;
+  }
+
+  // AP13.11: Vorschau der ganzen Einheit für die Ansicht „Einheit ansehen und bearbeiten“ (gen/api.einheit_vorschau)
+  async function einheitVorschau() {
+    var a = await anfrage("einheit_vorschau", { kurs_md: zustand.kurs_md, steckbrief: zustand.steckbrief_text,
+        assets: assetsKopie() });
+    messen("einheit_vorschau", zustand.beispiel, a, { bausteine: a.ergebnis.bausteine.length });
     return a.ergebnis;
   }
 
@@ -273,7 +294,7 @@ var km = (function () {
   }
 
   return { anfrage: anfrage, laden: laden, bereit: bereit, pruefe: pruefe, stand: stand, mappeFn: mappeFn,
-      prompt: prompt, baue: baue, designVorschau: designVorschau, lehrplanVorschlag: lehrplanVorschlag,
+      prompt: prompt, baue: baue, designVorschau: designVorschau, einheitVorschau: einheitVorschau, lehrplanVorschlag: lehrplanVorschlag,
     mappeAusBytes: mappeAusBytes, mappeAusDateien: mappeAusDateien, mappeSchreiben: mappeSchreiben,
     mappeUebernehmen: mappeUebernehmen,
     neueMappe: neueMappe, heap: heap, beenden: beenden, sha256: sha256, autosaveSchreiben: autosaveSchreiben,
@@ -344,6 +365,12 @@ window.km = km;
     var d = new Date(t), heute = new Date();
     return d.toDateString() === heute.toDateString() ? "um " + zeit(t) : "am " + d.toLocaleDateString("de-DE") +
         " um " + zeit(t);
+  }
+  // AP13.11: Wortlaut der Ansicht „Einheit ansehen und bearbeiten“ aus katalog.yaml (oberflaeche.editor)
+  function editorText(schluessel, werte) {
+    var t = (S.katalog && S.katalog.oberflaeche.editor || {})[schluessel] || "";
+    Object.keys(werte || {}).forEach(function (k) { t = t.split("{" + k + "}").join(werte[k]); });
+    return t;
   }
   function typInfo(typ) { return S.katalog && S.katalog.typen.filter(function (x) { return x.typ === typ; })[0]; }
   function formularname(typ) { if (typ === AUTO) return "Typ automatisch"; var t = typInfo(typ); return t ?
@@ -585,7 +612,9 @@ window.km = km;
     // AP13.14: gelbe Sprach-Hinweise nur für Karten mit „Sprache anpassen lassen“ (ids nur noch, wenn die Karte gelb ist)
     S.spracheGelb = S.spracheGelb.filter(function (id) { return pr.diagnosen.some(function (d) {
         return d.baustein === id && d.regel === "sprache.lang"; }); });
-    S.korrekturen = await km.prompt("korrektur", [pr, S.spracheGelb]);
+    // AP13.11 §8.9: gelbe Bitten nicht für von Hand geänderte Bausteine, rote Fehler bleiben
+    S.korrekturen = await km.prompt("korrektur", [pr, S.spracheGelb, Z.mappe && Z.mappe.hand ? Object.keys(Z.mappe.hand) :
+        []]);
     var fc = await km.prompt("fachcheck", [pr, Z.steckbrief_text]);
     $("gegen-text-feld").value = fc.text;
     Z.fragen = S.fragenListe; Z.korrekturen = S.korrekturen;
@@ -647,6 +676,7 @@ window.km = km;
     S.rueckmeldungFuellen();
     S.knoepfe();
     S.zeichneSchritte();
+    if (S.zeichneEditor) S.zeichneEditor();
   }
 
   function felderFuellen() {
@@ -688,7 +718,7 @@ window.km = km;
   Object.assign(S, { $: $, AUTO: AUTO, FARBEN: FARBEN, KOPIERT: KOPIERT, SCHRITTE: SCHRITTE,
     STANDARD_FARBE: STANDARD_FARBE, Z: Z, ZWEIG_TEXT: ZWEIG_TEXT, auswertung: auswertung, autosave: autosave,
     bildGroesse: bildGroesse, bilderStandard: bilderStandard, bilderWert: bilderWert, bildwuensche: bildwuensche,
-    chatInfo: chatInfo, datumZeit: datumZeit, download: download, einheitTag: einheitTag, el: el,
+    chatInfo: chatInfo, datumZeit: datumZeit, download: download, editorText: editorText, einheitTag: einheitTag, el: el,
     erledigtBis: erledigtBis, fehlerText: fehlerText, fehlerZahl: fehlerZahl, felderFuellen: felderFuellen,
     formularname: formularname, geaendert: geaendert, heute: heute, hinweiseSichern: hinweiseSichern, hoehe: hoehe,
     inhalt: inhalt, karteNach: karteNach, kb: kb, kopieren: kopieren, ladenStarten: ladenStarten, markiert: markiert,

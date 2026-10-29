@@ -1,10 +1,11 @@
 {
 "version": "2.0.0-b16",
-"generator": "b1dac98a4fff2918",
+"generator": "d6de8b71121e1b7d",
 "dateien": [
 "ansicht.css",
 "bilder.js",
 "chat.js",
+"editor.js",
 "familien.json",
 "formate.js",
 "generator.zip",

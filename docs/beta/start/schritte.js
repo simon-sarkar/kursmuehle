@@ -1515,7 +1515,7 @@
   Object.assign(S, { schulartGemerkt: schulartGemerkt, adresseLesen: adresseLesen, angabenSchreiben: angabenSchreiben, ausklapp: ausklapp,
     kursangabenMerken: kursangabenMerken,
     felderPruefen: felderPruefen, feldOk: feldOk,
-    akzent: akzent, gehe: gehe, jahrgangZahl: jahrgangZahl, nachZwei: nachZwei, neuStart: neuStart,
+    akzent: akzent, gehe: gehe, miniFormat: miniFormat, jahrgangZahl: jahrgangZahl, nachZwei: nachZwei, neuStart: neuStart,
     schemaZeigen: schemaZeigen, steckbriefSicher: steckbriefSicher, vorlageNach: vorlageNach, vorschauLaden: vorschauLaden,
     vorlagenZeigen: vorlagenZeigen, vorschlagAnwenden: vorschlagAnwenden, vorschlagLoesen: vorschlagLoesen,
     fachWoerter: fachWoerter, fachJetzt: fachJetzt, weiterAnzeigen: weiterAnzeigen, zeichneAussehen: zeichneAussehen,

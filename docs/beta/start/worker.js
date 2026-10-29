@@ -17,6 +17,8 @@
  *             Kompetenzerwartungen des gewählten Lehrplans (AP13.24); ohne Lernbereich null
  *           | material_lesen {name, daten}  gen.api.material_lesen: eigenes Material aus einer Datei (AP13.13); pypdf
  *             lädt erst beim ersten PDF
+ *           | einheit_vorschau {kurs_md, steckbrief, assets}  gen.api.einheit_vorschau: HTML je Baustein für die Ansicht
+ *             „Einheit ansehen und bearbeiten“ (AP13.11)
  * Bytes laufen als ArrayBuffer/Uint8Array (Assets: {name: Uint8Array}); die .mbz kommt als übertragener ArrayBuffer.
  * Klassischer Worker ohne ES-Module (läuft so auch aus einem Blob, Offline-Datei später).
  * Pyodide-Dateien und generator.zip kommen ab dem zweiten Aufruf aus der Cache API (AP13.12 b4). */
@@ -142,8 +144,11 @@ var PY_BRUECKE = [
   "",
   "_MAPPE = {'verschiebe', 'entferne', 'umbenennen', 'kennzahlen', 'angaben_lesen', 'angaben_schreiben', 'geplant',",
   "          'planung', 'auffuellen', 'loesung_zulassen', 'zusatzaufgabe',",
-  "          'antwort', 'modus', 'einsetzen', 'anhaengen', 'dateiname', 'bild_verkleinert', 'herkunft_hinweis'}",
-  "_PROMPT = {'einheit', 'baustein', 'korrektur', 'diagnose', 'fragen', 'fachcheck', 'vergleich', 'lehrplan'}",
+  "          'antwort', 'modus', 'einsetzen', 'anhaengen', 'dateiname', 'bild_verkleinert', 'herkunft_hinweis',",
+  "          'hand_pruefen', 'hand_betroffen', 'hand_erhalten', 'abschnitt_setzen', 'abschnitt_verschieben',",
+  "          'kurstitel_setzen'}",
+  "_PROMPT = {'einheit', 'baustein', 'korrektur', 'diagnose', 'fragen', 'fachcheck', 'vergleich', 'lehrplan',",
+  "           'format_hilfe'}",
   "",
   "def km_mappe(e):",
   "    f = e.get('funktion')",
@@ -168,6 +173,9 @@ var PY_BRUECKE = [
   "    if e.get('familie'):",
   "        return api.design_vorschau(e.get('familie'), e.get('hebel'))",
   "    return api.design_vorschauen(e.get('hebel'))",
+  "",
+  "def km_einheit_vorschau(e):",
+  "    return api.einheit_vorschau(e.get('kurs_md') or '', e.get('steckbrief'), _bytes(e.get('assets')))",
   "",
   "def km_info():",
   "    return {'python': sys.version.split()[0], 'version': api.VERSION, 'format': _M.FORMAT}",
@@ -269,6 +277,7 @@ self.onmessage = async function (ev) {
       else if (m.aktion === "mappe") ergebnis = aufruf("km_mappe", { funktion: m.funktion, args: m.args });
       else if (m.aktion === "prompt") ergebnis = aufruf("km_prompt", { funktion: m.funktion, args: m.args });
       else if (m.aktion === "vorschlag") ergebnis = aufruf("km_vorschlag", { lehrplan: m.lehrplan, fach: m.fach });
+      else if (m.aktion === "einheit_vorschau") ergebnis = aufruf("km_einheit_vorschau", { kurs_md: m.kurs_md, steckbrief: m.steckbrief, assets: m.assets });
       else if (m.aktion === "design_vorschau") ergebnis = aufruf("km_design_vorschau", { familie: m.familie, hebel: m.hebel });
       else if (m.aktion === "material_lesen") {
         if (!pypdfGeladen && /\.pdf$/i.test(m.name || "")) {

@@ -262,10 +262,14 @@
   var MODUS_TEXT = { ersetzen: "Einheit ersetzt", baustein: "nur diese Bausteine ersetzt",
       anhaengen: "als weitere Einheit angehängt" };
 
-  // Antwort mit einem Modus einsetzen; vorher den Stand sichern, damit ein anderer Modus von dort aus neu einsetzt
-  async function einsetzen(text, modus, vorher) {
+  // Antwort mit einem Modus einsetzen; vorher den Stand sichern, damit ein anderer Modus von dort aus neu einsetzt.
+  // AP13.11 §4: betrifft die Antwort von Hand geänderte Bausteine, fragt die Seite einmal je Antwort (`merk`)
+  async function einsetzen(text, modus, vorher, merk) {
     Z.mappe = JSON.parse(JSON.stringify(vorher.mappe)); Z.kurs_md = vorher.kurs_md;
     var neu, meldung = "";
+    var hv = await S.handVorEinsetzen(Z.mappe, Z.kurs_md, text, modus, null, merk);
+    text = hv.text;
+    if (hv.bausteine === 0) { await km.stand(Z.kurs_md); return { ok: false, art: "ok", text: S.editorText("hand_bleibt") }; }
     if (modus === "baustein") {
       var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, text]);
       if (!r.ersetzt.length && !r.eingefuegt.length) {
@@ -275,6 +279,7 @@
       var ids = r.ersetzt.concat(r.eingefuegt);
       neu = r.kurs_md;
       await km.stand(neu);
+      S.handNachEinsetzen(ids, hv);
       Z.mappe.bausteine.forEach(function (k) { if (ids.indexOf(k.id) >= 0) k.neu = false; });
       if (r.fehler.length) meldung = " " + r.fehler.join(" ");
       return { ok: true, n: ids.length, ids: ids, text: meldung };
@@ -282,6 +287,7 @@
     if (modus === "anhaengen") neu = await km.mappeFn("anhaengen", [Z.kurs_md, text, Z.mappe.anhaengen || null]);
     else neu = (await km.mappeFn("antwort", [text])).kursdatei;
     var pr = await km.stand(neu);
+    if (modus === "ersetzen") S.handNachEinsetzen([], hv);
     if (modus === "anhaengen" && Z.mappe.anhaengen) delete Z.mappe.anhaengen;
     return { ok: true, n: pr.bausteine.length, text: "" };
   }
@@ -449,9 +455,9 @@
         S.letzteAntwort = { text: text, vorher: { mappe: JSON.parse(JSON.stringify(Z.mappe)), kurs_md: Z.kurs_md } };
       }
       diagnoseKarte($("eingabe-diagnose"), null);
-      var e = await einsetzen(text, modus, S.letzteAntwort.vorher);
+      var e = await einsetzen(text, modus, S.letzteAntwort.vorher, S.letzteAntwort);
       if (!e.ok) {
-        standKarte($("eingabe-stand"), e.text, "fehler");
+        standKarte($("eingabe-stand"), e.text, e.art || "fehler");
         zeichne();
         return;
       }

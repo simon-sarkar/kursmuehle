@@ -772,7 +772,135 @@
     "text": "Alle Rechte vorbehalten"
    }
   ],
-  "ki_hinweis": "Mit KI erstellt, von der Lehrkraft geprüft."
+  "ki_hinweis": "Mit KI erstellt, von der Lehrkraft geprüft.",
+  "kachelicon": [
+   {
+    "wert": "book",
+    "text": "Buch"
+   },
+   {
+    "wert": "lightbulb-o",
+    "text": "Glühbirne"
+   },
+   {
+    "wert": "pencil",
+    "text": "Stift"
+   },
+   {
+    "wert": "flask",
+    "text": "Kolben"
+   },
+   {
+    "wert": "globe",
+    "text": "Globus"
+   },
+   {
+    "wert": "laptop",
+    "text": "Laptop"
+   },
+   {
+    "wert": "calculator",
+    "text": "Rechner"
+   },
+   {
+    "wert": "comments",
+    "text": "Sprechblasen"
+   },
+   {
+    "wert": "users",
+    "text": "Gruppe"
+   },
+   {
+    "wert": "puzzle-piece",
+    "text": "Puzzle"
+   },
+   {
+    "wert": "star",
+    "text": "Stern"
+   },
+   {
+    "wert": "check-square-o",
+    "text": "Haken"
+   },
+   {
+    "wert": "clock-o",
+    "text": "Uhr"
+   },
+   {
+    "wert": "map-o",
+    "text": "Karte"
+   },
+   {
+    "wert": "music",
+    "text": "Musik"
+   },
+   {
+    "wert": "leaf",
+    "text": "Blatt"
+   }
+  ],
+  "editor": {
+   "knopf": "Einheit ansehen und bearbeiten",
+   "titel": "Einheit ansehen und bearbeiten",
+   "schliessen": "Schließen",
+   "liste": "Bausteine",
+   "liste_auf": "Bausteine anzeigen",
+   "laedt": "Die Vorschau entsteht …",
+   "leer": "Noch keine Bausteine mit Inhalt.",
+   "bearbeiten": "Bearbeiten",
+   "neu_schreiben": "Neu schreiben lassen",
+   "feld": "Text dieses Bausteins",
+   "format": "So schreibst du diesen Typ",
+   "uebernehmen": "Übernehmen",
+   "abbrechen": "Abbrechen",
+   "zuruecknehmen": "Handänderung zurücknehmen",
+   "hand": "von Hand geändert",
+   "uebernommen": "Übernommen.",
+   "zurueckgenommen": "Handänderung zurückgenommen.",
+   "zwei_bausteine": "Im Feld stehen zwei Bausteine. Ändere hier nur diesen; neue Bausteine legst du in der Liste der Bausteine an.",
+   "fremde_id": "Die Zeile „id: {id}“ gehört zu „{titel}“. Lösche die Zeile, dann bleibt der Text bei diesem Baustein.",
+   "kein_baustein": "Kein Baustein: die erste Zeile ist die Überschrift `### Typ: Titel`.",
+   "geprueft": "Geprüft, keine Fehler.",
+   "wunsch": "Was soll anders sein?",
+   "wunsch_platzhalter": "Ein Satz genügt. Leer lassen heißt: verbessern.",
+   "text_kopieren": "Text kopieren",
+   "an_ki": "An meine KI senden",
+   "kopiert": "Kopiert. Füge den Text in deinen Chat ein und die Antwort hier ein.",
+   "antwort": "Antwort des Chats",
+   "einsetzen": "Einsetzen",
+   "eingesetzt": "Eingesetzt.",
+   "frage": "Du hast manuelle Änderungen durchgeführt. Sollen diese erhalten bleiben oder verworfen werden?",
+   "erhalten": "Erhalten",
+   "verwerfen": "Verwerfen",
+   "hand_bleibt": "Die Antwort betrifft nur Bausteine, die du von Hand geändert hast; sie bleiben, wie sie sind.",
+   "unterabschnitt": "Unterabschnitt",
+   "platzhalter_h5p": "Übung als eigene Aktivität{menge}. Die Vorschau zeigt sie nicht; im Kurs ist sie bedienbar.",
+   "platzhalter_test": "Test als eigene Aktivität{menge}. Die Vorschau zeigt ihn nicht.",
+   "platzhalter_website": "Teil der Website „{abschnitt}“. Die Vorschau zeigt die Website nicht.",
+   "platzhalter_link": "Link auf {adresse}",
+   "platzhalter_aktivitaet": "Eigene Aktivität auf der Kursseite.",
+   "platzhalter_fehler": "Dieser Baustein hat einen Fehler; die Vorschau zeigt ihn erst, wenn er behoben ist.",
+   "platzhalter_weg": "Dieser Baustein erscheint in diesem Kursformat nicht.",
+   "platzhalter_video": "Eingebettetes Video. Die Vorschau lädt es nicht.",
+   "uebersicht": "Kursübersicht",
+   "darstellung": "Darstellung",
+   "uebersicht_zeile": "Klicke auf den Kurstitel, einen Abschnitt oder eine Kachel, um sie zu ändern.",
+   "kurstitel": "Kurstitel",
+   "abschnitt_titel": "Titel des Abschnitts",
+   "abschnitt": "Abschnitt",
+   "kachelbild": "Kachelbild",
+   "kachelbild_keins": "Fläche des Designs",
+   "kachelbild_hochladen": "Bild hochladen",
+   "kachelicon": "Symbol auf der Kachel",
+   "kachelicon_keins": "kein Symbol",
+   "farbe": "Farbe",
+   "farbe_kurs": "Farbe des Kurses",
+   "links": "Nach links",
+   "rechts": "Nach rechts",
+   "hoch": "Nach oben",
+   "runter": "Nach unten",
+   "wochen_start": "Für Wochen braucht der Kurs einen Kursbeginn; du setzt ihn im Schritt „Wie soll der Kurs aussehen?“."
+  }
  },
  "chats": [
   {

@@ -74,13 +74,15 @@
         : !steuer ? el("button", { type: "button", cls: "k-typ k-typ-mach", "data-aktion": "steuern",
             title: "Ändern in „Ich steuere“", text: formularname(k.typ) })
         : el("span", { cls: "k-typ", text: formularname(k.typ) });
+      var hand = handGeaendert(k.id) && !k.geplant;
       var diag = el("ul", { cls: "k-diagnosen" });
       if (Z.pruefung && !k.geplant && !warten) {
         Z.pruefung.diagnosen.filter(function (d) { return d.baustein === k.id && d.stufe !== "hinweis"; })
             .forEach(function (d) {
           var satz = (d.zeile_im_baustein ? "Zeile " + d.zeile_im_baustein + ": " : "") + d.text;
           // AP13.14: Sprach-Hinweis gelb ohne Bitte; der Knopf nimmt den Satz für den Chat in die Korrekturbitte
-          var an = d.regel === "sprache.lang" ? S.spracheGelb.indexOf(k.id) >= 0 : null;
+          // AP13.11 §8.9: an einer Handfassung kein Knopf (gelbe Bitten gehen für sie nicht an den Chat)
+          var an = d.regel === "sprache.lang" && !hand ? S.spracheGelb.indexOf(k.id) >= 0 : null;
           diag.appendChild(el("li", { cls: d.stufe, "data-regel": d.regel || "" }, an === null ? [satz] : [satz + " ",
             el("button", { type: "button", cls: "k-sprache klein", "data-aktion": "sprache",
                 "aria-pressed": an ? "true" : "false", text: "Sprache anpassen lassen" })]));
@@ -120,6 +122,7 @@
         abschnitt,
         el("div", { cls: "k-kopf" }, [
           el("span", { cls: "k-nr", text: String(i + 1) }), typFeld,
+          hand ? el("span", { cls: "k-hand", text: S.editorText("hand") }) : null,
           el("span", { cls: "k-status", title: stText }, [el("span", { cls: "punkt", "aria-hidden": "true" }),
               stText])]),
         el("input", { cls: "k-titel von-" + herkunft, "data-herkunft": herkunft, type: "text", value: k.titel,
@@ -214,13 +217,7 @@
   }
   var selbstTimer = null;
   async function selbstPruefen(id, text) {
-    var pr = await km.mappeFn("antwort", [text]);
-    var m = pr.diagnosen.filter(function (d) { return d.stufe !== "hinweis"; }).map(function (d) {
-      return { stufe: d.stufe, text: (d.zeile_im_baustein ? "Zeile " + d.zeile_im_baustein + ": " : "") + d.text };
-    });
-    if (!pr.bausteine.length) m.unshift({ stufe: "fehler",
-        text: "Kein Baustein: die erste Zeile ist die Überschrift `### Typ: Titel`." });
-    if (!m.length) m = [{ stufe: "ok", text: "Geprüft, keine Fehler." }];
+    var m = (await km.mappeFn("hand_pruefen", [Z.mappe, text, id])).meldungen;
     if (!selbst[id]) return;
     selbst[id].meldungen = m;
     var ul = document.querySelector("#karte-" + CSS.escape(id) + " .ausweg-pruefung");
@@ -253,15 +250,10 @@
     } else if (a === "selbst-uebernehmen") {
       var text = (selbst[k.id] || {}).text || "";
       if (!text.trim()) return;
-      await km.bereit();
-      var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, text, k.id, true]);
-      if (!r.ersetzt.length && !r.eingefuegt.length) { selbst[k.id].meldungen = [{ stufe: "fehler",
-          text: r.fehler.join(" ") || "Der Text ergibt keinen Baustein." }]; zeichneKarten(); return; }
-      await km.stand(r.kurs_md);
-      delete selbst[k.id]; delete schleife()[k.id];
-      await auswertung();
-      zeichne(); geaendert();
-      status("Baustein übernommen", "ok");
+      var e = await handUebernehmen(k.id, text, b ? b.text : null);
+      if (!e.ok) { if (selbst[k.id]) selbst[k.id].meldungen = e.meldungen; zeichneKarten(); return; }
+      delete selbst[k.id];
+      zeichne();
     } else if (a === "anderer-chat") {
       k.neu = true; delete schleife()[k.id];
       S.korrektur.text = ""; S.korrektur.offen = false;
@@ -272,6 +264,121 @@
       zeichne(); geaendert(); korrekturSpaeter(0);
       $("chat-aendern").click();
     }
+  }
+
+  // AP13.11: Handänderung (Editor „Bearbeiten“ und „Selbst anpassen“ an der roten Karte), ein Weg. Prüft den Text
+  // (gen/mappe.py hand_pruefen); ein Fehler des Parsers setzt nicht ein. Sonst Einsetzen an diese Karte (einsetzen mit
+  // nur = id, kopf), Markierung „von Hand geändert“ mit dem Stand davor (`hand`), neu prüfen; Fehler aus den Regeln der
+  // Einheit färben die Karte danach rot. Das einstufige Rückgängig und die letzte Antwort (Moduswechsel) gelten danach
+  // nicht mehr. -> {ok, meldungen}
+  function handGeaendert(id) { return !!(Z.mappe && Z.mappe.hand && Z.mappe.hand[id]); }
+  function handIds() { return Z.mappe && Z.mappe.hand ? Object.keys(Z.mappe.hand) : []; }
+  function hatFragen(ids) { return S.fragenListe.some(function (f) { return ids.indexOf(f.baustein) >= 0; }); }
+  function nachHandAenderung(id) {
+    delete schleife()[id]; delete selbst[id];
+    S.spracheGelb = S.spracheGelb.filter(function (x) { return x !== id; });
+    S.rueckgaengig = null; $("rueckgaengig").hidden = true;
+    S.letzteAntwort = null;
+  }
+  // `angezeigt` = Text, den das Feld anfangs zeigte: unverändert übernommen, passiert nichts (keine Markierung)
+  async function handUebernehmen(id, text, angezeigt) {
+    if (angezeigt !== undefined && angezeigt !== null && String(text).trim() === String(angezeigt).trim())
+      return { ok: true, unveraendert: true, meldungen: [] };
+    await km.bereit();
+    var pr = await km.mappeFn("hand_pruefen", [Z.mappe, text, id]);
+    if (!pr.ok) return pr;
+    var b = pruefBaustein(id), vorher = b ? b.text : "";
+    var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, text, id, true, true]);
+    if (!r.ersetzt.length && !r.eingefuegt.length) return { ok: false, meldungen: [{ stufe: "fehler",
+        text: r.fehler.join(" ") || S.editorText("kein_baustein") }] };
+    var hand = Z.mappe.hand = Z.mappe.hand || {};
+    if (!hand[id]) hand[id] = { vorher: vorher, zeit: Date.now() }; else hand[id].zeit = Date.now();
+    await km.stand(r.kurs_md);
+    nachHandAenderung(id);
+    await auswertung();
+    if (hatFragen([id])) Z.mappe.durchsicht = false;
+    zeichne(); geaendert();
+    status("Baustein übernommen", "ok");
+    return pr;
+  }
+  // „Handänderung zurücknehmen“: der Stand vor der ersten Handänderung kommt zurück, die Markierung entfällt
+  async function handZuruecknehmen(id) {
+    var h = Z.mappe && Z.mappe.hand && Z.mappe.hand[id];
+    if (!h) return false;
+    await km.bereit();
+    var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, h.vorher, id, false, true]);
+    if (!r.ersetzt.length && !r.eingefuegt.length) return false;
+    delete Z.mappe.hand[id];
+    await km.stand(r.kurs_md);
+    nachHandAenderung(id);
+    await auswertung();
+    if (hatFragen([id])) Z.mappe.durchsicht = false;
+    zeichne(); geaendert();
+    return true;
+  }
+  // §9: Änderung an der Kursübersicht (Kurstitel, Abschnittskopf) als Handänderung `kopf` bzw. `abschnitt:n`; der
+  // neue Text der Kursdatei kommt aus gen/mappe.py (kurstitel_setzen, abschnitt_setzen)
+  async function uebersichtAendern(md, schluessel, vorher, werte) {
+    var hand = Z.mappe.hand = Z.mappe.hand || {};
+    if (!hand[schluessel]) hand[schluessel] = { vorher: vorher, zeit: Date.now() };
+    Object.assign(hand[schluessel], werte, { zeit: Date.now() });
+    await km.stand(md);
+    S.rueckgaengig = null; $("rueckgaengig").hidden = true; S.letzteAntwort = null;
+    await auswertung();
+    zeichne(); geaendert();
+  }
+  function handTitel(id) {
+    if (id.indexOf("abschnitt:") === 0) {
+      var n = ((Z.mappe.hand || {})[id] || {}).nachher || "";
+      return S.editorText("abschnitt") + " „" + n.split("\n")[0].replace(/^##\s*/, "").replace(/\s*·\s*\d+\s*min.*$/,
+          "") + "“";
+    }
+    if (id === "kopf") return S.editorText("kurstitel");
+    var k = (Z.mappe.bausteine || []).filter(function (x) { return x.id === id; })[0];
+    return "„" + (k ? k.titel : id) + "“";
+  }
+  // Frage vor dem Einsetzen einer Antwort, die von Hand geänderte Bausteine betrifft (§4); ein <dialog> über allem,
+  // auch über der Ansicht „Einheit ansehen und bearbeiten“. Esc gilt als „Erhalten“ (nichts geht verloren).
+  function handFrage(ids) {
+    var d = $("hand-frage");
+    $("hand-frage-text").textContent = S.editorText("frage");
+    $("hand-erhalten").textContent = S.editorText("erhalten");
+    $("hand-verwerfen").textContent = S.editorText("verwerfen");
+    var ul = $("hand-frage-liste"); ul.innerHTML = "";
+    ids.forEach(function (id) { ul.appendChild(el("li", { text: handTitel(id) })); });
+    var vorher = document.activeElement;
+    return new Promise(function (fertig) {
+      function ende(wahl) {
+        d.removeEventListener("cancel", abbruch);
+        $("hand-erhalten").onclick = $("hand-verwerfen").onclick = null;
+        if (d.open) d.close();
+        if (vorher && vorher.focus && document.contains(vorher)) vorher.focus({ preventScroll: true });
+        fertig(wahl);
+      }
+      function abbruch(ev) { ev.preventDefault(); ende("erhalten"); }
+      d.addEventListener("cancel", abbruch);
+      $("hand-erhalten").onclick = function () { ende("erhalten"); };
+      $("hand-verwerfen").onclick = function () { ende("verwerfen"); };
+      if (typeof d.showModal === "function") d.showModal(); else d.setAttribute("open", "");
+      $("hand-erhalten").focus();
+    });
+  }
+  // Vor dem Einsetzen: betroffene Handfassungen und die Wahl (einmal je Antwort, `merk` hält sie); „Erhalten“ gibt den
+  // Text zurück, der statt der Antwort eingesetzt wird. -> {ids, wahl, text, bausteine}
+  async function handVorEinsetzen(mappe, kurs_md, text, modus, nur, merk) {
+    var ids = await km.mappeFn("hand_betroffen", [mappe, kurs_md, text, modus, nur]);
+    if (!ids.length) return { ids: [], wahl: null, text: text, bausteine: -1 };
+    var wahl = merk && merk.hand ? merk.hand : await handFrage(ids);
+    if (merk) merk.hand = wahl;
+    if (wahl !== "erhalten") return { ids: ids, wahl: wahl, text: text, bausteine: -1 };
+    var e = await km.mappeFn("hand_erhalten", [mappe, kurs_md, text, modus, nur, ids]);
+    return { ids: ids, wahl: wahl, text: e.text, bausteine: e.bausteine };
+  }
+  // Nach dem Einsetzen: eingesetzte Bausteine kommen aus dem Chat, „Verwerfen“ nimmt die Markierung der betroffenen
+  function handNachEinsetzen(eingesetzt, hv) {
+    if (!Z.mappe.hand) return;
+    eingesetzt.forEach(function (id) { delete Z.mappe.hand[id]; });
+    if (hv && hv.wahl === "verwerfen") hv.ids.forEach(function (id) { delete Z.mappe.hand[id]; });
   }
 
   function zeichneDiagnosen() {
@@ -539,7 +646,10 @@
     var neu = neuBeauftragt();
     if (!neu.length) return S.korrekturen.map(function (k) { return k.satz; }).join("\n");
     var ids = korrekturZiele();
-    var t = await km.prompt("baustein", [Z.mappe, ids, Z.kurs_md, Z.steckbrief_text, null, 900, Z.pruefung]);
+    // AP13.11 §8.4: von Hand geänderte Bausteine gehen ungekürzt als „Bisheriger Inhalt“ mit
+    var kontext = { _: 900 };
+    handIds().forEach(function (id) { kontext[id] = null; });
+    var t = await km.prompt("baustein", [Z.mappe, ids, Z.kurs_md, Z.steckbrief_text, null, kontext, Z.pruefung]);
     var ohne = S.korrekturen.filter(function (k) { return !k.baustein; }).map(function (k) { return k.satz; });
     return t + (ohne.length ? "\n" + ohne.join("\n") + "\n" : "");
   }
@@ -563,8 +673,8 @@
     var ul = $("korrektur-liste"); ul.innerHTML = "";
     S.korrekturen.forEach(function (k) { ul.appendChild(el("li", { "data-regel": k.regel || "", text: k.satz })); });
     neu.forEach(function (k) {
-      ul.appendChild(el("li", { cls: "k-neu-zeile", text: "„" + k.titel +
-          "“ neu schreiben, nach deinem Auftrag an der Karte." }));
+      ul.appendChild(el("li", { cls: "k-neu-zeile", text: "„" + k.titel + "“ neu schreiben" + (k.auftrag && k.auftrag.trim()
+          ? ", nach deinem Auftrag." : ".") }));
     });
     var n = ziele.length;
     var nurGelb = !neu.length && S.korrekturen.length > 0 && S.korrekturen.every(function (k) {
@@ -606,6 +716,7 @@
   }
   // Jede Korrekturbitte als Ereignis in der Kursmappe (keine Inhalte): Version, Chat, Typ, Regel, Runde je Einheit
   function korrekturVermerken() {
+    if (!Z.mappe) return;
     var liste = Z.mappe.korrekturen = Z.mappe.korrekturen || [], tag = einheitTag();
     var runde = 1 + liste.filter(function (x) { return (x.einheit || "") === tag; }).reduce(function (m, x) {
         return Math.max(m, x.runde || 0); }, 0);
@@ -641,73 +752,100 @@
     b.scrollIntoView({ behavior: "smooth", block: "start" });
     $("korrektur-kopieren").focus({ preventScroll: true });
   }
-  async function korrekturEinsetzen() {
-    var text = $("korrektur-eingabe").value;
-    if (!text.trim()) return;
+  // Antwort auf die Korrekturbitte einsetzen, nach `id:` (kein Modus). AP13.11 §8.3: Text, Meldungsort und Feld sind
+  // Parameter, damit der Korrekturblock und der Editor („Neu schreiben lassen“) dieselbe Funktion rufen. o: {text,
+  // stand(satz, art), diagnose(d oder null), leeren(), sprung (zurück nach Schritt 5, nur der Korrekturblock), fokus}
+  // -> true, wenn eingesetzt
+  function korrekturBlock() {
+    return { text: $("korrektur-eingabe").value, sprung: true, fokus: true,
+      stand: function (x, art) { S.korrektur.stand = x; S.korrektur.art = art || ""; S.standKarte($("korrektur-ergebnis"),
+          x, art); },
+      diagnose: function (d) { S.diagnoseKarte($("korrektur-diagnose"), d); },
+      leeren: function () { $("korrektur-eingabe").value = ""; } };
+  }
+  async function korrekturEinsetzen(o) {
+    o = o || korrekturBlock();
+    var text = o.text || "";
+    if (!text.trim()) return false;
     var eigen = S.eigenerText(text);
-    if (eigen) { S.korrektur.stand = S.EIGEN[eigen]; S.korrektur.art = "fehler"; S.standKarte($("korrektur-ergebnis"),
-        S.korrektur.stand, "fehler"); return; }
+    if (eigen) { o.stand(S.EIGEN[eigen], "fehler"); return false; }
     try {
       await km.bereit();
       var saetzeVorher = S.korrekturen.map(function (k) { return k.satz; }).join("\n");
       var ziele = korrekturZiele(), ohne = S.korrekturen.some(function (k) { return !k.baustein; });
       var mo = await km.mappeFn("modus", [Z.mappe, text]);
       if (mo.modus === "keine") {
-        S.korrektur.stand = ""; S.korrektur.art = "";
-        S.standKarte($("korrektur-ergebnis"), "");
-        S.diagnoseKarte($("korrektur-diagnose"), await km.prompt("diagnose", [text])); return;
+        o.stand("", "");
+        o.diagnose(await km.prompt("diagnose", [text])); return false;
       }
-      S.diagnoseKarte($("korrektur-diagnose"), null);
-      var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, text, ziele.length === 1 ? ziele[0] : null, true]);
+      o.diagnose(null);
+      var nur = ziele.length === 1 ? ziele[0] : null;
+      // §4: betrifft die Antwort von Hand geänderte Bausteine, fragt die Seite vorher (neu beauftragte zählen nicht)
+      var hv = await handVorEinsetzen(Z.mappe, Z.kurs_md, text, "baustein", nur, null);
+      if (hv.bausteine === 0) { o.leeren(); o.stand(S.editorText("hand_bleibt"), "ok"); return false; }
+      var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, hv.text, nur, true]);
       var ids = r.ersetzt.concat(r.eingefuegt);
       if (!ids.length && ohne && mo.modus === "ersetzen") {
-        await km.stand((await km.mappeFn("antwort", [text])).kursdatei);     // ganze Kursdatei ohne passende ids
-        ids = Z.pruefung.bausteine.map(function (b) { return b.id; });
+        // ganze Kursdatei ohne passende ids: ersetzt die Einheit, also fragt die Seite für alle Handfassungen
+        hv = await handVorEinsetzen(Z.mappe, Z.kurs_md, text, "ersetzen", null, null);
+        await km.stand((await km.mappeFn("antwort", [hv.text])).kursdatei);
+        ids = Z.pruefung.bausteine.map(function (b) { return b.id; }).filter(function (id) {
+          return hv.wahl !== "erhalten" || hv.ids.indexOf(id) < 0; });
       } else if (!ids.length) {
-        S.korrektur.stand = r.fehler.join(" ") || "Kein Baustein der Antwort passte zu einer Karte.";
-            S.korrektur.art = "fehler";
-        S.standKarte($("korrektur-ergebnis"), S.korrektur.stand, "fehler"); return;
+        o.stand(r.fehler.join(" ") || "Kein Baustein der Antwort passte zu einer Karte.", "fehler");
+        return false;
       } else await km.stand(r.kurs_md);
+      handNachEinsetzen(ids, hv);
       Z.mappe.bausteine.forEach(function (k) { if (ids.indexOf(k.id) >= 0) k.neu = false; });
       S.spracheGelb = S.spracheGelb.filter(function (id) { return ids.indexOf(id) < 0; });
-      Z.mappe.durchsicht = false;
-      if (schritt() !== 5) { Z.mappe.schritt = 5; S.auf = {}; }
+      if (o.sprung && schritt() !== 5) { Z.mappe.schritt = 5; S.auf = {}; }
       await auswertung();
+      if (hatFragen(ids)) Z.mappe.durchsicht = false;
       var gleich = schleifeMerken(ids, true);
-      $("korrektur-eingabe").value = "";
+      o.leeren();
       var rot = fehlerZahl(), satz = "Eingesetzt: " + ids.length + (ids.length === 1 ? " Baustein" : " Bausteine") +
           ".";
       if (!rot && !neuBeauftragt().length) {
         S.korrektur = { text: "", offen: false, stand: "", art: "" };
-        S.standKarte($("eingabe-stand"), satz + " Alle Bausteine sind in Ordnung; sieh sie durch und geh dann weiter.",
-            "ok");
+        if (o.sprung) S.standKarte($("eingabe-stand"), satz +
+            " Alle Bausteine sind in Ordnung; sieh sie durch und geh dann weiter.", "ok");
+        else o.stand(satz, "ok");
         status("Korrektur eingesetzt", "ok");
       } else {
         // „neu“ nur, wenn sich die Sätze geändert haben; derselbe Text wie vorher wird beim Namen genannt
         var neuSaetze = S.korrekturen.map(function (k) { return k.satz; }).join("\n") !== saetzeVorher;
         var weg = ids.some(ausweg) ? " Unter der Karte stehen jetzt drei Wege, wie es weitergeht." : "";
-        S.korrektur.stand = gleich.length
+        var x = gleich.length
           ? "Die Antwort für „" + gleich[0] + "“ ist dieselbe wie vorher (Runde " +
               schleife()[ids.filter(function (id) { return schleife()[id] && schleife()[id].gleich; })[0]].rot + ")."
             + (weg || " Kopiere die Bitte noch einmal oder nimm einen anderen Chat.")
           : satz + " Noch " + (rot === 1 ? "ein Fehler" : rot + " Fehler") + (neuSaetze ?
               "; die Bitte oben ist neu, kopiere sie noch einmal." : "; die Bitte oben ist dieselbe wie vorher.") + weg;
-        S.korrektur.stand += r.fehler.length ? " " + r.fehler.join(" ") : "";
-        S.korrektur.art = "fehler"; S.korrektur.text = "";
+        x += r.fehler.length ? " " + r.fehler.join(" ") : "";
+        o.stand(x, "fehler");
+        if (o.sprung) { S.korrektur.stand = x; S.korrektur.art = "fehler"; }
+        S.korrektur.text = "";
         modellHinweisPruefen(ids);
       }
       zeichne(); geaendert(); korrekturSpaeter(0);
-      var f = !$("korrektur").hidden ? $("korrektur-kopieren") : $("weiter-5");
-      if (f && !f.hidden) f.focus({ preventScroll: true });
-    } catch (e) { zeigeFehler(e); }
+      if (o.fokus) {
+        var f = !$("korrektur").hidden ? $("korrektur-kopieren") : $("weiter-5");
+        if (f && !f.hidden) f.focus({ preventScroll: true });
+      }
+      return true;
+    } catch (e) { zeigeFehler(e); return false; }
   }
   var korrekturEingabeTimer = null;
   $("korrektur-eingabe").addEventListener("input", function (ev) {
     clearTimeout(korrekturEingabeTimer);
-    korrekturEingabeTimer = setTimeout(korrekturEinsetzen, ev.inputType === "insertFromPaste" ? 30 : 500);
+    korrekturEingabeTimer = setTimeout(function () { korrekturEinsetzen(); }, ev.inputType === "insertFromPaste" ? 30 : 500);
   });
   $("korrektur-uebernehmen").onclick = function () { clearTimeout(korrekturEingabeTimer); korrekturEinsetzen(); };
-  Object.assign(S, { knoepfe: knoepfe, korrekturSpaeter: korrekturSpaeter, neuBeauftragt: neuBeauftragt,
+  Object.assign(S, { uebersichtAendern: uebersichtAendern,
+    handFrage: handFrage, handGeaendert: handGeaendert, handIds: handIds,
+    handNachEinsetzen: handNachEinsetzen, handUebernehmen: handUebernehmen, handVorEinsetzen: handVorEinsetzen,
+    handZuruecknehmen: handZuruecknehmen, korrekturEinsetzen: korrekturEinsetzen, korrekturText: korrekturText,
+    korrekturVermerken: korrekturVermerken, knoepfe: knoepfe, korrekturSpaeter: korrekturSpaeter, neuBeauftragt: neuBeauftragt,
     schleifeMerken: schleifeMerken, typAuswahl: typAuswahl, zeichneDiagnosen: zeichneDiagnosen,
     zeichneKarten: zeichneKarten, zeichneKorrektur: zeichneKorrektur, zuKarte: zuKarte });
 })();

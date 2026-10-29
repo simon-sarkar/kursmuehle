@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 010fca3 vom 29.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 3e89d68 vom 29.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -26,6 +26,7 @@
     d="M3 5.5h14M3 10h14M3 14.5h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
   <div id="kopf-links" class="kopf-links">
     <label for="datei-oeffnen" class="kopf-link">Einheit öffnen</label>
+    <button type="button" id="editor-auf" class="kopf-link" hidden>Einheit ansehen und bearbeiten</button>
     <button type="button" id="speichern" class="kopf-link" disabled hidden>Einheit speichern</button>
     <button type="button" id="neue-einheit" class="kopf-link" hidden>Neue Einheit</button>
     <button type="button" id="schema" class="kopf-link" title="Farbschema wechseln">Dunkel</button>
@@ -39,6 +40,33 @@
   <button type="button" id="verwerfen-nein" class="textlink">Nein</button>
 </div>
 <p id="testfassung" class="testfassung" hidden></p>
+
+<!-- AP13.11: Ansicht „Einheit ansehen und bearbeiten“ (web/editor.js). Vorschau je Baustein aus gen/api.einheit_vorschau
+     in einem Shadow Root; Bearbeiten und Neu schreiben lassen am Baustein; rechts (ab 1100 px) die Liste zum Springen,
+     schmaler als aufklappbare Leiste oben. Texte aus katalog.yaml oberflaeche.editor. -->
+<dialog id="editor" class="editor" aria-labelledby="editor-titel">
+  <div class="ed-kopf">
+    <h2 id="editor-titel">Einheit ansehen und bearbeiten</h2>
+    <p id="editor-stand" class="ed-stand" role="status" aria-live="polite"></p>
+    <button type="button" id="editor-zu" class="ed-zu" aria-label="Schließen" title="Schließen">×</button>
+  </div>
+  <div class="ed-rumpf">
+    <details id="editor-liste" class="ed-liste" open>
+      <summary id="editor-liste-titel">Bausteine</summary>
+      <ol id="editor-liste-ol" class="ed-liste-ol"></ol>
+    </details>
+    <div id="editor-vorschau" class="ed-vorschau"></div>
+  </div>
+</dialog>
+<!-- AP13.11 §4: Frage vor dem Einsetzen einer Antwort, die von Hand geänderte Bausteine betrifft -->
+<dialog id="hand-frage" class="hand-frage" aria-labelledby="hand-frage-text">
+  <p id="hand-frage-text"></p>
+  <ul id="hand-frage-liste" class="hand-frage-liste"></ul>
+  <div class="hand-frage-knoepfe">
+    <button type="button" id="hand-erhalten" class="knopf haupt">Erhalten</button>
+    <button type="button" id="hand-verwerfen" class="knopf">Verwerfen</button>
+  </div>
+</dialog>
 
 <!-- AP13.23: Bitte um Rückmeldung nach dem Download, nur in der Testphase (oberflaeche.rueckmeldung_bitte_bis) -->
 <dialog id="rm-bitte" class="rm-bitte" aria-labelledby="rm-bitte-titel">
@@ -632,6 +660,7 @@
     <select id="neu-typ"></select>
     <button type="button" id="neu-hinzufuegen" class="knopf">Baustein hinzufügen</button>
   </div>
+  <button type="button" id="editor-auf-2" class="knopf editor-auf-2" hidden>Einheit ansehen und bearbeiten</button>
  </div>
 
  <input id="datei-oeffnen" class="unsichtbar" type="file" multiple accept=".zip,application/zip,.md,.yaml,.yml,image/png,image/jpeg">
@@ -670,5 +699,6 @@
 <script src="nachbau.js"></script>
 <script src="verbindung.js"></script>
 <script src="lehrplan.js"></script>
+<script src="editor.js"></script>
 </body>
 </html>

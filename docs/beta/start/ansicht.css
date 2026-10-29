@@ -90,7 +90,7 @@ p { margin: 0 0 10px; }
 .kopf .innen { max-width: 1180px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }   /* Lesebreite wie .seite.mit-rand, Band volle Breite (wie die Startseite) */
 .marke { display: inline-flex; align-items: center; gap: 10px; color: var(--kopf-text); text-decoration: none; font-weight: 700; font-size: 1.1rem; }
 .marke img { display: block; border-radius: 7px; box-shadow: 0 0 0 1px var(--kopf-strich); }
-.status { margin: 0; font-size: 0.9rem; color: var(--kopf-leise); flex: 1 1 12rem; }
+.status { margin: 0; font-size: 0.9rem; color: var(--kopf-leise); flex: 1 1 4rem; }   /* AP13.11: schmale Basis, die Links passen in eine Zeile */
 .status::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; background: var(--leer); vertical-align: 1px; }
 .status.ok::before { background: var(--kopf-ok); }
 .status.lauf::before { background: var(--ocker); }
@@ -688,6 +688,19 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
   .kopf.menue-auf .kopf-links { display: flex; }
   .kopf-links .kopf-link { display: flex; align-items: center; min-height: 44px; padding: 8px 16px; text-align: left; }
 }
+/* AP13.11: zwischen 641 und 1199 px passen die Textlinks (mit „Einheit ansehen und bearbeiten“) nicht in eine Zeile;
+   dort stehen sie im Menü wie auf dem Handy, Status und Sicherung bleiben in der Zeile */
+@media (min-width: 641px) and (max-width: 1199px) {
+  .kopf { position: relative; }
+  .kopf .innen { flex-wrap: nowrap; }
+  .status, .kopf-stand { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kopf-menue { display: inline-flex; margin-left: auto; }
+  .kopf-links { display: none; position: absolute; top: 100%; right: 8px; z-index: 40; min-width: 15rem; flex-direction: column;
+    align-items: stretch; gap: 0; padding: 4px 0; background: var(--kopf); border-radius: 0 0 10px 10px;
+    box-shadow: 0 8px 18px var(--schatten); }
+  .kopf.menue-auf .kopf-links { display: flex; }
+  .kopf-links .kopf-link { display: flex; align-items: center; min-height: 44px; padding: 8px 16px; text-align: left; }
+}
 
 /* Schleife: drei Wege unter der Karte; weggelassene Karte gestrichen */
 .ausweg { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--linie); border-left: 4px solid var(--warn); border-radius: 8px; background: var(--warn-flaeche); }
@@ -710,3 +723,107 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
   color: var(--link); cursor: pointer; font-size: 1rem; line-height: 1; user-select: none; }
 .info-knopf:hover, .info-knopf[aria-expanded=true] { background: var(--creme); }
 .info-text { background: var(--creme); border-radius: var(--rund); padding: 10px 12px; line-height: 1.45; }
+/* AP13.11: Ansicht „Einheit ansehen und bearbeiten“ (editor.js). Eine Fläche über der Schrittfolge; ab 1100 px links die
+ * Vorschau in Lesebreite, rechts die Liste der Bausteine; schmaler die Liste als aufklappbare Leiste oben. Jeder Baustein
+ * steht auf weißer Fläche wie auf der Kursseite; Knöpfe sind immer sichtbar. „Von Hand geändert“ in Ocker wie alles, was
+ * von der Lehrkraft kommt. */
+.editor { width: 100vw; max-width: 100vw; height: 100vh; max-height: 100vh; margin: 0; padding: 0; border: 0; background: var(--grund);
+  color: var(--text); overflow: hidden; overflow: clip; }
+.editor[open] { display: flex; flex-direction: column; }
+.editor::backdrop { background: rgba(0, 0, 0, 0.45); }
+body.editor-offen { overflow: hidden; }
+.ed-kopf { flex: none; display: flex; align-items: center; gap: 8px 16px; padding: 10px 16px; background: var(--kopf); color: var(--kopf-text); }
+.ed-kopf h2 { margin: 0; font-size: 1.05rem; font-weight: 650; }
+.ed-stand { flex: 1 1 auto; margin: 0; font-size: 0.9rem; color: var(--kopf-ok); min-width: 0; }
+.ed-zu { flex: none; width: 44px; height: 44px; border: 0; border-radius: 8px; background: none; color: var(--kopf-text); font-size: 1.6rem;
+  line-height: 1; cursor: pointer; }
+.ed-zu:hover { background: var(--kopf-hover); }
+.ed-rumpf { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
+.ed-vorschau { width: 100%; max-width: 900px; margin: 0 auto; padding: 8px 16px 48px; }
+.ed-liste { position: sticky; top: 0; z-index: 2; background: var(--flaeche); border-bottom: 1px solid var(--linie); }
+.ed-liste > summary { padding: 10px 16px; min-height: 44px; font-weight: 650; cursor: pointer; }
+.ed-liste-ol { list-style: none; margin: 0; padding: 0 8px 10px; max-height: 50vh; overflow-y: auto; }
+.ed-sprung { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 40px; padding: 6px 8px; border: 0; border-radius: 6px;
+  background: none; font: inherit; font-size: 0.9rem; color: var(--text); text-align: left; cursor: pointer; }
+.ed-sprung:hover { background: var(--grund); }
+.ed-l-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.ed-l-typ { font-size: 0.75rem; color: var(--leise); }
+.ed-l-titel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ed-l-hand { color: var(--ocker-tief); }
+.ed-punkt { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--leer); }
+.ed-punkt.status-ok { background: var(--ok); }
+.ed-punkt.status-warnung { background: var(--warn); }
+.ed-punkt.status-fehler { background: var(--fehler); }
+.ed-nr { flex: none; min-width: 1.6em; height: 1.6em; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
+  background: var(--creme); color: var(--text); font-weight: 650; font-size: 0.78rem; }
+@media (min-width: 1100px) {
+  .ed-rumpf { flex-direction: row-reverse; align-items: flex-start; }
+  .ed-vorschau { flex: 1 1 auto; margin: 0; padding: 12px 24px 64px; max-width: none; display: block; }
+  .ed-vorschau > * { max-width: 880px; margin-left: auto; margin-right: auto; }
+  .ed-liste { flex: none; width: 300px; position: sticky; top: 0; align-self: flex-start; max-height: 100%; overflow-y: auto;
+    border-bottom: 0; border-left: 1px solid var(--linie); min-height: 100%; }
+  .ed-liste > summary { pointer-events: none; list-style: none; color: var(--leise); font-size: 0.85rem; text-transform: uppercase;
+    letter-spacing: 0.05em; }
+  .ed-liste > summary::-webkit-details-marker { display: none; }
+  .ed-liste-ol { max-height: none; }
+}
+.ed-abschnitt { margin: 22px 0 8px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--leise); }
+.ed-b { margin: 0 0 14px; padding: 10px 12px 12px; border: 1px solid var(--linie); border-radius: var(--rund); background: var(--flaeche); }
+.ed-b.status-fehler { border-color: var(--fehler); }
+.ed-b.ed-unter { padding: 6px 12px; background: none; border-style: dashed; }
+.ed-b-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 8px; }
+.ed-b-titel { flex: 1 1 16rem; min-width: 0; display: flex; align-items: baseline; gap: 8px; margin: 0; font-size: 1rem; font-weight: 650; }
+.ed-b-titel:focus { outline: 2px solid var(--fokus); outline-offset: 2px; border-radius: 4px; }
+.ed-typ { flex: none; font-size: 0.8rem; font-weight: 600; color: var(--leise); }
+.ed-titel-text { min-width: 0; overflow-wrap: anywhere; }
+.ed-marken { display: inline-flex; gap: 6px; }
+.ed-marken:empty { display: none; }
+.ed-hand { padding: 1px 8px; border: 1px solid var(--lehrkraft-kante); border-radius: 999px; background: var(--lehrkraft); color: var(--text);
+  font-size: 0.78rem; white-space: nowrap; }
+.ed-status.fehler { color: var(--fehler); font-size: 0.85rem; font-weight: 600; }
+.ed-b-knoepfe { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-left: auto; }
+.ed-zurueck { font-size: 0.88rem; }
+.ed-meldungen { list-style: none; width: 100%; margin: 4px 0 0; padding: 0; font-size: 0.9rem; }
+.ed-meldungen:empty { display: none; }
+.ed-meldungen li.fehler { color: var(--fehler); }
+.ed-meldungen li.warnung { color: var(--warn); }
+.ed-meldungen li.ok { color: var(--ok); }
+.ed-flaeche { border: 1px solid #d6d9de; border-radius: 8px; }
+.ed-platz { padding: 12px 14px; border: 1px dashed var(--chat-kante); border-radius: 8px; background: var(--chat); font-size: 0.92rem; }
+.ed-platz p { margin: 0; }
+.ed-platz + .ed-flaeche { margin-top: 8px; }
+.ed-platz-fehler { border-color: var(--fehler); }
+.ed-b-werk, .ed-b-neu { display: flex; flex-direction: column; gap: 8px; }
+.ed-b-neu { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--linie); }
+.ed-feld textarea { width: 100%; }
+.ed-text, .ed-antwort { font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace; }
+.ed-knoepfe { display: flex; flex-wrap: wrap; gap: 8px; }
+.ed-format { font-size: 0.85rem; color: var(--leise); }
+.ed-format p { margin: 0 0 4px; }
+.ed-format .ed-format-titel { font-weight: 650; }
+.ed-format code { font-size: 0.82rem; }
+.editor-auf-2 { margin-top: 12px; }
+/* Frage vor dem Einsetzen über Handänderungen (§4) */
+.hand-frage { width: min(32rem, calc(100vw - 32px)); padding: 20px 22px; border: 1px solid var(--linie); border-radius: var(--rund);
+  background: var(--flaeche); color: var(--text); }
+.hand-frage::backdrop { background: rgba(0, 0, 0, 0.45); }
+.hand-frage p { margin: 0 0 10px; }
+.hand-frage-liste { margin: 0 0 16px; padding-left: 20px; }
+.hand-frage-knoepfe { display: flex; flex-wrap: wrap; gap: 8px 12px; }
+.k-hand { padding: 1px 8px; border: 1px solid var(--lehrkraft-kante); border-radius: 999px; background: var(--lehrkraft); color: var(--text);
+  font-size: 0.78rem; white-space: nowrap; }
+/* §9: Kursübersicht als erster Eintrag; „Darstellung“ mit denselben Bildchen wie im Schritt Aussehen */
+.ed-ue { border-width: 2px; }
+.ed-darstellung-l { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; width: 100%; }
+.ed-darstellung-t { font-size: 0.85rem; font-weight: 600; color: var(--leise); }
+.ed-darstellung { display: flex; flex-wrap: wrap; gap: 6px; }
+.ed-format-wahl { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; width: 92px; padding: 4px; border: 1px solid var(--linie);
+  border-radius: 8px; background: var(--flaeche); color: var(--text); font: inherit; font-size: 0.75rem; line-height: 1.2; cursor: pointer; }
+.ed-format-wahl[aria-checked=true] { border: 2px solid var(--ocker-tief); background: var(--gewaehlt); font-weight: 650; }
+.ed-format-mini svg { display: block; width: 72px; height: 46px; border-radius: 4px; }
+.ed-ue-zeile { margin: 0 0 8px; font-size: 0.88rem; color: var(--leise); }
+.ed-ue-werk { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--linie); }
+.ed-ue-werk select, .ed-ue-werk input[type=text] { max-width: 28rem; }
+.ed-ue-reihe { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 12px; }
+.ed-ue-hochladen:focus-within { outline: 3px solid var(--fokus); outline-offset: 2px; }
+.ed-ue-meldung.fehler { color: var(--fehler); }

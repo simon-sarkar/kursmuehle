@@ -382,5 +382,6 @@
     if (z.classList.contains("zu")) oeffnen(z.dataset.key);
     bildSetzen(f, z.dataset.datei);
   });
-  Object.assign(S, { bildSetzen: bildSetzen, bildnamen: bildnamen, zeichneBilder: zeichneBilder, bildMasse: masse });
+  Object.assign(S, { bildSetzen: bildSetzen, bildnamen: bildnamen, zeichneBilder: zeichneBilder, bildMasse: masse,
+    vorschauUrl: vorschauUrl });
 })();
