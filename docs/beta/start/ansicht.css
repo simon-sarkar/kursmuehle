@@ -733,8 +733,7 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .editor::backdrop { background: rgba(0, 0, 0, 0.45); }
 body.editor-offen { overflow: hidden; }
 .ed-kopf { flex: none; display: flex; align-items: center; gap: 8px 16px; padding: 10px 16px; background: var(--kopf); color: var(--kopf-text); }
-.ed-kopf h2 { margin: 0; font-size: 1.05rem; font-weight: 650; }
-.ed-stand { flex: 1 1 auto; margin: 0; font-size: 0.9rem; color: var(--kopf-ok); min-width: 0; }
+.ed-kopf h2 { flex: 1 1 auto; margin: 0; font-size: 1.05rem; font-weight: 650; }
 .ed-zu { flex: none; width: 44px; height: 44px; border: 0; border-radius: 8px; background: none; color: var(--kopf-text); font-size: 1.6rem;
   line-height: 1; cursor: pointer; }
 .ed-zu:hover { background: var(--kopf-hover); }
@@ -783,6 +782,18 @@ body.editor-offen { overflow: hidden; }
 .ed-status.fehler { color: var(--fehler); font-size: 0.85rem; font-weight: 600; }
 .ed-b-knoepfe { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-left: auto; }
 .ed-zurueck { font-size: 0.88rem; }
+/* AP13.33 §1.5: Meldung zur letzten Handlung am Baustein (unter seinem Kopf), bis zur nächsten Handlung */
+.ed-b-meldung { margin: -2px 0 8px; font-size: 0.9rem; font-weight: 600; color: var(--ok); }
+.ed-b-meldung.fehler { color: var(--fehler); }
+.ed-b-meldung:empty { display: none; }
+/* §2.2: Frage „Änderungen verwerfen?“ unter den Knöpfen des Textfelds */
+.ed-verwerfen { padding: 10px 12px; border: 1px solid var(--warn); border-radius: 8px; background: var(--flaeche); }
+.ed-verwerfen p { margin: 0 0 8px; font-weight: 600; }
+/* §1.4: welche Fragen nach einer Änderung neu durchzusehen sind (Schritt Fragen) */
+.durchsicht-neu { margin: 0 0 10px; padding: 8px 12px; border-left: 4px solid var(--warn); border-radius: 6px;
+  background: var(--flaeche); font-weight: 600; }
+/* §1.8: Hinweise im Formular einer Kachel */
+.ed-ue-hinweis { margin: -4px 0 0; font-size: 0.85rem; color: var(--leise); }
 .ed-meldungen { list-style: none; width: 100%; margin: 4px 0 0; padding: 0; font-size: 0.9rem; }
 .ed-meldungen:empty { display: none; }
 .ed-meldungen li.fehler { color: var(--fehler); }
@@ -822,8 +833,86 @@ body.editor-offen { overflow: hidden; }
 .ed-format-wahl[aria-checked=true] { border: 2px solid var(--ocker-tief); background: var(--gewaehlt); font-weight: 650; }
 .ed-format-mini svg { display: block; width: 72px; height: 46px; border-radius: 4px; }
 .ed-ue-zeile { margin: 0 0 8px; font-size: 0.88rem; color: var(--leise); }
-.ed-ue-werk { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--linie); }
+.ed-ue-werk { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--linie); scroll-margin: 24px 0; }
+.ed-b-werk { scroll-margin: 24px 0; }
 .ed-ue-werk select, .ed-ue-werk input[type=text] { max-width: 28rem; }
 .ed-ue-reihe { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 12px; }
 .ed-ue-hochladen:focus-within { outline: 3px solid var(--fokus); outline-offset: 2px; }
 .ed-ue-meldung.fehler { color: var(--fehler); }
+/* AP13.30: Gliederung im Editor: „Hier neue Kachel beginnen“ zwischen zwei Bausteinen (breit beim Überfahren, schmal
+   immer), Auswahl „In Kachel“ am Baustein, Formular „Weitere Einheit“ */
+.ed-teilen { display: flex; align-items: center; justify-content: center; min-height: 28px; margin: -8px 0 6px; }
+.ed-teilen::before, .ed-teilen::after { content: ""; flex: 1 1 auto; border-top: 1px dashed var(--linie); }
+.ed-teilen-knopf { flex: none; margin: 0 10px; min-height: 32px; padding: 2px 12px; border: 1px dashed var(--ocker-tief);
+  border-radius: 999px; background: var(--flaeche); color: var(--text); font: inherit; font-size: 0.85rem; cursor: pointer; }
+.ed-teilen-knopf:hover { background: var(--lehrkraft); }
+.ed-teilen.offen { flex-direction: column; align-items: stretch; gap: 8px; margin: 0 0 14px; padding: 10px 12px;
+  border: 1px dashed var(--ocker-tief); border-radius: var(--rund); background: var(--flaeche); }
+.ed-teilen.offen::before, .ed-teilen.offen::after { display: none; }
+.ed-teilen-titel { max-width: 28rem; }
+@media (min-width: 1100px) and (hover: hover) {
+  .ed-teilen:not(.offen) .ed-teilen-knopf { opacity: 0; transition: opacity 0.12s; }
+  .ed-teilen:not(.offen)::before, .ed-teilen:not(.offen)::after { border-top-color: transparent; }
+  .ed-teilen:not(.offen):hover .ed-teilen-knopf, .ed-teilen:not(.offen) .ed-teilen-knopf:focus-visible { opacity: 1; }
+  .ed-teilen:not(.offen):hover::before, .ed-teilen:not(.offen):hover::after,
+  .ed-teilen:not(.offen):focus-within::before, .ed-teilen:not(.offen):focus-within::after { border-top-color: var(--linie); }
+}
+.ed-in-kachel-l { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--leise); white-space: nowrap; }
+.ed-in-kachel { max-width: 14rem; min-height: 32px; font-size: 0.85rem; }
+.ed-w-thema-l { flex: 1 1 18rem; }
+.ed-w-thema-l input { width: 100%; max-width: 28rem; }
+.ed-w-minuten-l input { width: 7rem; }
+/* AP13.31: Plan in „Ich steuere“: Kurs beschreiben, Darstellung, Kacheln mit Elementen. Im Format „Kacheln“ ein Raster
+   mit Fläche oben (wie die Kachel auf der Kursseite), sonst Abschnitte untereinander. */
+.plan { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
+.plan-beschreiben { display: flex; flex-direction: column; gap: 12px; }
+.plan-beschreiben textarea { width: 100%; }
+.plan .unterkopf { margin: 6px 0 0; }
+.plan-uebersicht { display: flex; flex-direction: column; gap: 10px; }
+.plan-zeile, .plan-leer, .plan-hinweis { margin: 0; }
+.plan-zeit { margin: 0; }
+.plan-kacheln { display: flex; flex-direction: column; gap: 12px; }
+.plan-f-kacheln { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); align-items: start; gap: 14px; }
+.plan-kachel { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 10px 12px 12px; border: 1px solid var(--linie);
+  border-radius: var(--rund); background: var(--flaeche); }
+.plan-f-kacheln .plan-kachel::before { content: ""; display: block; height: 34px; margin: -10px -12px 0; border-radius: var(--rund) var(--rund) 0 0;
+  background: var(--creme); }
+.plan-k-kopf { display: flex; align-items: center; gap: 4px 6px; min-width: 0; }
+.plan-k-woche { flex: none; font-size: 0.8rem; color: var(--leise); }
+.plan input.plan-k-titel { flex: 1 1 auto; width: auto; min-width: 0; min-height: 38px; padding: 4px 8px; border: 0; border-left: 3px solid var(--lehrkraft-kante);
+  border-radius: 0; background: transparent; font-size: 1.02rem; font-weight: 650; }
+.plan input.plan-k-titel:hover, .plan input.plan-k-titel:focus { background: var(--grund); }
+.plan-k-pfeile { flex: none; display: inline-flex; }
+.plan-k-text-l textarea { width: 100%; font-size: 15px; }
+.plan-elemente { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.plan-el { border: 1px solid var(--linie); border-radius: 8px; background: var(--flaeche); min-width: 0; }
+.plan-el.offen { border-color: var(--ocker-tief); }
+.plan-el.aus { opacity: 0.62; }
+.plan-el-zeile { display: flex; align-items: flex-start; gap: 8px; width: 100%; min-height: 44px; padding: 8px 10px; border: 0; border-radius: 8px;
+  background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.plan-el-zeile:hover { background: var(--grund); }
+.plan-el-nr { flex: none; min-width: 1.6em; height: 1.6em; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
+  background: var(--creme); font-weight: 650; font-size: 0.8rem; }
+.plan-el-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.plan-el-kopf { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.plan-el-typ-t, .plan-el-min-t { font-size: 0.8rem; font-weight: 600; color: var(--leise); }
+.plan-el-titel-t { font-weight: 600; overflow-wrap: anywhere; }
+.plan-el-satz-t { font-size: 0.88rem; color: var(--leise); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden; }
+.plan-el-form { display: flex; flex-direction: column; gap: 8px; padding: 8px 10px 10px; border-top: 1px solid var(--linie); }
+.plan-el-reihe { display: flex; flex-wrap: wrap; gap: 8px 12px; }
+.plan-el-reihe > .feld { flex: 1 1 10rem; min-width: 0; }
+.plan-el-form select, .plan-el-form input[type=text], .plan-el-form textarea { width: 100%; max-width: 100%; }
+.plan-el-min-l input { width: 6rem; }
+.plan-el-kachel-l { white-space: normal; }
+.plan-el-kachel { max-width: 100%; }
+.plan-el-knoepfe { align-items: center; }
+.plan-el-knoepfe .klein { font-size: 1.05rem; }
+.plan-k-leer, .plan-rueck { margin: 0; font-size: 0.9rem; }
+.plan-el-plus { align-self: flex-start; }
+.plan-k-plus { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 64px; padding: 10px; border: 2px dashed var(--linie);
+  border-radius: var(--rund); background: var(--grund); color: var(--text); font: inherit; font-weight: 650; cursor: pointer; }
+.plan-k-plus:hover { border-color: var(--ocker-tief); }
+.plan-f-kacheln .plan-k-plus { min-height: 150px; flex-direction: column; }
+.plan-plus { font-size: 26px; line-height: 1; font-weight: 400; }
+.plan input.plan-el-titel { border-left: 3px solid var(--lehrkraft-kante); background: var(--lehrkraft); }

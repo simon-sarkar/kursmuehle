@@ -85,10 +85,32 @@ var km = (function () {
     return a.ergebnis;
   }
 
+  // AP13.31: Benennt die Antwort des Chats oder der Editor einen Abschnitt um, trägt die Kachel des Plans (`kacheln`) den
+  // neuen Titel; „Was soll hier rein?“ gilt so weiter. Zuordnung über die Bausteine, deren `abschnitt` die Kachel war: alle
+  // tragen danach denselben neuen Titel, keiner mehr den alten, und den neuen hat noch keine Kachel der Einheit.
+  function kachelnNachziehen(mappe, neu) {
+    var kacheln = mappe.kacheln || [];
+    if (!kacheln.length) return;
+    var nachId = {};
+    (neu || []).forEach(function (b) { nachId[b.id] = b; });
+    kacheln.forEach(function (ka) {
+      var tag = ka.einheit || "";
+      var vorher = (mappe.bausteine || []).filter(function (b) { return b.abschnitt === ka.titel && (b.einheit || "") === tag; });
+      var titel = {};
+      vorher.forEach(function (b) { var n = nachId[b.id]; if (n && n.abschnitt) titel[n.abschnitt] = 1; });
+      var t = Object.keys(titel);
+      if (t.length !== 1 || t[0] === ka.titel) return;
+      var bleibt = (neu || []).some(function (b) { return b.abschnitt === ka.titel && (b.einheit || "") === tag; });
+      var schon = kacheln.some(function (x) { return x !== ka && x.titel === t[0] && (x.einheit || "") === tag; });
+      if (!bleibt && !schon) ka.titel = t[0];
+    });
+  }
+
   // Der Worker gleicht eine Kopie der Mappe ab und ändert dabei nur diese Schlüssel. Was die Seite während der Anfrage
   // an derselben Mappe gesetzt hat (Schritt, Durchsicht, Prüffragen), ginge sonst mit der Antwort verloren.
   function mappeUebernehmen(gesendet, antwort) {
     if (zustand.mappe !== gesendet) { zustand.mappe = antwort; return; }
+    kachelnNachziehen(gesendet, antwort.bausteine);
     ["bausteine", "format", "kursmuehle"].forEach(function (k) { gesendet[k] = antwort[k]; });
     // AP13.11: Handänderungen ohne Baustein fallen weg (wie gen/mappe.py abgleich); was die Seite inzwischen gesetzt hat, bleibt
     if (gesendet.hand) {
@@ -113,8 +135,10 @@ var km = (function () {
     if (!String(text || "").trim()) {
       zustand.kurs_md = "";
       zustand.pruefung = { ok: true, bausteine: [], diagnosen: [], adressen: [], kursdatei: "" };
+      var vorher = JSON.stringify(gesendet.bausteine);
       var g = await anfrage("abgleich", { mappe: gesendet, bausteine: [] });
-      mappeUebernehmen(gesendet, g.ergebnis);
+      // AP13.31: hat die Seite die geplanten Karten inzwischen geändert (Plan in „Ich steuere“), gilt ihr Stand
+      if (JSON.stringify(gesendet.bausteine) === vorher) mappeUebernehmen(gesendet, g.ergebnis);
       zustand.kennzahlen = await mappeFn("kennzahlen", [zustand.mappe, zustand.pruefung, null,
           zustand.steckbrief_text]);
       return zustand.pruefung;
@@ -429,6 +453,9 @@ window.km = km;
   function inhalt() { return !!(Z.kurs_md && Z.kurs_md.trim()); }
   function fehlerZahl() { return Z.pruefung ? Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler"; })
       .length : 0; }
+  // AP13.34 §3.3: gelbe Hinweise der Prüfung (die Karten zeigen sie als „Hinweis“)
+  function gelbZahl() { return Z.pruefung ? Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "warnung"; })
+      .length : 0; }
   function markiert() { return Z.mappe ? Z.mappe.bausteine.filter(function (k) { return k.neu; }) : []; }
 
   // Kopieren nur in der Geste (Safari): der Text liegt fertig im Feld; ohne Zwischenablage markieren, execCommand
@@ -452,6 +479,26 @@ window.km = km;
           fertig(true); }, rueckfall);
       else rueckfall();
     } catch (e) { rueckfall(); }
+  }
+
+  // AP13.33 N5: Kopieren eines Textes, der erst noch entsteht (`versprechen` -> Text). Mit ClipboardItem geht der Auftrag
+  // an die Zwischenablage noch in der Geste (Safari und Chromium nehmen ein Versprechen als Inhalt); sonst nach dem
+  // Warten wie kopieren() (writeText, Rückfall Markieren und execCommand; lehnt der Browser ab, steht dort, dass es
+  // nicht ging, nie „Kopiert“)
+  function kopierenSpaeter(versprechen, feld, stand, satz, fertigCb) {
+    var mitItem = typeof window.ClipboardItem === "function" && navigator.clipboard && navigator.clipboard.write;
+    if (!mitItem) {
+      return versprechen.then(function (t) { if (t) { feld.value = t; kopieren(t, feld, stand, satz, fertigCb); } });
+    }
+    var text = versprechen.then(function (t) { if (!t) throw new Error("kein Text"); feld.value = t; return t; });
+    var blob = text.then(function (t) { return new Blob([t], { type: "text/plain" }); });
+    var geschrieben;
+    try { geschrieben = navigator.clipboard.write([new ClipboardItem({ "text/plain": blob })]); }
+    catch (e) { geschrieben = Promise.reject(e); }
+    return geschrieben.then(function () {
+      stand.textContent = satz; stand.classList.remove("fehler"); stand.classList.add("stand", "ok");
+      if (fertigCb) fertigCb();
+    }, function () { return text.then(function (t) { kopieren(t, feld, stand, satz, fertigCb); }, function () {}); });
   }
 
   // c5: kurze Meldung unter einem Knopf („Text kopiert“): Mühle ohne Drehung (S.muehleSymbol aus chat.js) und Text,
@@ -613,9 +660,11 @@ window.km = km;
     S.spracheGelb = S.spracheGelb.filter(function (id) { return pr.diagnosen.some(function (d) {
         return d.baustein === id && d.regel === "sprache.lang"; }); });
     // AP13.11 §8.9: gelbe Bitten nicht für von Hand geänderte Bausteine, rote Fehler bleiben
+    // AP13.30 §4a: mit der Mappe auch die Bitte um geplante Bausteine, die nach der Antwort leer blieben
     S.korrekturen = await km.prompt("korrektur", [pr, S.spracheGelb, Z.mappe && Z.mappe.hand ? Object.keys(Z.mappe.hand) :
-        []]);
-    var fc = await km.prompt("fachcheck", [pr, Z.steckbrief_text]);
+        [], Z.mappe || null]);
+    // AP13.30 §4b: Thema der laufenden Einheit wie im Auftrag
+    var fc = await km.prompt("fachcheck", [pr, Z.steckbrief_text, Z.mappe || {}]);
     $("gegen-text-feld").value = fc.text;
     Z.fragen = S.fragenListe; Z.korrekturen = S.korrekturen;
     S.korrektur.text = "";
@@ -677,6 +726,7 @@ window.km = km;
     S.knoepfe();
     S.zeichneSchritte();
     if (S.zeichneEditor) S.zeichneEditor();
+    if (S.zeichnePlan) S.zeichnePlan();
   }
 
   function felderFuellen() {
@@ -694,7 +744,8 @@ window.km = km;
       "a-abschluss": S.angaben.abschluss, "a-portionierung": S.angaben.portionierung, "a-chat": Z.mappe.chat || "",
       "a-material": Z.mappe.material || "", "f-thema": e.thema || "", "f-jahrgang": zgF ? "" : jgF,
           "f-zielgruppe": zgF, "f-minuten": e.minuten || 45 };
-    if (Z.mappe.anhaengen && !Z.mappe.bausteine.some(function (k) { return k.einheit === Z.mappe.anhaengen; })) {
+    if (Z.mappe.anhaengen && Z.mappe.laufend !== Z.mappe.anhaengen && !Z.mappe.bausteine.some(function (k) {
+        return k.einheit === Z.mappe.anhaengen; })) {
       werte["f-thema"] = undefined; werte["f-minuten"] = undefined;    // nächste Einheit: Felder gehören der Lehrkraft
     }
     Object.keys(werte).forEach(function (id) {
@@ -715,13 +766,78 @@ window.km = km;
     ["material-grenze", "r-material-grenze"].forEach(function (id) {
       $(id).textContent = zeile; $(id).classList.toggle("fehler", zuViel); });
   }
-  Object.assign(S, { $: $, AUTO: AUTO, FARBEN: FARBEN, KOPIERT: KOPIERT, SCHRITTE: SCHRITTE,
+  // AP13.33 §2.1: Fokus an die erste Stelle der Liste (Element oder id), die zu sehen und bedienbar ist. Für Knöpfe, die
+  // sich beim Klick selbst ausblenden, sperren oder ersetzen: sonst fällt der Fokus auf body. -> Element oder null
+  function fokus(liste, ruhig) {
+    for (var i = 0; i < liste.length; i++) {
+      var e = typeof liste[i] === "string" ? $(liste[i]) : liste[i];
+      if (!e || !e.focus || !document.contains(e) || e.disabled || !e.getClientRects().length ||
+          e.closest("[hidden], [inert]")) continue;
+      e.focus({ preventScroll: !!ruhig });
+      if (document.activeElement === e) return e;
+    }
+    return null;
+  }
+  // nur, wenn der Fokus nirgends mehr ist (body) oder in einem Teil, der gerade verschwindet
+  function fokusRetten(liste, teil) {
+    var a = document.activeElement;
+    if (a && a !== document.body && !(teil && teil.contains(a)) && a.getClientRects().length) return null;
+    return fokus(liste);
+  }
+
+  // AP13.33 §2.5: Kachelgruppen (role=radiogroup mit Knöpfen role=radio) wie native Radioknöpfe: ein Tab-Halt je Gruppe
+  // (die gewählte Kachel, sonst die erste), Pfeiltasten, Pos1 und Ende wechseln Fokus und Wahl (Klick auf die Kachel),
+  // Leertaste wählt. Gilt für jede Gruppe der Seite, auch für später gebaute (Beobachter auf dem Dokument). Eine Kachel,
+  // die ein label ist (Farbe „Eigene“ mit Farbwähler), bekommt statt des Klicks das Ereignis `km-pfeilwahl`: ein Klick
+  // auf das label öffnete den Farbwähler, und der Fokus bliebe darin.
+  function radios(gruppe) {
+    return Array.prototype.filter.call(gruppe.querySelectorAll("[role=radio]"), function (r) {
+      return r.tagName !== "INPUT" && r.closest("[role=radiogroup]") === gruppe;
+    });
+  }
+  function bedienbar(r) { return !r.disabled && !r.hidden && !!r.getClientRects().length; }
+  function radioTabs() {
+    Array.prototype.forEach.call(document.querySelectorAll("[role=radiogroup]"), function (g) {
+      var rs = radios(g); if (!rs.length) return;
+      var halt = rs.filter(function (r) { return r.getAttribute("aria-checked") === "true" && bedienbar(r); })[0] ||
+          rs.filter(bedienbar)[0] || rs[0];
+      rs.forEach(function (r) { var soll = r === halt ? 0 : -1; if (r.tabIndex !== soll) r.tabIndex = soll; });
+    });
+  }
+  var radioPlan = 0;
+  function radioSpaeter() { if (!radioPlan) radioPlan = requestAnimationFrame(function () { radioPlan = 0; radioTabs(); }); }
+  if (window.MutationObserver) new MutationObserver(radioSpaeter).observe(document.documentElement, { subtree: true,
+      childList: true, attributes: true, attributeFilter: ["aria-checked", "hidden", "disabled", "open"] });
+  document.addEventListener("keydown", function (ev) {
+    var r = ev.target, schritt = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[ev.key];
+    if (!r || !r.getAttribute || r.getAttribute("role") !== "radio" || r.tagName === "INPUT" || ev.altKey || ev.ctrlKey ||
+        ev.metaKey) return;
+    var g = r.closest("[role=radiogroup]"); if (!g) return;
+    var rs = radios(g).filter(function (x) { return x === r || bedienbar(x); }), i = rs.indexOf(r);
+    if (i < 0 || (!schritt && ev.key !== "Home" && ev.key !== "End")) return;
+    ev.preventDefault();
+    var ziel = ev.key === "Home" ? rs[0] : ev.key === "End" ? rs[rs.length - 1] : rs[(i + schritt + rs.length) % rs.length];
+    if (ziel === r) return;
+    var wert = ziel.dataset.wert, sel = wert !== undefined ? "[role=radio][data-wert='" + CSS.escape(wert) + "']" : null;
+    ziel.focus();
+    if (ziel.tagName === "LABEL") ziel.dispatchEvent(new CustomEvent("km-pfeilwahl", { bubbles: true }));
+    else ziel.click();
+    // die Wahl kann die Gruppe neu zeichnen oder den Fokus woandershin schicken; er bleibt auf der gewählten Kachel
+    var zurueck = function () {
+      var x = document.contains(ziel) ? ziel : sel && g.isConnected ? g.querySelector(sel) : null;
+      if (x && document.activeElement !== x && bedienbar(x)) x.focus();
+    };
+    zurueck(); setTimeout(zurueck, 0);
+  });
+
+  Object.assign(S, { $: $, AUTO: AUTO, FARBEN: FARBEN, KOPIERT: KOPIERT, SCHRITTE: SCHRITTE, fokus: fokus,
+    fokusRetten: fokusRetten, radioTabs: radioTabs,
     STANDARD_FARBE: STANDARD_FARBE, Z: Z, ZWEIG_TEXT: ZWEIG_TEXT, auswertung: auswertung, autosave: autosave,
     bildGroesse: bildGroesse, bilderStandard: bilderStandard, bilderWert: bilderWert, bildwuensche: bildwuensche,
     chatInfo: chatInfo, datumZeit: datumZeit, download: download, editorText: editorText, einheitTag: einheitTag, el: el,
-    erledigtBis: erledigtBis, fehlerText: fehlerText, fehlerZahl: fehlerZahl, felderFuellen: felderFuellen,
+    erledigtBis: erledigtBis, fehlerText: fehlerText, fehlerZahl: fehlerZahl, gelbZahl: gelbZahl, felderFuellen: felderFuellen,
     formularname: formularname, geaendert: geaendert, heute: heute, hinweiseSichern: hinweiseSichern, hoehe: hoehe,
-    inhalt: inhalt, karteNach: karteNach, kb: kb, kopieren: kopieren, ladenStarten: ladenStarten, markiert: markiert,
+    inhalt: inhalt, karteNach: karteNach, kb: kb, kopieren: kopieren, kopierenSpaeter: kopierenSpaeter, ladenStarten: ladenStarten, markiert: markiert,
     mitMinuten: mitMinuten, neuPruefen: neuPruefen, nrVon: nrVon, oberText: oberText, schritt: schritt,
     sektion: sektion, sichtbareSchritte: sichtbareSchritte, status: status, teileOffen: teileOffen, texte: texte,
     zeichne: zeichne, zeit: zeit, zeitSelbst: zeitSelbst, zweig: zweig });

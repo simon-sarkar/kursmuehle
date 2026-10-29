@@ -33,9 +33,14 @@
     var leer = eigene.filter(function (k) { return k.geplant; }).length;
     var voll = eigene.filter(function (k) { return !k.geplant; }).length;
     $("art-leer-l").hidden = !(leer && voll);
+    // AP13.31: Plan mit mehr als einer Kachel („Ich steuere“, vor der ersten Antwort): ein Text je Kachel als Wahl
+    $("art-kachel-l").hidden = !(S.planKachelZahl && S.planKachelZahl() > 1);
+    $("art-kachel-t").textContent = S.editorText("plan_kachel_fuer_kachel");
     var art = document.querySelector("input[name=text-art]:checked");
-    if (art && art.closest("label").hidden) document.querySelector("input[name=text-art][value=einheit]")
-        .checked = true;
+    if (art && art.closest("label").hidden) {
+      document.querySelector("input[name=text-art][value=einheit]").checked = true;
+      if (texte.art !== "einheit") textSpaeter(0);
+    }
     $("chat-aufwand").hidden = !c.aufwand;
     $("chat-aufwand").textContent = c.aufwand || "";
     var tw = $("teil-wahl"); tw.innerHTML = "";
@@ -73,6 +78,8 @@
     $("kopier-warnung-text").textContent = t;
     $("karten-warnung").hidden = !t || zweig() !== "steuer";
     $("karten-warnung").textContent = t;
+    var pw = $("plan-warnung");                    // AP13.31: dieselbe Warnung im Plan („Ich steuere“)
+    if (pw) { pw.hidden = !t || zweig() !== "steuer"; pw.textContent = t; }
   }
   $("auffuellen").onclick = async function () {
     if (!Z.mappe) return;
@@ -94,15 +101,18 @@
     clearTimeout(S.textTimer);
     S.textTimer = setTimeout(texteErzeugen, ms === undefined ? 400 : ms);
   }
-  async function texteErzeugen() {
+  // AP13.30: das Versprechen erfüllt sich erst mit dem Text des neuesten Laufs (der Editor wartet darauf)
+  function texteErzeugen() { var p = texteLauf(); texte.lauf = p; return p; }
+  async function texteLauf() {
     if (!Z.geladen || !Z.mappe || !Z.mappe.chat) { if (Z.mappe) zeichneChat(); return; }
     var nr = ++texte.laeuft;
     var art = textArt();
     try {
       // Teile aus gen/prompt.py: nur die laufende Einheit; nach dem ersten Kopieren gilt die eingefrorene Stückelung
-      var e = await km.prompt("einheit", [Z.mappe, Z.steckbrief_text, null, null, art === "leer"]);
+      var e = await km.prompt("einheit", [Z.mappe, Z.steckbrief_text, null, null, art === "leer", null, true,
+          art === "kachel"]);
       var teile = e.teile;
-      if (nr !== texte.laeuft) return;           // ein neuerer Lauf ist schon unterwegs
+      if (nr !== texte.laeuft) return texte.lauf;   // ein neuerer Lauf ist schon unterwegs
       if (art !== texte.art || teile.length !== texte.teile.length) { texte.teil = 0; texte.kopiert = {}; }
       texte.art = art; texte.teile = teile; texte.ids = e.ids || [];
       if (texte.teil >= teile.length) texte.teil = 0;
@@ -115,8 +125,14 @@
     var b = ev.target.closest("[data-chat]"); if (!b || !Z.mappe) return;
     Z.mappe.chat = b.dataset.chat;
     S.chatWahlOffen = false;
-    zeichneChat(); geaendert(); textSpaeter(0); zeichneSchritte();
-    setTimeout(function () { var k = $("text-kopieren"); if (k) k.focus({ preventScroll: true }); }, 0);
+    zeichneChat(); geaendert(); zeichneSchritte();
+    // AP13.33 §2.1: „Text kopieren“ ist gesperrt, bis der Text da ist; der Fokus geht danach dorthin
+    clearTimeout(S.textTimer);
+    var platz = S.fokus(["text-kopieren", "chat-aendern"], true);
+    texteErzeugen().then(function () {
+      var a = document.activeElement;
+      if (a === platz || a === document.body || !a.getClientRects().length) S.fokus(["text-kopieren", "chat-aendern"], true);
+    });
   });
   $("chat-aendern").onclick = function () {
     S.chatWahlOffen = true;
@@ -243,7 +259,10 @@
   function textKopieren() {
     if (ki()) return textSenden();
     kopieren($("chat-text-feld").value, $("chat-text-feld"), $("kopiert"), KOPIERT, function () {
-      textKopiert(); km.kurzmeldung($("text-kopieren"), "Text kopiert"); });
+      textKopiert(); km.kurzmeldung($("text-kopieren"), "Text kopiert");
+      // AP13.33 §2.1: Schritt 4 klappt zu oder die Infobox ist weg; weiter geht es im Antwortfeld
+      S.fokusRetten(["eingabe", "text-kopieren"]);
+    });
   }
   // Vor dem ersten Kopieren einmal die Infobox (Rechte am Material, Nutzungsbedingungen des Chats)
   $("text-kopieren").onclick = function () {
@@ -256,6 +275,13 @@
     else S.infoboxAus = true;                      // in dieser Sitzung nicht noch einmal
     textKopieren();
   };
+  // AP13.33 §2.2: Esc schließt die Infobox ohne zu kopieren, Fokus zurück auf „Text kopieren“
+  $("infobox").addEventListener("keydown", function (ev) {
+    if (ev.key !== "Escape") return;
+    ev.preventDefault();
+    $("infobox").hidden = true;
+    S.fokus(["text-kopieren"]);
+  });
 
   function setzeModus(m) { var r = document.querySelector("input[name=modus][value=" + m + "]");
       if (r) r.checked = true; }
@@ -286,10 +312,14 @@
     }
     if (modus === "anhaengen") neu = await km.mappeFn("anhaengen", [Z.kurs_md, text, Z.mappe.anhaengen || null]);
     else neu = (await km.mappeFn("antwort", [text])).kursdatei;
+    var tag = modus === "anhaengen" ? Z.mappe.anhaengen : null;
     var pr = await km.stand(neu);
     if (modus === "ersetzen") S.handNachEinsetzen([], hv);
     if (modus === "anhaengen" && Z.mappe.anhaengen) delete Z.mappe.anhaengen;
-    return { ok: true, n: pr.bausteine.length, text: "" };
+    // AP13.33 §1.9: angehängt zählt die Meldung die Bausteine der neuen Einheit (wie die Zusammenfassung), nicht die Liste
+    var n = tag ? pr.bausteine.filter(function (b) { var k = karteNach(b.id); return k && k.einheit === tag; }).length
+      : pr.bausteine.length;
+    return { ok: true, n: n, text: "" };
   }
 
   // Meldung unter einem Einfügefeld als Karte mit Rahmen: eine Zeile wird übersehen. `laeuft`: die Mühle dreht sich
@@ -430,84 +460,101 @@
           .focus({ preventScroll: true }); });
   };
 
-  async function eingabeUebernehmen(modusErzwungen) {
-    var text = modusErzwungen && S.letzteAntwort ? S.letzteAntwort.text : $("eingabe").value;
-    if (!text.trim()) return;
+  // Antwort einsetzen (Schritt 5). AP13.30: `o` = {text, stand(satz, art), diagnose(d oder null), leeren()} für ein
+  // anderes Einfügefeld mit eigenem Meldungsort (Editor, „Weitere Einheit“); sonst das Feld in Schritt 5.
+  // -> true, wenn eingesetzt
+  async function eingabeUebernehmen(modusErzwungen, o) {
+    var feld = !o;
+    var zeige = feld ? function (x, art) { standKarte($("eingabe-stand"), x, art); } : o.stand;
+    var diagnose = feld ? function (d) { diagnoseKarte($("eingabe-diagnose"), d); } : o.diagnose;
+    var text = modusErzwungen && S.letzteAntwort ? S.letzteAntwort.text : feld ? $("eingabe").value : o.text || "";
+    if (!text.trim()) return false;
     var eigen = !modusErzwungen && eigenerText(text);
-    if (eigen) { diagnoseKarte($("eingabe-diagnose"), null); standKarte($("eingabe-stand"), EIGEN[eigen], "fehler");
-        return; }
+    if (eigen) { diagnose(null); zeige(EIGEN[eigen], "fehler"); return false; }
     restWeg();
     try {
       await km.bereit();
-      var modus = modusErzwungen, mo = null;
+      var modus = modusErzwungen, mo = null, ergaenzt = [];
       if (!modus) {
+        // AP13.30 §4a: Baustein ohne id: mit Typ und Titel eines geplanten bekommt dessen id
+        var ie = await km.mappeFn("ids_ergaenzen", [Z.mappe, text]);
+        text = ie.text; ergaenzt = ie.ids;
         mo = await km.mappeFn("modus", [Z.mappe, text]);
         if (mo.modus === "keine") {
-          standKarte($("eingabe-stand"), "");
-          diagnoseKarte($("eingabe-diagnose"), await km.prompt("diagnose", [text]));
-          return;
+          zeige("");
+          diagnose(await km.prompt("diagnose", [text]));
+          return false;
         }
         // nächste Einheit, die noch ohne Inhalt ist: anhängen statt in die erste Einheit einsetzen
         var neueOffen = Z.mappe.anhaengen && Z.mappe.bausteine.some(function (k) {
             return k.einheit === Z.mappe.anhaengen && k.geplant; });
         modus = neueOffen ? "anhaengen" : mo.modus;
         setzeModus(modus);
-        S.letzteAntwort = { text: text, vorher: { mappe: JSON.parse(JSON.stringify(Z.mappe)), kurs_md: Z.kurs_md } };
-      }
-      diagnoseKarte($("eingabe-diagnose"), null);
+        S.letzteAntwort = { text: text, ergaenzt: ergaenzt, vorher: { mappe: JSON.parse(JSON.stringify(Z.mappe)),
+            kurs_md: Z.kurs_md } };
+      } else ergaenzt = S.letzteAntwort.ergaenzt || [];
+      diagnose(null);
       var e = await einsetzen(text, modus, S.letzteAntwort.vorher, S.letzteAntwort);
       if (!e.ok) {
-        standKarte($("eingabe-stand"), e.text, e.art || "fehler");
+        zeige(e.text, e.art || "fehler");
         zeichne();
-        return;
+        return false;
       }
       if (mo) teilEingefuegt(e.ids || mo.ids, mo.fortsetzung);
-      Z.mappe.durchsicht = false;
+      var leerRest = (mo && mo.rest_ids || []).filter(function (id) { var k = karteNach(id); return k && k.geplant; });
+      await S.nachAntwortMarkieren(ergaenzt, teileOffen() || (leerRest.length && mo.rest));
+      Z.mappe.durchsicht = false; delete Z.mappe.durchsicht_neu;
       // neuer Inhalt: ab Schritt 5 neu durchsehen
       if (schritt() > 5 || schritt() < 5) { Z.mappe.schritt = 5; S.auf = {}; }
       await auswertung();
       // Hash je Baustein merken; einzelne Bausteine zählen als Runde, eine ganze Einheit fängt neu an
       var gleichE = schleifeMerken(e.ids || Z.pruefung.bausteine.map(function (b) { return b.id; }), false);
       zeichne(); geaendert();
-      $("eingabe").value = "";
+      if (feld) $("eingabe").value = ""; else o.leeren();
       var st = Z.mappe.stueckelung, mehr = "", baust = e.n + (e.n === 1 ? " Baustein" : " Bausteine");
       // „Fortsetzung folgt“: Karten, die noch fehlen, und die Bitte darum kommen aus gen/mappe.py modus
-      var leer = (mo && mo.rest_ids || []).filter(function (id) { var k = karteNach(id); return k && k.geplant; });
+      var leer = leerRest;
       if (leer.length && mo.rest) {
         S.restSatz = mo.rest;
         var von = ki() && (!S.restZahl || leer.length < S.restZahl);   // von selbst nur, solange jede Antwort Neues bringt
         S.restZahl = leer.length;
-        standKarte($("eingabe-stand"), "Übernommen: " + baust + "; die Antwort endet mit „Fortsetzung folgt“. " +
+        zeige("Übernommen: " + baust + "; die Antwort endet mit „Fortsetzung folgt“. " +
             (von ? "Die Mühle bittet deine KI um den Rest." : ki() ? "„Rest an meine KI senden“ bittet um die " +
               "fehlenden Bausteine." : "„Rest anfordern“ kopiert die Bitte um die fehlenden Bausteine für den Chat."),
             "ok");
         restZeigen(S.restSatz);
         if (von) restSenden(S.restSatz);
-        else $("rest-anfordern").focus({ preventScroll: true });
-        return;
+        else if (feld) $("rest-anfordern").focus({ preventScroll: true });
+        return true;
       }
       S.restZahl = 0;
       if (teileOffen()) {
-        standKarte($("eingabe-stand"), "Übernommen: " + baust + (kette() ? ". Jetzt geht Teil " : ki() ?
+        zeige("Übernommen: " + baust + (kette() ? ". Jetzt geht Teil " : ki() ?
             ". „Teil " + (naechsterTeil() + 1) + " an meine KI senden“ schickt Teil " : ". Kopiere jetzt Teil ")
           + (naechsterTeil() + 1) + " von " + st.ids.length + (kette() ? " an deine KI" : "") +
               "; die Prüfung zeigt Fehler erst, wenn alle Teile da sind.", "ok");
-        $("teil-weiter").focus({ preventScroll: true });
-        return;
+        if (feld) $("teil-weiter").focus({ preventScroll: true });
+        return true;
       }
-      eingabeZu(true);                              // c6: fertig eingefügt, das Feld klappt zu (auch mit eigener KI)
+      if (feld) eingabeZu(true);                    // c6: fertig eingefügt, das Feld klappt zu (auch mit eigener KI)
       var rot = Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler" && (!e.ids ||
           e.ids.indexOf(b.id) >= 0); }).length;
       var aussen = Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler" && !d.baustein; }).length;
       if (rot || aussen) mehr = ki() ? " Unter dem Feld steht die Korrektur: „An meine KI senden“ schickt die Bitte." :
           " Unter dem Feld steht die Korrektur: „Korrektur anfordern“ kopiert die Bitte für den Chat.";
       if (gleichE.length) mehr = " Die Antwort für „" + gleichE[0] + "“ ist dieselbe wie vorher." + mehr;
-      standKarte($("eingabe-stand"), "Übernommen (" + MODUS_TEXT[modus] + "): " + e.n + (e.n === 1 ?
+      zeige("Übernommen (" + MODUS_TEXT[modus] + "): " + e.n + (e.n === 1 ?
           " Baustein" : " Bausteine")
         + (rot ? ", davon " + rot + " mit Fehler (rot)." : aussen ? "." : ". Sieh sie durch und geh dann weiter.") +
             mehr + e.text,
         rot || aussen ? "fehler" : "ok");
-    } catch (err) { zeigeFehler(err); }
+      // AP13.33 §2.1: stand der Fokus im Feld, geht er an die nächste Stelle (Korrektur, Weiter, noch einmal einfügen)
+      if (feld) {
+        var neuOrt = S.fokusRetten(["korrektur-kopieren", "weiter-5", "eingabe-nochmal"], $("eingabe-bereich"));
+        if (neuOrt) neuOrt.scrollIntoView({ block: "nearest" });
+      }
+      return true;
+    } catch (err) { zeigeFehler(err); return false; }
   }
   $("eingabe").addEventListener("input", function () {
     clearTimeout(S.eingabeTimer);
@@ -529,14 +576,15 @@
     $("eingabe-bereich").classList.toggle("zu", zu);
     $("eingabe-nochmal").hidden = !zu;
   }
-  $("eingabe-nochmal").onclick = function () { eingabeZu(false); $("eingabe").focus(); };
+  // AP13.33 §1.5: die Meldung zur vorigen Antwort gilt für das leere Feld nicht mehr
+  $("eingabe-nochmal").onclick = function () { eingabeZu(false); standKarte($("eingabe-stand"), ""); $("eingabe").focus(); };
   // Knopf zusätzlich zur Automatik: nach dem Einfügen fehlt sonst etwas zum Klicken
   $("eingabe-uebernehmen").onclick = function () { clearTimeout(S.eingabeTimer); eingabeUebernehmen(null); };
   // Anderen Modus gewählt: die letzte Antwort vom Stand davor aus neu einsetzen
   Array.prototype.forEach.call(document.querySelectorAll("input[name=modus]"), function (r) {
     r.addEventListener("change", function () { if (S.letzteAntwort && r.checked) eingabeUebernehmen(r.value); });
   });
-  Object.assign(S, { EIGEN: EIGEN, kiBesetzt: besetzt, wartezeichen: wartezeichen, diagnoseKarte: diagnoseKarte, eigenerText: eigenerText,
+  Object.assign(S, { EIGEN: EIGEN, kiBesetzt: besetzt, texteErzeugen: texteErzeugen, textKopiert: textKopiert, wartezeichen: wartezeichen, diagnoseKarte: diagnoseKarte, eigenerText: eigenerText,
     eingabeUebernehmen: eingabeUebernehmen, eingabeZu: eingabeZu, muehleSymbol: muehleSymbol, standKarte: standKarte,
     textGesendet: textGesendet, textGroesse: textGroesse, textSpaeter: textSpaeter, zeichneChat: zeichneChat,
     zeichnePlanung: zeichnePlanung, zeichneTeile: zeichneTeile });

@@ -20,9 +20,11 @@
   var bearbeiten = {};          // id -> {text, meldungen}: offenes Textfeld
   var neuOffen = {};            // id -> true: Teil „Neu schreiben lassen“ offen
   var neuText = {};             // id -> Text für den Chat, vorbereitet (Kopieren in der Geste, Safari)
-  var stand = null, standSig = "", lauf = 0, timer = null, pruefTimer = {}, wunschTimer = null, bilderSig = "";
+  var stand = null, standSig = "", lauf = 0, timer = null, pruefTimer = {}, wunschTimer = {}, bilderSig = "";
   var UE = "uebersicht", ueZiel = null;      // §9: Kursübersicht als erster Eintrag; offenes Formular („kopf“, „abschnitt:n“)
   var hilfe = {};               // typ -> [Zeile] (prompt.format_hilfe)
+  var loeschLaeuft = false;     // AP13.30: „Löschen“ an einer leeren Kachel läuft
+  var teilKnoten = {};          // AP13.30: id des unteren Bausteins -> {el, b, ka, offen}: „Hier neue Kachel beginnen“
   var BREIT = window.matchMedia ? matchMedia("(min-width: 1100px)") : { matches: true };
   // Platzhalter für ein Bild, das noch nicht hochgeladen ist (hellgrau wie in der Sicherung)
   var BILD_FEHLT = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" ' +
@@ -62,7 +64,7 @@
     $("editor-zu").title = T("schliessen");
     $("editor-liste-titel").textContent = BREIT.matches ? T("liste") : T("liste_auf");
     $("editor-liste").open = BREIT.matches;
-    $("editor-stand").textContent = "";
+    meldungenWeg();
     if (typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open", "");
     document.body.classList.add("editor-offen");
     aktualisieren();
@@ -71,18 +73,30 @@
   dlg.addEventListener("close", function () {
     document.body.classList.remove("editor-offen");
     var v = offenVon; offenVon = null;
-    if (v && document.contains(v) && !v.hidden) v.focus({ preventScroll: true });
+    // AP13.33 §2.1: über das Handymenü geöffnet, ist der Knopf jetzt zugeklappt; dann der Menüknopf
+    S.fokus([v, "kopf-menue", "editor-auf-2"], true);
   });
-  // Esc: zuerst ein offenes Textfeld (Fokus auf seinen Knopf „Bearbeiten“), dann die Ansicht
-  dlg.addEventListener("cancel", function (ev) {
-    var ids = Object.keys(bearbeiten);
-    if (ueZiel) { ev.preventDefault(); ueZu(); return; }
-    if (!ids.length) return;
-    ev.preventDefault();
-    var drin = document.activeElement && document.activeElement.closest && document.activeElement.closest(".ed-b");
-    var id = drin && bearbeiten[drin.dataset.id] ? drin.dataset.id : ids[ids.length - 1];
-    abbrechen(id);
+  // Esc: zuerst ein offenes Formular, ein offenes Textfeld oder „Neu schreiben lassen“ (das mit dem Fokus, sonst das
+  // zuletzt geöffnete), dann die Ansicht. AP13.33 §2.2: ein geändertes Textfeld fragt „Änderungen verwerfen?“ (Esc in der
+  // Frage heißt weiter bearbeiten); Esc in „Neu schreiben lassen“ schließt nur dieses und nimmt die Vormerkung zurück
+  // Chromium lässt ein abgefangenes `cancel` ohne Nutzeraktion dazwischen nur einmal zu (Esc zählt nicht); darum wirkt Esc
+  // schon beim Tastendruck, `cancel` bleibt für andere Wege (Zurück-Geste)
+  function escInnen() {
+    if (ueZiel) { ueZu(); return true; }
+    var offen = Object.keys(teilKnoten).filter(function (id) { return teilKnoten[id].offen; })[0];
+    if (offen) { teilenZu(offen, true); return true; }
+    var a = document.activeElement, drin = a && a.closest && a.closest(".ed-b"), id = drin ? drin.dataset.id : null;
+    var imNeu = !!(id && neuOffen[id] && a.closest(".ed-b-neu"));
+    if (imNeu || (id && neuOffen[id] && !bearbeiten[id])) { neuZu(id, true, true); return true; }
+    if (!(id && bearbeiten[id])) id = Object.keys(bearbeiten).pop() || null;
+    if (!id) { id = Object.keys(neuOffen).pop() || null; if (id) { neuZu(id, true, true); return true; } return false; }
+    abbrechenFragen(id);
+    return true;
+  }
+  dlg.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape" && !ev.defaultPrevented && escInnen()) { ev.preventDefault(); ev.stopPropagation(); }
   });
+  dlg.addEventListener("cancel", function (ev) { if (escInnen()) ev.preventDefault(); });
   $("editor-zu").onclick = schliessen;
   ["editor-auf", "editor-auf-2"].forEach(function (id) { $(id).onclick = function () { oeffnen($(id)); }; });
   if (BREIT.addEventListener) BREIT.addEventListener("change", function () {
@@ -124,10 +138,21 @@
     if (!st) { st = el("style", { id: "editor-schrift" }); document.head.appendChild(st); }
     if (st.textContent !== (css || "")) st.textContent = css || "";      // @font-face greift im Shadow Root nicht
   }
-  function nummer(id, i) {
-    var liste = Z.mappe ? Z.mappe.bausteine : [];
-    for (var j = 0; j < liste.length; j++) if (liste[j].id === id) return j + 1;
-    return i + 1;
+  // AP13.33 §1.6: dieselbe Nummer wie an der Karte und am Rand (karten.js S.nummer, ausgeschaltete Karten zählen nicht)
+  function nummer(id, i) { return S.nummer(id) || i + 1; }
+  function handArt(id) { var h = Z.mappe && Z.mappe.hand && Z.mappe.hand[id]; return h ? (h.art === "neu" ? "neu" : "hand") : ""; }
+  function handText(id) { return handArt(id) === "neu" ? T("neu_geschrieben") : T("hand"); }
+
+  // AP13.33 §1.5: Meldung zur letzten Handlung am betroffenen Baustein (nicht im Kopf der Ansicht); die nächste Handlung
+  // nimmt sie weg
+  function meldung(id, text, art) {
+    meldungenWeg();
+    var k = knoten[id]; if (!k || !k.meldung) return;
+    k.meldung.className = "ed-b-meldung" + (art ? " " + art : "");
+    k.meldung.textContent = text || "";
+  }
+  function meldungenWeg() {
+    Object.keys(knoten).forEach(function (id) { var m = knoten[id].meldung; if (m && m.textContent) m.textContent = ""; });
   }
   function statusVon(b) {
     var p = pruef(b.id);
@@ -147,7 +172,8 @@
         el("span", { cls: "ed-nr", text: String(nummer(b.id, i)) }),
         el("span", { cls: "ed-l-text" }, [el("span", { cls: "ed-l-typ", text: S.formularname(b.typ) }),
           el("span", { cls: "ed-l-titel", text: b.titel })]),
-        S.handGeaendert(b.id) ? el("span", { cls: "ed-l-hand", title: T("hand"), "aria-label": T("hand"), text: "✎" }) : null,
+        S.handGeaendert(b.id) ? el("span", { cls: "ed-l-hand", title: handText(b.id), "aria-label": handText(b.id),
+            text: "✎" }) : null,
         el("span", { cls: "ed-punkt status-" + st, title: STATUS[st] || st }, [el("span", { cls: "unsichtbar",
             text: STATUS[st] || st })])])]));
     });
@@ -166,17 +192,32 @@
     var rumpf = dlg.querySelector(".ed-rumpf"), leiste = BREIT.matches ? 0 : $("editor-liste").offsetHeight;
     rumpf.scrollTop += knoten_.getBoundingClientRect().top - rumpf.getBoundingClientRect().top - leiste - 8;
   }
+  // AP13.30: Kacheln (Abschnitte `## `) mit Nummer und den ids ihrer Bausteine, aus der Vorschau
+  var ALLGEMEIN = ["allgemeines", "allgemein", "0"];
+  function kacheln() {
+    return (stand.abschnitte || []).map(function (a, i) {
+      return { nr: i + 1, titel: a.titel, ids: a.bausteine, teil: a.teil || "", allgemein: ALLGEMEIN.indexOf(String(
+          a.titel || "").toLowerCase()) >= 0 };
+    });
+  }
+  function kachelVon(id) { return kacheln().filter(function (a) { return a.ids.indexOf(id) >= 0; })[0] || null; }
   function zeichneVorschau() {
-    var box = $("editor-vorschau"), soll = [], gesehen = {}, letzter = null, nAbschnitt = 0;
+    var box = $("editor-vorschau"), soll = [], gesehen = {}, letzter = null, nAbschnitt = 0, vorige = null;
     if (!stand.bausteine.length) { box.textContent = T("leer"); return; }
     if (stand.uebersicht) { soll.push(uebersichtEintrag().el); gesehen[UE] = 1; }
     stand.bausteine.forEach(function (b, i) {
       if (b.abschnitt !== letzter) {
-        nAbschnitt += 1; letzter = b.abschnitt;
+        nAbschnitt += 1; letzter = b.abschnitt; vorige = null;
         var schl = nAbschnitt + "|" + (b.abschnitt || "");
         var h = abschnittKnoten[schl] || (abschnittKnoten[schl] = el("h3", { cls: "ed-abschnitt", text: b.abschnitt ||
             "" }));
         soll.push(h);
+      }
+      // §1: zwischen zwei Bausteinen derselben Kachel „Hier neue Kachel beginnen“ (nicht in „Allgemeines“)
+      if (b.ebene === 3) {
+        var ka = kachelVon(b.id);
+        if (vorige && ka && !ka.allgemein) { soll.push(teilenEintrag(b, ka)); gesehen["teilen:" + b.id] = 1; }
+        vorige = b;
       }
       var k = eintrag(b, i);
       gesehen[b.id] = 1;
@@ -184,6 +225,7 @@
     });
     Object.keys(knoten).forEach(function (id) { if (!gesehen[id]) { delete knoten[id]; delete bearbeiten[id];
         delete neuOffen[id]; } });
+    Object.keys(teilKnoten).forEach(function (id) { if (!gesehen["teilen:" + id]) delete teilKnoten[id]; });
     var ist = Array.prototype.slice.call(box.children);
     var gleich = ist.length === soll.length && ist.every(function (x, i) { return x === soll[i]; });
     if (!gleich) box.replaceChildren.apply(box, soll);     // nur bei neuer Reihenfolge; sonst bleibt der Fokus
@@ -195,10 +237,11 @@
       k = knoten[b.id] = { el: el("section", { cls: "ed-b", "data-id": b.id, id: "ed-" + b.id,
           "aria-labelledby": "ed-t-" + b.id }), sig: null };
       k.kopf = el("div", { cls: "ed-b-kopf" });
+      k.meldung = el("p", { cls: "ed-b-meldung", role: "status" });
       k.koerper = el("div", { cls: "ed-b-koerper" });
       k.werk = el("div", { cls: "ed-b-werk", hidden: true });
       k.neu = el("div", { cls: "ed-b-neu", hidden: true });
-      k.el.append(k.kopf, k.koerper, k.werk, k.neu);
+      k.el.append(k.kopf, k.meldung, k.koerper, k.werk, k.neu);
     }
     k.b = b;
     zeichneKopf(k, b, i);
@@ -229,7 +272,7 @@
       el("span", { cls: "ed-typ", text: b.typ === "Unterabschnitt" ? T("unterabschnitt") : S.formularname(b.typ) }),
       el("span", { cls: "ed-titel-text", text: b.titel })]);
     var marken = el("span", { cls: "ed-marken" }, [
-      hand ? el("span", { cls: "ed-hand", text: T("hand") }) : null,
+      hand ? el("span", { cls: "ed-hand", text: handText(b.id) }) : null,
       st === "fehler" ? el("span", { cls: "ed-status fehler", text: STATUS.fehler }) : null]);
     var knoepfe = null;
     if (b.typ !== "Unterabschnitt") {
@@ -239,19 +282,38 @@
         el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": "neu", "aria-expanded": String(neu),
             "aria-label": T("neu_schreiben") + ": " + b.titel, text: T("neu_schreiben") }),
         hand ? el("button", { type: "button", cls: "textlink ed-zurueck", "data-aktion": "zuruecknehmen",
-            text: T("zuruecknehmen") }) : null]);
+            text: handArt(b.id) === "neu" ? T("neu_zuruecknehmen") : T("zuruecknehmen") }) : null, inKachel(b)]);
     }
     k.kopf.append(titel, marken, knoepfe || "");
     // rote Meldungen wie an der Karte (auch Regeln der Einheit, die erst der ganze Stand kennt)
     var dg = Z.pruefung ? Z.pruefung.diagnosen.filter(function (d) { return d.baustein === b.id && d.stufe === "fehler"; })
       : [];
     if (dg.length && !(b.platzhalter && b.platzhalter.art === "fehler")) k.kopf.appendChild(el("ul", { cls: "ed-meldungen" },
-        dg.map(function (d) { return el("li", { cls: "fehler", text: (d.zeile_im_baustein ? "Zeile " + d.zeile_im_baustein +
-            ": " : "") + d.text }); })));
+        dg.map(function (d) { return el("li", { cls: "fehler", text: (d.zeile_im_baustein ? "Zeile " +
+            (d.zeile_editor || d.zeile_im_baustein) + " im Feld: " : "") + d.text }); })));
     if (fokus) {
       var f = fokus === "titel" ? titel : k.kopf.querySelector("[data-aktion='" + fokus + "']");
       if (f) f.focus({ preventScroll: true });
     }
+  }
+
+  // AP13.30 §1: Auswahl „In Kachel …“ mit den Kacheln der Einheit; die Wahl setzt den Baustein ans Ende der gewählten.
+  // Nicht an Bausteinen in einem Unterabschnitt: dort hinaus wäre aus `####` ein `###` (der Baustein änderte sich)
+  function inKachel(b) {
+    if (b.ebene !== 3 || b.typ === "Unterabschnitt" || b.typ === "Banner") return null;
+    // nur Kacheln derselben Einheit (`teil`); sonst liefert die Nachlieferung doppelt oder zu wenig
+    var ka = kachelVon(b.id), ziele = kacheln().filter(function (a) { return !a.allgemein && ka && a.teil === ka.teil; });
+    if (!ka || ziele.length < (ka.allgemein ? 1 : 2)) return null;
+    var zahl = {};
+    ziele.forEach(function (a) { zahl[a.titel] = (zahl[a.titel] || 0) + 1; });
+    var sel = el("select", { cls: "ed-in-kachel", "data-aktion": "in-kachel", "aria-label": T("in_kachel") + ": " + b.titel });
+    if (ka.allgemein) sel.appendChild(el("option", { value: "", text: ka.titel, disabled: true }));
+    ziele.forEach(function (a) {
+      sel.appendChild(el("option", { value: String(a.nr), text: a.titel + (zahl[a.titel] > 1 ? " (" + a.nr + ")" : "") }));
+    });
+    sel.value = ka.allgemein ? "" : String(ka.nr);
+    return el("label", { cls: "ed-in-kachel-l" }, [el("span", { cls: "ed-in-kachel-t", "aria-hidden": "true",
+        text: T("in_kachel") }), sel]);
   }
 
   function zeichneKoerper(k, b) {
@@ -291,7 +353,7 @@
         x.setAttribute("tabindex", "0");
         x.setAttribute("role", "button");
         x.setAttribute("aria-label", x.dataset.ziel === "kopf" ? T("kurstitel") + ": " + x.textContent :
-            T("abschnitt_titel") + ": " + (x.dataset.titel || x.textContent));
+            x.dataset.ziel === "weitere" ? T("weitere") : T("abschnitt_titel") + ": " + (x.dataset.titel || x.textContent));
       });
       Array.prototype.forEach.call(innen.querySelectorAll("button[data-aktion]"), function (x) {
         x.setAttribute("tabindex", "0"); });
@@ -319,20 +381,28 @@
       k = knoten[UE] = { el: el("section", { cls: "ed-b ed-ue", "data-id": UE, id: "ed-" + UE, "aria-labelledby": "ed-t-" + UE }),
           sig: null };
       k.kopf = el("div", { cls: "ed-b-kopf" });
+      k.meldung = el("p", { cls: "ed-b-meldung", role: "status" });
       k.zeile = el("p", { cls: "ed-ue-zeile" });
       k.koerper = el("div", { cls: "ed-b-koerper" });
       k.werk = el("div", { cls: "ed-b-werk ed-ue-werk", hidden: true });
-      k.el.append(k.kopf, k.zeile, k.koerper, k.werk);
+      k.el.append(k.kopf, k.meldung, k.zeile, k.koerper, k.werk);
     }
     k.b = { id: UE, titel: T("uebersicht") };
     zeichneUeKopf(k, u);
     k.zeile.textContent = T("uebersicht_zeile") + (u.format === "wochen" && !S.angaben.start ? " " + T("wochen_start") : "");
     var s = JSON.stringify([u.html, bilderSig]);
     if (s !== k.sig) {
+      // AP13.33 §2.1: lag der Fokus in der alten Fläche (Kurstitel, Kachel, Pfeil), geht er an dieselbe Stelle der neuen
+      var alt = k.koerper.firstChild, inAlt = alt && document.activeElement === alt && alt.shadowRoot &&
+          alt.shadowRoot.activeElement, wo = inAlt ? (inAlt.dataset.ziel ? "[data-ziel='" + inAlt.dataset.ziel + "']" :
+          inAlt.dataset.aktion ? "[data-aktion='" + inAlt.dataset.aktion + "'][data-nr='" + inAlt.dataset.nr + "']" : "") : "";
       k.sig = s; k.koerper.textContent = "";
       try { k.koerper.appendChild(flaeche(u.html, true)); } catch (e) { console.error("Vorschau", UE, e); }
+      var neu = wo && k.koerper.firstChild && k.koerper.firstChild.shadowRoot &&
+          k.koerper.firstChild.shadowRoot.querySelector(wo + ":not([disabled])");
+      if (neu) neu.focus({ preventScroll: true });
     }
-    if (ueZiel && !ueAbschnitt(ueZiel) && ueZiel !== "kopf") ueZu(true);
+    if (ueZiel && !ueAbschnitt(ueZiel) && ueZiel !== "kopf" && ueZiel !== "weitere") ueZu(true);
     return k;
   }
   function zeichneUeKopf(k, u) {
@@ -351,11 +421,15 @@
     k.kopf.append(el("h4", { cls: "ed-b-titel", id: "ed-t-" + UE, tabindex: "-1" }, [el("span", { cls: "ed-titel-text",
         text: T("uebersicht") })]),
       el("span", { cls: "ed-marken" }, [ueHand() ? el("span", { cls: "ed-hand", text: T("hand") }) : null]),
+      // AP13.33 §1.10: der Kurstitel ist auch ohne Klick in die Vorschau zu finden
+      el("span", { cls: "ed-b-knoepfe" }, [el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": "kurstitel",
+          "aria-expanded": String(ueZiel === "kopf"), text: T("kurstitel_aendern") })]),
       el("div", { cls: "ed-darstellung-l" }, [el("span", { cls: "ed-darstellung-t", text: T("darstellung") }), wahl]));
     if (fokus) {
       var f = k.kopf.querySelector("[data-wert='" + fokus + "']") || k.kopf.querySelector("." + String(fokus).split(" ")[0]);
       if (f) f.focus({ preventScroll: true });
     }
+    if (S.radioTabs) S.radioTabs();
   }
   function ueAbschnitt(ziel) {
     var nr = parseInt(String(ziel).replace("abschnitt:", ""), 10);
@@ -364,12 +438,22 @@
   function ueKlick(ev) {
     var t = ev.target.closest && ev.target.closest("[data-aktion], [data-ziel]");
     if (!t) return;
+    meldungenWeg();
     if (t.dataset.aktion === "hoch" || t.dataset.aktion === "runter") {
       ev.stopPropagation();
       if (!t.disabled) verschieben(parseInt(t.dataset.nr, 10), t.dataset.aktion === "hoch" ? -1 : 1).catch(S.zeigeFehler);
       return;
     }
-    if (t.dataset.ziel) ueFormular(t.dataset.ziel);
+    if (t.dataset.aktion === "kachel-loeschen") {
+      ev.stopPropagation();
+      if (loeschLaeuft) return;                       // Doppelklick: ein Aufruf
+      loeschLaeuft = true; t.disabled = true;
+      kachelLoeschen(parseInt(t.dataset.nr, 10)).catch(S.zeigeFehler).then(function () { loeschLaeuft = false;
+          t.disabled = false; });
+      return;
+    }
+    if (t.dataset.ziel === "weitere") weitereFormular();
+    else if (t.dataset.ziel) ueFormular(t.dataset.ziel);
   }
   // Auswahl mit dem bisherigen Wert: steht er nicht in der Liste (Symbol, Farbe als #RRGGBB, Bild nicht hochgeladen),
   // kommt er als eigene Option dazu und ist vorgewählt; `data-alt` hält ihn, gesendet wird nur, was sich ändert
@@ -391,25 +475,33 @@
         "data-alt": a ? a.titel : u.titel });
     var teile = [el("label", { cls: "feld ed-feld" }, [a ? T("abschnitt_titel") : T("kurstitel"), titel])];
     if (a) {
-      var o = S.katalog.oberflaeche;
-      if (u.format === "kacheln") {
+      var o = S.katalog.oberflaeche, kachel = u.format === "kacheln";
+      if (kachel) {
         var bilder = Object.keys(Z.assets).filter(function (n) { return /\.(png|jpe?g)$/i.test(n); }).sort();
         teile.push(el("div", { cls: "ed-ue-reihe" }, [
           el("label", { cls: "feld ed-feld" }, [T("kachelbild"), auswahl("ed-ue-bild", [{ wert: "", text: T("kachelbild_keins") }]
               .concat(bilder.map(function (n) { return { wert: n, text: n }; })), a.angaben.kachelbild, T("kachelbild"))]),
           el("label", { cls: "knopf klein-knopf ed-ue-hochladen" }, [T("kachelbild_hochladen"), el("input", { type: "file",
               cls: "unsichtbar ed-ue-datei", accept: "image/png,image/jpeg" })])]));
+        // AP13.33 §1.8: mit Kachelbild sind Symbol und Farbe auf der Kachel nicht zu sehen
+        teile.push(el("p", { cls: "ed-ue-hinweis ed-ue-bild-hinweis", text: T("kachelbild_hinweis"), hidden: !a.angaben.kachelbild }));
         teile.push(el("label", { cls: "feld ed-feld" }, [T("kachelicon"), auswahl("ed-ue-icon",
             [{ wert: "", text: T("kachelicon_keins") }].concat(o.kachelicon), a.angaben.kachelicon, T("kachelicon"))]));
       }
+      // AP13.33 §1.8: die Farbe gilt für den ganzen Abschnitt, auch für Kästen und Rahmen (gen/kursdatei.py, Abschnittsfarbe)
       teile.push(el("label", { cls: "feld ed-feld" }, [T("farbe"), auswahl("ed-ue-farbe",
           [{ wert: "", text: T("farbe_kurs") }].concat(o.farbe.filter(function (w) { return w.wert; })),
           a.angaben.farbe, T("farbe"))]));
-      var quer = u.format === "kacheln" || u.format === "einthemen";
+      teile.push(el("p", { cls: "ed-ue-hinweis ed-ue-farbe-hinweis", text: T(kachel ? "farbe_hinweis_kachel" :
+          "farbe_hinweis_abschnitt") }));
+      // AP13.33 §1.8: am Rand (und bei nur einer Kachel) gesperrt wie die Pfeile in der Vorschau
+      var reihe = (u.abschnitte || []).filter(function (x) { return !x.allgemein; }), stelle = reihe.indexOf(a);
+      var quer = kachel || u.format === "einthemen";
       teile.push(el("div", { cls: "ed-knoepfe" }, [
-        el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": "ue-hoch", text: quer ? T("links") : T("hoch") }),
+        el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": "ue-hoch", disabled: stelle <= 0,
+            text: quer ? T("links") : T("hoch") }),
         el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": "ue-runter",
-            text: quer ? T("rechts") : T("runter") })]));
+            disabled: stelle < 0 || stelle >= reihe.length - 1, text: quer ? T("rechts") : T("runter") })]));
     }
     teile.push(el("p", { cls: "ed-meldungen ed-ue-meldung", role: "status" }));
     teile.push(el("div", { cls: "ed-knoepfe" }, [
@@ -420,13 +512,21 @@
     k.werk.setAttribute("aria-label", a ? T("abschnitt_titel") + ": " + a.titel : T("kurstitel"));
     k.werk.append.apply(k.werk, teile);
     k.werk.hidden = false;
-    titel.focus(); titel.select();
+    titel.focus({ preventScroll: true }); titel.select();
+    // AP13.33 §1.8: das Formular steht unter der Vorschau; die Ansicht springt dorthin, „Übernehmen“ ist im Blick
+    k.werk.scrollIntoView({ block: "nearest" });
+    var kn = k.kopf.querySelector("[data-aktion=kurstitel]"); if (kn) kn.setAttribute("aria-expanded", String(ziel === "kopf"));
+  }
+  function bildHinweis() {
+    var k = knoten[UE], sel = k && k.werk.querySelector(".ed-ue-bild"), p = k && k.werk.querySelector(".ed-ue-bild-hinweis");
+    if (sel && p) p.hidden = !sel.value;
   }
   function ueZu(stumm) {
     var k = knoten[UE], ziel = ueZiel;
     ueZiel = null;
     if (!k) return;
     k.werk.hidden = true; k.werk.textContent = "";
+    var kn = k.kopf.querySelector("[data-aktion=kurstitel]"); if (kn) kn.setAttribute("aria-expanded", "false");
     if (stumm) return;
     var f = null;
     try { f = ziel && k.koerper.firstChild && k.koerper.firstChild.shadowRoot &&
@@ -455,10 +555,12 @@
       var r2 = await km.mappeFn("abschnitt_setzen", [Z.kurs_md, nr, angaben, Z.mappe.hand || {}]);
       if (r2.fehler) { meldung.textContent = r2.fehler; meldung.className = "ed-meldungen ed-ue-meldung fehler"; return; }
       ueZu();
-      if (r2.vorher !== r2.nachher) await S.uebersichtAendern(r2.kurs_md, r2.schluessel, r2.vorher, { nachher: r2.nachher });
+      // AP13.30: Abschnitte mit Handänderung nach diesem (neuer Titel = neuer Vorgänger) ziehen nach
+      if (r2.vorher !== r2.nachher) await S.gliederungAendern(r2.kurs_md, [{ schluessel: r2.schluessel, vorher: r2.vorher,
+          werte: { nachher: r2.nachher } }].concat(r2.hand || []), []);
     }
-    $("editor-stand").textContent = T("uebernommen");
     await aktualisieren();
+    meldung(UE, T("uebernommen"));
     ueFokus(ziel);
   }
   // Fokus auf die Stelle in der (neu gebauten) Übersicht, sonst auf ihre Überschrift
@@ -474,11 +576,196 @@
     if (r.nach === nr) return;
     if (ueZiel === "abschnitt:" + nr) ueZiel = "abschnitt:" + r.nach;
     // §8.7: Verschieben ist eine Handänderung des Abschnitts (Kopf und Vorgänger); Rückgängig und Moduswechsel gelten nicht mehr
-    await S.uebersichtAendern(r.kurs_md, r.schluessel, r.vorher, { nachher: r.nachher, nach: r.vorgaenger });
+    // AP13.30: auch die Nachbarkachel bekommt ihren neuen Vorgänger, falls sie eine Handänderung trägt
+    await S.gliederungAendern(r.kurs_md, [{ schluessel: r.schluessel, vorher: r.vorher, werte: { nachher: r.nachher,
+        nach: r.vorgaenger } }].concat(r.hand || []), []);
     await aktualisieren();
     var k = knoten[UE], root = k && k.koerper.firstChild && k.koerper.firstChild.shadowRoot;
     var f = root && (root.querySelector("[data-aktion=" + (richtung < 0 ? "hoch" : "runter") + "][data-nr='" + r.nach + "']:not([disabled])")
         || root.querySelector("[data-ziel='abschnitt:" + r.nach + "']"));
+    if (f) f.focus({ preventScroll: true });
+  }
+
+  // ---------------------------------------------------------------- Gliederung (AP13.30)
+  // Kachel teilen, Baustein in eine andere Kachel, leere Kachel löschen: gen/mappe.py stellt die Zeilen der Kursdatei
+  // um (die Bausteine bleiben Byte für Byte); karten.js gliederungAendern merkt es als Handänderung der Abschnitte.
+  // -> Ergebnis von gen/mappe.py; mit `fehler` ist nichts geändert. Die Meldung steht an `ort` (Baustein oder Übersicht)
+  async function gliederung(funktion, args, satz, ort) {
+    await km.bereit();
+    var r = await km.mappeFn(funktion, args.concat([Z.mappe.hand || {}]));
+    if (r.fehler) { meldung(ort, r.fehler, "fehler"); return r; }
+    if (r.kurs_md === Z.kurs_md) return r;
+    await S.gliederungAendern(r.kurs_md, r.hand, r.weg);
+    await aktualisieren();
+    meldung(ort, satz);
+    return r;
+  }
+  function teilenEintrag(b, ka) {
+    var t = teilKnoten[b.id];
+    if (!t) t = teilKnoten[b.id] = { el: el("div", { cls: "ed-teilen", "data-id": b.id }), offen: false };
+    var neu = !t.b || t.b.titel !== b.titel || t.ka.titel !== ka.titel;
+    t.b = b; t.ka = ka;
+    if (neu && !t.offen) zeichneTeilen(t);
+    return t.el;
+  }
+  function zeichneTeilen(t) {
+    t.el.textContent = "";
+    t.el.classList.toggle("offen", t.offen);
+    if (!t.offen) {
+      t.el.appendChild(el("button", { type: "button", cls: "ed-teilen-knopf", "data-aktion": "teilen",
+          "aria-label": T("teilen") + ": " + t.b.titel, text: T("teilen") }));
+      return;
+    }
+    var titel = el("input", { type: "text", cls: "ed-teilen-titel", maxlength: "120" });
+    titel.value = T("teil_2", { titel: t.ka.titel });
+    t.el.setAttribute("role", "group");
+    t.el.setAttribute("aria-label", T("teilen") + ": " + t.b.titel);
+    t.el.append(el("label", { cls: "feld ed-feld" }, [T("teilen_titel"), titel]),
+      el("p", { cls: "ed-meldungen ed-teilen-meldung fehler", role: "status" }),
+      el("div", { cls: "ed-knoepfe" }, [
+        el("button", { type: "button", cls: "knopf haupt", "data-aktion": "teilen-ok", text: T("uebernehmen") }),
+        el("button", { type: "button", cls: "knopf", "data-aktion": "teilen-abbrechen", text: T("abbrechen") })]));
+    titel.focus(); titel.select();
+  }
+  function teilenZu(id, fokus) {
+    var t = teilKnoten[id]; if (!t) return;
+    t.offen = false; t.el.removeAttribute("role"); t.el.removeAttribute("aria-label");
+    zeichneTeilen(t);
+    if (fokus) t.el.querySelector("button").focus();
+  }
+  async function kachelTeilen(id) {
+    var t = teilKnoten[id]; if (!t) return;
+    var titel = t.el.querySelector(".ed-teilen-titel").value;
+    var r = await gliederung("kachel_teilen", [Z.kurs_md, id, titel], T("geteilt"), id);
+    if (r.fehler) { meldungenWeg(); t.el.querySelector(".ed-teilen-meldung").textContent = r.fehler; return; }
+    delete teilKnoten[id];
+    var f = knoten[id] && knoten[id].kopf.querySelector(".ed-b-titel");
+    if (f) { zeigen(knoten[id].el); f.focus({ preventScroll: true }); }
+  }
+  async function bausteinVerschieben(id, nr) {
+    if (!nr) return;
+    await gliederung("baustein_verschieben", [Z.kurs_md, id, nr], T("verschoben"), id);
+    var k = knoten[id];
+    if (k) { zeigen(k.el); var f = k.kopf.querySelector(".ed-in-kachel"); if (f) f.focus({ preventScroll: true }); }
+  }
+  async function kachelLoeschen(nr) {
+    if ((await gliederung("kachel_loeschen", [Z.kurs_md, nr], T("geloescht"), UE)).fehler) return;
+    var k = knoten[UE]; if (k) k.kopf.querySelector(".ed-b-titel").focus({ preventScroll: true });
+  }
+
+  // §2: „Weitere Einheit“ am Ende der Übersicht: Thema und Dauer, dann derselbe Weg wie „Einheit hinzufügen“
+  // (nachbau.js S.weitereEinheit), Text aus chat.js (S.texteErzeugen), Einsetzen über S.eingabeUebernehmen (Modus
+  // „anhaengen“, gen/mappe.py anhaengen); die Antwort steht danach als neue Kachel(n) am Ende
+  function offeneEinheit() {
+    return !!(Z.mappe && Z.mappe.anhaengen && Z.mappe.bausteine.some(function (k) {
+      return k.einheit === Z.mappe.anhaengen && k.geplant; }));
+  }
+  function weitereFormular() {
+    var k = knoten[UE]; if (!k) return;
+    ueZiel = "weitere";
+    k.werk.textContent = "";
+    k.werk.setAttribute("role", "group");
+    k.werk.setAttribute("aria-label", T("weitere"));
+    k.werk.hidden = false;
+    if (offeneEinheit()) {                 // schon angelegt, noch ohne Antwort: gleich der Text
+      k.werk.appendChild(el("p", { cls: "ed-ue-zeile", text: T("weitere_laeuft") }));
+      S.texteErzeugen().then(function () { if (ueZiel === "weitere") weitereText(); }).catch(S.zeigeFehler);
+      return;
+    }
+    var thema = el("input", { type: "text", cls: "ed-w-thema", maxlength: "120", autocomplete: "off" });
+    var minuten = el("input", { type: "number", cls: "ed-w-minuten", min: "10", max: "300", inputmode: "numeric" });
+    minuten.value = String((Z.mappe.einheit && Z.mappe.einheit.minuten) || 45);
+    k.werk.append(el("p", { cls: "ed-ue-zeile", text: T("weitere_zeile") }),
+      el("div", { cls: "ed-ue-reihe" }, [el("label", { cls: "feld ed-feld ed-w-thema-l" }, [T("weitere_thema"), thema]),
+        el("label", { cls: "feld ed-feld ed-w-minuten-l" }, [T("weitere_minuten"), minuten])]),
+      el("p", { cls: "ed-meldungen ed-ue-meldung", role: "status" }),
+      el("div", { cls: "ed-knoepfe" }, [
+        el("button", { type: "button", cls: "knopf haupt", "data-aktion": "weitere-erstellen", text: T("weitere_erstellen") }),
+        el("button", { type: "button", cls: "knopf", "data-aktion": "ue-abbrechen", text: T("abbrechen") })]));
+    thema.focus();
+  }
+  async function weitereErstellen(knopf) {
+    var k = knoten[UE]; if (!k) return;
+    var thema = k.werk.querySelector(".ed-w-thema").value.replace(/\s+/g, " ").trim();
+    var minuten = k.werk.querySelector(".ed-w-minuten").value.trim(), m = k.werk.querySelector(".ed-ue-meldung");
+    var fehler = !thema ? [T("weitere_thema_fehlt"), ".ed-w-thema"] : !/^\d+$/.test(minuten) || +minuten < 10 ||
+        +minuten > 300 ? [T("weitere_minuten_falsch"), ".ed-w-minuten"] : null;
+    if (fehler) { m.textContent = fehler[0]; m.className = "ed-meldungen ed-ue-meldung fehler"; k.werk.querySelector(fehler[1])
+        .focus(); return; }
+    knopf.disabled = true;
+    m.textContent = T("weitere_laeuft"); m.className = "ed-meldungen ed-ue-meldung";
+    try {
+      await km.bereit();
+      await S.weitereEinheit(thema, parseInt(minuten, 10));
+      await S.texteErzeugen();
+      if (ueZiel === "weitere") weitereText();
+    } finally { knopf.disabled = false; }
+  }
+  function weitereKnopfText() {
+    var tx = S.texte, n = tx.teile.length;
+    return n > 1 ? T(ki() ? "weitere_teil_ki" : "weitere_teil", { n: tx.teil + 1 }) : ki() ? T("an_ki") : T("text_kopieren");
+  }
+  function weitereText() {
+    var k = knoten[UE]; if (!k) return;
+    var e = (Z.mappe && Z.mappe.einheit) || {};
+    var feld = el("textarea", { cls: "unsichtbar ed-w-feld", readonly: true, "aria-hidden": "true", tabindex: "-1" });
+    feld.value = S.texte.teile[S.texte.teil] || "";
+    k.werk.textContent = "";
+    k.werk.append(el("p", { cls: "ed-ue-zeile", text: T("weitere") + ": " + (e.thema || "") + (e.minuten ? " · " +
+        e.minuten + " min" : "") }),
+      el("div", { cls: "kopieren" }, [el("button", { type: "button", cls: "knopf haupt", "data-aktion": "weitere-kopieren",
+          disabled: !feld.value || (S.kiBesetzt && S.kiBesetzt()), text: weitereKnopfText() })]),
+      el("p", { cls: "stand ed-w-kopiert", role: "status" }),
+      feld,
+      el("label", { cls: "feld ed-feld" }, [T("antwort"), el("textarea", { cls: "ed-antwort ed-w-antwort", rows: "4",
+          spellcheck: "false" })]),
+      el("div", { cls: "kopieren" }, [el("button", { type: "button", cls: "knopf", "data-aktion": "weitere-einsetzen",
+          text: T("einsetzen") })]),
+      el("p", { cls: "stand-karte ed-w-stand", role: "status", "aria-live": "polite", hidden: true }),
+      el("div", { cls: "stand-karte fehler diagnose-karte ed-w-diagnose", role: "status", hidden: true }),
+      el("div", { cls: "ed-knoepfe" }, [el("button", { type: "button", cls: "knopf", "data-aktion": "ue-abbrechen",
+          text: T("schliessen") })]));
+    k.werk.querySelector("[data-aktion=weitere-kopieren]").focus();
+  }
+  function weitereStand(x, art) { var p = knoten[UE] && knoten[UE].werk.querySelector(".ed-w-stand"); if (p) S.standKarte(p, x, art); }
+  function weitereKopieren() {
+    var k = knoten[UE], tx = S.texte, t = tx.teile[tx.teil]; if (!k || !t) return;
+    var antwort = k.werk.querySelector(".ed-w-antwort"), knopf = k.werk.querySelector("[data-aktion=weitere-kopieren]");
+    var n = tx.teil + 1, mehr = tx.teile.length > 1;
+    var weiter = function () {
+      knopf.textContent = weitereKnopfText();
+      k.werk.querySelector(".ed-w-feld").value = tx.teile[tx.teil] || "";
+    };
+    if (ki()) {
+      return S.anKi(t, { einheit: S.einheitTag(), neu: tx.teil === 0, ort: k.werk.querySelector(".ed-w-stand"),
+        feld: "eingabe", vorher: function () { S.textKopiert(true); weiter(); }, stand: weitereStand,
+        fertig: function (a) { antwort.value = a; return weitereEinsetzen(); } });
+    }
+    S.kopieren(t, k.werk.querySelector(".ed-w-feld"), k.werk.querySelector(".ed-w-kopiert"),
+        mehr ? T("weitere_teil_kopiert", { n: n }) : T("weitere_kopiert"), function () {
+      S.textKopiert(); weiter();
+      km.kurzmeldung(knopf, T("text_kopieren"));
+      antwort.focus({ preventScroll: true });
+    });
+  }
+  async function weitereEinsetzen() {
+    var k = knoten[UE]; if (!k || ueZiel !== "weitere") return;
+    var antwort = k.werk.querySelector(".ed-w-antwort");
+    var ok = await S.eingabeUebernehmen(null, { text: antwort.value, stand: weitereStand,
+      diagnose: function (d) { var box = k.werk.querySelector(".ed-w-diagnose"); if (box) S.diagnoseKarte(box, d); },
+      leeren: function () { antwort.value = ""; } });
+    if (!ok) return;
+    if (offeneEinheit() || (S.teileOffen && S.teileOffen())) {
+      k.werk.querySelector("[data-aktion=weitere-kopieren]").textContent = weitereKnopfText();
+      await aktualisieren();
+      return;
+    }
+    ueZu(true);
+    await aktualisieren();
+    meldung(UE, T("weitere_eingesetzt"));
+    var root = knoten[UE] && knoten[UE].koerper.firstChild && knoten[UE].koerper.firstChild.shadowRoot;
+    var alle = root ? root.querySelectorAll("[data-ziel^='abschnitt:']") : [];
+    var f = alle.length ? alle[alle.length - 1] : knoten[UE] && knoten[UE].kopf.querySelector(".ed-b-titel");
     if (f) f.focus({ preventScroll: true });
   }
 
@@ -514,7 +801,11 @@
     k.werk.hidden = false;
     k.koerper.hidden = true;
     zeichneKopf(k, b, 0);
-    feld.focus();
+    // AP13.33 §2.6: Cursor und Ansicht am Textanfang (Überschrift und erster Satz im Blick)
+    feld.focus({ preventScroll: true });
+    feld.setSelectionRange(0, 0);
+    feld.scrollTop = 0;
+    k.werk.scrollIntoView({ block: "nearest" });
     try {
       (await formatZeilen(b.typ)).forEach(function (z) { format.appendChild(el("p", {}, mitCode(z))); });
     } catch (e) { /* ohne Formatzeile geht das Bearbeiten trotzdem */ }
@@ -530,6 +821,26 @@
     var r = await km.mappeFn("hand_pruefen", [Z.mappe, e.text, id]);
     if (bearbeiten[id] !== e) return;
     e.meldungen = r.meldungen; meldungenZeigen(id, r.meldungen);
+  }
+  // AP13.33 §2.2: Esc mit geändertem Text fragt „Änderungen verwerfen?“ unter dem Feld; Esc in der Frage oder „Weiter
+  // bearbeiten“ führt zurück ins Feld, „Verwerfen“ schließt es ohne Änderung
+  function abbrechenFragen(id) {
+    var e = bearbeiten[id], k = knoten[id]; if (!e || !k) return;
+    var frage = k.werk.querySelector(".ed-verwerfen");
+    if (frage) { verwerfenZu(id); return; }
+    if (String(e.text).trim() === String(k.b.text).trim()) { abbrechen(id); return; }
+    frage = el("div", { cls: "ed-verwerfen", role: "group", "aria-label": T("verwerfen_frage") }, [
+      el("p", { text: T("verwerfen_frage") }),
+      el("div", { cls: "ed-knoepfe" }, [
+        el("button", { type: "button", cls: "knopf", "data-aktion": "verwerfen-ja", text: T("verwerfen_ja") }),
+        el("button", { type: "button", cls: "knopf haupt", "data-aktion": "verwerfen-nein", text: T("weiter_bearbeiten") })])]);
+    k.werk.querySelector(".ed-knoepfe").after(frage);
+    frage.querySelector("[data-aktion=verwerfen-nein]").focus();
+  }
+  function verwerfenZu(id) {
+    var k = knoten[id], frage = k && k.werk.querySelector(".ed-verwerfen"); if (!frage) return;
+    frage.remove();
+    var f = k.werk.querySelector(".ed-text"); if (f) f.focus();
   }
   function abbrechen(id) {
     var k = knoten[id];
@@ -550,8 +861,8 @@
       delete bearbeiten[id];
       var k = knoten[id];
       if (k) { k.werk.hidden = true; k.werk.textContent = ""; k.koerper.hidden = false; }
-      $("editor-stand").textContent = T("uebernommen");
       await aktualisieren();
+      meldung(id, T("uebernommen"));
       k = knoten[id];
       var b = k && k.kopf.querySelector("[data-aktion=bearbeiten]");
       if (b) b.focus({ preventScroll: true });
@@ -588,7 +899,8 @@
     wunsch.focus();
     textVorbereiten(id);
   }
-  function neuZu(id, abwaehlen) {
+  // `fokus`: der Fokus geht auf „Neu schreiben lassen“ dieses Bausteins (Esc)
+  function neuZu(id, abwaehlen, fokus) {
     var k = knoten[id], kt = karte(id);
     delete neuOffen[id]; delete neuText[id];
     if (abwaehlen && kt && kt.neu) { kt.neu = false; S.korrektur.text = ""; S.zeichneKarten(); S.zeichneKorrektur();
@@ -596,66 +908,102 @@
     if (!k) return;
     k.neu.hidden = true; k.neu.textContent = "";
     zeichneKopf(k, k.b, 0);
+    if (fokus) S.fokus([k.kopf.querySelector("[data-aktion=neu]")], true);
   }
+  // AP13.33 §1.1: je offenes Feld der Text nur für diesen Baustein, mit dem Wunsch, der beim Bauen im Feld stand
+  // (`wunsch`); „Text kopieren“ baut neu, wenn sich der Wunsch seitdem geändert hat
+  function wunschJetzt(id) { var kt = karte(id); return (kt && kt.auftrag) || ""; }
   async function textVorbereiten(id) {
-    var k = knoten[id]; if (!k || !neuOffen[id]) return;
-    var knopf = k.neu.querySelector("[data-aktion=neu-kopieren]");
+    var k = knoten[id]; if (!k || !neuOffen[id]) return null;
+    var knopf = k.neu.querySelector("[data-aktion=neu-kopieren]"), wunsch = wunschJetzt(id), md = Z.kurs_md;
     try {
-      var t = await S.korrekturText();
-      if (!neuOffen[id]) return;
-      neuText[id] = t;
+      var t = await S.korrekturText([id]);
+      if (!neuOffen[id] || !knoten[id]) return null;
+      if (wunschJetzt(id) !== wunsch || Z.kurs_md !== md) return textVorbereiten(id);   // inzwischen geändert
+      neuText[id] = { text: t, wunsch: wunsch, md: md };
       k.neu.querySelector(".ed-neu-feld").value = t;
       knopf.disabled = !t || (S.kiBesetzt && S.kiBesetzt());
       knopf.textContent = ki() ? T("an_ki") : T("text_kopieren");
-    } catch (e) { S.zeigeFehler(e); }
+      return neuText[id];
+    } catch (e) { S.zeigeFehler(e); return null; }
   }
   function neuStand(id, x, art) {
     var k = knoten[id]; if (!k) return;
     var p = k.neu.querySelector(".ed-neu-stand"); if (p) S.standKarte(p, x, art);
   }
+  // AP13.33 N5: ist der Text älter als der Wunsch, entsteht er neu; das Kopieren beginnt trotzdem in der Geste
+  // (S.kopierenSpaeter), damit Safari es nicht als Kopieren ohne Klick ablehnt
   function neuKopieren(id) {
-    var k = knoten[id], t = neuText[id]; if (!k || !t) return;
-    var antwort = k.neu.querySelector(".ed-antwort");
+    var k = knoten[id], v = neuText[id]; if (!k || !v) return;
+    var antwort = k.neu.querySelector(".ed-antwort"), feld = k.neu.querySelector(".ed-neu-feld");
+    // Nachprüfung 29.10.: auch nach „Bearbeiten“/„Übernehmen“ am Baustein neu bauen; alte Meldung „Kopiert“ weg
+    var stand = k.neu.querySelector(".ed-neu-kopiert"), alt = v.wunsch !== wunschJetzt(id) || v.md !== Z.kurs_md;
+    if (stand) stand.textContent = "";
+    if (alt) clearTimeout(wunschTimer[id]);
+    var text = alt ? textVorbereiten(id).then(function (x) { return x ? x.text : ""; }) : Promise.resolve(v.text);
     if (ki()) {
-      return S.anKi(t, { einheit: S.einheitTag(), neu: false, ort: k.neu.querySelector(".ed-neu-stand"), feld: "korrektur",
-        vorher: S.korrekturVermerken, stand: function (x, art) { neuStand(id, x, art); },
-        fertig: function (a) { antwort.value = a; return neuEinsetzen(id); } });
+      return text.then(function (t) {
+        if (!t) return;
+        return S.anKi(t, { einheit: S.einheitTag(), neu: false, ort: k.neu.querySelector(".ed-neu-stand"),
+          feld: "korrektur", vorher: S.korrekturVermerken, stand: function (x, art) { neuStand(id, x, art); },
+          fertig: function (a) { antwort.value = a; return neuEinsetzen(id); } });
+      });
     }
-    S.korrekturVermerken();
-    S.kopieren(t, k.neu.querySelector(".ed-neu-feld"), k.neu.querySelector(".ed-neu-kopiert"), T("kopiert"), function () {
+    var fertig = function () {
       km.kurzmeldung(k.neu.querySelector("[data-aktion=neu-kopieren]"), T("text_kopieren"));
       antwort.focus({ preventScroll: true });
-    });
+    };
+    S.korrekturVermerken();
+    if (!alt) return S.kopieren(v.text, feld, stand, T("kopiert"), fertig);
+    return S.kopierenSpaeter(text, feld, stand, T("kopiert"), fertig);
   }
   async function neuEinsetzen(id) {
     var k = knoten[id]; if (!k) return;
     var antwort = k.neu.querySelector(".ed-antwort");
-    var ok = await S.korrekturEinsetzen({ text: antwort.value, sprung: false, fokus: false,
+    var ok = await S.korrekturEinsetzen({ text: antwort.value, sprung: false, fokus: false, nur: id,
       stand: function (x, art) { neuStand(id, x, art); },
       diagnose: function (d) { var box = k.neu.querySelector(".ed-neu-diagnose"); if (box) S.diagnoseKarte(box, d); },
       leeren: function () { antwort.value = ""; } });
     if (!ok) return;
     if (!(karte(id) || {}).neu) {
       neuZu(id);
-      $("editor-stand").textContent = T("eingesetzt");
       await aktualisieren();
-      var b = knoten[id] && knoten[id].kopf.querySelector("[data-aktion=neu]");
-      if (b) b.focus({ preventScroll: true });
+      meldung(id, T("eingesetzt"));
+      // AP13.33 §2.3: Fokus auf den eingesetzten Baustein, die Ansicht zeigt seinen Anfang
+      var k2 = knoten[id], t = k2 && k2.kopf.querySelector(".ed-b-titel");
+      if (t) { zeigen(k2.el); t.focus({ preventScroll: true }); }
     }
   }
 
   // ---------------------------------------------------------------- Ereignisse in der Vorschau
   $("editor-vorschau").addEventListener("click", async function (ev) {
     var knopf = ev.target.closest("[data-aktion]"); if (!knopf) return;
+    var teil = knopf.closest(".ed-teilen");
+    if (teil) {
+      meldungenWeg();
+      var tid = teil.dataset.id, ta = knopf.dataset.aktion, t = teilKnoten[tid];
+      try {
+        if (ta === "teilen" && t) { t.offen = true; zeichneTeilen(t); }
+        else if (ta === "teilen-abbrechen") teilenZu(tid, true);
+        else if (ta === "teilen-ok") { knopf.disabled = true; await kachelTeilen(tid); }
+      } catch (e) { S.zeigeFehler(e); }
+      finally { knopf.disabled = false; }
+      return;
+    }
     var sec = knopf.closest(".ed-b"); if (!sec) return;
     var id = sec.dataset.id, a = knopf.dataset.aktion;
+    meldungenWeg();
     try {
+      if (a === "weitere-erstellen") return await weitereErstellen(knopf);
+      if (a === "weitere-kopieren") return weitereKopieren();
+      if (a === "weitere-einsetzen") return await weitereEinsetzen();
       if (a === "darstellung") {
         if (knopf.getAttribute("aria-checked") === "true") return;
         S.angaben.format = knopf.dataset.wert;
         await S.angabenSchreiben({ format: knopf.dataset.wert }, true);
         return;
       }
+      if (a === "kurstitel") return ueZiel === "kopf" ? ueZu() : ueFormular("kopf");
       if (a === "ue-uebernehmen") return await ueUebernehmen();
       if (a === "ue-abbrechen") return ueZu();
       if (a === "ue-hoch" || a === "ue-runter") {
@@ -664,11 +1012,14 @@
       }
       if (a === "bearbeiten") { if (bearbeiten[id]) abbrechen(id); else await bearbeitenAuf(id); }
       else if (a === "abbrechen") abbrechen(id);
+      else if (a === "verwerfen-ja") abbrechen(id);
+      else if (a === "verwerfen-nein") verwerfenZu(id);
       else if (a === "uebernehmen") await uebernehmen(id, knopf);
       else if (a === "zuruecknehmen") {
+        var war = handArt(id);
         if (await S.handZuruecknehmen(id)) {
-          $("editor-stand").textContent = T("zurueckgenommen");
           await aktualisieren();
+          meldung(id, T(war === "neu" ? "neu_zurueckgenommen" : "zurueckgenommen"));
           var t = knoten[id] && knoten[id].kopf.querySelector("[data-aktion=bearbeiten]"); if (t) t.focus();
         }
       }
@@ -678,6 +1029,13 @@
     } catch (e) { S.zeigeFehler(e); }
   });
   $("editor-vorschau").addEventListener("change", async function (ev) {
+    if (ev.target.classList.contains("ed-ue-bild")) { bildHinweis(); return; }
+    meldungenWeg();
+    if (ev.target.classList.contains("ed-in-kachel")) {
+      var b = ev.target.closest(".ed-b");
+      if (b) bausteinVerschieben(b.dataset.id, parseInt(ev.target.value, 10)).catch(S.zeigeFehler);
+      return;
+    }
     if (!ev.target.classList.contains("ed-ue-datei")) return;
     var f = ev.target.files && ev.target.files[0], nr = String(ueZiel || "").replace("abschnitt:", "");
     ev.target.value = "";
@@ -689,15 +1047,27 @@
     if (sel && Z.assets[name]) {
       if (!sel.querySelector("option[value='" + name + "']")) sel.appendChild(el("option", { value: name, text: name }));
       sel.value = name;
+      bildHinweis();
     }
   });
   $("editor-vorschau").addEventListener("keydown", function (ev) {
     if (ev.key === "Enter" && ev.target.classList.contains("ed-ue-titel")) { ev.preventDefault(); ueUebernehmen()
         .catch(S.zeigeFehler); }
+    if (ev.key === "Enter" && ev.target.classList.contains("ed-teilen-titel")) {
+      ev.preventDefault(); kachelTeilen(ev.target.closest(".ed-teilen").dataset.id).catch(S.zeigeFehler); }
+    if (ev.key === "Enter" && (ev.target.classList.contains("ed-w-thema") || ev.target.classList.contains("ed-w-minuten"))) {
+      ev.preventDefault();
+      var w = knoten[UE] && knoten[UE].werk.querySelector("[data-aktion=weitere-erstellen]");
+      if (w && !w.disabled) weitereErstellen(w).catch(S.zeigeFehler);
+    }
   });
   $("editor-vorschau").addEventListener("input", function (ev) {
     var sec = ev.target.closest(".ed-b"); if (!sec) return;
     var id = sec.dataset.id;
+    if (ev.target.classList.contains("ed-w-antwort")) {
+      if (ev.inputType === "insertFromPaste") setTimeout(function () { weitereEinsetzen().catch(S.zeigeFehler); }, 30);
+      return;
+    }
     if (ev.target.classList.contains("ed-text") && bearbeiten[id]) {
       bearbeiten[id].text = ev.target.value;
       clearTimeout(pruefTimer[id]);
@@ -708,8 +1078,8 @@
       var an = document.querySelector("#karte-" + CSS.escape(id) + " .k-auftrag");
       if (an) an.value = kt.auftrag;
       S.geaendert();
-      clearTimeout(wunschTimer);
-      wunschTimer = setTimeout(function () { textVorbereiten(id); S.korrekturSpaeter(0); }, 400);
+      clearTimeout(wunschTimer[id]);
+      wunschTimer[id] = setTimeout(function () { textVorbereiten(id); S.korrekturSpaeter(0); }, 400);
     } else if (ev.target.classList.contains("ed-antwort") && ev.inputType === "insertFromPaste") {
       setTimeout(function () { neuEinsetzen(id); }, 30);
     }

@@ -5,9 +5,9 @@
   if (!document.getElementById("schritt-5")) return;
   var S = km.seite;
   var $ = S.$, AUTO = S.AUTO, Z = S.Z, auswertung = S.auswertung, autosave = S.autosave, chatInfo = S.chatInfo,
-      einheitTag = S.einheitTag, el = S.el, fehlerZahl = S.fehlerZahl, formularname = S.formularname,
+      einheitTag = S.einheitTag, el = S.el, fehlerZahl = S.fehlerZahl, gelbZahl = S.gelbZahl, formularname = S.formularname,
       geaendert = S.geaendert, hoehe = S.hoehe, inhalt = S.inhalt, kopieren = S.kopieren, markiert = S.markiert,
-      mitMinuten = S.mitMinuten, nrVon = S.nrVon, schritt = S.schritt, status = S.status, teileOffen = S.teileOffen,
+      mitMinuten = S.mitMinuten, nrVon = S.nrVon, schritt = S.schritt, teileOffen = S.teileOffen,
       vorlageNach = S.vorlageNach, zeichne = S.zeichne, zeichneSchritte = S.zeichneSchritte,
       zeigeFehler = S.zeigeFehler, zeitSelbst = S.zeitSelbst, zweig = S.zweig;
   function pruefBaustein(id) { return Z.pruefung ? Z.pruefung.bausteine.filter(function (b) { return b.id === id;
@@ -44,13 +44,26 @@
     var v = vorlageNach((Z.mappe.einheit || {}).vorlage);
     return !!(v && v.phasen.some(function (p) { return p.optional && p.phase === k.phase; }));
   }
-  function neueId() {
-    var ids = {}, n = 1;
-    Z.mappe.bausteine.forEach(function (k) { ids[k.id] = 1; });
-    while (ids["b" + n]) n += 1;
-    return "b" + n;
+  // AP13.30: neue Karten zählen hinter der höchsten Nummer weiter (b6-2 zählt als 6); eine frei gewordene Nummer kommt
+  // nicht wieder, sonst träfe sie eine Karte mit demselben Namen in Kursdatei, Handänderungen oder einer Einheit davor
+  function naechsteNummer() {
+    var n = 0;
+    Z.mappe.bausteine.forEach(function (k) { var m = /^b(\d+)(?:-\d+)?$/.exec(k.id); if (m) n = Math.max(n, +m[1]); });
+    var re = /^id:\s*b(\d+)(?:-\d+)?\s*$/gm, m;
+    while ((m = re.exec(Z.kurs_md || ""))) n = Math.max(n, +m[1]);
+    return n + 1;
   }
+  function neueId() { return "b" + naechsteNummer(); }
 
+  // AP13.33 §1.6: Nummer wie am Rand und im Editor (gen/mappe.py nummern): ausgeschaltete Karten zählen nicht
+  function nummer(id) {
+    var liste = (Z.mappe && Z.mappe.bausteine) || [], n = 0;
+    for (var j = 0; j < liste.length; j++) {
+      if (!liste[j].aus) n += 1;
+      if (liste[j].id === id) return liste[j].aus ? null : n;
+    }
+    return null;
+  }
   function zeichneKarten() {
     var ol = $("karten"); ol.innerHTML = "";
     var liste = Z.mappe.bausteine, letzter = null, steuer = zweig() === "steuer";
@@ -59,6 +72,7 @@
     var zeitplanung = zeitSelbst() && steuer;
     var zeitInfo = (Z.kennzahlen && Z.kennzahlen.zeit) || {};
     liste.forEach(function (k, i) {
+      var nr = nummer(k.id), bez = nr ? "Baustein " + nr : "ausgeschalteter Baustein";
       var abschnitt = mehrere && k.abschnitt && k.abschnitt !== letzter ? el("p", { cls: "k-abschnitt",
           text: "Abschnitt " + k.abschnitt }) : null;
       if (k.abschnitt) letzter = k.abschnitt;
@@ -70,7 +84,7 @@
           weggelassen: "Weggelassen" }[st];
       var minuten = mitMinuten(k.typ);
       // Typ: „Ich steuere“ native Auswahl nach Rolle, „Mach du“ eine Beschriftung (Klick wechselt den Zweig)
-      var typFeld = k.geplant && steuer ? typAuswahl(k.typ, "Typ von Baustein " + (i + 1))
+      var typFeld = k.geplant && steuer ? typAuswahl(k.typ, "Typ von " + bez)
         : !steuer ? el("button", { type: "button", cls: "k-typ k-typ-mach", "data-aktion": "steuern",
             title: "Ändern in „Ich steuere“", text: formularname(k.typ) })
         : el("span", { cls: "k-typ", text: formularname(k.typ) });
@@ -79,7 +93,7 @@
       if (Z.pruefung && !k.geplant && !warten) {
         Z.pruefung.diagnosen.filter(function (d) { return d.baustein === k.id && d.stufe !== "hinweis"; })
             .forEach(function (d) {
-          var satz = (d.zeile_im_baustein ? "Zeile " + d.zeile_im_baustein + ": " : "") + d.text;
+          var satz = (d.zeile_im_baustein ? "Zeile " + d.zeile_im_baustein + " im Baustein: " : "") + d.text;
           // AP13.14: Sprach-Hinweis gelb ohne Bitte; der Knopf nimmt den Satz für den Chat in die Korrekturbitte
           // AP13.11 §8.9: an einer Handfassung kein Knopf (gelbe Bitten gehen für sie nicht an den Chat)
           var an = d.regel === "sprache.lang" && !hand ? S.spracheGelb.indexOf(k.id) >= 0 : null;
@@ -88,6 +102,8 @@
                 "aria-pressed": an ? "true" : "false", text: "Sprache anpassen lassen" })]));
         });
       }
+      if (k.geplant && k.leer_antwort && !k.aus) diag.appendChild(el("li", { cls: "warnung", "data-regel": "leer.antwort",
+          text: S.editorText("leer_antwort", { n: nr || "" }).replace(/^[^:]*:\s*/, "") }));
       var sl = schleife()[k.id];
       if (sl && sl.gleich && st === "fehler") diag.appendChild(el("li", { cls: "warnung k-gleich",
           text: "Die Antwort für „" + k.titel + "“ ist dieselbe wie vorher (Runde " + sl.rot + ")." }));
@@ -121,13 +137,14 @@
           " aus" : ""), "data-id": k.id, id: "karte-" + k.id }, [
         abschnitt,
         el("div", { cls: "k-kopf" }, [
-          el("span", { cls: "k-nr", text: String(i + 1) }), typFeld,
-          hand ? el("span", { cls: "k-hand", text: S.editorText("hand") }) : null,
+          el("span", { cls: "k-nr", text: nr ? String(nr) : "–" }), typFeld,
+          hand ? el("span", { cls: "k-hand", text: S.editorText(Z.mappe.hand[k.id].art === "neu" ? "neu_geschrieben" :
+              "hand") }) : null,
           el("span", { cls: "k-status", title: stText }, [el("span", { cls: "punkt", "aria-hidden": "true" }),
               stText])]),
         el("input", { cls: "k-titel von-" + herkunft, "data-herkunft": herkunft, type: "text", value: k.titel,
             readonly: !steuer,
-          "aria-label": "Titel von Baustein " + (i + 1) + (herkunft === "chat" ? " (vom Chat)" : " (von dir)") }),
+          "aria-label": "Titel von " + bez + (herkunft === "chat" ? " (vom Chat)" : " (von dir)") }),
         minuten && zeitplanung ? el("div", { cls: "k-felder" }, [
           el("label", { cls: "k-phase-l" }, ["Phase ", el("input", { cls: "k-phase", type: "text", list: "phasen",
               value: k.phase || "" })]),
@@ -138,7 +155,7 @@
             [el("input", { type: "checkbox", cls: "k-an", checked: !k.aus }),
           k.aus ? "Freiwillig, ausgeschaltet: einschalten" : "Freiwillig: verwenden"]) : null,
         steuer && !k.aus ? el("label", { cls: "k-auftrag-l" }, [el("span", { cls: "unsichtbar",
-            text: "Auftrag für Baustein " + (i + 1) }),
+            text: "Auftrag für " + bez }),
           el("textarea", { cls: "k-auftrag von-lehrkraft", rows: "1",
               placeholder: "Was soll hinein? Ein Satz genügt (optional)" })]) : null,
         diag,
@@ -148,10 +165,10 @@
         st === "fehler" && ausweg(k.id) ? auswegBlock(k, b) : null,
         hochladen, inhaltEl,
         steuer ? el("div", { cls: "k-aktionen" }, [
-          el("button", { type: "button", cls: "k-hoch klein", "data-aktion": "hoch", "aria-label": "Baustein " + (i +
-              1) + " nach oben", disabled: i === 0, text: "↑" }),
-          el("button", { type: "button", cls: "k-runter klein", "data-aktion": "runter", "aria-label": "Baustein " +
-              (i + 1) + " nach unten", disabled: i === liste.length - 1, text: "↓" }),
+          el("button", { type: "button", cls: "k-hoch klein", "data-aktion": "hoch", "aria-label": bez + " nach oben",
+              disabled: i === 0, text: "↑" }),
+          el("button", { type: "button", cls: "k-runter klein", "data-aktion": "runter", "aria-label": bez + " nach unten",
+              disabled: i === liste.length - 1, text: "↓" }),
           k.geplant ? null : el("button", { type: "button", cls: "k-neu klein", "data-aktion": "neu",
             "aria-pressed": k.neu ? "true" : "false", text: "Diesen Baustein neu beauftragen" }),
           el("button", { type: "button", cls: "k-loeschen klein", "data-aktion": "loeschen",
@@ -273,7 +290,25 @@
   // nicht mehr. -> {ok, meldungen}
   function handGeaendert(id) { return !!(Z.mappe && Z.mappe.hand && Z.mappe.hand[id]); }
   function handIds() { return Z.mappe && Z.mappe.hand ? Object.keys(Z.mappe.hand) : []; }
-  function hatFragen(ids) { return S.fragenListe.some(function (f) { return ids.indexOf(f.baustein) >= 0; }); }
+  // AP13.33 §1.4: die Durchsicht der Fragen gilt weiter, solange sich keine Frage und keine Lösung der geänderten
+  // Bausteine ändert. fragenStand(ids) vorher merken, durchsichtNach danach; geändert: Durchsicht zurück, die Bausteine
+  // stehen in `durchsicht_neu` (Satz und Knopf in den Schritten Fragen und Datei)
+  function fragenVon(id) {
+    return JSON.stringify(S.fragenListe.filter(function (f) { return f.baustein === id; }).map(function (f) {
+      return [f.art, f.frage, f.optionen, f.loesung]; }));
+  }
+  function fragenStand(ids) { var o = {}; ids.forEach(function (id) { o[id] = fragenVon(id); }); return o; }
+  function durchsichtNach(vorher) {
+    if (!Z.mappe) return;
+    var anders = Object.keys(vorher).filter(function (id) { return fragenVon(id) !== vorher[id]; });
+    if (!anders.length) return;
+    var neu = Z.mappe.durchsicht_neu || [];
+    if (Z.mappe.durchsicht || neu.length) {
+      anders.forEach(function (id) { if (neu.indexOf(id) < 0) neu.push(id); });
+      Z.mappe.durchsicht_neu = neu;
+    }
+    Z.mappe.durchsicht = false;
+  }
   function nachHandAenderung(id) {
     delete schleife()[id]; delete selbst[id];
     S.spracheGelb = S.spracheGelb.filter(function (x) { return x !== id; });
@@ -291,14 +326,14 @@
     var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, text, id, true, true]);
     if (!r.ersetzt.length && !r.eingefuegt.length) return { ok: false, meldungen: [{ stufe: "fehler",
         text: r.fehler.join(" ") || S.editorText("kein_baustein") }] };
-    var hand = Z.mappe.hand = Z.mappe.hand || {};
+    var hand = Z.mappe.hand = Z.mappe.hand || {}, fr = fragenStand([id]);
     if (!hand[id]) hand[id] = { vorher: vorher, zeit: Date.now() }; else hand[id].zeit = Date.now();
+    delete hand[id].art;                     // ein neu geschriebener Baustein ist jetzt von Hand geändert
     await km.stand(r.kurs_md);
     nachHandAenderung(id);
     await auswertung();
-    if (hatFragen([id])) Z.mappe.durchsicht = false;
+    durchsichtNach(fr);
     zeichne(); geaendert();
-    status("Baustein übernommen", "ok");
     return pr;
   }
   // „Handänderung zurücknehmen“: der Stand vor der ersten Handänderung kommt zurück, die Markierung entfällt
@@ -308,24 +343,49 @@
     await km.bereit();
     var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, h.vorher, id, false, true]);
     if (!r.ersetzt.length && !r.eingefuegt.length) return false;
+    var fr = fragenStand([id]);
     delete Z.mappe.hand[id];
     await km.stand(r.kurs_md);
     nachHandAenderung(id);
     await auswertung();
-    if (hatFragen([id])) Z.mappe.durchsicht = false;
+    durchsichtNach(fr);
     zeichne(); geaendert();
     return true;
   }
   // §9: Änderung an der Kursübersicht (Kurstitel, Abschnittskopf) als Handänderung `kopf` bzw. `abschnitt:n`; der
   // neue Text der Kursdatei kommt aus gen/mappe.py (kurstitel_setzen, abschnitt_setzen)
-  async function uebersichtAendern(md, schluessel, vorher, werte) {
+  function uebersichtAendern(md, schluessel, vorher, werte) {
+    return gliederungAendern(md, [{ schluessel: schluessel, vorher: vorher, werte: werte }], []);
+  }
+  // AP13.30: Gliederung (Kachel teilen, Baustein in eine andere Kachel, leere Kachel löschen) auf demselben Weg: je
+  // betroffenem Abschnitt eine Handänderung `abschnitt:…` mit Kopf, Vorgänger und den ids seiner Bausteine (gen/mappe.py
+  // kachel_teilen, baustein_verschieben, kachel_loeschen); `weg` = Einträge, deren Abschnitt es nicht mehr gibt. Danach
+  // gelten Rückgängig und die letzte Antwort (Moduswechsel) nicht mehr; eine neue Antwort fragt „Erhalten/Verwerfen“.
+  async function gliederungAendern(md, eintraege, weg) {
     var hand = Z.mappe.hand = Z.mappe.hand || {};
-    if (!hand[schluessel]) hand[schluessel] = { vorher: vorher, zeit: Date.now() };
-    Object.assign(hand[schluessel], werte, { zeit: Date.now() });
+    (weg || []).forEach(function (k) { delete hand[k]; });
+    (eintraege || []).forEach(function (e) {
+      if (!hand[e.schluessel]) hand[e.schluessel] = { vorher: e.vorher, zeit: Date.now() };
+      Object.assign(hand[e.schluessel], e.werte, { zeit: Date.now() });
+    });
     await km.stand(md);
     S.rueckgaengig = null; $("rueckgaengig").hidden = true; S.letzteAntwort = null;
     await auswertung();
     zeichne(); geaendert();
+  }
+  // AP13.30 §4a: nach dem Einsetzen einer Antwort die Karten markieren, die noch leer sind (gen/mappe.py
+  // leer_nach_antwort; Rand und Korrekturbitte nennen sie mit ihrer id), und die Karten, deren ID über Typ und Titel
+  // ergänzt wurde (`ergaenzt`, aus ids_ergaenzen; grauer Hinweis bis zur nächsten Antwort). `ohne`: ein Teil oder der
+  // Rest steht noch aus, dann keine Markierung „leer“.
+  async function nachAntwortMarkieren(ergaenzt, ohne) {
+    var leer = ohne ? [] : await km.mappeFn("leer_nach_antwort", [Z.mappe]);
+    var vorher = JSON.stringify(Z.mappe.bausteine);
+    Z.mappe.bausteine.forEach(function (k) {
+      if (leer.indexOf(k.id) >= 0) k.leer_antwort = true; else delete k.leer_antwort;
+      if ((ergaenzt || []).indexOf(k.id) >= 0 && !k.geplant) k.id_ergaenzt = true; else delete k.id_ergaenzt;
+    });
+    if (JSON.stringify(Z.mappe.bausteine) !== vorher)
+      Z.kennzahlen = await km.mappeFn("kennzahlen", [Z.mappe, Z.pruefung, null, Z.steckbrief_text]);
   }
   function handTitel(id) {
     if (id.indexOf("abschnitt:") === 0) {
@@ -335,7 +395,9 @@
     }
     if (id === "kopf") return S.editorText("kurstitel");
     var k = (Z.mappe.bausteine || []).filter(function (x) { return x.id === id; })[0];
-    return "„" + (k ? k.titel : id) + "“";
+    // AP13.33 §1.2: neu geschriebene Bausteine stehen in derselben Frage, mit dem Zusatz „neu geschrieben“
+    var neu = ((Z.mappe.hand || {})[id] || {}).art === "neu";
+    return "„" + (k ? k.titel : id) + "“" + (neu ? " (" + S.editorText("neu_geschrieben") + ")" : "");
   }
   // Frage vor dem Einsetzen einer Antwort, die von Hand geänderte Bausteine betrifft (§4); ein <dialog> über allem,
   // auch über der Ansicht „Einheit ansehen und bearbeiten“. Esc gilt als „Erhalten“ (nichts geht verloren).
@@ -352,7 +414,7 @@
         d.removeEventListener("cancel", abbruch);
         $("hand-erhalten").onclick = $("hand-verwerfen").onclick = null;
         if (d.open) d.close();
-        if (vorher && vorher.focus && document.contains(vorher)) vorher.focus({ preventScroll: true });
+        S.fokus([vorher], true);            // AP13.33 §2.1: nur, wenn die Stelle davor noch zu sehen ist
         fertig(wahl);
       }
       function abbruch(ev) { ev.preventDefault(); ende("erhalten"); }
@@ -372,13 +434,16 @@
     if (merk) merk.hand = wahl;
     if (wahl !== "erhalten") return { ids: ids, wahl: wahl, text: text, bausteine: -1 };
     var e = await km.mappeFn("hand_erhalten", [mappe, kurs_md, text, modus, nur, ids]);
-    return { ids: ids, wahl: wahl, text: e.text, bausteine: e.bausteine };
+    return { ids: ids, wahl: wahl, text: e.text, bausteine: e.bausteine, vorher: e.vorher || {} };
   }
-  // Nach dem Einsetzen: eingesetzte Bausteine kommen aus dem Chat, „Verwerfen“ nimmt die Markierung der betroffenen
+  // Nach dem Einsetzen: eingesetzte Bausteine kommen aus dem Chat, „Verwerfen“ nimmt die Markierung der betroffenen.
+  // AP13.33 §1.3: „Erhalten“: der Stand davor ist die Fassung dieser Antwort (der Block, den die Handfassung verdrängt)
   function handNachEinsetzen(eingesetzt, hv) {
     if (!Z.mappe.hand) return;
     eingesetzt.forEach(function (id) { delete Z.mappe.hand[id]; });
     if (hv && hv.wahl === "verwerfen") hv.ids.forEach(function (id) { delete Z.mappe.hand[id]; });
+    if (hv && hv.wahl === "erhalten") Object.keys(hv.vorher || {}).forEach(function (id) {
+      if (Z.mappe.hand[id]) Z.mappe.hand[id].vorher = hv.vorher[id]; });
   }
 
   function zeichneDiagnosen() {
@@ -454,6 +519,15 @@
         preventScroll: true }); }
   }
 
+  // AP13.33 §1.4: „Neu durchzusehen: die Fragen in „A“ und „B“.“, solange die Durchsicht nach einer Änderung aussteht
+  function durchsichtNeuText() {
+    var ids = (Z.mappe && !Z.mappe.durchsicht && Z.mappe.durchsicht_neu) || [];
+    var titel = ids.map(function (id) { var b = pruefBaustein(id) || S.karteNach(id); return b ? "„" + b.titel + "“" : null; })
+        .filter(Boolean);
+    if (!titel.length) return "";
+    var liste = titel.length === 1 ? titel[0] : titel.slice(0, -1).join(", ") + " und " + titel[titel.length - 1];
+    return S.editorText("durchsicht_neu", { titel: liste });
+  }
   function knoepfe() {
     var fehler = fehlerZahl(), voll = inhalt();
     // Fragen und Lösungen einmal ansehen (oder bewusst überspringen), bevor die Datei entsteht
@@ -467,6 +541,7 @@
     else if (!voll) t = "";
     else if (fehler) t = "In der Antwort " + (fehler === 1 ? "steht 1 Fehler" : "stehen " + fehler + " Fehler") +
         "; behebe sie in Schritt " + nrVon(5) + ".";
+    else if (!durchsicht && durchsichtNeuText()) t = durchsichtNeuText();
     else if (!durchsicht) t = "Sieh vorher in Schritt " + nrVon(6) + " die " + S.fragenListe.length +
         " Fragen und ihre Lösungen durch.";
     else if (fertig) t = "Die Datei ist heruntergeladen (" + Math.round(Z.bau.mbz.length / 1024) + " KB)" +
@@ -479,6 +554,9 @@
     if (S.bauLaeuft && es.querySelector(".muehle-warten")) es.querySelector(".laeuft-text").textContent = t;
     else if (S.bauLaeuft) { es.textContent = ""; es.append(S.wartezeichen(), el("span", { cls: "laeuft-text", text: t })); }
     else es.textContent = t;
+    // AP13.33 §1.4: nach einer Änderung an Fragen ein Knopf zum Schritt Fragen (dort steht, was neu durchzusehen ist)
+    $("zu-durchsicht").hidden = !(voll && !fehler && !durchsicht && !S.bauLaeuft && schritt() >= 7);
+    $("zu-durchsicht").textContent = S.editorText("durchsicht_neu_knopf");
     $("speichern").disabled = !Z.geladen || !Z.mappe;
     $("wiederherstellen").hidden = !(Z.bau && Z.bau.mbz);
     $("weiter-5").hidden = !(schritt() === 5 && voll && !fehler && !teileOffen());
@@ -642,14 +720,16 @@
     neuBeauftragt().forEach(function (k) { if (ids.indexOf(k.id) < 0) ids.push(k.id); });
     return ids;
   }
-  async function korrekturText() {
+  // `nur` (AP13.33 §1.1, Editor „Neu schreiben lassen“): der Text nur für diese Bausteine, ohne die übrigen Korrekturen
+  async function korrekturText(nur) {
     var neu = neuBeauftragt();
-    if (!neu.length) return S.korrekturen.map(function (k) { return k.satz; }).join("\n");
-    var ids = korrekturZiele();
+    if (!neu.length && !nur) return S.korrekturen.map(function (k) { return k.satz; }).join("\n");
+    var ids = nur || korrekturZiele();
     // AP13.11 §8.4: von Hand geänderte Bausteine gehen ungekürzt als „Bisheriger Inhalt“ mit
     var kontext = { _: 900 };
     handIds().forEach(function (id) { kontext[id] = null; });
     var t = await km.prompt("baustein", [Z.mappe, ids, Z.kurs_md, Z.steckbrief_text, null, kontext, Z.pruefung]);
+    if (nur) return t;
     var ohne = S.korrekturen.filter(function (k) { return !k.baustein; }).map(function (k) { return k.satz; });
     return t + (ohne.length ? "\n" + ohne.join("\n") + "\n" : "");
   }
@@ -678,7 +758,7 @@
     });
     var n = ziele.length;
     var nurGelb = !neu.length && S.korrekturen.length > 0 && S.korrekturen.every(function (k) {
-        return k.stufe === "warnung"; });
+        return k.regel === "sprache.lang"; });
     $("korrektur-titel").textContent = nurGelb ? (n === 1 ? "Ein Lesetext bekommt kürzere Sätze" : n +
         " Lesetexte bekommen kürzere Sätze")
       : n > 1 ? n + " Bausteine brauchen eine Korrektur" : n === 1 ? "Ein Baustein braucht eine Korrektur"
@@ -718,8 +798,9 @@
   function korrekturVermerken() {
     if (!Z.mappe) return;
     var liste = Z.mappe.korrekturen = Z.mappe.korrekturen || [], tag = einheitTag();
-    var runde = 1 + liste.filter(function (x) { return (x.einheit || "") === tag; }).reduce(function (m, x) {
-        return Math.max(m, x.runde || 0); }, 0);
+    // AP13.34 N6: Aufträge für neue Karten („neu.auftrag“) sind keine Korrekturrunde und verbrauchen keine Nummer
+    var runde = 1 + liste.filter(function (x) { return (x.einheit || "") === tag && x.regel !== "neu.auftrag"; })
+      .reduce(function (m, x) { return Math.max(m, x.runde || 0); }, 0);
     var basis = { version: (S.katalog && S.katalog.version) || "", chat: (chatInfo(Z.mappe.chat) || {}).text || "",
         runde: runde };
     if (tag) basis.einheit = tag;
@@ -754,7 +835,8 @@
   }
   // Antwort auf die Korrekturbitte einsetzen, nach `id:` (kein Modus). AP13.11 §8.3: Text, Meldungsort und Feld sind
   // Parameter, damit der Korrekturblock und der Editor („Neu schreiben lassen“) dieselbe Funktion rufen. o: {text,
-  // stand(satz, art), diagnose(d oder null), leeren(), sprung (zurück nach Schritt 5, nur der Korrekturblock), fokus}
+  // stand(satz, art), diagnose(d oder null), leeren(), sprung (zurück nach Schritt 5, nur der Korrekturblock), fokus,
+  // nur (AP13.33: Baustein, an den ein Block ohne passende id geht; der Editor setzt je Feld seinen)}
   // -> true, wenn eingesetzt
   function korrekturBlock() {
     return { text: $("korrektur-eingabe").value, sprung: true, fokus: true,
@@ -773,15 +855,33 @@
       await km.bereit();
       var saetzeVorher = S.korrekturen.map(function (k) { return k.satz; }).join("\n");
       var ziele = korrekturZiele(), ohne = S.korrekturen.some(function (k) { return !k.baustein; });
+      var ie = await km.mappeFn("ids_ergaenzen", [Z.mappe, text]);     // AP13.30 §4a: id aus Typ und Titel
+      text = ie.text;
       var mo = await km.mappeFn("modus", [Z.mappe, text]);
       if (mo.modus === "keine") {
         o.stand("", "");
         o.diagnose(await km.prompt("diagnose", [text])); return false;
       }
       o.diagnose(null);
-      var nur = ziele.length === 1 ? ziele[0] : null;
+      var nur = o.nur || (ziele.length === 1 ? ziele[0] : null);
+      // AP13.33 §1.2: neu beauftragte Bausteine gelten nach dem Einsetzen als „neu geschrieben“ (wie eine Handänderung;
+      // Stand davor = Fassung der letzten Antwort)
+      // Ein neu geschriebener Baustein, für den diese Bitte eine Korrektur verlangt (rot nach der Neufassung), fragt nicht:
+      // die Antwort ist die erbetene Korrektur der Neufassung, er bleibt „neu geschrieben“
+      var hand0 = Z.mappe.hand || {}, korrNeu = ziele.filter(function (id) { return hand0[id] && hand0[id].art === "neu"; });
+      var neuIds = neuBeauftragt().map(function (k) { return k.id; }).concat(korrNeu), neuVorher = {};
+      neuIds.forEach(function (id) {
+        var h = hand0[id], b = pruefBaustein(id);
+        neuVorher[id] = h ? h.vorher : b ? b.text : null;
+      });
       // §4: betrifft die Antwort von Hand geänderte Bausteine, fragt die Seite vorher (neu beauftragte zählen nicht)
-      var hv = await handVorEinsetzen(Z.mappe, Z.kurs_md, text, "baustein", nur, null);
+      var frageMappe = Z.mappe;
+      if (korrNeu.length) {
+        var ohneKorr = {};
+        Object.keys(hand0).forEach(function (id) { if (korrNeu.indexOf(id) < 0) ohneKorr[id] = hand0[id]; });
+        frageMappe = Object.assign({}, Z.mappe, { hand: ohneKorr });
+      }
+      var hv = await handVorEinsetzen(frageMappe, Z.kurs_md, text, "baustein", nur, null);
       if (hv.bausteine === 0) { o.leeren(); o.stand(S.editorText("hand_bleibt"), "ok"); return false; }
       var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, hv.text, nur, true]);
       var ids = r.ersetzt.concat(r.eingefuegt);
@@ -795,22 +895,29 @@
         o.stand(r.fehler.join(" ") || "Kein Baustein der Antwort passte zu einer Karte.", "fehler");
         return false;
       } else await km.stand(r.kurs_md);
+      var fr = fragenStand(ids);
       handNachEinsetzen(ids, hv);
+      r.ersetzt.forEach(function (id) {             // nicht bei „Einheit ersetzen“ (ganze Kursdatei ohne passende ids)
+        if (neuIds.indexOf(id) < 0 || neuVorher[id] === null || neuVorher[id] === undefined) return;
+        var hand = Z.mappe.hand = Z.mappe.hand || {};
+        hand[id] = { vorher: neuVorher[id], zeit: Date.now(), art: "neu" };
+      });
       Z.mappe.bausteine.forEach(function (k) { if (ids.indexOf(k.id) >= 0) k.neu = false; });
       S.spracheGelb = S.spracheGelb.filter(function (id) { return ids.indexOf(id) < 0; });
+      await nachAntwortMarkieren(ie.ids, teileOffen());
       if (o.sprung && schritt() !== 5) { Z.mappe.schritt = 5; S.auf = {}; }
       await auswertung();
-      if (hatFragen(ids)) Z.mappe.durchsicht = false;
+      durchsichtNach(fr);
       var gleich = schleifeMerken(ids, true);
       o.leeren();
       var rot = fehlerZahl(), satz = "Eingesetzt: " + ids.length + (ids.length === 1 ? " Baustein" : " Bausteine") +
           ".";
       if (!rot && !neuBeauftragt().length) {
         S.korrektur = { text: "", offen: false, stand: "", art: "" };
-        if (o.sprung) S.standKarte($("eingabe-stand"), satz +
-            " Alle Bausteine sind in Ordnung; sieh sie durch und geh dann weiter.", "ok");
+        var gelb = gelbZahl();       // AP13.34 §3.3: mit gelben Hinweisen nicht „alles in Ordnung“
+        if (o.sprung) S.standKarte($("eingabe-stand"), satz + (gelb ? " Keine Fehler. " + gelb + (gelb === 1 ? " Hinweis"
+            : " Hinweise") + "; sieh sie durch und geh dann weiter." : " Alle Bausteine sind in Ordnung; sieh sie durch und geh dann weiter."), "ok");
         else o.stand(satz, "ok");
-        status("Korrektur eingesetzt", "ok");
       } else {
         // „neu“ nur, wenn sich die Sätze geändert haben; derselbe Text wie vorher wird beim Namen genannt
         var neuSaetze = S.korrekturen.map(function (k) { return k.satz; }).join("\n") !== saetzeVorher;
@@ -841,8 +948,9 @@
     korrekturEingabeTimer = setTimeout(function () { korrekturEinsetzen(); }, ev.inputType === "insertFromPaste" ? 30 : 500);
   });
   $("korrektur-uebernehmen").onclick = function () { clearTimeout(korrekturEingabeTimer); korrekturEinsetzen(); };
-  Object.assign(S, { uebersichtAendern: uebersichtAendern,
-    handFrage: handFrage, handGeaendert: handGeaendert, handIds: handIds,
+  Object.assign(S, { uebersichtAendern: uebersichtAendern, gliederungAendern: gliederungAendern,
+    nachAntwortMarkieren: nachAntwortMarkieren, naechsteNummer: naechsteNummer,
+    handFrage: handFrage, handGeaendert: handGeaendert, handIds: handIds, nummer: nummer, durchsichtNeuText: durchsichtNeuText,
     handNachEinsetzen: handNachEinsetzen, handUebernehmen: handUebernehmen, handVorEinsetzen: handVorEinsetzen,
     handZuruecknehmen: handZuruecknehmen, korrekturEinsetzen: korrekturEinsetzen, korrekturText: korrekturText,
     korrekturVermerken: korrekturVermerken, knoepfe: knoepfe, korrekturSpaeter: korrekturSpaeter, neuBeauftragt: neuBeauftragt,
