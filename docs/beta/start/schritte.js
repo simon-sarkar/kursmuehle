@@ -162,7 +162,7 @@
     if (n > schritt() && n > 2 && materialFehlt()) { materialZeigen(true); return; }
     if (n > schritt()) erledigtBis(n);
     Z.mappe.schritt = n;
-    S.auf = {}; S.designer = null;
+    S.auf = {}; designerBeenden();
     zeichne();
     autosave();
     var sec = sektion(n);
@@ -559,7 +559,7 @@
     var b = ev.target.closest("[data-zweig]"); if (!b || !Z.mappe) return;
     var vorher = zweig();
     Z.mappe.zweig = b.dataset.zweig;
-    S.designer = null;
+    designerBeenden();
     if (vorher !== b.dataset.zweig && S.lehrplanVorbelegen) S.lehrplanVorbelegen();   // AP13.24: Felder des neuen Wegs
     if (vorher === "richtung" && b.dataset.zweig === "steuer") typenUebernehmen();
     if (b.dataset.zweig === "mach" || b.dataset.zweig === "richtung") {
@@ -1153,12 +1153,19 @@
     return bis === 1 && f && f.akzent_fest ? 2 : bis;     // Farbe gesperrt: Dichte gleich mit, sonst ginge es nicht weiter
   }
   function aussehenGewaehlt(feld) {
-    if (!Z.mappe || S.designer) return;
+    if (!Z.mappe) return;
     var i = feld === "bilder" || feld === "bildbeschriftung" ? 0 : FOLGE.indexOf(feld);
     if (i < 0) return;
     var bis = Math.max(aussehenBis(), i + 1), f = familieInfo(familieJetzt());
     if (bis === 1 && f && f.akzent_fest) bis = 2;          // bleibt, auch wenn danach ein anderes Design gilt
     Z.mappe.aussehen_bis = Math.min(FOLGE.length - 1, bis);
+  }
+  // AP13.28: Im Designer sind alle Gruppen zu sehen. Wer ihn verlässt („Fertig“, Wechsel des Zweigs, Weiter), hat sie
+  // gesehen: Schritt 3 zeigt danach alle, nie weniger als vorher. Ohne das fiel „Ränder“ nach dem Designer wieder weg
+  // (`aussehen_bis` stand noch auf der Stelle vor dem Designer), auch mit einer eigenen Wahl gleich dem Standard.
+  function designerBeenden() {
+    if (S.designer && Z.mappe) Z.mappe.aussehen_bis = FOLGE.length - 1;
+    S.designer = null;
   }
   function gruppe(g) { return document.querySelector('#schritt-3 .aus-gruppe[data-gruppe="' + g + '"]'); }
   function zeichneGruppen(s) {
@@ -1339,10 +1346,11 @@
   $("designer-fertig").onclick = function () {
     if (!S.designer) return;
     var y = S.designer.y;
-    S.designer = null;
+    designerBeenden();
     if (schritt() > 2) S.auf[2] = true;
     $("mehr").open = true;
     zeichne();
+    geaendert();
     window.scrollTo(0, y);
     $("zum-designer").focus({ preventScroll: true });
   };

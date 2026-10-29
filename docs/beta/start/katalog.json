@@ -722,6 +722,7 @@
    "qualitaet": 85
   },
   "bild_pruefung": "Passt, wenn Text im Bild lesbar ist (oder keiner da ist), Pfeile auf das Richtige zeigen und keine fremden Symbole oder Gesten zu sehen sind.",
+  "bild_spaeter": "Bild noch nicht hochgeladen (Schritt „Bilder“).",
   "wiederherstellen_bilder": [],
   "abschluss": [
    {

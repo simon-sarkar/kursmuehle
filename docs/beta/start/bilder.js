@@ -71,30 +71,58 @@
         nachher: blob.size };
   }
 
+  // AP13.28: Die Zeile eines Bildes in der Liste (offen oder zu)
+  function zeileVon(name) {
+    return $("bilder-liste").querySelector(".bild-zeile[data-datei=\"" + CSS.escape(name) + "\"]");
+  }
+  // Nach einer Wahl oder einem Drop gilt die Zeile nicht mehr als geschützt: das Dateifeld (oder ein anderer Knopf der
+  // Zeile) gibt den Fokus ab, sonst bliebe die Karte in ihrem alten Zustand stehen. -> war der Fokus in der Zeile?
+  function fokusAb(name) {
+    var li = zeileVon(name), a = document.activeElement;
+    if (li) delete li.dataset.waehlt;
+    if (li && a && a !== document.body && li.contains(a)) { a.blur(); return true; }
+    return false;
+  }
+  // Immer nach dem Setzen, auch wenn ein Schritt davor geworfen hat: ein Bild in Z.assets ist in der Karte sichtbar.
+  // `zeichne()` bleibt draußen, es kann selbst werfen. Der Fokus geht auf „Passt“ der neuen Karte, wenn er vorher in
+  // der Zeile lag und inzwischen nirgends sonst ist.
+  function bildGezeichnet(name, fokus) {
+    try { zeichneBilder(); geaendert(); } catch (e) { zeigeFehler(e); }
+    if (!fokus || (document.activeElement && document.activeElement !== document.body)) return;
+    var li = zeileVon(name), k = li && li.querySelector(".bild-passt, .bild-zuschneiden");
+    if (k) k.focus({ preventScroll: true });
+  }
+
   async function bildSetzen(datei, name) {
+    var fokus = false;
     try {
       var bild = await bildVorbereiten(datei);
       Z.assets[name] = bild.bytes;
+      fokus = fokusAb(name);
       if (Z.mappe && Z.mappe.bildformat) delete Z.mappe.bildformat[name];      // neues Bild: Format und Prüfung neu
       if (Z.mappe && Z.mappe.bildpruefung) delete Z.mappe.bildpruefung[name];
       bildGroesse[name] = await km.mappeFn("bild_verkleinert", [bild.vorher, bild.nachher]);
       await km.stand(Z.kurs_md);
       await auswertung();
-      zeichne(); geaendert();
+      zeichne();
     } catch (e) { zeigeFehler(e); }
+    finally { bildGezeichnet(name, fokusAb(name) || fokus); }
   }
 
   // c7: mittiger Ausschnitt im Format des Prompts aus dem Bild im Speicher; die Wahl steht in der Mappe (`bildformat`)
   async function zuschneiden(name, f) {
+    var fokus = false;
     try {
       var bild = await bildVorbereiten(new Blob([Z.assets[name]]), f);
       Z.assets[name] = bild.bytes;
+      fokus = fokusAb(name);
       formatMerken(name, "zugeschnitten");
       bildGroesse[name] = "Auf " + f[0] + ":" + f[1] + " zugeschnitten, " + bild.breite + " × " + bild.hoehe + " px.";
       await km.stand(Z.kurs_md);
       await auswertung();
-      zeichne(); geaendert();
+      zeichne();
     } catch (e) { zeigeFehler(e); }
+    finally { bildGezeichnet(name, fokusAb(name) || fokus); }
   }
   function formatMerken(name, wahl) { (Z.mappe.bildformat = Z.mappe.bildformat || {})[name] = wahl; }
 
