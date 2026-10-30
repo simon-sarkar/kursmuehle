@@ -165,8 +165,14 @@
     if (stand.uebersicht) ol.appendChild(el("li", {}, [el("button", { type: "button", cls: "ed-sprung", "data-ziel": UE }, [
       el("span", { cls: "ed-l-text" }, [el("span", { cls: "ed-l-titel", text: T("uebersicht") })]),
       ueHand() ? el("span", { cls: "ed-l-hand", title: T("hand"), "aria-label": T("hand"), text: "✎" }) : null])]));
+    var mehrE = S.mehrereEinheiten(), letzteE = null;          // AP13.35 §4.2: Überschrift je Einheit
     stand.bausteine.forEach(function (b, i) {
       if (b.typ === "Unterabschnitt") return;
+      var e = karte(b.id) ? S.einheitVon(karte(b.id)) : letzteE || "e1";
+      if (mehrE && e !== letzteE) {
+        letzteE = e;
+        ol.appendChild(el("li", { cls: "ed-l-einheit-li" }, [el("p", { cls: "ed-l-einheit", text: S.einheitName(e) })]));
+      }
       var st = statusVon(b);
       ol.appendChild(el("li", {}, [el("button", { type: "button", cls: "ed-sprung", "data-ziel": b.id }, [
         el("span", { cls: "ed-nr", text: String(nummer(b.id, i)) }),
@@ -389,7 +395,7 @@
     }
     k.b = { id: UE, titel: T("uebersicht") };
     zeichneUeKopf(k, u);
-    k.zeile.textContent = T("uebersicht_zeile") + (u.format === "wochen" && !S.angaben.start ? " " + T("wochen_start") : "");
+    k.zeile.textContent = T(S.beruehrung() ? "uebersicht_zeile_touch" : "uebersicht_zeile") + (u.format === "wochen" && !S.angaben.start ? " " + T("wochen_start") : "");
     var s = JSON.stringify([u.html, bilderSig]);
     if (s !== k.sig) {
       // AP13.33 §2.1: lag der Fokus in der alten Fläche (Kurstitel, Kachel, Pfeil), geht er an dieselbe Stelle der neuen
@@ -537,12 +543,12 @@
     var k = knoten[UE], ziel = ueZiel; if (!k || !ziel) return;
     // nur Felder, die die Lehrkraft geändert hat (sonst gingen Werte außerhalb der Listen verloren)
     var w = function (c) { var x = k.werk.querySelector("." + c); return x && x.value !== x.dataset.alt ? x.value : undefined; };
-    var meldung = k.werk.querySelector(".ed-ue-meldung"), titel = w("ed-ue-titel");
+    var mfeld = k.werk.querySelector(".ed-ue-meldung"), titel = w("ed-ue-titel");
     await km.bereit();
     if (ziel === "kopf" && titel === undefined) { ueZu(); return; }
     if (ziel === "kopf") {
       var r = await km.mappeFn("kurstitel_setzen", [Z.kurs_md, Z.steckbrief_text, titel]);
-      if (r.fehler) { meldung.textContent = r.fehler; meldung.className = "ed-meldungen ed-ue-meldung fehler"; return; }
+      if (r.fehler) { mfeld.textContent = r.fehler; mfeld.className = "ed-meldungen ed-ue-meldung fehler"; return; }
       Z.steckbrief_text = r.steckbrief; S.angaben.thema = titel.trim(); Z.mappe.titel = titel.trim();
       ueZu();
       await S.uebersichtAendern(r.kurs_md, "kopf", r.vorher, { titel: titel.trim() });
@@ -553,7 +559,7 @@
         var v = w("ed-ue-" + x); if (v !== undefined) angaben[["kachelbild", "kachelicon", "farbe"][i]] = v; });
       if (!Object.keys(angaben).length) { ueZu(); return; }
       var r2 = await km.mappeFn("abschnitt_setzen", [Z.kurs_md, nr, angaben, Z.mappe.hand || {}]);
-      if (r2.fehler) { meldung.textContent = r2.fehler; meldung.className = "ed-meldungen ed-ue-meldung fehler"; return; }
+      if (r2.fehler) { mfeld.textContent = r2.fehler; mfeld.className = "ed-meldungen ed-ue-meldung fehler"; return; }
       ueZu();
       // AP13.30: Abschnitte mit Handänderung nach diesem (neuer Titel = neuer Vorgänger) ziehen nach
       if (r2.vorher !== r2.nachher) await S.gliederungAendern(r2.kurs_md, [{ schluessel: r2.schluessel, vorher: r2.vorher,
@@ -680,7 +686,8 @@
         el("label", { cls: "feld ed-feld ed-w-minuten-l" }, [T("weitere_minuten"), minuten])]),
       el("p", { cls: "ed-meldungen ed-ue-meldung", role: "status" }),
       el("div", { cls: "ed-knoepfe" }, [
-        el("button", { type: "button", cls: "knopf haupt", "data-aktion": "weitere-erstellen", text: T("weitere_erstellen") }),
+        el("button", { type: "button", cls: "knopf haupt", "data-aktion": "weitere-erstellen",
+            text: T(S.zweig() === "steuer" ? "weitere_planen" : "weitere_erstellen") }),
         el("button", { type: "button", cls: "knopf", "data-aktion": "ue-abbrechen", text: T("abbrechen") })]));
     thema.focus();
   }
@@ -696,7 +703,14 @@
     m.textContent = T("weitere_laeuft"); m.className = "ed-meldungen ed-ue-meldung";
     try {
       await km.bereit();
+      var plan = S.zweig() === "steuer";
       await S.weitereEinheit(thema, parseInt(minuten, 10));
+      if (plan) {                 // AP13.35 §4.1: „Ich steuere“: weiter im Plan der neuen Einheit (Schritt 2)
+        ueZu(true);
+        schliessen();
+        setTimeout(function () { S.fokus([document.querySelector("#plan [data-aktion=k-plus]"), "weiter-2"]); }, 0);
+        return;
+      }
       await S.texteErzeugen();
       if (ueZiel === "weitere") weitereText();
     } finally { knopf.disabled = false; }
@@ -824,10 +838,12 @@
   }
   // AP13.33 §2.2: Esc mit geändertem Text fragt „Änderungen verwerfen?“ unter dem Feld; Esc in der Frage oder „Weiter
   // bearbeiten“ führt zurück ins Feld, „Verwerfen“ schließt es ohne Änderung
-  function abbrechenFragen(id) {
+  // AP13.36 §1.3: „Abbrechen“ und der Knopf „Bearbeiten“ fragen wie Esc (`esc`); ist die Frage schon da, wirken sie nicht
+  // wie „Weiter bearbeiten“ (nur Esc), sondern führen zu ihr
+  function abbrechenFragen(id, esc) {
     var e = bearbeiten[id], k = knoten[id]; if (!e || !k) return;
     var frage = k.werk.querySelector(".ed-verwerfen");
-    if (frage) { verwerfenZu(id); return; }
+    if (frage) { if (esc === false) frage.querySelector("[data-aktion=verwerfen-nein]").focus(); else verwerfenZu(id); return; }
     if (String(e.text).trim() === String(k.b.text).trim()) { abbrechen(id); return; }
     frage = el("div", { cls: "ed-verwerfen", role: "group", "aria-label": T("verwerfen_frage") }, [
       el("p", { text: T("verwerfen_frage") }),
@@ -876,13 +892,17 @@
     neuOffen[id] = true;
     if (!kt.neu) { kt.neu = true; S.korrektur.text = ""; }
     var wunsch = el("textarea", { cls: "ed-wunsch von-lehrkraft", rows: "2", placeholder: T("wunsch_platzhalter") });
-    wunsch.value = kt.auftrag || "";
+    // AP13.35 §3.5: das Feld beginnt leer (eigener Wunsch, `wunsch`); der Auftrag aus dem Plan steht darüber und geht
+    // wie bisher in den Text
+    wunsch.value = kt.wunsch || "";
+    var auftrag = String(kt.auftrag || "").trim();
     var feld = el("textarea", { cls: "unsichtbar ed-neu-feld", readonly: true, "aria-hidden": "true", tabindex: "-1" });
     var antwort = el("textarea", { cls: "ed-antwort", rows: "4", spellcheck: "false" });
     k.neu.textContent = "";
     k.neu.setAttribute("role", "group");
     k.neu.setAttribute("aria-label", T("neu_schreiben") + ": " + k.b.titel);
     k.neu.append(
+      auftrag ? el("p", { cls: "ed-plan-auftrag", text: T("auftrag_plan", { text: auftrag }) }) : "",
       el("label", { cls: "feld ed-feld" }, [T("wunsch"), wunsch]),
       el("div", { cls: "kopieren" }, [el("button", { type: "button", cls: "knopf haupt", "data-aktion": "neu-kopieren",
           disabled: true, text: ki() ? T("an_ki") : T("text_kopieren") })]),
@@ -903,6 +923,7 @@
   function neuZu(id, abwaehlen, fokus) {
     var k = knoten[id], kt = karte(id);
     delete neuOffen[id]; delete neuText[id];
+    if (abwaehlen && kt) delete kt.wunsch;
     if (abwaehlen && kt && kt.neu) { kt.neu = false; S.korrektur.text = ""; S.zeichneKarten(); S.zeichneKorrektur();
         S.geaendert(); S.korrekturSpaeter(0); }
     if (!k) return;
@@ -912,7 +933,7 @@
   }
   // AP13.33 §1.1: je offenes Feld der Text nur für diesen Baustein, mit dem Wunsch, der beim Bauen im Feld stand
   // (`wunsch`); „Text kopieren“ baut neu, wenn sich der Wunsch seitdem geändert hat
-  function wunschJetzt(id) { var kt = karte(id); return (kt && kt.auftrag) || ""; }
+  function wunschJetzt(id) { var kt = karte(id); return (kt && kt.wunsch) || ""; }
   async function textVorbereiten(id) {
     var k = knoten[id]; if (!k || !neuOffen[id]) return null;
     var knopf = k.neu.querySelector("[data-aktion=neu-kopieren]"), wunsch = wunschJetzt(id), md = Z.kurs_md;
@@ -1010,8 +1031,8 @@
         var nr = parseInt(String(ueZiel).replace("abschnitt:", ""), 10);
         return await verschieben(nr, a === "ue-hoch" ? -1 : 1);
       }
-      if (a === "bearbeiten") { if (bearbeiten[id]) abbrechen(id); else await bearbeitenAuf(id); }
-      else if (a === "abbrechen") abbrechen(id);
+      if (a === "bearbeiten") { if (bearbeiten[id]) abbrechenFragen(id, false); else await bearbeitenAuf(id); }
+      else if (a === "abbrechen") abbrechenFragen(id, false);
       else if (a === "verwerfen-ja") abbrechen(id);
       else if (a === "verwerfen-nein") verwerfenZu(id);
       else if (a === "uebernehmen") await uebernehmen(id, knopf);
@@ -1074,9 +1095,7 @@
       pruefTimer[id] = setTimeout(function () { pruefen(id).catch(S.zeigeFehler); }, 400);
     } else if (ev.target.classList.contains("ed-wunsch")) {
       var kt = karte(id); if (!kt) return;
-      kt.auftrag = ev.target.value;                     // derselbe Auftrag wie im Feld an der Karte („Ich steuere“)
-      var an = document.querySelector("#karte-" + CSS.escape(id) + " .k-auftrag");
-      if (an) an.value = kt.auftrag;
+      kt.wunsch = ev.target.value;                      // AP13.35 §3.5: neben dem Auftrag, nicht an seiner Stelle
       S.geaendert();
       clearTimeout(wunschTimer[id]);
       wunschTimer[id] = setTimeout(function () { textVorbereiten(id); S.korrekturSpaeter(0); }, 400);

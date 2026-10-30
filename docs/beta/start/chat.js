@@ -106,15 +106,17 @@
   async function texteLauf() {
     if (!Z.geladen || !Z.mappe || !Z.mappe.chat) { if (Z.mappe) zeichneChat(); return; }
     var nr = ++texte.laeuft;
-    var art = textArt();
+    var art = textArt(), md0 = pruefsumme(Z.kurs_md), mappe0 = Z.mappe;
     try {
       // Teile aus gen/prompt.py: nur die laufende Einheit; nach dem ersten Kopieren gilt die eingefrorene Stückelung
       var e = await km.prompt("einheit", [Z.mappe, Z.steckbrief_text, null, null, art === "leer", null, true,
           art === "kachel"]);
       var teile = e.teile;
+      basis(mappe0, md0, teile);                    // AP13.35 §3.3: auch ein überholter Lauf setzt den Stand
       if (nr !== texte.laeuft) return texte.lauf;   // ein neuerer Lauf ist schon unterwegs
       if (art !== texte.art || teile.length !== texte.teile.length) { texte.teil = 0; texte.kopiert = {}; }
       texte.art = art; texte.teile = teile; texte.ids = e.ids || [];
+      veraltetPruefen();
       if (texte.teil >= teile.length) texte.teil = 0;
       zeichneChat();
       felderFuellen();
@@ -150,6 +152,35 @@
     texte.teil = parseInt(b.dataset.teil, 10); $("kopiert").textContent = ""; zeichneChat();
   });
 
+  // AP13.35 §3.3: beim Kopieren merkt die Mappe den Text (`kopiert` = {text, md}: Prüfsummen von Text und Kursdatei).
+  // Ändert sich danach der Text, ohne dass eine Antwort oder Handänderung die Kursdatei geändert hat (anderer Weg,
+  // Schwerpunkt, Plan), fällt „kopiert“ weg; Schritt 4 sagt „Text geändert, noch einmal kopieren“. Ändert sich die
+  // Kursdatei, gilt der neue Text als Stand (er nennt die eingesetzten Bausteine). Ältere Mappen (`kopiert: true`) ohne.
+  function pruefsumme(t) {
+    var s = String(t || ""), h = 5381;
+    for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+    return (h >>> 0).toString(36) + "." + s.length;
+  }
+  function textStand(teile) { return pruefsumme((teile || texte.teile).join("\u0000")); }
+  // Ein Lauf, der mit einer neuen Kursdatei begann, setzt den Stand: sein Text entstand aus denselben Angaben wie der
+  // kopierte. km.stand stößt ihn nach jeder neuen Kursdatei sofort an (S.nachStand), damit eine Wahl danach nicht in den
+  // Stand rutscht
+  function basis(mappe, md, teile) {
+    var k = mappe && mappe.kopiert;
+    if (k && typeof k === "object" && k.md !== md && teile.length) { k.md = md; k.text = textStand(teile); }
+  }
+  S.nachStand = function () {
+    var k = Z.mappe && Z.mappe.kopiert;
+    if (k && typeof k === "object" && k.md !== pruefsumme(Z.kurs_md)) texteErzeugen();
+  };
+  function veraltetPruefen() {
+    var k = Z.mappe && Z.mappe.kopiert;
+    if (!k || typeof k !== "object" || !texte.teile.length || k.md !== pruefsumme(Z.kurs_md)) { texte.veraltet = false; return; }
+    var alt = !!texte.veraltet;
+    texte.veraltet = k.text !== textStand();
+    if (texte.veraltet && !alt) { texte.kopiert = {}; $("kopiert").textContent = ""; }
+    if (texte.veraltet !== alt) zeichneSchritte();
+  }
   // AP13.5h a5: ging der Text an die eigene KI, sagt das Fazit von Schritt 4 „Text gesendet“; ohne Merker (neu
   // geladen) gilt der gewählte Chat
   var gesendetAn = new WeakMap();
@@ -162,7 +193,8 @@
     eingabeZu(false);                              // neuer Text: das Einfügefeld gehört wieder dazu
     texte.kopiert[texte.teil] = true;
     if (!Z.mappe) return;
-    Z.mappe.kopiert = true;
+    Z.mappe.kopiert = { text: textStand(), md: pruefsumme(Z.kurs_md) };
+    texte.veraltet = false;
     gesendetAn.set(Z.mappe, !!gesendet);
     // beim ersten Kopieren eines gestückelten Textes Teilzahl und Zuordnung der Karten einfrieren
     if (texte.teile.length > 1 && !Z.mappe.stueckelung) {
@@ -548,9 +580,13 @@
         + (rot ? ", davon " + rot + " mit Fehler (rot)." : aussen ? "." : ". Sieh sie durch und geh dann weiter.") +
             mehr + e.text,
         rot || aussen ? "fehler" : "ok");
-      // AP13.33 §2.1: stand der Fokus im Feld, geht er an die nächste Stelle (Korrektur, Weiter, noch einmal einfügen)
+      // AP13.33 §2.1: stand der Fokus im Feld, geht er an die nächste Stelle. AP13.36 §1.2: nicht auf „Weiter“ (ein Enter
+      // überginge die Durchsicht der Karten), sondern auf die erste rote Karte, sonst auf die Meldung über den Karten
       if (feld) {
-        var neuOrt = S.fokusRetten(["korrektur-kopieren", "weiter-5", "eingabe-nochmal"], $("eingabe-bereich"));
+        var rotId = (Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler" && (!e.ids ||
+            e.ids.indexOf(b.id) >= 0); })[0] || {}).id;
+        var neuOrt = S.fokusRetten([rotId ? $("karte-" + rotId) : null, "eingabe-stand", "korrektur-kopieren", "weiter-5",
+            "eingabe-nochmal"], $("eingabe-bereich"));
         if (neuOrt) neuOrt.scrollIntoView({ block: "nearest" });
       }
       return true;

@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 98dd86a vom 30.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 1f52383 vom 30.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -109,7 +109,7 @@
 
   <!-- 1 Thema, Schulart, Jahrgangsstufe, Minuten -->
   <section id="start" class="schritt" data-nr="1" aria-labelledby="s1-titel">
-    <h2 class="s-kopf"><button type="button" class="s-zeile" data-nr="1"><span class="s-nr">1</span>
+    <h2 class="s-kopf" tabindex="-1"><button type="button" class="s-zeile" data-nr="1"><span class="s-nr">1</span>
       <span class="s-titel" id="s1-titel">Worum geht es?</span><span class="s-fazit"></span></button></h2>
     <div class="s-inhalt">
       <form id="start-form" class="start-form" autocomplete="off" novalidate>
@@ -144,17 +144,17 @@
 
   <!-- 2 Mach du oder Ich steuere -->
   <section id="schritt-2" class="schritt" data-nr="2" aria-labelledby="s2-titel" hidden>
-    <h2 class="s-kopf"><button type="button" class="s-zeile" data-nr="2"><span class="s-nr">2</span>
+    <h2 class="s-kopf" tabindex="-1"><button type="button" class="s-zeile" data-nr="2"><span class="s-nr">2</span>
       <span class="s-titel" id="s2-titel">Wie viel willst du selbst entscheiden?</span><span class="s-fazit"></span></button></h2>
     <div class="s-inhalt">
-      <div class="zweige" role="group" aria-label="Weg">
-        <button type="button" id="zweig-mach" class="zweig" data-zweig="mach" aria-pressed="false">
+      <div class="zweige" role="radiogroup" aria-label="Weg">
+        <button type="button" id="zweig-mach" class="zweig" data-zweig="mach" role="radio" aria-checked="false">
           <span class="zweig-name">Mach du</span>
           <span class="zweig-zeile">Kursmühle legt den Aufbau der Einheit fest. Du wählst nur noch das Aussehen und den Chat.</span></button>
-        <button type="button" id="zweig-richtung" class="zweig" data-zweig="richtung" aria-pressed="false">
+        <button type="button" id="zweig-richtung" class="zweig" data-zweig="richtung" role="radio" aria-checked="false">
           <span class="zweig-name">Ich gebe die Richtung</span>
           <span class="zweig-zeile">Du gibst Art, Schwerpunkt, Übungen und Sprache vor. Den Aufbau legt Kursmühle fest.</span></button>
-        <button type="button" id="zweig-steuer" class="zweig" data-zweig="steuer" aria-pressed="false">
+        <button type="button" id="zweig-steuer" class="zweig" data-zweig="steuer" role="radio" aria-checked="false">
           <span class="zweig-name">Ich steuere</span>
           <span class="zweig-zeile">Du beschreibst den Kurs, legst Kacheln an und gibst jeder Kachel Elemente.</span></button>
       </div>
@@ -171,6 +171,7 @@
       </div>
       <!-- Kontext in „Mach du“ und „Ich gebe die Richtung“, freiwillig; dieselbe Angabe wie unter „Mehr einstellen“ -->
       <div id="mach-teil" class="mach-teil" hidden>
+        <div id="m-kurs"></div>
         <label class="feld feld-breit">Worum geht es genau? <span class="feld-zeile">freiwillig</span>
           <textarea id="m-kontext" class="von-lehrkraft" rows="3" maxlength="600" spellcheck="true"
             placeholder="Was sollen die Lernenden danach können? Was ist vorausgesetzt, was nicht?"></textarea>
@@ -206,7 +207,8 @@
         </div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="r-art-t">Art der Einheit</h3>
           <div id="r-art" class="kacheln-wahl breit" role="radiogroup" aria-labelledby="r-art-t"></div>
-          <p id="r-art-vz" class="feld-zeile vorschlag-zeile" hidden>aus dem Lehrplan</p></div>
+          <p id="r-art-vz" class="feld-zeile vorschlag-zeile" hidden>aus dem Lehrplan</p>
+          <p id="r-art-gesperrt" class="feld-zeile" hidden></p></div>
         <div class="aus-gruppe"><h3 class="unterkopf" id="r-schwerpunkt-t">Schwerpunkt</h3>
           <div id="r-schwerpunkt" class="kacheln-wahl text-wahl" role="group" aria-labelledby="r-schwerpunkt-t"></div>
           <p id="r-schwerpunkt-vz" class="feld-zeile vorschlag-zeile" hidden>aus dem Lehrplan</p></div>
@@ -290,7 +292,7 @@
 
   <!-- 3 Aussehen -->
   <section id="schritt-3" class="schritt" data-nr="3" aria-labelledby="s3-titel" hidden>
-    <h2 class="s-kopf"><button type="button" class="s-zeile" data-nr="3"><span class="s-nr">3</span>
+    <h2 class="s-kopf" tabindex="-1"><button type="button" class="s-zeile" data-nr="3"><span class="s-nr">3</span>
       <span class="s-titel" id="s3-titel" tabindex="-1">Wie soll der Kurs aussehen?</span><span class="s-fazit"></span></button></h2>
     <div class="s-inhalt">
       <div class="aus-raster">
@@ -355,7 +357,7 @@
 
   <!-- 4 Chat wählen, Text kopieren -->
   <section id="schritt-4" class="schritt chat-teil" data-nr="4" aria-labelledby="s4-titel" hidden>
-    <h2 class="s-kopf"><button type="button" class="s-zeile" data-nr="4"><span class="s-nr">4</span>
+    <h2 class="s-kopf" tabindex="-1"><button type="button" class="s-zeile" data-nr="4"><span class="s-nr">4</span>
       <span class="s-titel" id="s4-titel">Text für den Chat</span><span class="s-fazit"></span></button></h2>
     <div class="s-inhalt">
       <div id="chat-wahl" class="chat-wahl">
@@ -422,7 +424,7 @@
 
   <!-- 5 Antwort einfügen, Bausteine mit Prüfstatus -->
   <section id="schritt-5" class="schritt" data-nr="5" aria-labelledby="s5-titel" hidden>
-    <h2 class="s-kopf"><button type="button" class="s-zeile" data-nr="5"><span class="s-nr">5</span>
+    <h2 class="s-kopf" tabindex="-1"><button type="button" class="s-zeile" data-nr="5"><span class="s-nr">5</span>
       <span class="s-titel" id="s5-titel">Antwort des Chats einfügen</span><span class="s-fazit"></span></button></h2>
     <div class="s-inhalt">
       <div class="einfuegen">
@@ -437,7 +439,7 @@
           <textarea id="eingabe" rows="6" spellcheck="false" placeholder="Hier einfügen (Strg+V oder lange drücken)"></textarea>
           <div id="eingabe-knopf" class="kopieren"><button type="button" id="eingabe-uebernehmen" class="knopf">Antwort übernehmen</button></div>
         </div>
-        <p id="eingabe-stand" class="stand-karte" role="status" aria-live="polite" hidden></p>
+        <p id="eingabe-stand" class="stand-karte" role="status" aria-live="polite" tabindex="-1" hidden></p>
         <button type="button" id="eingabe-nochmal" class="textlink" hidden>Noch einmal einfügen</button>
         <!-- die Antwort ergab keinen Baustein: die ersten drei Meldungen mit Zeile und Zitat, Satz für den Chat -->
         <div id="eingabe-diagnose" class="stand-karte fehler diagnose-karte" role="status" hidden></div>
@@ -473,7 +475,7 @@
 
   <!-- Bilder: nur, wenn die Antwort mindestens eine Zeile „Bildwunsch:“ hat -->
   <section id="schritt-bilder" class="schritt" data-nr="5.5" aria-labelledby="sb-titel" hidden>
-    <h2 class="s-kopf"><button type="button" class="s-zeile" data-nr="5.5"><span class="s-nr">6</span>
+    <h2 class="s-kopf" tabindex="-1"><button type="button" class="s-zeile" data-nr="5.5"><span class="s-nr">6</span>
       <span class="s-titel" id="sb-titel">Bilder einfügen</span><span class="s-fazit"></span></button></h2>
     <div class="s-inhalt">
       <p class="leise">Such zu jedem Bild ein freies Foto, zeichne es oder lass es von einem Bildgenerator erzeugen. Nimm
@@ -490,7 +492,7 @@
 
   <!-- 6 Fragen und Lösungen: erst der Weg (Kacheln), dann nur dessen Teil (AP13.5g) -->
   <section id="schritt-6" class="schritt" data-nr="6" aria-labelledby="s6-titel" hidden>
-    <h2 class="s-kopf"><button type="button" class="s-zeile" data-nr="6"><span class="s-nr">6</span>
+    <h2 class="s-kopf" tabindex="-1"><button type="button" class="s-zeile" data-nr="6"><span class="s-nr">6</span>
       <span class="s-titel" id="s6-titel">Fragen und Lösungen durchsehen</span><span class="s-fazit"></span></button></h2>
     <div class="s-inhalt">
       <!-- AP13.12 a10: Zeilen `Offen:` der Kursdatei (gen/api.offen), je Zeile mit dem Baustein, unter dem sie steht -->
@@ -558,7 +560,7 @@
 
   <!-- 7 Datei erstellen, wiederherstellen, weiter -->
   <section id="schritt-7" class="schritt" data-nr="7" aria-labelledby="s7-titel" hidden>
-    <h2 class="s-kopf"><button type="button" class="s-zeile" data-nr="7"><span class="s-nr">7</span>
+    <h2 class="s-kopf" tabindex="-1"><button type="button" class="s-zeile" data-nr="7"><span class="s-nr">7</span>
       <span class="s-titel" id="s7-titel">Datei für die Lernplattform</span><span class="s-fazit"></span></button></h2>
     <div class="s-inhalt">
       <div class="erstellen">
@@ -610,7 +612,10 @@
   </section>
 
   <section id="rueckmeldung" class="rueckmeldung" aria-labelledby="rm-titel" hidden>
-    <h2 id="rm-titel" class="abschnitt-titel">Rückmeldung</h2>
+    <div class="rm-kopf">
+      <h2 id="rm-titel" class="abschnitt-titel">Rückmeldung</h2>
+      <button type="button" id="rm-zu" class="textlink">Schließen</button>
+    </div>
     <p>Schreib mir, wie es lief. „Per Mail senden“ öffnet dein Mailprogramm mit dem Text unten an
       <strong id="rm-adresse">kursmuehle@pm.me</strong>; du kannst ihn auch kopieren. Er enthält keine Inhalte aus deiner
       Einheit.</p>
@@ -656,6 +661,8 @@
   <label id="zeit-schalter" class="schalter zeit-schalter"><input id="zeit-selbst" type="checkbox"> Zeit je Phase selbst einstellen
     <span class="feld-zeile">Aus: der Chat verteilt die Minuten. An: du gibst sie je Baustein vor.</span></label>
   <p id="karten-warnung" class="karten-warnung" role="status" hidden></p>
+  <!-- AP13.35 §2.3: gelbe Hinweise der ganzen Einheit (die Bausteine füllen die Dauer nicht) über den Karten -->
+  <p id="einheit-warnung" class="karten-warnung" role="status" hidden></p>
   <p id="rueckgaengig" class="rueckgaengig" hidden><span id="rueckgaengig-text"></span>
     <button type="button" id="rueckgaengig-knopf" class="textlink">Rückgängig</button></p>
   <ol id="karten" class="karten"></ol>

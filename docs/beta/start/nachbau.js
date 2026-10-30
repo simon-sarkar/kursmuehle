@@ -15,10 +15,31 @@
   var BUCHST = "ABCDEFGHIJ";
   function zeichneFragen() {
     var ol = $("fragen-liste"); ol.innerHTML = "";
-    $("fragen-zeile").textContent = S.fragenListe.length
-      ? S.fragenListe.length + " Fragen mit ihren Lösungen, ohne Rückmeldungen. Prüfe, ob jede Lösung stimmt." : "";
+    // AP13.35 §4.2: mit mehreren Einheiten die Fragen der laufenden offen, die früheren je Einheit zugeklappt darunter
+    var mehr = S.mehrereEinheiten(), jetzt = S.einheitTag() || "e1", frueher = {}, reihe = [];
+    var eigene = S.fragenListe.filter(function (f) {
+      var e = S.einheitVon(S.karteNach(f.baustein));
+      if (!mehr || e === jetzt) return true;
+      if (!frueher[e]) { frueher[e] = []; reihe.push(e); }
+      frueher[e].push(f);
+      return false;
+    });
+    $("fragen-zeile").textContent = eigene.length
+      ? eigene.length + " Fragen mit ihren Lösungen, ohne Rückmeldungen. Prüfe, ob jede Lösung stimmt." : "";
+    if (mehr && eigene.length) ol.appendChild(el("li", { cls: "f-einheit" }, [el("h3", { cls: "f-einheit-t",
+        text: S.einheitName(jetzt) })]));
+    fragenZeichnen(ol, eigene);
+    reihe.forEach(function (e) {
+      var unter = el("ol", { cls: "fragen-liste" });
+      fragenZeichnen(unter, frueher[e]);
+      ol.appendChild(el("li", { cls: "f-einheit f-frueher" }, [el("details", {}, [el("summary", { cls: "f-einheit-t",
+          text: S.editorText("fragen_frueher", { name: S.einheitName(e), zahl: frueher[e].length }) }), unter])]));
+    });
+    zeichneGegen();
+  }
+  function fragenZeichnen(ol, liste) {
     var letzter = null;
-    S.fragenListe.forEach(function (f) {
+    liste.forEach(function (f) {
       var kopf = f.baustein !== letzter ? el("p", { cls: "f-baustein" }, [el("button", { type: "button",
           cls: "hinweis-link", "data-ziel": f.baustein, text: f.titel })]) : null;
       letzter = f.baustein;
@@ -35,7 +56,6 @@
       ol.appendChild(el("li", { cls: "frage" }, [kopf, el("p", { cls: "f-frage", text: (f.art === "rf" ?
           "Richtig oder falsch: " : "") + f.frage }), optionen, loesung]));
     });
-    zeichneGegen();
   }
   $("fragen-liste").onclick = function (ev) { var z = ev.target.closest("[data-ziel]"); if (z) zuKarte(z.dataset.ziel);
       };
@@ -247,7 +267,7 @@
     autosave();
     zeichneGegen();
     // AP13.33 §2.3: bei „Ich prüfe selbst“ auf die erste Frage (im Bild), sonst auf den Knopf des Wegs
-    var erste = b.dataset.weg === "selbst" && $("fragen-liste").querySelector("li");
+    var erste = b.dataset.weg === "selbst" && $("fragen-liste").querySelector("li.frage");
     if (erste) { erste.tabIndex = -1; erste.scrollIntoView({ block: "nearest" }); erste.focus({ preventScroll: true }); return; }
     var f = { ki: "gegen-senden", chat: "gegen-kopieren", selbst: "durchsicht-ok" }[b.dataset.weg];
     if ($(f) && !$(f).disabled) $(f).focus({ preventScroll: true });
@@ -495,7 +515,8 @@
     var e = { thema: thema, jahrgang: alt.jahrgang || "", minuten: minuten };
     if (alt.jahrgang_zuletzt) e.jahrgang_zuletzt = alt.jahrgang_zuletzt;
     naechsteEinheit();
-    return S.einheitAnhaengen(e, true);
+    // AP13.35 §4.1: in „Ich steuere“ plant die Lehrkraft auch diese Einheit im Plan (derselbe Weg wie Schritt 2)
+    return S.einheitAnhaengen(e, zweig() !== "steuer");
   };
   $("speichern").onclick = async function () {
     try {
@@ -518,8 +539,11 @@
         /* Hinweis steht schon unter der Kursdatei */ } }
     leeren();
     weiterAnzeigen();
+    // AP13.36 §1.1: der Knopf ist weg; der Fokus geht ins Feld „Thema“, am Handy auf die Überschrift (keine Tastatur)
+    S.fokus(S.beruehrung() ? [document.querySelector("#start .s-kopf"), "f-thema"] : ["f-thema"], true);
   };
   function leeren() {
+    delete $("rueckmeldung").dataset.offen; delete $("rueckmeldung").dataset.zu;
     Z.mappe = null; Z.kurs_md = ""; Z.steckbrief_text = ""; Z.assets = {}; Z.pruefung = null; Z.kennzahlen = null;
         Z.bau = null; Z.vergleich = null; korrigieren = {}; gegenFuer = null;
     S.rueckgaengig = null; $("rueckgaengig").hidden = true; S.angaben = {};
@@ -560,12 +584,15 @@
     var frei = rmErgebnis && rmErgebnis !== "lief" ? ["Was ist passiert?", $("rm-passiert").value.trim(), "",
       "Fehlermeldung der Plattform:", $("rm-meldung").value.trim(), ""] : [];
     return ["Rückmeldung zu Kursmühle " + ((S.katalog && S.katalog.version) || ""), "",
-      "Ergebnis: " + (ERGEBNIS[rmErgebnis] || "–"), "Importiert: " + (Z.mappe && imp ? "ja" : "nein"),
+      // AP13.35 §4.3: „ja“ erst, wenn die Lehrkraft es bestätigt hat; vorher weiß die Mühle es nicht
+      "Ergebnis: " + (ERGEBNIS[rmErgebnis] || "–"), "Importiert: " + (Z.mappe && imp ? "ja" : "–"),
       "Minuten bis zur Datei: " + (min === null ? "–" : min)]
       .concat(echt ? ["Korrekturrunden: " + runden(m)] : [], [
       "Chat: " + (c ? (m.chat === "eigene" && S.kiName ? S.kiName() : c.text) : "–"), "Fach: " + (S.angaben.fach || "–"),
       ohneLp && !jg ? "Lehrplanbezug: nein" : "Jahrgangsstufe: " + (jg || "–"),
-      "Vorlage: " + (e.vorlage || "–") + (m.zweig ? " (" + ZWEIG_TEXT[m.zweig] + ")" : "")], echt ? [korrekturZeile(m)] : [],
+      // AP13.35 §4.3: die Vorlage nur, wenn eine gewählt wurde; ein eigener Plan heißt so
+      "Vorlage: " + (S.eigenerPlan() ? S.editorText("eigener_plan") : S.vorlageGewaehlt() && e.vorlage || "–") +
+          (m.zweig ? " (" + ZWEIG_TEXT[m.zweig] + ")" : "")], echt ? [korrekturZeile(m)] : [],
       [""], frei, ["Wo hat es gestockt?", "", "", "Was hättest du anders gewollt?", "", "",
           "Nimmst du es für deine nächste Einheit wieder? Wenn nicht, woran liegt es?", "", ""]).join("\n");
   }
@@ -615,13 +642,30 @@
     if (rmErgebnis !== "lief") $("rm-passiert").focus({ preventScroll: true });
   };
   ["rm-passiert", "rm-meldung"].forEach(function (id) { $(id).addEventListener("input", rueckmeldungFuellen); });
+  // AP13.36 §1.4: der Bereich lässt sich schließen (Knopf „Schließen“ und Esc); der Fokus geht zurück an die Stelle, die
+  // ihn geöffnet hat (`rmDavor`), sonst zu einem der Links
+  var rmDavor = null;
   function rueckmeldungOeffnen() {
-    $("rueckmeldung").dataset.offen = "1";
+    var a = document.activeElement, sec = $("rueckmeldung");
+    if (a && a !== document.body && !sec.contains(a) && !a.closest("dialog")) rmDavor = a;
+    delete sec.dataset.zu;
+    sec.dataset.offen = "1";
     rueckmeldungFuellen();
     zeichneSchritte();
-    $("rueckmeldung").scrollIntoView({ block: "start" });
+    sec.scrollIntoView({ block: "start" });
     $("rm-text-kopieren").focus({ preventScroll: true });
   }
+  function rueckmeldungSchliessen() {
+    var sec = $("rueckmeldung"), davor = rmDavor;
+    rmDavor = null;
+    delete sec.dataset.offen; sec.dataset.zu = "1";
+    zeichneSchritte();
+    S.fokus([davor, "rueckmeldung-auf", "fuss-rueckmeldung"]);
+  }
+  $("rm-zu").onclick = rueckmeldungSchliessen;
+  $("rueckmeldung").addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape" && !ev.defaultPrevented) { ev.preventDefault(); rueckmeldungSchliessen(); }
+  });
   $("rueckmeldung-auf").onclick = rueckmeldungOeffnen;
   $("fuss-rueckmeldung").onclick = rueckmeldungOeffnen;
   $("rm-mail").addEventListener("click", function () { bitteMerken({ nie: true }); });

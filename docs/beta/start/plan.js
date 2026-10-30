@@ -18,7 +18,6 @@
   // letztes Löschen, einstufig: {art: "element", karte, nach (id der Karte davor), index, titel, kachel} oder
   // {art: "kachel", kachel, index, titel}; die nächste andere Änderung nimmt es weg
   var rueck = null;
-  var kontextTimer = null;
   var beruehrt = new WeakSet();  // Mappen, deren Beschreibung die Lehrkraft schon bearbeitet hat (dann kein Thema als Vorbelegung)
 
   // ---------------------------------------------------------------- Daten
@@ -179,6 +178,12 @@
 
   // Die Darstellung ist eine Radiogruppe (role=radiogroup, Knöpfe role=radio mit data-wert): Tab-Halt und Pfeiltasten
   // kommen aus kern.js (AP13.33, S.radioTabs), ein Pfeil klickt die nächste Kachel
+  // AP13.35 §1.1: ein Feld des Plans hat den Fokus (Tippen, Tab zum nächsten Feld)? Dann ersetzt kein Neuzeichnen von
+  // außen (Prüfung, Autosave, Text für den Chat) die Felder; was getippt ist, steht schon in der Mappe
+  function tippt() {
+    var a = document.activeElement;
+    return !!(a && box.contains(a) && (a.tagName === "TEXTAREA" || (a.tagName === "INPUT" && a.type !== "checkbox")));
+  }
   function zeichnePlan(fokus) {
     var an = planPhase();
     box.hidden = !an;
@@ -192,14 +197,28 @@
     if (S.zeichnePlanung) S.zeichnePlanung();
     var aktiv = elemente().filter(function (k) { return !k.aus; }).length;
     $("weiter-2").disabled = !aktiv;
+    summeZeigen();
     if (fokus) fokusSetzen(fokus);
     else if (m) fokusSetzen(m.schl, m);
+  }
+  // AP13.35 §2.1: mit „Zeit selbst einteilen“ die Summe der Elemente neben der Dauer der Einheit. Haben alle Elemente
+  // Minuten, gilt ihre Summe im Text für den Chat (gen/prompt.py einheit_zeit): gelb über 10 % neben der Dauer. Sonst
+  // verteilt die Mühle den Rest (neutral); gelb nur, wenn die vergebenen Minuten die Dauer schon überschreiten
+  function summeZeigen() {
+    var p = box.querySelector("#plan-summe"); if (!p) return;
+    var soll = parseInt((Z.mappe.einheit || {}).minuten, 10) || 0, summe = 0, offen = 0;
+    var zaehlen = elemente().filter(function (k) { return !k.aus && S.mitMinuten(k.typ); });
+    zaehlen.forEach(function (k) { var m = parseInt(k.soll, 10) || 0; summe += m; if (!m) offen += 1; });
+    p.hidden = !zaehlen.length;                    // ohne Element gibt es nichts zu zählen
+    p.textContent = offen ? T("plan_summe_rest", { summe: summe }) : T("plan_summe", { summe: summe, minuten: soll });
+    p.classList.toggle("warn", !!soll && (offen ? summe > soll : Math.abs(summe - soll) > soll * 0.1));
   }
 
   function beschreiben() {
     var feld = el("textarea", { id: "plan-beschreibung", cls: "von-lehrkraft", rows: "3", maxlength: "600", spellcheck: "true",
         "data-fokus": "beschreibung" });
-    feld.value = S.angaben.kontext || (beruehrt.has(Z.mappe) ? "" : (Z.mappe.einheit && Z.mappe.einheit.thema) || "");
+    // AP13.35 §1.2: je Einheit (S.kontextJetzt); eine angehängte Einheit beginnt leer, nur die erste zeigt das Thema vor
+    feld.value = S.kontextJetzt() || (beruehrt.has(Z.mappe) || tag() ? "" : (Z.mappe.einheit && Z.mappe.einheit.thema) || "");
     var hue = S.akzent ? S.akzent() : "#1D5FD1", format = S.angaben.format || "themen";
     var wahl = el("div", { cls: "ed-darstellung", role: "radiogroup", "aria-labelledby": "plan-darstellung-t" },
         S.katalog.oberflaeche.format.map(function (w) {
@@ -211,6 +230,7 @@
       return b;
     }));
     return el("div", { cls: "plan-beschreiben" }, [
+      tag() && S.kursZeile ? S.kursZeile() : null,            // AP13.35 M1: ab Einheit 2 die Kursbeschreibung
       el("label", { cls: "feld feld-breit" }, [T("plan_beschreiben"),
         el("span", { cls: "feld-zeile", text: T("plan_beschreiben_zeile") }), feld]),
       el("div", { cls: "ed-darstellung-l plan-darstellung" }, [el("span", { cls: "ed-darstellung-t", id: "plan-darstellung-t",
@@ -232,6 +252,7 @@
     var teile = [el("h3", { cls: "unterkopf", text: T("uebersicht") }),
       el("p", { cls: "leise plan-zeile", text: T("plan_zeile") }),
       el("label", { cls: "schalter plan-zeit" }, [zeit, T("plan_zeit"), el("span", { cls: "feld-zeile", text: T("plan_zeit_zeile") })])];
+    if (S.zeitSelbst()) teile.push(el("p", { id: "plan-summe", cls: "plan-summe", role: "status" }));
     var v = S.vorlageNach((Z.mappe.einheit || {}).vorlage) || S.katalog.vorlagen[0];
     if (!liste.length && !elemente().length) teile.push(el("p", { cls: "plan-leer" }, [T("plan_leer") + " ",
       el("button", { type: "button", cls: "textlink", "data-aktion": "vorschlag", "data-fokus": "vorschlag",
@@ -255,21 +276,24 @@
     els.forEach(function (k, j) { ol.appendChild(element(k, j, els.length, zaehle)); });
     var kopf = el("div", { cls: "plan-k-kopf" }, [
       format === "wochen" ? el("span", { cls: "plan-k-woche", text: "Woche " + (i + 1) }) : null,
-      titel,
-      el("span", { cls: "plan-k-pfeile" }, [
+      titel]);
+    // AP13.35 §1.1: die Pfeile stehen hinter „Was soll hier rein?“ und den Elementen. Zwischen Titel und Text fing ein Tab
+    // den Pfeil, und die Leertaste im getippten Satz schob die Kachel nach oben (Erkundung e4, Befund 1)
+    var pfeile = el("span", { cls: "plan-k-pfeile" }, [
         el("button", { type: "button", cls: "klein", "data-aktion": "k-hoch", "data-fokus": "kh:" + i, disabled: i === 0,
             "aria-label": (quer ? T("links") : T("hoch")) + ": " + ka.titel, title: quer ? T("links") : T("hoch"), text: quer ? "←" : "↑" }),
         el("button", { type: "button", cls: "klein", "data-aktion": "k-runter", "data-fokus": "kr:" + i, disabled: i === n - 1,
             "aria-label": (quer ? T("rechts") : T("runter")) + ": " + ka.titel, title: quer ? T("rechts") : T("runter"),
-            text: quer ? "→" : "↓" })])]);
+            text: quer ? "→" : "↓" })]);
     var kinder = [kopf,
       el("label", { cls: "feld plan-k-text-l" }, [T("plan_kachel_text"), text]),
       els.length ? ol : el("p", { cls: "plan-k-leer leise" }, [T("plan_kachel_leer") + " ",
         el("button", { type: "button", cls: "textlink", "data-aktion": "k-loeschen", "data-fokus": "kl:" + i,
             "aria-label": T("plan_loeschen") + ": " + ka.titel, text: T("plan_loeschen") })])];
     if (rueck && rueck.art === "element" && rueck.kachel === ka.titel) kinder.push(rueckZeile());
-    kinder.push(el("button", { type: "button", cls: "knopf klein-knopf plan-el-plus", "data-aktion": "el-plus", "data-fokus": "ep:" + i,
-        "aria-label": T("plan_element_plus").replace(/^\+\s*/, "") + ": " + ka.titel, text: T("plan_element_plus") }));
+    kinder.push(el("div", { cls: "plan-k-fuss" }, [el("button", { type: "button", cls: "knopf klein-knopf plan-el-plus",
+        "data-aktion": "el-plus", "data-fokus": "ep:" + i, "aria-label": T("plan_element_plus").replace(/^\+\s*/, "") + ": " +
+        ka.titel, text: T("plan_element_plus") }), pfeile]));
     return el("section", { cls: "plan-kachel", "data-nr": String(i), role: "group", "aria-label": T("plan_kachel") + ": " + ka.titel },
         kinder);
   }
@@ -354,19 +378,38 @@
     ordnen();
     return k;
   }
-  function kachelUmbenennen(feld) {
+  // AP13.35 §1.1: der Titel geht beim Tippen in die Mappe (leer oder doppelt: der letzte gültige bzw. „Titel 2“); kein
+  // Neuzeichnen, das das Feld mit dem Fokus oder das nächste Feld ersetzt. Beim Verlassen und mit Enter zeigt das Feld
+  // den Titel, der gilt; Beschriftungen und die Auswahl „In Kachel“ ziehen ohne Neuzeichnen nach
+  function kachelUmbenennen(feld, fertig) {
     var i = parseInt(feld.dataset.nr, 10), ka = kacheln()[i]; if (!ka) return;
     var t = feld.value.replace(/\s+/g, " ").trim();
-    if (!t) { feld.value = ka.titel; return; }
-    if (t === ka.titel) return;
-    t = freierTitel(t, ka);
-    elementeVon(ka.titel).forEach(function (k) { k.abschnitt = t; });
-    aendern();
-    ka.titel = t;
-    bearbeitet(ka);
-    feld.value = t;
-    S.geaendert();
-    zeichnePlan();
+    if (t && t !== ka.titel) {
+      t = freierTitel(t, ka);
+      if (t !== ka.titel) {
+        elementeVon(ka.titel).forEach(function (k) { k.abschnitt = t; });
+        ka.titel = t;
+        bearbeitet(ka);
+        titelZeigen();
+        S.geaendert();
+      }
+    }
+    if (fertig && feld.value !== ka.titel) feld.value = ka.titel;
+  }
+  function titelZeigen() {
+    var alle = kacheln();
+    Array.prototype.forEach.call(box.querySelectorAll(".plan-kachel"), function (sec) {
+      var ka = alle[parseInt(sec.dataset.nr, 10)]; if (!ka) return;
+      sec.setAttribute("aria-label", T("plan_kachel") + ": " + ka.titel);
+      [["[data-aktion=el-plus]", T("plan_element_plus").replace(/^\+\s*/, "")], ["[data-aktion=k-loeschen]", T("plan_loeschen")],
+       ["[data-aktion=k-hoch]", null], ["[data-aktion=k-runter]", null]].forEach(function (x) {
+        var b = sec.querySelector(x[0]); if (!b) return;
+        b.setAttribute("aria-label", (x[1] || b.getAttribute("title")) + ": " + ka.titel);
+      });
+    });
+    Array.prototype.forEach.call(box.querySelectorAll(".plan-el-kachel option"), function (o) {
+      var ka = alle[parseInt(o.value, 10)]; if (ka && o.textContent !== ka.titel) o.textContent = ka.titel;
+    });
   }
 
   box.addEventListener("input", function (ev) {
@@ -374,11 +417,10 @@
     aendern();
     if (t.id === "plan-beschreibung") {
       beruehrt.add(Z.mappe);
-      S.angaben.kontext = t.value;
-      clearTimeout(kontextTimer);
-      kontextTimer = setTimeout(function () { S.angabenSchreiben({ kontext: S.angaben.kontext }); S.textSpaeter(); }, 400);
+      S.kontextSetzen(t.value);
       return;
     }
+    if (c.contains("plan-k-titel")) { kachelUmbenennen(t, false); return; }
     if (c.contains("plan-k-text")) { var ka = kacheln()[kachelNr(t)]; if (ka) { ka.text = t.value; bearbeitet(ka); S.geaendert(); }
       return; }
     var k = karteVon(t); if (!k) return;
@@ -403,6 +445,7 @@
     if (c.contains("plan-el-min")) {
       if (k.soll && !mt) { mt = el("span", { cls: "plan-el-min-t" }); li.querySelector(".plan-el-kopf").appendChild(mt); }
       if (mt) { if (k.soll) mt.textContent = k.soll + " min"; else mt.remove(); }
+      summeZeigen();
     }
   });
 
@@ -410,7 +453,7 @@
     var t = ev.target, c = t.classList;
     aendern();
     if (t.id === "plan-zeit") { Z.mappe.zeit_selbst = t.checked; fertig("zeit"); return; }
-    if (c.contains("plan-k-titel")) { kachelUmbenennen(t); return; }
+    if (c.contains("plan-k-titel")) { kachelUmbenennen(t, true); return; }
     var k = karteVon(t); if (!k) return;
     bearbeitet(kachelVonKarte(k));
     if (c.contains("plan-el-typ")) {
@@ -437,7 +480,7 @@
 
   box.addEventListener("keydown", function (ev) {
     var t = ev.target;
-    if (ev.key === "Enter" && t.classList.contains("plan-k-titel")) { ev.preventDefault(); kachelUmbenennen(t); return; }
+    if (ev.key === "Enter" && t.classList.contains("plan-k-titel")) { ev.preventDefault(); kachelUmbenennen(t, true); return; }
     if (ev.key === "Escape") {
       var li = t.closest && t.closest(".plan-el.offen");
       if (li) { ev.preventDefault(); ev.stopPropagation(); offen = null; zeichnePlan("el:" + li.dataset.id); }
@@ -544,5 +587,8 @@
   S.planBelegt = planBelegt;
   S.planZweig = planZweig;
   S.planKachelZahl = kachelZahl;
-  S.zeichnePlan = function () { zeichnePlan(); };
+  S.zeichnePlan = function () {
+    if (planPhase() && tippt()) { box.hidden = false; summeZeigen(); return; }    // AP13.35 §1.1
+    zeichnePlan();
+  };
 })();

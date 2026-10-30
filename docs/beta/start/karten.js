@@ -36,6 +36,13 @@
     }
     return s;
   }
+  // gen/kursdatei.py `_block`: ein Quiz wird nur Block im Textfeld, wenn sein Abschluss nicht „bestehen“ ist (`abschluss:`
+  // ansehen, keine oder manuell) oder es eine Zusatzaufgabe ist
+  function quizAlsAktivitaet(b) {
+    if (!b || b.typ !== "Quiz" || (S.angaben.website || "textfeld") !== "textfeld") return false;
+    var an = b.angaben || {}, abschluss = String(an.abschluss || "").trim().toLowerCase();
+    return !/^(ja|true|1|an)$/i.test(String(an.zusatz || "").trim()) && ["ansehen", "keine", "manuell"].indexOf(abschluss) < 0;
+  }
   function plus(pos) {
     return el("li", { cls: "k-zwischen" }, [el("button", { type: "button", cls: "k-plus", "data-pos": pos,
       "aria-label": "Baustein an Stelle " + (pos + 1) + " einfügen", title: "Baustein hier einfügen", text: "+" })]);
@@ -65,12 +72,15 @@
     return null;
   }
   function zeichneKarten() {
-    var ol = $("karten"); ol.innerHTML = "";
+    var ol = $("karten");
+    if (ol.contains($("korrektur"))) $("karten-ort-5").before($("korrektur"));     // vor dem Leeren der Liste in Sicherheit
+    ol.innerHTML = "";
     var liste = Z.mappe.bausteine, letzter = null, steuer = zweig() === "steuer";
     var abschnitte = liste.filter(function (k) { return k.abschnitt; }).map(function (k) { return k.abschnitt; });
     var mehrere = abschnitte.some(function (a) { return a !== abschnitte[0]; });
     var zeitplanung = zeitSelbst() && steuer;
     var zeitInfo = (Z.kennzahlen && Z.kennzahlen.zeit) || {};
+    var mehrE = S.mehrereEinheiten(), letzteE = null;      // AP13.35 §4.2: Überschrift je Einheit
     liste.forEach(function (k, i) {
       var nr = nummer(k.id), bez = nr ? "Baustein " + nr : "ausgeschalteter Baustein";
       var abschnitt = mehrere && k.abschnitt && k.abschnitt !== letzter ? el("p", { cls: "k-abschnitt",
@@ -102,6 +112,9 @@
                 "aria-pressed": an ? "true" : "false", text: "Sprache anpassen lassen" })]));
         });
       }
+      // AP13.36 §3.2: im Textfeld-Modus bleibt ein Quiz mit Abschluss „bestehen“ (Standard beim Quiz) eine eigene Aktivität
+      if (quizAlsAktivitaet(b) && !k.geplant && !k.aus) diag.appendChild(el("li", { cls: "hinweis k-aktivitaet",
+          text: S.editorText("quiz_aktivitaet") }));
       if (k.geplant && k.leer_antwort && !k.aus) diag.appendChild(el("li", { cls: "warnung", "data-regel": "leer.antwort",
           text: S.editorText("leer_antwort", { n: nr || "" }).replace(/^[^:]*:\s*/, "") }));
       var sl = schleife()[k.id];
@@ -132,9 +145,14 @@
       })) : null;
       var herkunft = titelHerkunft(k);
       if (k.aus && !steuer && !k.weggelassen) return;  // ausgeschaltete Karte: nur in „Ich steuere“ sichtbar
+      if (mehrE && S.einheitVon(k) !== letzteE) {
+        letzteE = S.einheitVon(k);
+        ol.appendChild(el("li", { cls: "k-einheit", "data-einheit": letzteE }, [el("h3", { cls: "k-einheit-t",
+            text: S.einheitName(letzteE) })]));
+      }
       if (steuer && k.geplant) ol.appendChild(plus(i));
       var li = el("li", { cls: "karte status-" + st + (k.neu ? " neu" : "") + (minuten ? "" : " struktur") + (k.aus ?
-          " aus" : ""), "data-id": k.id, id: "karte-" + k.id }, [
+          " aus" : ""), "data-id": k.id, id: "karte-" + k.id, tabindex: "-1" }, [
         abschnitt,
         el("div", { cls: "k-kopf" }, [
           el("span", { cls: "k-nr", text: nr ? String(nr) : "–" }), typFeld,
@@ -182,8 +200,39 @@
     if (steuer && liste.length && liste[liste.length - 1].geplant) ol.appendChild(plus(liste.length));
     if (!$("tafel-bausteine").hidden) Array.prototype.forEach.call(ol.querySelectorAll(".k-auftrag"), hoehe);
     $("karten-leer").hidden = liste.length > 0;
+    // AP13.35 §2.3: gelbe Hinweise der ganzen Einheit mit Satz für den Chat (Regel zeit.kurz) stehen über den Karten
+    // „Verlängern lassen“ nimmt den Satz für den Chat in die Korrekturbitte (wie „Sprache anpassen lassen“)
+    var einheitGelb = Z.pruefung && inhalt() && !teileOffen() ? Z.pruefung.diagnosen.filter(function (d) {
+      return d.stufe === "warnung" && !d.baustein && d.bitte; }) : [];
+    var ew = $("einheit-warnung");
+    ew.hidden = !einheitGelb.length;
+    ew.textContent = "";
+    einheitGelb.forEach(function (d) {
+      var an = S.spracheGelb.indexOf(d.regel) >= 0;
+      ew.append(d.text + " ", el("button", { type: "button", cls: "k-sprache klein", "data-regel": d.regel,
+          "aria-pressed": an ? "true" : "false", text: S.editorText("zeit_kurz_knopf") }), " ");
+    });
     $("zeit-selbst").checked = zeitSelbst();
     $("zeit-schalter").hidden = !steuer;
+    // AP13.35 §4.2: „Nur Baustein ersetzen“ nennt die Einheit, sobald es mehrere gibt
+    $("modus-baustein-text").textContent = mehrE ? S.editorText("modus_baustein", { name: S.einheitName(einheitTag() ||
+        "e1") }) : "Nur Baustein ersetzen";
+    korrekturOrt();
+  }
+  // AP13.36 §3.1: die Bitte zu „Sprache anpassen lassen“ und „Diesen Baustein neu beauftragen“ steht unter der Karte, die
+  // den Wunsch ausgelöst hat (S.korrektur.ort); sonst, bei roten Karten, über der Liste unter dem Einfügefeld. Die Liste
+  // wird bei jedem Zeichnen neu gebaut, darum geht der Block vorher heraus (zeichneKarten) und kommt hier wieder.
+  var korrekturLi = null;
+  function korrekturOrt() {
+    var kb = $("korrektur"), karte = S.korrektur.ort ? $("karte-" + S.korrektur.ort) : null;
+    if (karte && karte.parentNode === $("karten") && !kb.hidden) {
+      if (!korrekturLi) korrekturLi = el("li", { cls: "k-korrektur-ort" });
+      korrekturLi.appendChild(kb);
+      karte.after(korrekturLi);
+    } else {
+      if (korrekturLi) korrekturLi.remove();
+      if ($("karten").contains(kb) || kb.nextElementSibling !== $("karten-ort-5")) $("karten-ort-5").before(kb);
+    }
   }
 
   // Je id merkt sich die Mappe den Hash des zuletzt eingefügten Texts und zählt die Korrekturrunden, nach denen der
@@ -365,7 +414,9 @@
     var hand = Z.mappe.hand = Z.mappe.hand || {};
     (weg || []).forEach(function (k) { delete hand[k]; });
     (eintraege || []).forEach(function (e) {
-      if (!hand[e.schluessel]) hand[e.schluessel] = { vorher: e.vorher, zeit: Date.now() };
+      // AP13.35 §1.3: `bausteine_vorher` = ids vor der ersten Änderung (für die Frage vor einer neuen Antwort)
+      if (!hand[e.schluessel]) hand[e.schluessel] = e.bausteine_vorher ? { vorher: e.vorher, zeit: Date.now(),
+          bausteine_vorher: e.bausteine_vorher } : { vorher: e.vorher, zeit: Date.now() };
       Object.assign(hand[e.schluessel], e.werte, { zeit: Date.now() });
     });
     await km.stand(md);
@@ -387,12 +438,27 @@
     if (JSON.stringify(Z.mappe.bausteine) !== vorher)
       Z.kennzahlen = await km.mappeFn("kennzahlen", [Z.mappe, Z.pruefung, null, Z.steckbrief_text]);
   }
-  function handTitel(id) {
-    if (id.indexOf("abschnitt:") === 0) {
-      var n = ((Z.mappe.hand || {})[id] || {}).nachher || "";
-      return S.editorText("abschnitt") + " „" + n.split("\n")[0].replace(/^##\s*/, "").replace(/\s*·\s*\d+\s*min.*$/,
-          "") + "“";
+  function kopfTitel(kopf) {
+    return String(kopf || "").split("\n")[0].replace(/^##\s*/, "").replace(/\s*·\s*\d+\s*min.*$/, "").trim();
+  }
+  // AP13.35 §1.3: Zeilen der Frage zu einer Kachel: geteilt (neue Kachel), Bausteine hineinverschoben, umbenannt; eine
+  // Kachel, die nur Bausteine abgegeben hat, steht nicht eigens da (die Zeile der Zielkachel nennt sie); sonst Bild,
+  // Farbe oder Stelle
+  function gliederungZeilen(id) {
+    var v = (Z.mappe.hand || {})[id] || {}, titel = kopfTitel(v.nachher), T = S.editorText, out = [];
+    if (v.bausteine && !v.vorher) out.push(T("gl_neu", { titel: titel }));
+    else if (v.vorher && kopfTitel(v.vorher) !== titel) out.push(T("gl_umbenannt", { alt: kopfTitel(v.vorher), titel: titel }));
+    if (v.bausteine && v.bausteine_vorher) {
+      v.bausteine.filter(function (b) { return v.bausteine_vorher.indexOf(b) < 0; }).forEach(function (b) {
+        var k = S.karteNach(b);
+        out.push(T("gl_hinein", { baustein: k ? k.titel : b, titel: titel }));
+      });
     }
+    if (!out.length && !v.bausteine) out.push(T("gl_kachel", { titel: titel }));
+    return out;
+  }
+  function handTitel(id) {
+    if (id.indexOf("abschnitt:") === 0) return gliederungZeilen(id).join("\n");
     if (id === "kopf") return S.editorText("kurstitel");
     var k = (Z.mappe.bausteine || []).filter(function (x) { return x.id === id; })[0];
     // AP13.33 §1.2: neu geschriebene Bausteine stehen in derselben Frage, mit dem Zusatz „neu geschrieben“
@@ -403,11 +469,17 @@
   // auch über der Ansicht „Einheit ansehen und bearbeiten“. Esc gilt als „Erhalten“ (nichts geht verloren).
   function handFrage(ids) {
     var d = $("hand-frage");
-    $("hand-frage-text").textContent = S.editorText("frage");
+    var gl = ids.some(function (id) { return id.indexOf("abschnitt:") === 0; });
+    $("hand-frage-text").textContent = S.editorText(gl ? "frage_gliederung" : "frage");
     $("hand-erhalten").textContent = S.editorText("erhalten");
     $("hand-verwerfen").textContent = S.editorText("verwerfen");
     var ul = $("hand-frage-liste"); ul.innerHTML = "";
-    ids.forEach(function (id) { ul.appendChild(el("li", { text: handTitel(id) })); });
+    var zeilen = [];
+    ids.forEach(function (id) { handTitel(id).split("\n").forEach(function (z) { if (z && zeilen.indexOf(z) < 0) zeilen.push(z); }); });
+    // nur Kacheln, die Bausteine abgegeben haben: dann wenigstens ihre Namen
+    if (!zeilen.length) ids.forEach(function (id) { zeilen.push(S.editorText("gl_kachel", { titel: kopfTitel(
+        ((Z.mappe.hand || {})[id] || {}).nachher) })); });
+    zeilen.forEach(function (z) { ul.appendChild(el("li", { text: z })); });
     var vorher = document.activeElement;
     return new Promise(function (fertig) {
       function ende(wahl) {
@@ -505,6 +577,18 @@
         " anzeigen";
   }
   $("hinweise-mehr").onclick = function () { S.hinweiseAlle = !S.hinweiseAlle; zeichneDiagnosen(); };
+  // AP13.35 §2.3: „Verlängern lassen“ an der gelben Zeile der Einheit, ein Weg mit „Sprache anpassen lassen“ (S.spracheGelb)
+  $("einheit-warnung").addEventListener("click", async function (ev) {
+    var b = ev.target.closest("[data-regel]"); if (!b) return;
+    var r = b.dataset.regel, pos = S.spracheGelb.indexOf(r);
+    if (pos >= 0) S.spracheGelb.splice(pos, 1); else S.spracheGelb.push(r);
+    try {
+      await auswertung();
+      S.korrektur.text = ""; zeichneKarten(); zeichneKorrektur(); korrekturSpaeter(0);
+      var nb = $("einheit-warnung").querySelector("[data-regel='" + CSS.escape(r) + "']");
+      if (nb) nb.focus({ preventScroll: true });
+    } catch (e) { zeigeFehler(e); }
+  });
   $("hinweise").onclick = function (ev) {
     var z = ev.target.closest("[data-ziel]");
     if (!z) return;
@@ -645,15 +729,18 @@
         var pos = S.spracheGelb.indexOf(k.id);
         if (pos >= 0) S.spracheGelb.splice(pos, 1); else S.spracheGelb.push(k.id);
         await auswertung();
+        S.korrektur.ort = pos >= 0 ? (S.korrektur.ort === k.id ? null : S.korrektur.ort) : k.id;
         S.korrektur.text = ""; zeichneKarten(); zeichneKorrektur(); korrekturSpaeter(0);
         var sk = document.querySelector("#karte-" + CSS.escape(k.id) + " .k-sprache");
         if (sk) sk.focus({ preventScroll: true });
+        if (!$("korrektur").hidden) $("korrektur").scrollIntoView({ block: "nearest" });
       }
       else if (["weglassen", "selbst", "selbst-uebernehmen", "anderer-chat"].indexOf(a) >= 0) await auswegAktion(a, k);
       else if (a === "neu") {
         // „Diesen Baustein neu beauftragen“ markiert die Karte; Text, Antwort und Einsetzen laufen über den einen
         // Korrekturblock, mehrere Karten zugleich
         if (k.neu) k.neu = false; else k.neu = true;
+        S.korrektur.ort = k.neu ? k.id : (S.korrektur.ort === k.id ? null : S.korrektur.ort);
         S.korrektur.text = ""; zeichneKarten(); zeichneKorrektur(); geaendert(); korrekturSpaeter(0);
         var af = document.querySelector("#karte-" + CSS.escape(k.id) + " .k-auftrag");
         if (k.neu && af) af.focus({ preventScroll: true });
@@ -723,15 +810,14 @@
   // `nur` (AP13.33 §1.1, Editor „Neu schreiben lassen“): der Text nur für diese Bausteine, ohne die übrigen Korrekturen
   async function korrekturText(nur) {
     var neu = neuBeauftragt();
-    if (!neu.length && !nur) return S.korrekturen.map(function (k) { return k.satz; }).join("\n");
+    if (!neu.length && !nur) return S.korrekturBitte || await km.prompt("korrektur_bitte", [S.korrekturen]);
     var ids = nur || korrekturZiele();
     // AP13.11 §8.4: von Hand geänderte Bausteine gehen ungekürzt als „Bisheriger Inhalt“ mit
     var kontext = { _: 900 };
     handIds().forEach(function (id) { kontext[id] = null; });
-    var t = await km.prompt("baustein", [Z.mappe, ids, Z.kurs_md, Z.steckbrief_text, null, kontext, Z.pruefung]);
-    if (nur) return t;
-    var ohne = S.korrekturen.filter(function (k) { return !k.baustein; }).map(function (k) { return k.satz; });
-    return t + (ohne.length ? "\n" + ohne.join("\n") + "\n" : "");
+    // AP13.35 §3.1: Punkte außerhalb der Bausteine (Zeile `Angenommen:` …) stehen im selben Text, mit einer Ausgabeanweisung
+    var aussen = nur ? [] : S.korrekturen.filter(function (k) { return !k.baustein; });
+    return await km.prompt("baustein", [Z.mappe, ids, Z.kurs_md, Z.steckbrief_text, null, kontext, Z.pruefung, true, aussen]);
   }
   function korrekturSpaeter(ms) {
     clearTimeout(S.korrekturTimer);
@@ -740,6 +826,7 @@
       try {
         var t = await korrekturText();
         S.korrektur.text = t;
+        if (S.korrektur.kopiert !== t) $("korrektur-stand").textContent = "";      // „Kopiert“ gilt nur für den kopierten Text
         $("korrektur-feld").value = t;
         $("korrektur-kopieren").disabled = !t || S.kiBesetzt();
       } catch (e) { zeigeFehler(e); }
@@ -749,11 +836,14 @@
     var neu = neuBeauftragt(), ziele = korrekturZiele();
     var zeigen = !!Z.mappe && inhalt() && !teileOffen() && (S.korrekturen.length > 0 || neu.length > 0);
     $("korrektur").hidden = !zeigen;
-    if (!zeigen) { S.korrektur.offen = false; }
+    if (!zeigen) { S.korrektur.offen = false; S.korrektur.ort = null; S.korrektur.kopiert = null; $("korrektur-stand").textContent = ""; }
+    korrekturOrt();
     var ul = $("korrektur-liste"); ul.innerHTML = "";
-    S.korrekturen.forEach(function (k) { ul.appendChild(el("li", { "data-regel": k.regel || "", text: k.satz })); });
+    // AP13.35 §3.1: die Liste zeigt, was zu ändern ist; die eine Ausgabeanweisung steht nur in der Bitte selbst
+    S.korrekturen.forEach(function (k) { ul.appendChild(el("li", { "data-regel": k.regel || "",
+        text: S.korrekturen.length > 1 && k.kern ? k.kern : k.satz })); });
     neu.forEach(function (k) {
-      ul.appendChild(el("li", { cls: "k-neu-zeile", text: "„" + k.titel + "“ neu schreiben" + (k.auftrag && k.auftrag.trim()
+      ul.appendChild(el("li", { cls: "k-neu-zeile", text: "„" + k.titel + "“ neu schreiben" + (String(k.auftrag || k.wunsch || "").trim()
           ? ", nach deinem Auftrag." : ".") }));
     });
     var n = ziele.length;
@@ -772,8 +862,8 @@
     modellHinweisZeigen(zeigen);
     $("korrektur-antwort").hidden = !S.korrektur.offen;
     S.standKarte($("korrektur-ergebnis"), S.korrektur.stand, S.korrektur.art);
-    if (!S.korrektur.text && !neu.length) S.korrektur.text = S.korrekturen.map(function (k) { return k.satz; })
-        .join("\n");
+    if (!S.korrektur.text && !neu.length) S.korrektur.text = S.korrekturBitte || S.korrekturen.map(function (k) {
+        return k.satz; }).join("\n");
     $("korrektur-feld").value = S.korrektur.text;
     $("korrektur-kopieren").disabled = !S.korrektur.text || S.kiBesetzt();
   }
@@ -822,6 +912,7 @@
           art); },
       fertig: function (antwort) { $("korrektur-eingabe").value = antwort; return korrekturEinsetzen(); } });
     korrekturVermerken();
+    S.korrektur.kopiert = S.korrektur.text;
     kopieren(S.korrektur.text, $("korrektur-feld"), $("korrektur-stand"),
         "Kopiert. Füge sie in deinen Chat ein und die Antwort des Chats hier unten.",
       function () { km.kurzmeldung($("korrektur-kopieren"), "Text kopiert");
@@ -902,7 +993,7 @@
         var hand = Z.mappe.hand = Z.mappe.hand || {};
         hand[id] = { vorher: neuVorher[id], zeit: Date.now(), art: "neu" };
       });
-      Z.mappe.bausteine.forEach(function (k) { if (ids.indexOf(k.id) >= 0) k.neu = false; });
+      Z.mappe.bausteine.forEach(function (k) { if (ids.indexOf(k.id) >= 0) { k.neu = false; delete k.wunsch; } });
       S.spracheGelb = S.spracheGelb.filter(function (id) { return ids.indexOf(id) < 0; });
       await nachAntwortMarkieren(ie.ids, teileOffen());
       if (o.sprung && schritt() !== 5) { Z.mappe.schritt = 5; S.auf = {}; }

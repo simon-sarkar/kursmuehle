@@ -149,6 +149,7 @@ var km = (function () {
     zustand.kurs_md = a.ergebnis.pruefung.kursdatei;
     mappeUebernehmen(gesendet, a.ergebnis.mappe);
     zustand.kennzahlen = a.ergebnis.kennzahlen;
+    if (km.seite && km.seite.nachStand) km.seite.nachStand();     // AP13.35 §3.3 (chat.js)
     messen("pruefe", zustand.beispiel, a, { bausteine: zustand.pruefung.bausteine.length, zeichen: (text || "").length,
       fehler: zustand.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler"; }).length });
     return zustand.pruefung;
@@ -349,6 +350,7 @@ window.km = km;
   var texte = { teile: [], ids: [], art: "einheit", teil: 0, laeuft: 0, kopiert: {} };
   S.fragenListe = [];
   S.korrekturen = [];
+  S.korrekturBitte = "";
   S.spracheGelb = [];             // AP13.14: ids mit „Sprache anpassen lassen“ (flüchtig, nicht in der Mappe)
   S.letzteAntwort = null;
   S.infoboxAus = false;
@@ -401,6 +403,11 @@ window.km = km;
       t.formularname : typ; }
   // wie gen/prompt.py zeit_selbst(): ohne Schlüssel gelten die Soll-Minuten
   function zeitSelbst() { return !!Z.mappe && Z.mappe.zeit_selbst !== false; }
+  // AP13.35 §1.2: „Worum geht es?“ der laufenden Einheit (wie gen/prompt.py einheit_kontext): die erste im Steckbrief
+  // (`kurs.kontext`, zugleich die Beschreibung des Kurses), eine angehängte in der Mappe (`einheit.kontext`)
+  function kontextJetzt() {
+    return einheitTag() ? String(((Z.mappe && Z.mappe.einheit) || {}).kontext || "") : String(S.angaben.kontext || "");
+  }
   function mitMinuten(typ) { var t = typInfo(typ); return !t || t.minuten !== false; }
   function chatInfo(wert) { return S.katalog && S.katalog.chats.filter(function (c) { return c.wert === wert; })[0]; }
   function oberText(feld, wert) {
@@ -433,6 +440,18 @@ window.km = km;
   function sektion(n) { return $(n === 1 ? "start" : n === 5.5 ? "schritt-bilder" : "schritt-" + n); }
   // laufende Einheit: „e2“ … beim Anhängen und danach, "" = die erste; Bilder, Rand und Text nur für sie
   function einheitTag() { return Z.mappe ? (Z.mappe.anhaengen || Z.mappe.laufend || "") : ""; }
+  // AP13.35 §4.2: Einheiten der Mappe („e1“ = erste, Karten ohne `einheit`) mit Nummer und Thema; Listen gliedern danach,
+  // sobald es mehr als eine gibt. Thema aus `themen` (seit AP13.35), sonst die laufende nach `einheit.thema`, die erste
+  // nach dem Titel der Mappe
+  function einheitVon(k) { return (k && k.einheit) || "e1"; }
+  function mehrereEinheiten() { return !!Z.mappe && Z.mappe.bausteine.some(function (k) { return !!k.einheit; }); }
+  function einheitName(tag) {
+    var th = (Z.mappe && Z.mappe.themen) || {}, lauf = einheitTag() || "e1";
+    var thema = th[tag] || (tag === lauf ? ((Z.mappe && Z.mappe.einheit) || {}).thema : "") ||
+        (tag === "e1" ? (Z.mappe && Z.mappe.titel) || "" : "");
+    var n = parseInt(String(tag).replace(/^e/, ""), 10) || 1;
+    return editorText("einheit_name", { n: n }) + (thema ? ": " + thema : "");
+  }
   function karteNach(id) { return Z.mappe ? Z.mappe.bausteine.filter(function (k) { return k.id === id; })[0] : null; }
   function inEinheit(id) { var k = karteNach(id); return !!k && (k.einheit || "") === einheitTag(); }
   function bildwuensche() {
@@ -657,12 +676,15 @@ window.km = km;
     var pr = Z.pruefung || { bausteine: [], diagnosen: [] };
     S.fragenListe = await km.prompt("fragen", [pr]);
     // AP13.14: gelbe Sprach-Hinweise nur für Karten mit „Sprache anpassen lassen“ (ids nur noch, wenn die Karte gelb ist)
+    // AP13.35 §2.3: dazu die Regel einer gelben Zeile der Einheit („Verlängern lassen“), solange sie gilt
     S.spracheGelb = S.spracheGelb.filter(function (id) { return pr.diagnosen.some(function (d) {
-        return d.baustein === id && d.regel === "sprache.lang"; }); });
+        return (d.baustein === id && d.regel === "sprache.lang") || (!d.baustein && d.regel === id); }); });
     // AP13.11 §8.9: gelbe Bitten nicht für von Hand geänderte Bausteine, rote Fehler bleiben
     // AP13.30 §4a: mit der Mappe auch die Bitte um geplante Bausteine, die nach der Antwort leer blieben
     S.korrekturen = await km.prompt("korrektur", [pr, S.spracheGelb, Z.mappe && Z.mappe.hand ? Object.keys(Z.mappe.hand) :
         [], Z.mappe || null]);
+    // AP13.35 §3.1: die Bitte an den Chat mit genau einer Ausgabeanweisung (gen/prompt.py korrektur_bitte)
+    S.korrekturBitte = await km.prompt("korrektur_bitte", [S.korrekturen]);
     // AP13.30 §4b: Thema der laufenden Einheit wie im Auftrag
     var fc = await km.prompt("fachcheck", [pr, Z.steckbrief_text, Z.mappe || {}]);
     $("gegen-text-feld").value = fc.text;
@@ -708,8 +730,9 @@ window.km = km;
           .vorlage));
     });
     var v = (Z.mappe.einheit || {}).vorlage;
-    $("vorlage-zeile").textContent = inhalt() ? "Aufbau: " + (v || "eigener Aufbau") +
-        ". Du kannst ihn ändern, bis die erste Antwort eingefügt ist."
+    // AP13.35 §4.3: mit eigenem Plan heißt der Aufbau so, nicht nach der Voreinstellung
+    if (S.eigenerPlan && S.eigenerPlan()) v = editorText("eigener_plan");
+    $("vorlage-zeile").textContent = inhalt() ? "Aufbau: " + (v || "eigener Aufbau") + "."
       : "Wähle den Aufbau; die Bausteine darunter folgen ihm.";
     S.zeichneAussehen();
     S.zeichneKarten();
@@ -737,7 +760,7 @@ window.km = km;
     var werte = { "a-thema": e.thema || S.angaben.thema || "", "a-jahrgang": zgA ? "" : jgA, "a-zielgruppe": zgA,
       "a-minuten": e.minuten || S.angaben.minuten || "", "a-schulart": zgA ? "" : S.angaben.schulart || "",
       "f-schulart": zgF ? "" : S.angaben.schulart || "",
-      "fach": S.angaben.fach || "", "a-kontext": S.angaben.kontext || "", "m-kontext": S.angaben.kontext || "",
+      "fach": S.angaben.fach || "", "a-kontext": kontextJetzt(), "m-kontext": kontextJetzt(),
       "a-format": S.angaben.format, "a-familie": S.angaben.familie,
       "a-farbe": /^#/.test(S.angaben.farbe || "") ? "eigen" : S.angaben.farbe,
       "a-farbe-hex": /^#/.test(S.angaben.farbe || "") ? S.angaben.farbe : "",
@@ -778,6 +801,8 @@ window.km = km;
     }
     return null;
   }
+  // AP13.36: Bedienung mit dem Finger; dort öffnet ein Fokus im Textfeld die Bildschirmtastatur
+  function beruehrung() { return !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches); }
   // nur, wenn der Fokus nirgends mehr ist (body) oder in einem Teil, der gerade verschwindet
   function fokusRetten(liste, teil) {
     var a = document.activeElement;
@@ -831,13 +856,13 @@ window.km = km;
   });
 
   Object.assign(S, { $: $, AUTO: AUTO, FARBEN: FARBEN, KOPIERT: KOPIERT, SCHRITTE: SCHRITTE, fokus: fokus,
-    fokusRetten: fokusRetten, radioTabs: radioTabs,
+    fokusRetten: fokusRetten, radioTabs: radioTabs, beruehrung: beruehrung,
     STANDARD_FARBE: STANDARD_FARBE, Z: Z, ZWEIG_TEXT: ZWEIG_TEXT, auswertung: auswertung, autosave: autosave,
     bildGroesse: bildGroesse, bilderStandard: bilderStandard, bilderWert: bilderWert, bildwuensche: bildwuensche,
     chatInfo: chatInfo, datumZeit: datumZeit, download: download, editorText: editorText, einheitTag: einheitTag, el: el,
     erledigtBis: erledigtBis, fehlerText: fehlerText, fehlerZahl: fehlerZahl, gelbZahl: gelbZahl, felderFuellen: felderFuellen,
     formularname: formularname, geaendert: geaendert, heute: heute, hinweiseSichern: hinweiseSichern, hoehe: hoehe,
-    inhalt: inhalt, karteNach: karteNach, kb: kb, kopieren: kopieren, kopierenSpaeter: kopierenSpaeter, ladenStarten: ladenStarten, markiert: markiert,
+    inhalt: inhalt, einheitName: einheitName, einheitVon: einheitVon, mehrereEinheiten: mehrereEinheiten, karteNach: karteNach, kb: kb, kontextJetzt: kontextJetzt, kopieren: kopieren, kopierenSpaeter: kopierenSpaeter, ladenStarten: ladenStarten, markiert: markiert,
     mitMinuten: mitMinuten, neuPruefen: neuPruefen, nrVon: nrVon, oberText: oberText, schritt: schritt,
     sektion: sektion, sichtbareSchritte: sichtbareSchritte, status: status, teileOffen: teileOffen, texte: texte,
     zeichne: zeichne, zeit: zeit, zeitSelbst: zeitSelbst, zweig: zweig });

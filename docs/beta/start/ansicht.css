@@ -18,7 +18,8 @@
   --ergebnis-text: #2a2a2a;      /* Schrift auf Ocker, in beiden Schemata */
   --ocker-tief: #8a6416;
   --link: #2a2a2a;
-  --fokus: #d9a441;
+  --fokus: #a07416;              /* Fokusring hell: mindestens 3 : 1 auf Weiß, Creme, Lehrkraft-Ocker und der dunklen Kopfleiste (AP13.36) */
+  --feld-rand: var(--linie);     /* Rahmen von Eingabefeldern; im dunklen Schema stärker (AP13.36) */
   --haupt: #2a2a2a;              /* Hauptknopf, aktive Schrittnummer */
   --haupt-text: #f3e9d8;
   --haupt-hover: #3d3d3d;
@@ -52,6 +53,9 @@
   --leise: #b9ae9c;
   --linie: #423e37;
   --rand-linie: #4a463e;
+  --fokus: #d9a441;
+  --feld-rand: #8f8678;          /* 3,3 : 1 auf dem Ocker der Lehrkraft, 4,8 : 1 auf der Fläche */
+  --platzhalter: #aaa090;        /* 4,6 : 1 auf dem Ocker der Lehrkraft, 6,7 : 1 auf der Fläche */
   --ocker-tief: #d9a441;
   --link: #f3e9d8;
   --haupt: #f3e9d8;
@@ -106,6 +110,7 @@ p { margin: 0 0 10px; }
 .kopf-x { background: none; border: 0; border-radius: 6px; width: 36px; height: 36px; font: inherit; font-size: 1.35rem; line-height: 1;
   color: inherit; cursor: pointer; opacity: 0.8; }
 .kopf-x:hover { opacity: 1; background: var(--kopf-hover); }
+.kopf-x:focus-visible { opacity: 1; }   /* Ring sonst nur mit 80 % Deckkraft, unter 3:1 (Sachprüfung AP13.36) */
 .kopf-menue { display: none; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 0;
   border-radius: 6px; background: none; color: inherit; cursor: pointer; }
 .kopf-menue:hover, .kopf-menue[aria-expanded=true] { background: var(--kopf-hover); }
@@ -141,7 +146,8 @@ p { margin: 0 0 10px; }
 .textlink { background: none; border: 0; padding: 6px 0; font: inherit; color: var(--link); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .feld { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: var(--leise); }
 input[type=text], input[type=number], select, textarea { font: inherit; font-size: 16px; color: var(--text); background: var(--flaeche);
-  border: 1px solid var(--linie); border-radius: 8px; padding: 9px 10px; min-height: 44px; width: 100%; }
+  border: 1px solid var(--feld-rand); border-radius: 8px; padding: 9px 10px; min-height: 44px; width: 100%; }
+:root[data-theme="dark"] ::placeholder { color: var(--platzhalter); opacity: 1; }
 textarea { min-height: 0; resize: vertical; }
 select { appearance: auto; }
 .feld-breit { grid-column: 1 / -1; }
@@ -200,7 +206,7 @@ select { appearance: auto; }
 .zweig { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 16px; border-radius: var(--rund); border: 1px solid var(--linie);
   background: var(--flaeche); font: inherit; color: var(--text); cursor: pointer; }
 .zweig:hover { border-color: var(--text); }
-.zweig[aria-pressed=true] { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); background: var(--gewaehlt); }
+.zweig[aria-checked=true] { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); background: var(--gewaehlt); }
 .zweig-name { font-weight: 700; font-size: 1.1rem; }
 .zweig-zeile { color: var(--leise); font-size: 0.93rem; }
 .steuer-teil { margin-top: 6px; }
@@ -439,6 +445,8 @@ select { appearance: auto; }
 .teil-stand { margin-top: 14px; padding: 12px 14px; border-radius: var(--rund); background: var(--creme); }
 .teil-stand p { margin: 0 0 8px; }
 .teil-stand .stand { margin: 6px 0 0; }
+.k-korrektur-ort { list-style: none; padding: 0 14px 12px; }
+.k-korrektur-ort .korrektur { margin-top: 0; }
 .korrektur { margin-top: 14px; padding: 12px 14px; border: 1px solid var(--fehler); border-radius: var(--rund); background: var(--flaeche); }
 .korrektur .unterkopf { margin-top: 0; }
 .korrektur-liste { margin: 0 0 10px; padding-left: 18px; font-size: 0.93rem; }
@@ -453,6 +461,7 @@ select { appearance: auto; }
 .karten > .karte:first-child, .karten > .k-zwischen:first-child + .karte { border-top: 0; }
 .karte.neu { box-shadow: inset 4px 0 0 var(--text); }
 .karte.aus { opacity: 0.62; }
+.karte.aus:focus-within { opacity: 1; }
 .k-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 0.85rem; color: var(--leise); }
 .k-nr { min-width: 1.6em; height: 1.6em; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
   background: var(--creme); color: var(--text); font-weight: 650; font-size: 0.8rem; }
@@ -566,6 +575,10 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .fragen-liste { list-style: none; margin: 0 0 12px; padding: 0; border: 1px solid var(--linie); border-radius: var(--rund); }
 .frage { padding: 12px 14px; border-top: 1px solid var(--linie); }
 .frage:first-child { border-top: 0; }
+.f-einheit { padding: 10px 14px; border-top: 1px solid var(--linie); background: var(--grund); }
+.f-einheit:first-child { border-top: 0; }
+.f-frueher summary { cursor: pointer; color: var(--link); }
+.f-frueher .fragen-liste { margin: 8px 0 0; background: var(--flaeche); }
 .f-baustein { margin: 0 0 6px; font-size: 0.85rem; color: var(--leise); }
 .f-frage { margin: 0 0 4px; font-weight: 600; }
 .f-optionen { list-style: none; margin: 0; padding: 0; font-size: 0.95rem; }
@@ -609,6 +622,8 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 
 /* Rückmeldung */
 .rueckmeldung { background: var(--flaeche); border-radius: var(--rund); padding: 16px; margin: 0 0 12px; box-shadow: 0 1px 2px var(--schatten); }
+.rm-kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.rm-kopf h2 { margin: 0 0 10px; }
 .rueckmeldung textarea { margin-top: 10px; font-size: 15px; }
 .rm-felder { display: grid; gap: 8px; margin: 0 0 12px; }
 .rm-felder textarea { margin-top: 4px; }
@@ -806,6 +821,7 @@ body.editor-offen { overflow: hidden; }
 .ed-platz-fehler { border-color: var(--fehler); }
 .ed-b-werk, .ed-b-neu { display: flex; flex-direction: column; gap: 8px; }
 .ed-b-neu { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--linie); }
+.ed-plan-auftrag { margin: 0; font-size: 0.93rem; color: var(--leise); overflow-wrap: anywhere; }
 .ed-feld textarea { width: 100%; }
 .ed-text, .ed-antwort { font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace; }
 .ed-knoepfe { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -883,11 +899,24 @@ body.editor-offen { overflow: hidden; }
   border-radius: 0; background: transparent; font-size: 1.02rem; font-weight: 650; }
 .plan input.plan-k-titel:hover, .plan input.plan-k-titel:focus { background: var(--grund); }
 .plan-k-pfeile { flex: none; display: inline-flex; }
+.k-einheit { list-style: none; margin: 0; padding: 12px 14px 4px; border-top: 2px solid var(--linie); background: var(--grund); }
+.k-einheit:first-child { border-top: 0; border-radius: var(--rund) var(--rund) 0 0; }
+.k-einheit-t, .ed-l-einheit, .f-einheit-t { margin: 0; font-size: 1rem; font-weight: 700; overflow-wrap: anywhere; }
+.ed-l-einheit { padding: 10px 8px 4px; font-size: 0.9rem; color: var(--leise); }
+.plan-k-fuss { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; }
+/* AP13.35 M1: Kursbeschreibung ab Einheit 2, über dem Feld der Einheit */
+.kurs-zeile { display: flex; flex-direction: column; gap: 6px; }
+.kurs-zeile .kurs-text { margin: 0; overflow-wrap: anywhere; }
+.kurs-zeile .textlink { font-size: inherit; }
+#m-kurs:not(:empty) { margin-bottom: 12px; }
+.plan-summe { margin: 0; font-size: 0.92rem; }
+.plan-summe.warn { padding: 4px 10px; border-radius: 8px; background: var(--warn-flaeche); color: var(--warn); font-weight: 600; }
 .plan-k-text-l textarea { width: 100%; font-size: 15px; }
 .plan-elemente { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .plan-el { border: 1px solid var(--linie); border-radius: 8px; background: var(--flaeche); min-width: 0; }
 .plan-el.offen { border-color: var(--ocker-tief); }
 .plan-el.aus { opacity: 0.62; }
+.plan-el.aus:focus-within { opacity: 1; }
 .plan-el-zeile { display: flex; align-items: flex-start; gap: 8px; width: 100%; min-height: 44px; padding: 8px 10px; border: 0; border-radius: 8px;
   background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .plan-el-zeile:hover { background: var(--grund); }

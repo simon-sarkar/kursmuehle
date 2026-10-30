@@ -25,17 +25,23 @@
       e.minuten ? e.minuten + " Minuten" : ""].filter(Boolean).join(" · ");
     if (n === 2) {
       var z = ZWEIG_TEXT[zweig()] || "";
-      var n = Z.mappe.bausteine.filter(function (k) { return !k.aus; }).length;
+      var n = Z.mappe.bausteine.filter(function (k) { return !k.aus && (k.einheit || "") === einheitTag(); }).length;
+      // AP13.35 §4.3: mit eigenem Plan „Eigener Plan · N Kacheln“, nicht der Name eines Aufbaus, den niemand gewählt hat
+      if (zweig() === "steuer" && eigenerPlan()) {
+        var nk = planKacheln();
+        return [z, S.editorText("eigener_plan"), S.editorText(nk === 1 ? "kachel_eine" : "kacheln_zahl", { n: nk })].join(" · ");
+      }
       // AP13.34 §5: „Mach du“ nennt die Art der Einheit nur, wenn die Lehrkraft sie gewählt hat oder sie als Vorschlag
       // auf der Seite steht; die Standardart, die niemand gewählt hat, bleibt aus der Zusammenfassung
-      var art = zweig() !== "mach" || e.vorlage_selbst || (S.angaben.vorschlag || []).indexOf("vorlage") >= 0 ? e.vorlage : "";
+      var art = zweig() !== "mach" || vorlageGewaehlt() ? e.vorlage : "";
       return [z, art, zweig() === "steuer" ? n + " Bausteine" : ""].concat(zweig() === "richtung" ?
           richtungText() : []).filter(Boolean).join(" · ");
     }
     if (n === 3) return [oberText("familie", S.angaben.familie || "sachlich"), feinheitenText(),
       oberText("format", S.angaben.format), bilderText(), oberText("website", S.angaben.website ||
           "textfeld")].filter(Boolean).join(" · ");
-    if (n === 4) { var c = chatInfo(Z.mappe.chat); return c ? c.text + (!Z.mappe.kopiert ? "" : S.textGesendet &&
+    if (n === 4) { var c = chatInfo(Z.mappe.chat); return c ? c.text + (!Z.mappe.kopiert ? "" : texte.veraltet ?
+        " · " + S.editorText(S.anKiAktiv && S.anKiAktiv() ? "text_geaendert_ki" : "text_geaendert") : S.textGesendet &&
         S.textGesendet() ? " · Text gesendet" : " · Text kopiert") : ""; }
     if (n === 5) {
       var voll = Z.mappe.bausteine.filter(function (k) { return !k.geplant && (k.einheit || "") === einheitTag(); })
@@ -53,6 +59,17 @@
     return "";
   }
 
+  // AP13.35 §4.3: eigener Plan in „Ich steuere“ (eine eigene Kachel, eine Beschreibung oder eine Änderung am Aufbau)
+  function eigenerPlan() { return !!(S.planBelegt && S.planBelegt()); }
+  function planKacheln() { return ((Z.mappe && Z.mappe.kacheln) || []).filter(function (k) { return (k.einheit || "") ===
+      einheitTag(); }).length; }
+  // Hat die Lehrkraft eine Art der Einheit (Vorlage) gewählt? Selbst gewählt, als Vorschlag des Lehrplans übernommen
+  // oder in „Ich steuere“ mit „Mit dem Aufbau … beginnen“ geholt; die Standardart allein zählt nicht
+  function vorlageGewaehlt() {
+    var e = (Z.mappe && Z.mappe.einheit) || {};
+    return !!(e.vorlage_selbst || (S.angaben.vorschlag || []).indexOf("vorlage") >= 0 ||
+        (zweig() === "steuer" && !eigenerPlan() && planKacheln() > 0) || zweig() === "richtung");
+  }
   // AP13.12: Ausklappteile. Geöffnet bleibt, was die Lehrkraft einmal geöffnet hat (je Teil ein Schlüssel
   // „kursmuehle-offen-<name>“ in localStorage, unter /beta/ mit dem Zusatz von km.speicher); öffnet die Seite einen
   // Teil selbst (Testcode, gewählte Kachel), merkt sie nichts
@@ -88,7 +105,9 @@
   }
   document.querySelector(".spalte-haupt").addEventListener("click", function (ev) {
     if (!ev.target.closest(".hinweis-aus")) return;
+    var kopf = ev.target.closest(".schritt").querySelector(".s-kopf");
     S.hinweise.an = false; hinweiseSichern(); zeichneSchritte();
+    S.fokus([kopf], true);                  // AP13.36 §1.1: der Knopf verschwindet; der Fokus bleibt in diesem Schritt
   });
 
   var modusVorgewaehlt = null;      // AP13.33 M2: Einheit, für die „Als weitere Einheit anhängen“ schon vorgewählt ist
@@ -121,11 +140,12 @@
       zeichneHinweis(sec, n, stand === "aktiv" && !d);
     });
     $("hinweise-an").checked = S.hinweise.an;
-    ["mach", "richtung", "steuer"].forEach(function (w) { $("zweig-" + w).setAttribute("aria-pressed", String(z === w));
+    ["mach", "richtung", "steuer"].forEach(function (w) { $("zweig-" + w).setAttribute("aria-checked", String(z === w));
         });
     $("steuer-teil").hidden = z !== "steuer";
     $("mach-teil").hidden = z !== "mach" && z !== "richtung";
     $("richtung-teil").hidden = z !== "richtung";
+    kursZeigen();
     if (z === "richtung" || z === "steuer") zeichneRichtung();
     if (S.katalog) { vorlagenZeigen(); zeichneMachArt(); }
     materialOrt();
@@ -157,7 +177,8 @@
     $("weiter-5").hidden = !(s === 5 && inhalt() && !fehlerZahl() && !teileOffen());
     $("weiter-5").textContent = sichtbareSchritte().indexOf(5.5) >= 0 ? "Weiter zu den Bildern" : S.fragenListe.length ?
         "Weiter zu den Fragen und Lösungen" : "Weiter zur Datei";
-    $("rueckmeldung").hidden = !(s >= 7 && Z.bau && Z.bau.mbz) && !$("rueckmeldung").dataset.offen;
+    $("rueckmeldung").hidden = !!$("rueckmeldung").dataset.zu ||
+        (!(s >= 7 && Z.bau && Z.bau.mbz) && !$("rueckmeldung").dataset.offen);
     $("speichern").hidden = !Z.mappe;
     $("neue-einheit").hidden = !Z.mappe;
     $("schliessen").hidden = !Z.mappe;
@@ -360,6 +381,7 @@
     // Schritt 1 nachträglich geändert: Angaben übernehmen; ohne Inhalt die Bausteine der Vorlage neu rechnen
     Z.mappe.einheit = Object.assign({}, Z.mappe.einheit || {}, e);
     if (!Z.mappe.anhaengen) Z.mappe.titel = thema;
+    if (Z.mappe.themen) Z.mappe.themen[einheitTag() || "e1"] = thema;
     var v = vorlageNach(Z.mappe.einheit.vorlage);
     if (v && !inhalt() && Z.mappe.bausteine.every(function (k) { return k.geplant; })) karteVorlage(v);
     S.angaben.thema = thema; S.angaben.jahrgang = e.jahrgang; S.angaben.minuten = e.minuten;
@@ -399,7 +421,9 @@
         karten.push(karte);
       });
     });
-    var summe = karten.reduce(function (s, k) { return s + k.soll; }, 0), diff = minuten - summe;
+    // AP13.35 M2: die eingeschalteten Karten ergeben zusammen die Dauer (die Summe gilt mit „Zeit selbst einteilen“ als
+    // Zahl der Einheit im Text für den Chat)
+    var summe = karten.reduce(function (s, k) { return s + (k.aus ? 0 : k.soll); }, 0), diff = minuten - summe;
     var groesste = karten.filter(function (k) { return k._dehnbar; }).sort(function (a, b) { return b.soll - a.soll;
         })[0];
     if (groesste && groesste.soll + diff >= 1) groesste.soll += diff;
@@ -491,6 +515,11 @@
     var karten = zweig() === "steuer" && !ohneSprung ? [] : vorlageKarten(v, e.minuten, n);
     karten.forEach(function (k) { k.einheit = Z.mappe.anhaengen; });
     Z.mappe.bausteine = Z.mappe.bausteine.concat(karten);
+    // AP13.35 §4.2: Thema je Einheit, für die Gliederung der Listen
+    var th = Z.mappe.themen = Z.mappe.themen || {};
+    var vorige = Z.mappe.laufend || "e1";
+    if (!th[vorige] && (alteEinheit.thema || Z.mappe.titel)) th[vorige] = alteEinheit.thema || Z.mappe.titel;
+    th[Z.mappe.anhaengen] = e.thema;
     Z.mappe.einheit = e;
     Z.mappe.laufend = Z.mappe.anhaengen;           // Text, Bilder und Rand gehören jetzt zu dieser Einheit
     delete Z.mappe.stueckelung;
@@ -512,8 +541,9 @@
 
   function neuStart() {
     clearTimeout(S.kennzahlTimer); clearTimeout(S.textTimer); clearTimeout(S.eingabeTimer);
-    texte.teile = []; texte.ids = []; texte.teil = 0; texte.art = "einheit"; texte.kopiert = {}; S.fragenListe = [];
-        S.korrekturen = []; S.spracheGelb = []; S.letzteAntwort = null;
+    texte.teile = []; texte.ids = []; texte.teil = 0; texte.art = "einheit"; texte.kopiert = {}; texte.veraltet = false;
+        S.fragenListe = [];
+        S.korrekturen = []; S.korrekturBitte = ""; S.spracheGelb = []; S.letzteAntwort = null;
     S.korrektur = { text: "", offen: false, stand: "", art: "" };
     $("korrektur-eingabe").value = ""; $("eingabe-stand").hidden = true;
     S.chatWahlOffen = false; S.auf = {}; S.designer = null;
@@ -590,14 +620,10 @@
     if (vorher !== b.dataset.zweig && S.lehrplanVorbelegen) S.lehrplanVorbelegen();   // AP13.24: Felder des neuen Wegs
     if (vorher === "richtung" && b.dataset.zweig === "steuer") typenUebernehmen();
     if (S.planZweig) S.planZweig(vorher, b.dataset.zweig);     // AP13.31: Plan leeren bzw. Aufbau zurückholen
-    if (b.dataset.zweig === "mach" || b.dataset.zweig === "richtung") {
-      if (schritt() <= 2) { zeichne(); geaendert(); $("m-kontext").focus({ preventScroll: true }); }
-      else { S.auf[2] = true; zeichne(); geaendert(); }
-    } else {
-      if (schritt() <= 2) { zeichne(); geaendert(); var k = S.planPhase && S.planPhase() ? $("plan-beschreibung") :
-          $("vorlagen").querySelector("button"); if (k && !inhalt()) k.focus({ preventScroll: true }); }
-      else { S.auf[2] = true; zeichne(); geaendert(); }
-    }
+    // AP13.36 §1.5: der Fokus bleibt auf dem gewählten Weg (eine Radiogruppe: die Pfeiltasten wählen weiter); ein Sprung
+    // in ein Textfeld öffnete am Handy die Tastatur
+    if (schritt() <= 2) { zeichne(); geaendert(); }
+    else { S.auf[2] = true; zeichne(); geaendert(); }
   });
   $("weiter-2").onclick = function () { gehe(nachZwei()); };
 
@@ -651,6 +677,9 @@
     ["r-differenzierung", "a-differenzierung"].forEach(function (id) { textKacheln($(id), "differenzierung",
         o.differenzierung, a.differenzierung ? "an" : "aus", false); });
     Array.prototype.forEach.call($("r-art").querySelectorAll(".aus-kachel"), function (b) { b.disabled = inhalt(); });
+    // AP13.35 §3.4: nach der ersten Antwort ist die Art fest; ein Satz sagt, warum, und was noch geht
+    $("r-art-gesperrt").hidden = !inhalt();
+    $("r-art-gesperrt").textContent = inhalt() ? S.editorText("art_gesperrt") : "";
     if (document.activeElement !== $("r-material")) $("r-material").value = Z.mappe.material || "";
     vorschlagZeilen();
   }
@@ -1505,6 +1534,7 @@
       zeichne(); geaendert(); S.textSpaeter(0);
       return;
     }
+    if (ev.target.id === "a-kontext") { kontextSchreiben("kontext", ev.target.value); zeichne(); return; }
     var feld = FELDER[ev.target.id]; if (!feld) return;
     if (/^a-(thema|jahrgang|minuten|zielgruppe)$/.test(ev.target.id) && !felderPruefen([ev.target.id])) return;
     var wert = ev.target.value;
@@ -1531,14 +1561,60 @@
     angabenSchreiben(a, feld === "farbe" || feld === "familie");
   });
   var kontextTimer = null, kontextOffen = {};
-  function kontextSchreiben(feld, wert) {
+  // AP13.35 §1.2: „Worum geht es?“ einer angehängten Einheit steht in ihrer Einheit der Mappe; die erste Einheit schreibt
+  // den Steckbrief (`kurs.kontext`) wie bisher. Ein Weg für die drei Felder (Plan, „Mach du“, „Mehr einstellen“)
+  // `kurs` (AP13.35 M1): ab Einheit 2 das Feld „ändern“ der Kursbeschreibung, das den Steckbrief schreibt
+  function kontextSchreiben(feld, wert, kurs) {
     if (!Z.mappe) return;
+    if (feld === "kontext" && einheitTag() && !kurs) {
+      Z.mappe.einheit = Object.assign({}, Z.mappe.einheit || {}, { kontext: wert });
+      geaendert();
+      return;
+    }
     S.angaben[feld] = wert; kontextOffen[feld] = wert;
     clearTimeout(kontextTimer);
     kontextTimer = setTimeout(function () { var a = kontextOffen; kontextOffen = {}; angabenSchreiben(a);
         S.textSpaeter(); }, 400);
   }
   $("m-kontext").addEventListener("input", function () { kontextSchreiben("kontext", $("m-kontext").value); });
+  // AP13.35 M1: ab Einheit 2 steht die Beschreibung des Kurses (Text der ersten Einheit, `kurs.kontext`) über dem Feld der
+  // Einheit, im Plan und in „Mach du“/„Ich gebe die Richtung“, mit „ändern“; das Feld dazu schreibt den Steckbrief. Leer:
+  // keine Zeile „Kurs:“ im Text für den Chat. Ein Zustand für beide Stellen
+  var kursOffen = false;
+  function kursZeile() {
+    var a = String(S.angaben.kontext || "").trim(), T = S.editorText;
+    var box = el("div", { cls: "kurs-zeile" });
+    box.appendChild(el("p", { cls: "feld-zeile kurs-text" }, [el("span", { cls: "kurs-wert", text: a ? T("kurs_zeile",
+        { text: a }) : T("kurs_leer") }), " · ", el("button", { type: "button", cls: "textlink kurs-aendern", "data-fokus": "kurs",
+        "aria-expanded": String(kursOffen), text: T(a ? "kurs_aendern" : "kurs_ergaenzen") })]));
+    if (kursOffen) {
+      var f = el("textarea", { cls: "von-lehrkraft kurs-feld", rows: "2", maxlength: "600", spellcheck: "true",
+          "data-fokus": "kurs-feld" });
+      f.value = S.angaben.kontext || "";
+      box.appendChild(el("label", { cls: "feld feld-breit" }, [T("kurs_feld"), f]));
+    }
+    return box;
+  }
+  function kursZeigen() {
+    var c = $("m-kurs"); if (!c || c.contains(document.activeElement) && document.activeElement.tagName === "TEXTAREA") return;
+    c.textContent = "";
+    if (Z.mappe && S.katalog && einheitTag()) c.appendChild(kursZeile());
+  }
+  document.addEventListener("click", function (ev) {
+    var b = ev.target.closest && ev.target.closest(".kurs-aendern"); if (!b) return;
+    var imPlan = !!b.closest("#plan");
+    kursOffen = !kursOffen;
+    kursZeigen();
+    if (S.zeichnePlan) S.zeichnePlan();
+    var ort = imPlan ? $("plan") : $("m-kurs");
+    S.fokus([ort.querySelector(kursOffen ? ".kurs-feld" : ".kurs-aendern")]);
+  });
+  document.addEventListener("input", function (ev) {
+    if (!ev.target.classList || !ev.target.classList.contains("kurs-feld")) return;
+    kontextSchreiben("kontext", ev.target.value, true);
+    var w = ev.target.closest(".kurs-zeile").querySelector(".kurs-wert"), t = ev.target.value.trim();
+    if (w) w.textContent = t ? S.editorText("kurs_zeile", { text: t }) : S.editorText("kurs_leer");
+  });
   $("fach").addEventListener("input", function () {
     kontextSchreiben("fach", $("fach").value.trim());
     if (Z.mappe && S.katalog) { zeichneRichtung(); vorlagenZeigen(); zeichneMachArt(); }   // AP13.24: Wörter und Arten nach dem Fach
@@ -1580,7 +1656,7 @@
         /* ohne Speicher: nur diese Seite */ }
     schemaZeigen();
   };
-  Object.assign(S, { schulartGemerkt: schulartGemerkt, adresseLesen: adresseLesen, angabenSchreiben: angabenSchreiben, ausklapp: ausklapp,
+  Object.assign(S, { kursZeile: kursZeile, eigenerPlan: eigenerPlan, vorlageGewaehlt: vorlageGewaehlt, kontextSetzen: function (wert) { kontextSchreiben("kontext", wert); }, schulartGemerkt: schulartGemerkt, adresseLesen: adresseLesen, angabenSchreiben: angabenSchreiben, ausklapp: ausklapp,
     kursangabenMerken: kursangabenMerken, einheitAnhaengen: einheitAnhaengen,
     felderPruefen: felderPruefen, feldOk: feldOk, karteVorlage: karteVorlage, vorlageKarten: vorlageKarten,
     typenUebernehmen: typenUebernehmen, materialFehlt: materialFehlt, materialZeigen: materialZeigen,
