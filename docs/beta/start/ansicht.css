@@ -830,6 +830,31 @@ body.editor-offen { overflow: hidden; }
 .ed-format .ed-format-titel { font-weight: 650; }
 .ed-format code { font-size: 0.82rem; }
 .editor-auf-2 { margin-top: 12px; }
+/* AP13.38: schwebender Knopf unten links, fest am Fensterrand; öffnet dieselbe Ansicht wie der Link in der Kopfzeile. Fläche und
+ * Rand aus den Tokens (Rand --leise, Schrift --text); das Symbol sitzt auf dem festen Anthrazit des Logos in beiden Schemata.
+ * Am Handy in Schritt 3 liegt er über der Vorschauleiste (96 px, aufgeklappt 60 vh); ohne ihn stünde er auf ihr. Die Fußzeile
+ * bekommt unten Platz, damit am Seitenende nichts unter ihm liegt. Sichtbar nur ohne offenen Dialog (die Ansicht selbst ist
+ * einer). */
+.editor-schweb { position: fixed; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 15; display: flex;
+  flex-direction: column; align-items: center; gap: 2px; min-width: 72px; padding: 6px 8px 5px; border: 2px solid var(--leise);
+  border-radius: 20px; background: var(--flaeche); color: var(--text); font: inherit; font-size: 0.8rem; font-weight: 650;
+  line-height: 1.25; cursor: pointer; box-shadow: 0 2px 10px var(--schatten); }
+.editor-schweb:hover { background: var(--gewaehlt); border-color: var(--text); }
+.sw-symbol { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%;
+  background: #2a2a2a; }
+.sw-symbol img { display: block; width: 44px; height: 44px; }
+body.editor-offen .editor-schweb { display: none; }
+body:has(dialog[open]) .editor-schweb { display: none; }
+@media (max-width: 999px) {
+  body.mit-editor-schweb .fuss { padding-bottom: calc(28px + 100px + env(safe-area-inset-bottom, 0px)); }
+  /* die haftende Zeile „Übernehmen“ der Lehrplanwahl bleibt über dem Knopf statt hinter ihm */
+  body.mit-editor-schweb .lp-fuss { bottom: calc(114px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 1099px) {
+  body[data-schritt="3"] .editor-schweb { bottom: calc(96px + 16px + env(safe-area-inset-bottom, 0px)); }
+  body[data-schritt="3"]:has(.vorschau-spalte.offen) .editor-schweb { bottom: calc(60vh + 16px); }
+  body.mit-editor-schweb[data-schritt="3"] .fuss { padding-bottom: calc(28px + 100px + 96px + env(safe-area-inset-bottom, 0px)); }
+}
 /* Frage vor dem Einsetzen über Handänderungen (§4) */
 .hand-frage { width: min(32rem, calc(100vw - 32px)); padding: 20px 22px; border: 1px solid var(--linie); border-radius: var(--rund);
   background: var(--flaeche); color: var(--text); }

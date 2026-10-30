@@ -219,6 +219,7 @@
   // jeder Teil dieser Einheit mit einem Klick (#teil-weiter)
   S.angehalten = {};
   S.restSatz = ""; S.restZahl = 0;                // Zahl der fehlenden Karten nach der letzten Bitte um den Rest
+  S.modusGewaehlt = "";                           // AP13.37 §1.2: Art, die die Lehrkraft vor dem Einfügen gewählt hat
   function kette() { return ki() && !S.angehalten[einheitTag() || ""]; }
   function eingefuegtZahl() { var st = Z.mappe && Z.mappe.stueckelung; return st ? (st.eingefuegt || []).length : -1; }
   function weiterSenden(vorher) {
@@ -319,17 +320,41 @@
       if (r) r.checked = true; }
   var MODUS_TEXT = { ersetzen: "Einheit ersetzt", baustein: "nur diese Bausteine ersetzt",
       anhaengen: "als weitere Einheit angehängt" };
+  function modusText(m) {                          // AP13.37 §1.2: „Einheit 3 ersetzt“, sobald es mehrere gibt
+    if (m !== "ersetzen" || !S.mehrereEinheiten()) return MODUS_TEXT[m];
+    var n = parseInt(String(einheitTag() || "e1").replace(/^e/, ""), 10) || 1;
+    return S.editorText("modus_ersetzt", { name: S.editorText("einheit_name", { n: n }) });
+  }
 
   // Antwort mit einem Modus einsetzen; vorher den Stand sichern, damit ein anderer Modus von dort aus neu einsetzt.
   // AP13.11 §4: betrifft die Antwort von Hand geänderte Bausteine, fragt die Seite einmal je Antwort (`merk`)
   async function einsetzen(text, modus, vorher, merk) {
+    var jetzt = { mappe: JSON.parse(JSON.stringify(Z.mappe)), kurs_md: Z.kurs_md };
     Z.mappe = JSON.parse(JSON.stringify(vorher.mappe)); Z.kurs_md = vorher.kurs_md;
-    var neu, meldung = "";
+    var neu, meldung = "", erlaubt = [];
+    // AP13.37: trifft die Antwort Bausteine einer anderen Einheit (Typ und Titel passen), fragt die Seite mit Namen.
+    // „Einheit ersetzen“ ersetzt nur die laufende Einheit („Nur Einheit 3 ersetzen“), „Nur Baustein ersetzen“ ändert
+    // sie dort erst nach „In Einheit 1 ändern“. „Abbrechen“ und Esc setzen nichts ein; die Antwort bleibt im Feld
+    if (modus === "ersetzen" || modus === "baustein") {
+      var um = await km.mappeFn("andere_einheiten", [Z.mappe, Z.kurs_md, text, modus, null]);
+      if (um.ids.length) {
+        var gemerkt = merk && merk["andere_" + modus];
+        var w = gemerkt || await S.frage(um.frage, [], um.haupt, um.abbrechen, "riskant");
+        if (w !== "sicher") {
+          Z.mappe = jetzt.mappe;
+          await km.stand(jetzt.kurs_md);
+          return { ok: false, art: "ok", text: S.editorText("abgebrochen") };
+        }
+        if (merk) merk["andere_" + modus] = w;
+        if (modus === "baustein") erlaubt = um.ids;
+      }
+    }
     var hv = await S.handVorEinsetzen(Z.mappe, Z.kurs_md, text, modus, null, merk);
     text = hv.text;
     if (hv.bausteine === 0) { await km.stand(Z.kurs_md); return { ok: false, art: "ok", text: S.editorText("hand_bleibt") }; }
     if (modus === "baustein") {
-      var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, text]);
+      // AP13.37 §1.3: die Antwort gehört zur laufenden Einheit (neu nummerierte landen in ihrer Kachel, kein Doppel)
+      var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, text, null, false, false, true, erlaubt]);
       if (!r.ersetzt.length && !r.eingefuegt.length) {
         await km.stand(Z.kurs_md);
         return { ok: false, text: r.fehler.join(" ") || "Kein Baustein passte zu einer Karte." };
@@ -343,14 +368,16 @@
       return { ok: true, n: ids.length, ids: ids, text: meldung };
     }
     if (modus === "anhaengen") neu = await km.mappeFn("anhaengen", [Z.kurs_md, text, Z.mappe.anhaengen || null]);
-    else neu = (await km.mappeFn("antwort", [text])).kursdatei;
+    else neu = await km.mappeFn("einheit_ersetzen", [Z.mappe, Z.kurs_md, text]);
     var tag = modus === "anhaengen" ? Z.mappe.anhaengen : null;
     var pr = await km.stand(neu);
     if (modus === "ersetzen") S.handNachEinsetzen([], hv);
     if (modus === "anhaengen" && Z.mappe.anhaengen) delete Z.mappe.anhaengen;
+    // AP13.37 §1.2: ersetzt zählt die Meldung die Bausteine der laufenden Einheit, sobald es mehrere gibt
+    if (modus === "ersetzen" && S.mehrereEinheiten()) tag = einheitTag();
     // AP13.33 §1.9: angehängt zählt die Meldung die Bausteine der neuen Einheit (wie die Zusammenfassung), nicht die Liste
-    var n = tag ? pr.bausteine.filter(function (b) { var k = karteNach(b.id); return k && k.einheit === tag; }).length
-      : pr.bausteine.length;
+    var n = tag !== null ? pr.bausteine.filter(function (b) { var k = karteNach(b.id); return k && (k.einheit || "") === tag; })
+        .length : pr.bausteine.length;
     return { ok: true, n: n, text: "" };
   }
 
@@ -506,11 +533,12 @@
     restWeg();
     try {
       await km.bereit();
-      var modus = modusErzwungen, mo = null, ergaenzt = [];
+      var modus = modusErzwungen, mo = null, ergaenzt = [], umbenannt = [], wechsel = "";
       if (!modus) {
-        // AP13.30 §4a: Baustein ohne id: mit Typ und Titel eines geplanten bekommt dessen id
+        // AP13.30 §4a: Baustein ohne id: mit Typ und Titel eines geplanten bekommt dessen id; AP13.37 §1.3: eine id, die
+        // nicht zu ihrer Karte passt, die einer leeren Karte gleichen Typs und Titels
         var ie = await km.mappeFn("ids_ergaenzen", [Z.mappe, text]);
-        text = ie.text; ergaenzt = ie.ids;
+        text = ie.text; ergaenzt = ie.ids; umbenannt = ie.titel || [];
         mo = await km.mappeFn("modus", [Z.mappe, text]);
         if (mo.modus === "keine") {
           zeige("");
@@ -521,10 +549,14 @@
         var neueOffen = Z.mappe.anhaengen && Z.mappe.bausteine.some(function (k) {
             return k.einheit === Z.mappe.anhaengen && k.geplant; });
         modus = neueOffen ? "anhaengen" : mo.modus;
+        // AP13.37 §1.2: hatte die Lehrkraft vor dem Einfügen eine andere Art gewählt, sagt die Meldung, warum diese gilt
+        if (feld && S.modusGewaehlt && S.modusGewaehlt !== modus && modus === "baustein")
+          wechsel = S.editorText("modus_gewechselt", { gewaehlt: modusName(S.modusGewaehlt) }) + " ";
+        S.modusGewaehlt = "";
         setzeModus(modus);
-        S.letzteAntwort = { text: text, ergaenzt: ergaenzt, vorher: { mappe: JSON.parse(JSON.stringify(Z.mappe)),
-            kurs_md: Z.kurs_md } };
-      } else ergaenzt = S.letzteAntwort.ergaenzt || [];
+        S.letzteAntwort = { text: text, ergaenzt: ergaenzt, umbenannt: umbenannt, vorher: {
+            mappe: JSON.parse(JSON.stringify(Z.mappe)), kurs_md: Z.kurs_md } };
+      } else { ergaenzt = S.letzteAntwort.ergaenzt || []; umbenannt = S.letzteAntwort.umbenannt || []; }
       diagnose(null);
       var e = await einsetzen(text, modus, S.letzteAntwort.vorher, S.letzteAntwort);
       if (!e.ok) {
@@ -575,7 +607,9 @@
       if (rot || aussen) mehr = ki() ? " Unter dem Feld steht die Korrektur: „An meine KI senden“ schickt die Bitte." :
           " Unter dem Feld steht die Korrektur: „Korrektur anfordern“ kopiert die Bitte für den Chat.";
       if (gleichE.length) mehr = " Die Antwort für „" + gleichE[0] + "“ ist dieselbe wie vorher." + mehr;
-      zeige("Übernommen (" + MODUS_TEXT[modus] + "): " + e.n + (e.n === 1 ?
+      if (umbenannt.length) mehr = " " + S.editorText("ids_zugeordnet", { titel: umbenannt.slice(0, 3).map(function (t) {
+          return "„" + t + "“"; }).join(", ") + (umbenannt.length > 3 ? " und " + (umbenannt.length - 3) + " weitere" : "") }) + mehr;
+      zeige(wechsel + "Übernommen (" + modusText(modus) + "): " + e.n + (e.n === 1 ?
           " Baustein" : " Bausteine")
         + (rot ? ", davon " + rot + " mit Fehler (rot)." : aussen ? "." : ". Sieh sie durch und geh dann weiter.") +
             mehr + e.text,
@@ -618,8 +652,15 @@
   $("eingabe-uebernehmen").onclick = function () { clearTimeout(S.eingabeTimer); eingabeUebernehmen(null); };
   // Anderen Modus gewählt: die letzte Antwort vom Stand davor aus neu einsetzen
   Array.prototype.forEach.call(document.querySelectorAll("input[name=modus]"), function (r) {
-    r.addEventListener("change", function () { if (S.letzteAntwort && r.checked) eingabeUebernehmen(r.value); });
+    r.addEventListener("change", function () {
+      if (r.checked) S.modusGewaehlt = r.value;      // AP13.37 §1.2: Wahl merken für die nächste eingefügte Antwort
+      if (S.letzteAntwort && r.checked) eingabeUebernehmen(r.value);
+    });
   });
+  function modusName(m) {
+    var r = document.querySelector("input[name=modus][value=" + m + "]");
+    return r ? r.closest("label").textContent.trim() : m;
+  }
   Object.assign(S, { EIGEN: EIGEN, kiBesetzt: besetzt, texteErzeugen: texteErzeugen, textKopiert: textKopiert, wartezeichen: wartezeichen, diagnoseKarte: diagnoseKarte, eigenerText: eigenerText,
     eingabeUebernehmen: eingabeUebernehmen, eingabeZu: eingabeZu, muehleSymbol: muehleSymbol, standKarte: standKarte,
     textGesendet: textGesendet, textGroesse: textGroesse, textSpaeter: textSpaeter, zeichneChat: zeichneChat,

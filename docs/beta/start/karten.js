@@ -217,6 +217,9 @@
     // AP13.35 §4.2: „Nur Baustein ersetzen“ nennt die Einheit, sobald es mehrere gibt
     $("modus-baustein-text").textContent = mehrE ? S.editorText("modus_baustein", { name: S.einheitName(einheitTag() ||
         "e1") }) : "Nur Baustein ersetzen";
+    // AP13.37 §1.2: „Einheit ersetzen“ ersetzt nur die laufende Einheit und sagt welche
+    $("modus-ersetzen-text").textContent = mehrE ? S.editorText("modus_ersetzen", { name: S.einheitName(einheitTag() ||
+        "e1") }) : "Einheit ersetzen";
     korrekturOrt();
   }
   // AP13.36 §3.1: die Bitte zu „Sprache anpassen lassen“ und „Diesen Baustein neu beauftragen“ steht unter der Karte, die
@@ -468,17 +471,26 @@
   // Frage vor dem Einsetzen einer Antwort, die von Hand geänderte Bausteine betrifft (§4); ein <dialog> über allem,
   // auch über der Ansicht „Einheit ansehen und bearbeiten“. Esc gilt als „Erhalten“ (nichts geht verloren).
   function handFrage(ids) {
-    var d = $("hand-frage");
     var gl = ids.some(function (id) { return id.indexOf("abschnitt:") === 0; });
-    $("hand-frage-text").textContent = S.editorText(gl ? "frage_gliederung" : "frage");
-    $("hand-erhalten").textContent = S.editorText("erhalten");
-    $("hand-verwerfen").textContent = S.editorText("verwerfen");
-    var ul = $("hand-frage-liste"); ul.innerHTML = "";
     var zeilen = [];
     ids.forEach(function (id) { handTitel(id).split("\n").forEach(function (z) { if (z && zeilen.indexOf(z) < 0) zeilen.push(z); }); });
     // nur Kacheln, die Bausteine abgegeben haben: dann wenigstens ihre Namen
     if (!zeilen.length) ids.forEach(function (id) { zeilen.push(S.editorText("gl_kachel", { titel: kopfTitel(
         ((Z.mappe.hand || {})[id] || {}).nachher) })); });
+    return frage(S.editorText(gl ? "frage_gliederung" : "frage"), zeilen, S.editorText("erhalten"),
+        S.editorText("verwerfen")).then(function (w) { return w === "sicher" ? "erhalten" : "verwerfen"; });
+  }
+  // Rückfrage vor dem Einsetzen im <dialog> #hand-frage: Satz, Zeilen, Hauptknopf („sicher“) und zweiter Knopf
+  // („riskant“); Esc gibt `esc` (sonst „sicher“: nichts geht verloren). AP13.37: dieselbe Frage, wenn die Antwort
+  // Bausteine einer anderen Einheit trifft (dort ist der zweite Knopf „Abbrechen“ und Esc wirkt wie er).
+  // -> Promise mit "sicher" oder "riskant"
+  function frage(text, zeilen, sicher, riskant, esc) {
+    var d = $("hand-frage");
+    $("hand-frage-text").textContent = text;
+    $("hand-erhalten").textContent = sicher;
+    $("hand-verwerfen").textContent = riskant;
+    var ul = $("hand-frage-liste"); ul.innerHTML = "";
+    ul.hidden = !zeilen.length;
     zeilen.forEach(function (z) { ul.appendChild(el("li", { text: z })); });
     var vorher = document.activeElement;
     return new Promise(function (fertig) {
@@ -489,10 +501,10 @@
         S.fokus([vorher], true);            // AP13.33 §2.1: nur, wenn die Stelle davor noch zu sehen ist
         fertig(wahl);
       }
-      function abbruch(ev) { ev.preventDefault(); ende("erhalten"); }
+      function abbruch(ev) { ev.preventDefault(); ende(esc || "sicher"); }
       d.addEventListener("cancel", abbruch);
-      $("hand-erhalten").onclick = function () { ende("erhalten"); };
-      $("hand-verwerfen").onclick = function () { ende("verwerfen"); };
+      $("hand-erhalten").onclick = function () { ende("sicher"); };
+      $("hand-verwerfen").onclick = function () { ende("riskant"); };
       if (typeof d.showModal === "function") d.showModal(); else d.setAttribute("open", "");
       $("hand-erhalten").focus();
     });
@@ -500,6 +512,7 @@
   // Vor dem Einsetzen: betroffene Handfassungen und die Wahl (einmal je Antwort, `merk` hält sie); „Erhalten“ gibt den
   // Text zurück, der statt der Antwort eingesetzt wird. -> {ids, wahl, text, bausteine}
   async function handVorEinsetzen(mappe, kurs_md, text, modus, nur, merk) {
+    // AP13.37 §1.2: bei „Einheit ersetzen“ nur Handänderungen der laufenden Einheit (gen/mappe.py hand_betroffen)
     var ids = await km.mappeFn("hand_betroffen", [mappe, kurs_md, text, modus, nur]);
     if (!ids.length) return { ids: [], wahl: null, text: text, bausteine: -1 };
     var wahl = merk && merk.hand ? merk.hand : await handFrage(ids);
@@ -972,16 +985,25 @@
         Object.keys(hand0).forEach(function (id) { if (korrNeu.indexOf(id) < 0) ohneKorr[id] = hand0[id]; });
         frageMappe = Object.assign({}, Z.mappe, { hand: ohneKorr });
       }
+      // AP13.37: trifft die Antwort Bausteine einer anderen Einheit (Typ und Titel passen), fragt die Seite mit Namen;
+      // „Abbrechen“ und Esc setzen nichts ein, die Antwort bleibt im Feld
+      var um = await km.mappeFn("andere_einheiten", [Z.mappe, Z.kurs_md, text, "baustein", nur]);
+      if (um.ids.length && await frage(um.frage, [], um.haupt, um.abbrechen, "riskant") !== "sicher") {
+        o.stand(S.editorText("abgebrochen"), "ok"); return false;
+      }
       var hv = await handVorEinsetzen(frageMappe, Z.kurs_md, text, "baustein", nur, null);
       if (hv.bausteine === 0) { o.leeren(); o.stand(S.editorText("hand_bleibt"), "ok"); return false; }
-      var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, hv.text, nur, true]);
+      // AP13.37 §1.3: Bausteine gehören zur laufenden Einheit; neu nummerierte kommen nicht in eine andere
+      var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, hv.text, nur, true, false, true, um.ids, false]);
       var ids = r.ersetzt.concat(r.eingefuegt);
       if (!ids.length && ohne && mo.modus === "ersetzen") {
         // ganze Kursdatei ohne passende ids: ersetzt die Einheit, also fragt die Seite für alle Handfassungen
         hv = await handVorEinsetzen(Z.mappe, Z.kurs_md, text, "ersetzen", null, null);
-        await km.stand((await km.mappeFn("antwort", [hv.text])).kursdatei);
+        await km.stand(await km.mappeFn("einheit_ersetzen", [Z.mappe, Z.kurs_md, hv.text]));   // AP13.37 §1.2
+        // AP13.37: gezählt werden die Bausteine der laufenden Einheit, nicht die des ganzen Kurses
         ids = Z.pruefung.bausteine.map(function (b) { return b.id; }).filter(function (id) {
-          return hv.wahl !== "erhalten" || hv.ids.indexOf(id) < 0; });
+          var k = S.karteNach(id);
+          return (!k || (k.einheit || "") === einheitTag()) && (hv.wahl !== "erhalten" || hv.ids.indexOf(id) < 0); });
       } else if (!ids.length) {
         o.stand(r.fehler.join(" ") || "Kein Baustein der Antwort passte zu einer Karte.", "fehler");
         return false;
@@ -1002,7 +1024,7 @@
       var gleich = schleifeMerken(ids, true);
       o.leeren();
       var rot = fehlerZahl(), satz = "Eingesetzt: " + ids.length + (ids.length === 1 ? " Baustein" : " Bausteine") +
-          ".";
+          "." + (r.fehler.length && (rot || neuBeauftragt().length) ? "" : r.fehler.map(function (f) { return " " + f; }).join(""));
       if (!rot && !neuBeauftragt().length) {
         S.korrektur = { text: "", offen: false, stand: "", art: "" };
         var gelb = gelbZahl();       // AP13.34 §3.3: mit gelben Hinweisen nicht „alles in Ordnung“
@@ -1042,7 +1064,7 @@
   Object.assign(S, { uebersichtAendern: uebersichtAendern, gliederungAendern: gliederungAendern,
     nachAntwortMarkieren: nachAntwortMarkieren, naechsteNummer: naechsteNummer,
     handFrage: handFrage, handGeaendert: handGeaendert, handIds: handIds, nummer: nummer, durchsichtNeuText: durchsichtNeuText,
-    handNachEinsetzen: handNachEinsetzen, handUebernehmen: handUebernehmen, handVorEinsetzen: handVorEinsetzen,
+    frage: frage, handNachEinsetzen: handNachEinsetzen, handUebernehmen: handUebernehmen, handVorEinsetzen: handVorEinsetzen,
     handZuruecknehmen: handZuruecknehmen, korrekturEinsetzen: korrekturEinsetzen, korrekturText: korrekturText,
     korrekturVermerken: korrekturVermerken, knoepfe: knoepfe, korrekturSpaeter: korrekturSpaeter, neuBeauftragt: neuBeauftragt,
     schleifeMerken: schleifeMerken, typAuswahl: typAuswahl, zeichneDiagnosen: zeichneDiagnosen,

@@ -723,7 +723,7 @@ window.km = km;
 
   function zeichne() {
     S.zeichneSchritte();
-    if (!Z.mappe || !S.katalog) { S.knoepfe(); return; }
+    if (!Z.mappe || !S.katalog) { S.knoepfe(); if (S.zeichneEditor) S.zeichneEditor(); return; }   // AP13.38: auch ohne Einheit blenden die Editor-Knöpfe sich aus
     felderFuellen();
     Array.prototype.forEach.call(document.querySelectorAll(".vorlage"), function (b) {
       b.setAttribute("aria-pressed", String(S.katalog.vorlagen[b.dataset.vorlage].name === (Z.mappe.einheit || {})

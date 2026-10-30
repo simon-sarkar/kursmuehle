@@ -18,7 +18,6 @@
   // letztes Löschen, einstufig: {art: "element", karte, nach (id der Karte davor), index, titel, kachel} oder
   // {art: "kachel", kachel, index, titel}; die nächste andere Änderung nimmt es weg
   var rueck = null;
-  var beruehrt = new WeakSet();  // Mappen, deren Beschreibung die Lehrkraft schon bearbeitet hat (dann kein Thema als Vorbelegung)
 
   // ---------------------------------------------------------------- Daten
   function tag() { return S.einheitTag() || ""; }
@@ -217,8 +216,11 @@
   function beschreiben() {
     var feld = el("textarea", { id: "plan-beschreibung", cls: "von-lehrkraft", rows: "3", maxlength: "600", spellcheck: "true",
         "data-fokus": "beschreibung" });
-    // AP13.35 §1.2: je Einheit (S.kontextJetzt); eine angehängte Einheit beginnt leer, nur die erste zeigt das Thema vor
-    feld.value = S.kontextJetzt() || (beruehrt.has(Z.mappe) || tag() ? "" : (Z.mappe.einheit && Z.mappe.einheit.thema) || "");
+    // AP13.35 §1.2: je Einheit (S.kontextJetzt). AP13.37 §2.1: das Feld beginnt leer; das Thema steht nur als Platzhalter
+    // darin (getippter Text hing sonst ohne Leerzeichen an das Thema)
+    feld.value = S.kontextJetzt() || "";
+    var th = String((Z.mappe.einheit && Z.mappe.einheit.thema) || "").trim();
+    if (th) feld.placeholder = th;
     var hue = S.akzent ? S.akzent() : "#1D5FD1", format = S.angaben.format || "themen";
     var wahl = el("div", { cls: "ed-darstellung", role: "radiogroup", "aria-labelledby": "plan-darstellung-t" },
         S.katalog.oberflaeche.format.map(function (w) {
@@ -416,7 +418,6 @@
     var t = ev.target, c = t.classList;
     aendern();
     if (t.id === "plan-beschreibung") {
-      beruehrt.add(Z.mappe);
       S.kontextSetzen(t.value);
       return;
     }

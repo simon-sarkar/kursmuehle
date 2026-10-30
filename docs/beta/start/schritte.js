@@ -625,6 +625,19 @@
     if (schritt() <= 2) { zeichne(); geaendert(); }
     else { S.auf[2] = true; zeichne(); geaendert(); }
   });
+  // AP13.37 §3 (e7-11): der Fokus bleibt nach der Wahl auf dem Weg (AP13.36 §1.5); wer gleich tippt, schreibt in das
+  // Textfeld dieses Wegs („Worum geht es genau?“ bzw. im Plan „Worum geht es in dieser Einheit?“), nichts geht verloren.
+  // Leertaste, Pfeile und Tasten mit Strg, Alt oder Cmd bleiben bei der Radiogruppe
+  document.querySelector(".zweige").addEventListener("keydown", function (ev) {
+    if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.isComposing || String(ev.key).length !== 1 || ev.key === " ") return;
+    var f = zweig() === "steuer" ? $("plan-beschreibung") : zweig() ? $("m-kontext") : null;
+    if (!f || !f.getClientRects().length || f.disabled || f.readOnly) return;
+    ev.preventDefault();
+    f.focus();
+    var pos = f.value.length;
+    f.setRangeText(ev.key, pos, pos, "end");
+    f.dispatchEvent(new Event("input", { bubbles: true }));
+  });
   $("weiter-2").onclick = function () { gehe(nachZwei()); };
 
   // AP13.5b: „Ich gebe die Richtung“ – Eingabekarte (Art, Schwerpunkt, Übungen, Sprache, Material)

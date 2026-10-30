@@ -53,6 +53,11 @@
       var b = $(id); b.hidden = !da;
       if (S.katalog) b.textContent = T("knopf");
     });
+    // AP13.38: der schwebende Knopf unter derselben Bedingung; das Wort darauf ist kürzer, der Name für Vorlesegeräte nicht
+    var sw = $("editor-schweb");
+    sw.hidden = !da;
+    document.body.classList.toggle("mit-editor-schweb", da);
+    if (S.katalog) { $("editor-schweb-text").textContent = T("schweb"); sw.setAttribute("aria-label", T("schweb") + ": " + T("knopf")); }   // WCAG 2.5.3: Name beginnt mit dem sichtbaren Wort
   }
 
   // ---------------------------------------------------------------- Öffnen, Schließen, Esc
@@ -98,7 +103,7 @@
   });
   dlg.addEventListener("cancel", function (ev) { if (escInnen()) ev.preventDefault(); });
   $("editor-zu").onclick = schliessen;
-  ["editor-auf", "editor-auf-2"].forEach(function (id) { $(id).onclick = function () { oeffnen($(id)); }; });
+  ["editor-auf", "editor-auf-2", "editor-schweb"].forEach(function (id) { $(id).onclick = function () { oeffnen($(id)); }; });
   if (BREIT.addEventListener) BREIT.addEventListener("change", function () {
     $("editor-liste").open = BREIT.matches;
     if (S.katalog) $("editor-liste-titel").textContent = BREIT.matches ? T("liste") : T("liste_auf");
@@ -501,7 +506,9 @@
       teile.push(el("p", { cls: "ed-ue-hinweis ed-ue-farbe-hinweis", text: T(kachel ? "farbe_hinweis_kachel" :
           "farbe_hinweis_abschnitt") }));
       // AP13.33 §1.8: am Rand (und bei nur einer Kachel) gesperrt wie die Pfeile in der Vorschau
-      var reihe = (u.abschnitte || []).filter(function (x) { return !x.allgemein; }), stelle = reihe.indexOf(a);
+      // AP13.37 §3: nur innerhalb der Einheit (wie „In Kachel …“)
+      var reihe = (u.abschnitte || []).filter(function (x) { return !x.allgemein && (x.einheit || "") === (a.einheit || ""); }),
+          stelle = reihe.indexOf(a);
       var quer = kachel || u.format === "einthemen";
       teile.push(el("div", { cls: "ed-knoepfe" }, [
         el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": "ue-hoch", disabled: stelle <= 0,

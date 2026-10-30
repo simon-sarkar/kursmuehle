@@ -147,7 +147,7 @@ var PY_BRUECKE = [
   "          'antwort', 'modus', 'einsetzen', 'anhaengen', 'dateiname', 'bild_verkleinert', 'herkunft_hinweis',",
   "          'hand_pruefen', 'hand_betroffen', 'hand_erhalten', 'abschnitt_setzen', 'abschnitt_verschieben',",
   "          'kurstitel_setzen', 'kachel_teilen', 'baustein_verschieben', 'kachel_loeschen', 'ids_ergaenzen',",
-  "          'leer_nach_antwort'}",
+  "          'leer_nach_antwort', 'einheit_ersetzen', 'andere_einheiten'}",
   "_PROMPT = {'einheit', 'baustein', 'korrektur', 'korrektur_bitte', 'diagnose', 'fragen', 'fachcheck', 'vergleich',",
   "           'lehrplan', 'format_hilfe'}",
   "",

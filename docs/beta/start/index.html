@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 1f52383 vom 30.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 1021ac4 vom 30.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -430,7 +430,7 @@
       <div class="einfuegen">
         <p id="eingabe-satz" class="leise">Kopiere die ganze Antwort mit dem Kopierknopf des Chats und füge sie hier ein.</p>
         <div id="modus" class="modus" role="radiogroup" aria-label="Wie die Antwort eingesetzt wird">
-          <label><input type="radio" name="modus" value="ersetzen" checked> Einheit ersetzen</label>
+          <label><input type="radio" name="modus" value="ersetzen" checked> <span id="modus-ersetzen-text">Einheit ersetzen</span></label>
           <label><input type="radio" name="modus" value="baustein"> <span id="modus-baustein-text">Nur Baustein ersetzen</span></label>
           <label><input type="radio" name="modus" value="anhaengen"> Als weitere Einheit anhängen</label>
         </div>
@@ -679,6 +679,11 @@
  <input id="ordner-oeffnen" class="unsichtbar" type="file" tabindex="-1" multiple webkitdirectory>
  <datalist id="phasen"></datalist>
 </main>
+<!-- AP13.38: schwebender Knopf unten links, öffnet dieselbe Ansicht wie der Link in der Kopfzeile (editor.js, Text aus
+     katalog.yaml oberflaeche.editor); im Tab-Lauf nach dem Hauptinhalt, vor der Fußzeile -->
+<button type="button" id="editor-schweb" class="editor-schweb" aria-label="Editor: Einheit ansehen und bearbeiten" hidden>
+  <span class="sw-symbol" aria-hidden="true"><img src="logo.svg" alt="" width="44" height="44"></span>
+  <span id="editor-schweb-text" class="sw-text">Editor</span></button>
 <footer class="fuss">
   <button type="button" id="fuss-rueckmeldung" class="textlink">Rückmeldung</button>
   <a href="../impressum.html" class="fuss-klein">Impressum und Datenschutz</a>
