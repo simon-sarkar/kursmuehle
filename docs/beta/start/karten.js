@@ -161,7 +161,7 @@
           el("span", { cls: "k-status", title: stText }, [el("span", { cls: "punkt", "aria-hidden": "true" }),
               stText])]),
         el("input", { cls: "k-titel von-" + herkunft, "data-herkunft": herkunft, type: "text", value: k.titel,
-            readonly: !steuer,
+            readonly: !steuer, placeholder: k.geplant ? S.editorText("plan_titel_platzhalter") : null,   // AP13.41 §2.3
           "aria-label": "Titel von " + bez + (herkunft === "chat" ? " (vom Chat)" : " (von dir)") }),
         minuten && zeitplanung ? el("div", { cls: "k-felder" }, [
           el("label", { cls: "k-phase-l" }, ["Phase ", el("input", { cls: "k-phase", type: "text", list: "phasen",
@@ -214,12 +214,14 @@
     });
     $("zeit-selbst").checked = zeitSelbst();
     $("zeit-schalter").hidden = !steuer;
+    sollSummeZeigen();
     // AP13.35 §4.2: „Nur Baustein ersetzen“ nennt die Einheit, sobald es mehrere gibt
     $("modus-baustein-text").textContent = mehrE ? S.editorText("modus_baustein", { name: S.einheitName(einheitTag() ||
         "e1") }) : "Nur Baustein ersetzen";
     // AP13.37 §1.2: „Einheit ersetzen“ ersetzt nur die laufende Einheit und sagt welche
     $("modus-ersetzen-text").textContent = mehrE ? S.editorText("modus_ersetzen", { name: S.einheitName(einheitTag() ||
         "e1") }) : "Einheit ersetzen";
+    if (S.modusSatzZeigen) S.modusSatzZeigen();      // AP13.41 §3.3
     korrekturOrt();
   }
   // AP13.36 §3.1: die Bitte zu „Sprache anpassen lassen“ und „Diesen Baustein neu beauftragen“ steht unter der Karte, die
@@ -659,6 +661,17 @@
     $("weiter-5").hidden = !(schritt() === 5 && voll && !fehler && !teileOffen());
   }
 
+  // AP13.41 §3.2: Soll der Karten über der Dauer der Einheit: gelb, Schritt 5 rechnet mit der Dauer (gen/prompt.py
+  // pruef_minuten); derselbe Satz wie im Plan
+  function sollSummeZeigen() {
+    var p = $("soll-summe"), steuer = zweig() === "steuer" && zeitSelbst();
+    var dauer = parseInt(((Z.mappe && Z.mappe.einheit) || {}).minuten, 10) || 0, summe = 0;
+    if (steuer) Z.mappe.bausteine.forEach(function (k) { if (!k.aus && mitMinuten(k.typ) && !k.zusatzaufgabe &&
+        (k.einheit || "") === (S.einheitTag() || "")) summe += parseInt(k.soll, 10) || 0; });
+    var t = steuer && dauer && summe > dauer ? S.editorText("plan_summe_ueber", { summe: summe, minuten: dauer }) : "";
+    p.hidden = !t;
+    if (p.textContent !== t) p.textContent = t;
+  }
   function karteVon(t) { var li = t.closest(".karte"); return li ? Z.mappe.bausteine.filter(function (k) {
       return k.id === li.dataset.id; })[0] : null; }
 
@@ -673,8 +686,10 @@
       return;
     }
     if (c.contains("k-phase")) k.phase = ev.target.value;
-    else if (c.contains("k-soll")) k.soll = ev.target.value === "" ? null : Math.max(0, parseInt(ev.target.value, 10) ||
-        0);
+    else if (c.contains("k-soll")) {
+      k.soll = ev.target.value === "" ? null : Math.max(0, parseInt(ev.target.value, 10) || 0);
+      sollSummeZeigen();
+    }
     else if (c.contains("k-auftrag")) {
       k.auftrag = ev.target.value; hoehe(ev.target);
       if (k.neu) korrekturSpaeter();           // neu beauftragt: Text im Korrekturblock folgt dem Auftrag

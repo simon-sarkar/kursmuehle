@@ -279,6 +279,8 @@ var km = (function () {
     var m = await mappeSchreiben();
     var d = await db();
     var titel = (zustand.mappe.einheit && zustand.mappe.einheit.thema) || zustand.mappe.titel || "";
+    // AP13.40: „Weiter mit …“ nennt bei einer Sequenz die Sequenz und die Stunde
+    if (zustand.mappe.sequenz && km.seite && km.seite.sequenzName) titel = km.seite.sequenzName() || titel;
     return new Promise(function (resolve, reject) {
       var tx = d.transaction(STORE, "readwrite");
       tx.objectStore(STORE).put({ zip: m.zip.buffer, dateiname: m.dateiname, titel: titel, zeit: Date.now() },
@@ -353,6 +355,7 @@ window.km = km;
   S.korrekturBitte = "";
   S.spracheGelb = [];             // AP13.14: ids mit „Sprache anpassen lassen“ (flüchtig, nicht in der Mappe)
   S.letzteAntwort = null;
+  S.modusSpaeter = false;         // AP13.41 §1.3: die Moduswahl gilt erst für die nächste Antwort (chat.js)
   S.infoboxAus = false;
   S.schreibKette = Promise.resolve();
   S.angabenFuer = null;            // Mappe, deren Angaben aus dem Steckbrief gelesen sind (neuPruefen)
@@ -393,8 +396,14 @@ window.km = km;
         " um " + zeit(t);
   }
   // AP13.11: Wortlaut der Ansicht „Einheit ansehen und bearbeiten“ aus katalog.yaml (oberflaeche.editor)
+  // AP13.40 (Korrekturrunde): in einer Sequenz heißen die Einheiten in Namen, Moduswahl und Rückfragen „Stunde“
+  // (wie gen/mappe.py stunden_wort)
+  var STUNDEN_TEXTE = { einheit_name: 1, modus_ersetzen: 1, modus_baustein: 1, modus_ersetzt: 1, modus_gewechselt: 1,
+    andere_frage: 1, andere_frage_ersetzen: 1, andere_aendern: 1, ersetzen_nur: 1 };
+  function stundenWort(t) { return String(t).replace(/Einheit(en)?/g, function (_, en) { return en ? "Stunden" : "Stunde"; }); }
   function editorText(schluessel, werte) {
     var t = (S.katalog && S.katalog.oberflaeche.editor || {})[schluessel] || "";
+    if (STUNDEN_TEXTE[schluessel] && Z.mappe && Z.mappe.sequenz) t = stundenWort(t);
     Object.keys(werte || {}).forEach(function (k) { t = t.split("{" + k + "}").join(werte[k]); });
     return t;
   }
@@ -723,6 +732,7 @@ window.km = km;
 
   function zeichne() {
     S.zeichneSchritte();
+    if (S.zeichneSequenz) S.zeichneSequenz();      // AP13.40 (sequenz.js), auch ohne Mappe: Umschalter in Schritt 1
     if (!Z.mappe || !S.katalog) { S.knoepfe(); if (S.zeichneEditor) S.zeichneEditor(); return; }   // AP13.38: auch ohne Einheit blenden die Editor-Knöpfe sich aus
     felderFuellen();
     Array.prototype.forEach.call(document.querySelectorAll(".vorlage"), function (b) {
@@ -767,6 +777,7 @@ window.km = km;
       "a-abschluss": S.angaben.abschluss, "a-portionierung": S.angaben.portionierung, "a-chat": Z.mappe.chat || "",
       "a-material": Z.mappe.material || "", "f-thema": e.thema || "", "f-jahrgang": zgF ? "" : jgF,
           "f-zielgruppe": zgF, "f-minuten": e.minuten || 45 };
+    if (Z.mappe.sequenz) werte["f-thema"] = Z.mappe.titel || e.thema || "";    // AP13.40: Thema der Sequenz
     if (Z.mappe.anhaengen && Z.mappe.laufend !== Z.mappe.anhaengen && !Z.mappe.bausteine.some(function (k) {
         return k.einheit === Z.mappe.anhaengen; })) {
       werte["f-thema"] = undefined; werte["f-minuten"] = undefined;    // nächste Einheit: Felder gehören der Lehrkraft

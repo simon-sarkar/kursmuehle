@@ -1,6 +1,6 @@
 {
-"version": "2.0.0-b16",
-"generator": "87e1b3ca15efc119",
+"version": "2.0.0-b17",
+"generator": "821e71ebefae3bd2",
 "dateien": [
 "ansicht.css",
 "bilder.js",
@@ -26,6 +26,7 @@
 "nachbau.js",
 "plan.js",
 "schritte.js",
+"sequenz.js",
 "themen.js",
 "verbindung.js",
 "worker.js",

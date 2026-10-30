@@ -68,6 +68,8 @@
   // Plan der Einheit (gen/mappe.py planung): Warnung vor dem Kopieren und an der Kartenliste, keine Sperre
   function planungText() {
     var p = Z.kennzahlen && Z.kennzahlen.planung;
+    // AP13.40: in einer Sequenz plant der Chat die Phasen je Stunde (Sequenzplan); die Vorlage warnt dort nicht
+    if (Z.mappe && Z.mappe.sequenz) return "";
     if (!p || (!p.zu_wenig && !p.fehlen.length)) return "";
     return [p.zu_wenig ? p.text + ". Bausteine ergänzen?" : ""].concat(p.fehlen.map(function (f) { return f + "."; }))
         .filter(Boolean).join(" ");
@@ -79,7 +81,15 @@
     $("karten-warnung").hidden = !t || zweig() !== "steuer";
     $("karten-warnung").textContent = t;
     var pw = $("plan-warnung");                    // AP13.31: dieselbe Warnung im Plan („Ich steuere“)
-    if (pw) { pw.hidden = !t || zweig() !== "steuer"; pw.textContent = t; }
+    if (pw) {
+      pw.hidden = !t || zweig() !== "steuer";
+      $("plan-warnung-text").textContent = t;
+      // AP13.39: fehlt eine Phase der Art, ergänzt „Fehlende Phase ergänzen“ sie (derselbe Weg wie „Vorlage auffüllen“)
+      var pl = Z.kennzahlen && Z.kennzahlen.planung;
+      pw.querySelector("[data-aktion=auffuellen]").hidden = !(pl && pl.fehlen.length);
+    }
+    var ps = $("plan-status"), pt = pw && !pw.hidden ? t : "";
+    if (ps && ps.textContent !== pt) ps.textContent = pt;     // angesagt nur, wenn sich der Satz ändert
   }
   $("auffuellen").onclick = async function () {
     if (!Z.mappe) return;
@@ -96,6 +106,7 @@
       $("kopiert").className = "stand ok";
     } catch (e) { zeigeFehler(e); }
   };
+  S.auffuellen = function () { return $("auffuellen").onclick(); };   // AP13.39: „Fehlende Phase ergänzen“ im Plan
 
   function textSpaeter(ms) {
     clearTimeout(S.textTimer);
@@ -109,12 +120,15 @@
     var art = textArt(), md0 = pruefsumme(Z.kurs_md), mappe0 = Z.mappe;
     try {
       // Teile aus gen/prompt.py: nur die laufende Einheit; nach dem ersten Kopieren gilt die eingefrorene Stückelung
-      var e = await km.prompt("einheit", [Z.mappe, Z.steckbrief_text, null, null, art === "leer", null, true,
+      // AP13.40: in einer Sequenz ohne Plan holt der Text nur den Sequenzplan
+      var e = S.sequenzOffen && S.sequenzOffen() ? await km.prompt("sequenzplan", [Z.mappe, Z.steckbrief_text]) :
+          await km.prompt("einheit", [Z.mappe, Z.steckbrief_text, null, null, art === "leer", null, true,
           art === "kachel"]);
       var teile = e.teile;
       basis(mappe0, md0, teile);                    // AP13.35 §3.3: auch ein überholter Lauf setzt den Stand
       if (nr !== texte.laeuft) return texte.lauf;   // ein neuerer Lauf ist schon unterwegs
-      if (art !== texte.art || teile.length !== texte.teile.length) { texte.teil = 0; texte.kopiert = {}; }
+      if (art !== texte.art || teile.length !== texte.teile.length) { texte.teil = 0; texte.kopiert = {}; texte.geaendert = []; }
+      else teilePruefen(teile, md0);
       texte.art = art; texte.teile = teile; texte.ids = e.ids || [];
       veraltetPruefen();
       if (texte.teil >= teile.length) texte.teil = 0;
@@ -178,9 +192,33 @@
     if (!k || typeof k !== "object" || !texte.teile.length || k.md !== pruefsumme(Z.kurs_md)) { texte.veraltet = false; return; }
     var alt = !!texte.veraltet;
     texte.veraltet = k.text !== textStand();
-    if (texte.veraltet && !alt) { texte.kopiert = {}; $("kopiert").textContent = ""; }
+    if (texte.veraltet && !alt) { texte.kopiert = {}; texte.geaendert = []; $("kopiert").textContent = ""; }
     if (texte.veraltet !== alt) zeichneSchritte();
   }
+  // AP13.41 §1.2: hat sich die Kursdatei durch die Lehrkraft geändert (Editor: Kachel geteilt, Element verschoben,
+  // Handänderung), vergleicht die Mühle jeden schon kopierten Teil mit seinem Text beim Kopieren: ein geänderter Teil
+  // verliert „kopiert“, Schritt 4 meldet ihn einmal. Kam die Kursdatei aus einer Antwort (S.ausAntwort vor km.stand),
+  // gilt der neue Text als Stand wie bei basis(). Ohne neue Kursdatei (Plan geändert) greift veraltetPruefen für alles
+  S.ausAntwort = function (md) { texte.antwortMd = pruefsumme(md); };
+  function teilePruefen(teile, md) {
+    if (texte.teilMd === undefined || texte.teilMd === md) { texte.teilMd = md; return; }
+    var antwort = md === texte.antwortMd, neu = [];
+    texte.teilMd = md;
+    Object.keys(texte.kopiert).forEach(function (i) {
+      var jetzt = textStand([teile[i] || ""]);
+      if (texte.kopiert[i] === jetzt || typeof texte.kopiert[i] !== "string") return;
+      if (antwort) { texte.kopiert[i] = jetzt; return; }
+      delete texte.kopiert[i];
+      neu.push(parseInt(i, 10));
+    });
+    if (!neu.length) return;
+    texte.geaendert = (texte.geaendert || []).concat(neu).sort(function (a, b) { return a - b; });
+    $("kopiert").textContent = S.editorText(ki() ? "teil_geaendert_ki" : "teil_geaendert", { n: neu[0] + 1 });
+    $("kopiert").className = "stand warn";
+    zeichneSchritte();
+  }
+  S.teilGeaendert = function () { return (texte.geaendert || []).length ? S.editorText(ki() ? "teil_geaendert_ki" :
+      "teil_geaendert", { n: texte.geaendert[0] + 1 }) : ""; };
   // AP13.5h a5: ging der Text an die eigene KI, sagt das Fazit von Schritt 4 „Text gesendet“; ohne Merker (neu
   // geladen) gilt der gewählte Chat
   var gesendetAn = new WeakMap();
@@ -191,7 +229,8 @@
   function textKopiert(gesendet) {
     var kopierterTeil = texte.teil + 1;
     eingabeZu(false);                              // neuer Text: das Einfügefeld gehört wieder dazu
-    texte.kopiert[texte.teil] = true;
+    texte.kopiert[texte.teil] = textStand([texte.teile[texte.teil]]);    // AP13.41 §1.2: Prüfsumme des kopierten Teils
+    texte.geaendert = (texte.geaendert || []).filter(function (i) { return i !== texte.teil; });
     if (!Z.mappe) return;
     Z.mappe.kopiert = { text: textStand(), md: pruefsumme(Z.kurs_md) };
     texte.veraltet = false;
@@ -242,10 +281,11 @@
     if (!t) return;
     texte.teil = i;
     var von = texte.teile.length, st = Z.mappe && Z.mappe.stueckelung;
-    var danach = von > 1 && texte.teile.some(function (_, j) { return j !== i && !(st && (st.eingefuegt || [])
-        .indexOf(j) >= 0); });
+    var danach = (von > 1 && texte.teile.some(function (_, j) { return j !== i && !(st && (st.eingefuegt || [])
+        .indexOf(j) >= 0); })) || !!(S.sequenzDanach && S.sequenzDanach());   // AP13.40: danach kommt die nächste Stunde
     S.anKi(t, { einheit: einheitTag(), neu: i === 0, ort: $("eingabe-stand"), feld: "eingabe",
-      vor: von > 1 ? "Teil " + (i + 1) + " von " + von + " · " : "",
+      // AP13.40: in einer Sequenz vorn „Sequenzplan · “ bzw. „Stunde 2 von 6 · “
+      vor: (S.sequenzVor ? S.sequenzVor() : "") + (von > 1 ? "Teil " + (i + 1) + " von " + von + " · " : ""),
       vorher: function () { textKopiert(true); },
       stand: function (x, art) {
         standKarte($("eingabe-stand"), x, art);
@@ -290,7 +330,8 @@
       } });
   }
   function textKopieren() {
-    if (ki()) return textSenden();
+    // AP13.40: eine lange Sequenz an die eigene KI erst nach einer Bestätigung
+    if (ki()) return S.sequenzStart ? S.sequenzStart().then(function (ja) { if (ja) textSenden(); }) : textSenden();
     kopieren($("chat-text-feld").value, $("chat-text-feld"), $("kopiert"), KOPIERT, function () {
       textKopiert(); km.kurzmeldung($("text-kopieren"), "Text kopiert");
       // AP13.33 §2.1: Schritt 4 klappt zu oder die Infobox ist weg; weiter geht es im Antwortfeld
@@ -341,9 +382,10 @@
         var gemerkt = merk && merk["andere_" + modus];
         var w = gemerkt || await S.frage(um.frage, [], um.haupt, um.abbrechen, "riskant");
         if (w !== "sicher") {
-          Z.mappe = jetzt.mappe;
-          await km.stand(jetzt.kurs_md);
-          return { ok: false, art: "ok", text: S.editorText("abgebrochen") };
+          // AP13.40 (S2-3): „Abbrechen“ führt zum Stand vor dieser Antwort; ein Anhang derselben Antwort geht mit weg
+          Z.mappe = JSON.parse(JSON.stringify(vorher.mappe));
+          await km.stand(vorher.kurs_md);
+          return { ok: false, art: "ok", text: S.editorText("abgebrochen"), zurueck: true };
         }
         if (merk) merk["andere_" + modus] = w;
         if (modus === "baustein") erlaubt = um.ids;
@@ -361,6 +403,7 @@
       }
       var ids = r.ersetzt.concat(r.eingefuegt);
       neu = r.kurs_md;
+      S.ausAntwort(neu);
       await km.stand(neu);
       S.handNachEinsetzen(ids, hv);
       Z.mappe.bausteine.forEach(function (k) { if (ids.indexOf(k.id) >= 0) k.neu = false; });
@@ -370,6 +413,7 @@
     if (modus === "anhaengen") neu = await km.mappeFn("anhaengen", [Z.kurs_md, text, Z.mappe.anhaengen || null]);
     else neu = await km.mappeFn("einheit_ersetzen", [Z.mappe, Z.kurs_md, text]);
     var tag = modus === "anhaengen" ? Z.mappe.anhaengen : null;
+    S.ausAntwort(neu);
     var pr = await km.stand(neu);
     if (modus === "ersetzen") S.handNachEinsetzen([], hv);
     if (modus === "anhaengen" && Z.mappe.anhaengen) delete Z.mappe.anhaengen;
@@ -437,7 +481,7 @@
           "." : "Kopiere die ganze Antwort mit dem Kopierknopf des Chats.") }));
       return;
     }
-    box.appendChild(el("p", { text: "Die Mühle findet in der Antwort keinen Baustein:" }));
+    box.appendChild(el("p", { text: d.kopf || "Die Mühle findet in der Antwort keinen Baustein:" }));
     box.appendChild(el("ul", {}, d.meldungen.map(function (m) {
       return el("li", { cls: "diagnose-zeile" }, [m.zeile ? "Zeile " + m.zeile + ": " : "", m.zitat ? el("code", {
           text: m.zitat }) : null,
@@ -533,6 +577,8 @@
     restWeg();
     try {
       await km.bereit();
+      // AP13.40: in einer Sequenz ohne Plan ist die Antwort der Sequenzplan (sequenz.js)
+      if (!modusErzwungen && S.sequenzOffen && S.sequenzOffen()) return await S.sequenzplanEinsetzen(text, zeige, diagnose, feld, o);
       var modus = modusErzwungen, mo = null, ergaenzt = [], umbenannt = [], wechsel = "";
       if (!modus) {
         // AP13.30 §4a: Baustein ohne id: mit Typ und Titel eines geplanten bekommt dessen id; AP13.37 §1.3: eine id, die
@@ -549,6 +595,11 @@
         var neueOffen = Z.mappe.anhaengen && Z.mappe.bausteine.some(function (k) {
             return k.einheit === Z.mappe.anhaengen && k.geplant; });
         modus = neueOffen ? "anhaengen" : mo.modus;
+        // AP13.40 (Korrekturrunde): passt die Antwort nicht zur laufenden Stunde, fragt die Mühle, bevor sie anhängt
+        if (modus === "anhaengen" && S.sequenzFremd && !(await S.sequenzFremd(text, mo))) {
+          zeige(S.editorText("abgebrochen"), "ok");
+          return false;
+        }
         // AP13.37 §1.2: hatte die Lehrkraft vor dem Einfügen eine andere Art gewählt, sagt die Meldung, warum diese gilt
         if (feld && S.modusGewaehlt && S.modusGewaehlt !== modus && modus === "baustein")
           wechsel = S.editorText("modus_gewechselt", { gewaehlt: modusName(S.modusGewaehlt) }) + " ";
@@ -560,6 +611,9 @@
       diagnose(null);
       var e = await einsetzen(text, modus, S.letzteAntwort.vorher, S.letzteAntwort);
       if (!e.ok) {
+        S.letzteAntwort.nach = antwortStand();
+        // die Meldung sagt, die Antwort stehe noch im Feld: dann steht sie dort auch
+        if (e.zurueck && feld && !$("eingabe").value.trim()) { $("eingabe").value = text; eingabeZu(false); }
         zeige(e.text, e.art || "fehler");
         zeichne();
         return false;
@@ -573,6 +627,7 @@
       await auswertung();
       // Hash je Baustein merken; einzelne Bausteine zählen als Runde, eine ganze Einheit fängt neu an
       var gleichE = schleifeMerken(e.ids || Z.pruefung.bausteine.map(function (b) { return b.id; }), false);
+      S.letzteAntwort.nach = antwortStand(); S.modusSpaeter = false;   // AP13.41 §1.3
       zeichne(); geaendert();
       if (feld) $("eingabe").value = ""; else o.leeren();
       var st = Z.mappe.stueckelung, mehr = "", baust = e.n + (e.n === 1 ? " Baustein" : " Bausteine");
@@ -593,6 +648,7 @@
       }
       S.restZahl = 0;
       if (teileOffen()) {
+        setzeModus("baustein");     // AP13.41 §3.3: die übrigen Teile füllen ihre Karten nach id (gen/mappe.py modus)
         zeige("Übernommen: " + baust + (kette() ? ". Jetzt geht Teil " : ki() ?
             ". „Teil " + (naechsterTeil() + 1) + " an meine KI senden“ schickt Teil " : ". Kopiere jetzt Teil ")
           + (naechsterTeil() + 1) + " von " + st.ids.length + (kette() ? " an deine KI" : "") +
@@ -609,7 +665,8 @@
       if (gleichE.length) mehr = " Die Antwort für „" + gleichE[0] + "“ ist dieselbe wie vorher." + mehr;
       if (umbenannt.length) mehr = " " + S.editorText("ids_zugeordnet", { titel: umbenannt.slice(0, 3).map(function (t) {
           return "„" + t + "“"; }).join(", ") + (umbenannt.length > 3 ? " und " + (umbenannt.length - 3) + " weitere" : "") }) + mehr;
-      zeige(wechsel + "Übernommen (" + modusText(modus) + "): " + e.n + (e.n === 1 ?
+      var eingesetzt = S.sequenzEingesetzt ? S.sequenzEingesetzt() : "";     // AP13.40: „Stunde 2 eingesetzt“
+      zeige(wechsel + (eingesetzt ? eingesetzt + ": " : "Übernommen (" + modusText(modus) + "): ") + e.n + (e.n === 1 ?
           " Baustein" : " Bausteine")
         + (rot ? ", davon " + rot + " mit Fehler (rot)." : aussen ? "." : ". Sieh sie durch und geh dann weiter.") +
             mehr + e.text,
@@ -622,6 +679,7 @@
         var neuOrt = S.fokusRetten([rotId ? $("karte-" + rotId) : null, "eingabe-stand", "korrektur-kopieren", "weiter-5",
             "eingabe-nochmal"], $("eingabe-bereich"));
         if (neuOrt) neuOrt.scrollIntoView({ block: "nearest" });
+        if (S.nachStunde) S.nachStunde(!!(rot || aussen));   // AP13.40: Sequenz, mit eigener KI weiter zur nächsten Stunde
       }
       return true;
     } catch (err) { zeigeFehler(err); return false; }
@@ -650,19 +708,46 @@
   $("eingabe-nochmal").onclick = function () { eingabeZu(false); standKarte($("eingabe-stand"), ""); $("eingabe").focus(); };
   // Knopf zusätzlich zur Automatik: nach dem Einfügen fehlt sonst etwas zum Klicken
   $("eingabe-uebernehmen").onclick = function () { clearTimeout(S.eingabeTimer); eingabeUebernehmen(null); };
-  // Anderen Modus gewählt: die letzte Antwort vom Stand davor aus neu einsetzen
+  // Anderen Modus gewählt: die letzte Antwort vom Stand davor aus neu einsetzen, statt der ersten Fassung, nie zusätzlich.
+  // AP13.41 §1.3: nur, solange seit dieser Antwort nichts anderes die Einheit geändert hat (Korrektur, Editor, Soll an
+  // einer Karte); sonst gilt die Wahl für die nächste Antwort und der Satz unter der Wahl sagt das
+  function antwortStand() { return pruefsumme(Z.kurs_md + "\u0000" + JSON.stringify(Z.mappe ? Z.mappe.bausteine : [])); }
   Array.prototype.forEach.call(document.querySelectorAll("input[name=modus]"), function (r) {
     r.addEventListener("change", function () {
-      if (r.checked) S.modusGewaehlt = r.value;      // AP13.37 §1.2: Wahl merken für die nächste eingefügte Antwort
-      if (S.letzteAntwort && r.checked) eingabeUebernehmen(r.value);
+      if (!r.checked) return;
+      S.modusGewaehlt = r.value;                    // AP13.37 §1.2: Wahl merken für die nächste eingefügte Antwort
+      var la = S.letzteAntwort;
+      S.modusSpaeter = !!la && la.nach !== antwortStand();
+      if (la && !S.modusSpaeter) eingabeUebernehmen(r.value);
+      modusSatzZeigen();
     });
   });
+  // AP13.41 §3.3: ein Satz unter der Wahl sagt, was mit der Antwort geschieht (geplante Einheit füllen, Teil n, Art)
+  function modusSatzZeigen() {
+    var p = $("modus-satz"); if (!p) return;
+    var t = "", m = Z.mappe, r = document.querySelector("input[name=modus]:checked");
+    if (m && zweig() === "steuer") {
+      var tag = einheitTag() || "e1", name = S.einheitName(tag), st = m.stueckelung;
+      if (S.modusSpaeter) t = S.editorText("modus_satz_spaeter");
+      else if (m.anhaengen && m.bausteine.some(function (k) { return k.einheit === m.anhaengen && k.geplant; }))
+        t = S.editorText("modus_satz_geplant", { name: S.einheitName(m.anhaengen) });
+      else if (teileOffen() && st && naechsterTeil() >= 0)
+        t = S.editorText("modus_satz_teil", { n: naechsterTeil() + 1, von: st.ids.length, name: name });
+      else if (r && r.value === "ersetzen")
+        t = S.mehrereEinheiten() ? S.editorText("modus_satz_ersetzen", { name: name }) : S.editorText("modus_satz_ersetzen_eine");
+      else if (r) t = S.editorText("modus_satz_" + r.value);
+    }
+    p.hidden = !t;
+    if (p.textContent !== t) p.textContent = t;
+  }
   function modusName(m) {
     var r = document.querySelector("input[name=modus][value=" + m + "]");
     return r ? r.closest("label").textContent.trim() : m;
   }
   Object.assign(S, { EIGEN: EIGEN, kiBesetzt: besetzt, texteErzeugen: texteErzeugen, textKopiert: textKopiert, wartezeichen: wartezeichen, diagnoseKarte: diagnoseKarte, eigenerText: eigenerText,
     eingabeUebernehmen: eingabeUebernehmen, eingabeZu: eingabeZu, muehleSymbol: muehleSymbol, standKarte: standKarte,
+    modusSatzZeigen: modusSatzZeigen,
     textGesendet: textGesendet, textGroesse: textGroesse, textSpaeter: textSpaeter, zeichneChat: zeichneChat,
     zeichnePlanung: zeichnePlanung, zeichneTeile: zeichneTeile });
+  S.textSenden = textSenden;                       // AP13.40: Stunde für Stunde an die eigene KI (sequenz.js)
 })();

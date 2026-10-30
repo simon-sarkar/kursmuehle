@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 1021ac4 vom 30.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand b92d425 vom 30.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -113,6 +113,8 @@
       <span class="s-titel" id="s1-titel">Worum geht es?</span><span class="s-fazit"></span></button></h2>
     <div class="s-inhalt">
       <form id="start-form" class="start-form" autocomplete="off" novalidate>
+        <!-- AP13.40: Umschalter „Stunde“ / „Sequenz“ mit Zahl der Stunden und ⓘ (sequenz.js, Wortlaut aus dem Katalog) -->
+        <div id="f-art-zeile" class="seq-zeile"></div>
         <label class="feld feld-thema">Thema
           <input id="f-thema" type="text" aria-required="true" placeholder="Terme und Gleichungen" maxlength="120">
         </label>
@@ -124,7 +126,7 @@
           <input id="f-jahrgang" type="text" inputmode="numeric" maxlength="12" placeholder="7">
           <span id="f-jahrgang-zeile" class="feld-zeile" hidden>Zielgruppe gewählt</span>
         </label>
-        <label class="feld feld-klein">Minuten
+        <label class="feld feld-klein"><span id="f-minuten-t">Minuten</span>
           <input id="f-minuten" type="number" min="10" max="300" step="5" value="45" inputmode="numeric">
         </label>
         <p id="zeit-vorab" class="leise zeit-vorab">Etwa 20 Minuten bis zur Datei, davon einige im Chat.</p>
@@ -187,6 +189,8 @@
            Material“ ist das Material nötig und steht direkt unter „Art der Einheit“ (in „Mach du“ unter „Worum geht es
            genau?“), sonst zuletzt (schritte.js materialOrt) -->
       <div id="richtung-teil" class="richtung-teil" hidden>
+        <!-- AP13.40: in einer Sequenz das Thema jeder Stunde (sequenz.js) -->
+        <div id="r-stunden" class="r-stunden" hidden></div>
         <!-- AP13.13: Dateien lesen (web/material.js); Liste der Abschnitte unter dem Feld, nicht gespeichert -->
         <div id="r-material-feld" class="r-material-feld material-ort" data-material="r">
           <label class="feld feld-breit"><span class="feld-kopf">Dein Material (Text, Stichpunkte oder Dateien)
@@ -224,6 +228,8 @@
         <!-- AP13.31: vor der ersten Antwort der Einheit der Plan (plan.js): beschreiben, Darstellung, Kacheln mit Elementen;
              Aufbau und Kartenliste stehen dann nicht hier -->
         <div id="plan" class="plan" hidden></div>
+        <!-- AP13.39: Ansage der Warnung im Plan, nur wenn sich ihr Text ändert (chat.js zeichnePlanung) -->
+        <p id="plan-status" class="unsichtbar" role="status"></p>
         <h3 id="aufbau-titel" class="unterkopf">Aufbau der Einheit</h3>
         <p id="vorlage-zeile" class="leise"></p>
         <div id="vorlagen" class="vorlagen" role="group" aria-label="Aufbau der Einheit"></div>
@@ -360,6 +366,8 @@
     <h2 class="s-kopf" tabindex="-1"><button type="button" class="s-zeile" data-nr="4"><span class="s-nr">4</span>
       <span class="s-titel" id="s4-titel">Text für den Chat</span><span class="s-fazit"></span></button></h2>
     <div class="s-inhalt">
+      <!-- AP13.40: Sequenz mit ihren Stunden, Fortschritt und Sicherung (sequenz.js) -->
+      <div id="sequenz-box" class="sequenz-box" hidden></div>
       <div id="chat-wahl" class="chat-wahl">
         <p>Wo fügst du den Text ein?</p>
         <div id="chat-knoepfe" class="chat-knoepfe"></div>
@@ -432,8 +440,10 @@
         <div id="modus" class="modus" role="radiogroup" aria-label="Wie die Antwort eingesetzt wird">
           <label><input type="radio" name="modus" value="ersetzen" checked> <span id="modus-ersetzen-text">Einheit ersetzen</span></label>
           <label><input type="radio" name="modus" value="baustein"> <span id="modus-baustein-text">Nur Baustein ersetzen</span></label>
-          <label><input type="radio" name="modus" value="anhaengen"> Als weitere Einheit anhängen</label>
+          <label><input type="radio" name="modus" value="anhaengen"> <span id="modus-anhaengen-text">Als weitere Einheit anhängen</span></label>
         </div>
+        <!-- AP13.41 §3.3: was mit der Antwort geschieht (chat.js modusSatzZeigen) -->
+        <p id="modus-satz" class="leise modus-satz" role="status" hidden></p>
         <div id="eingabe-bereich">
           <label for="eingabe" class="unsichtbar">Antwort des Chats</label>
           <textarea id="eingabe" rows="6" spellcheck="false" placeholder="Hier einfügen (Strg+V oder lange drücken)"></textarea>
@@ -470,6 +480,8 @@
       </div>
       <div id="karten-ort-5" class="karten-ort"></div>
       <button type="button" id="weiter-5" class="knopf haupt" hidden>Weiter</button>
+      <!-- AP13.40: weiter mit der nächsten Stunde der Sequenz (sequenz.js) -->
+      <div id="sequenz-weiter" class="sequenz-weiter" role="status" hidden></div>
     </div>
   </section>
 
@@ -660,6 +672,8 @@
  <div id="tafel-bausteine" class="tafel-bausteine">
   <label id="zeit-schalter" class="schalter zeit-schalter"><input id="zeit-selbst" type="checkbox"> Zeit je Phase selbst einstellen
     <span class="feld-zeile">Aus: der Chat verteilt die Minuten. An: du gibst sie je Baustein vor.</span></label>
+  <!-- AP13.41 §3.2: Soll der Karten über der Dauer der Einheit -->
+  <p id="soll-summe" class="karten-warnung" role="status" hidden></p>
   <p id="karten-warnung" class="karten-warnung" role="status" hidden></p>
   <!-- AP13.35 §2.3: gelbe Hinweise der ganzen Einheit (die Bausteine füllen die Dauer nicht) über den Karten -->
   <p id="einheit-warnung" class="karten-warnung" role="status" hidden></p>
@@ -718,5 +732,6 @@
 <script src="lehrplan.js"></script>
 <script src="editor.js"></script>
 <script src="plan.js"></script>
+<script src="sequenz.js"></script>
 </body>
 </html>

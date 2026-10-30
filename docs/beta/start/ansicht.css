@@ -200,6 +200,45 @@ select { appearance: auto; }
 .start-form { display: grid; grid-template-columns: 1fr 12rem 9rem 7rem; gap: 12px; align-items: end; }
 .start-form .knopf { grid-column: 1 / -1; justify-self: start; min-width: 9rem; }
 .zeit-vorab { grid-column: 1 / -1; margin: -4px 0 0; font-size: 0.85rem; }
+/* AP13.40: Sequenz (sequenz.js): Umschalter in Schritt 1, Themen je Stunde, Stunden im Plan, Übersicht in Schritt 4 */
+.seq-zeile { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 16px; }
+.seq-zeile[hidden] { display: none; }
+.seq-art .aus-kachel { min-width: 96px; }
+.seq-stunden-l { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 10px; flex: 1 1 16rem; min-width: 0; }
+.seq-stunden-l .feld-kopf { color: var(--leise); }
+button.info-knopf { border: 0; background: transparent; padding: 0; font: inherit; color: inherit; cursor: pointer; }
+.seq-thema-zeile { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 14px; }
+.seq-thema-zeile .seq-thema-l { flex: 1 1 100%; margin: 0; }
+.seq-thema-zeile .seq-thema { flex: 1 1 16rem; min-width: 0; max-width: 32rem; }
+.seq-hinweis { margin: 6px 0; overflow-wrap: anywhere; }
+.seq-stunden-l input { flex: none; width: 5.5rem; }
+.seq-stunden-l .info-text { flex: 1 1 100%; }
+@media (min-width: 641px) { .start-form.mit-sequenz { grid-template-columns: 1fr 11rem 7rem 9.5rem; } }
+.r-stunden { margin-bottom: 14px; }
+.r-stunden-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 6px 14px; }
+.r-stunde { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.r-stunde-nr { flex: none; min-width: 4.8rem; font-size: 0.9rem; color: var(--leise); }
+.r-stunde input { flex: 1 1 auto; min-width: 0; }
+.seq-leiste { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 6px; padding: 12px; border: 1px solid var(--linie);
+  border-radius: var(--rund); background: var(--flaeche); }
+.seq-leiste .unterkopf { margin: 0; }
+.seq-reiter-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.seq-reiter { gap: 6px; }
+.seq-reiter .aus-kachel { flex-direction: row; justify-content: center; min-width: 0; padding: 6px 10px; }
+.seq-reiter-zahl { color: var(--leise); font-weight: 400; }
+.seq-ziel { margin: 0; }
+.sequenz-box { margin-bottom: 14px; padding: 12px; border: 1px solid var(--linie); border-radius: var(--rund); background: var(--flaeche); }
+.sequenz-box p { margin: 0 0 6px; }
+.seq-kopf { font-weight: 650; overflow-wrap: anywhere; }
+.seq-liste { margin: 8px 0 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.seq-stunde { display: flex; flex-direction: column; gap: 2px; padding-left: 10px; border-left: 3px solid var(--linie);
+  overflow-wrap: anywhere; }
+.seq-stunde.jetzt { border-left-color: var(--text); }
+.seq-stunde.fertig .seq-st-stand { color: var(--ok, inherit); }
+.seq-st-teile, .seq-st-ziel { font-size: 0.88rem; }
+.seq-knoepfe { margin-top: 8px; flex-wrap: wrap; }
+.sequenz-weiter { margin-top: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.sequenz-weiter p { flex: 1 1 100%; margin: 0; }
 
 /* 2 Zweige, Vorlagen, Mehr */
 .zweige { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
@@ -366,6 +405,7 @@ select { appearance: auto; }
 .text-art label, .modus label { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 6px 12px; border-radius: 8px;
   background: var(--flaeche); border: 1px solid var(--linie); cursor: pointer; font-size: 0.95rem; }
 .text-art label:has(input:checked), .modus label:has(input:checked) { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
+.modus-satz { margin: -4px 0 10px; font-size: 0.92rem; }   /* AP13.41 §3.3 */
 .text-art input, .modus input { accent-color: var(--ocker-tief); margin: 0; }
 .teil-wahl { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 8px; }
 .teil-knopf[aria-pressed=true] { color: var(--text); font-weight: 650; background: var(--creme); }
@@ -936,6 +976,10 @@ body:has(dialog[open]) .editor-schweb { display: none; }
 #m-kurs:not(:empty) { margin-bottom: 12px; }
 .plan-summe { margin: 0; font-size: 0.92rem; }
 .plan-summe.warn { padding: 4px 10px; border-radius: 8px; background: var(--warn-flaeche); color: var(--warn); font-weight: 600; }
+/* AP13.41: gelber Hinweis am Element (Zahl im Auftrag unter dem Mindestmaß) und „Zählt nicht zur Zeit“ */
+.plan-el-hinweis { margin: 0 8px 8px; padding: 4px 10px; border-radius: 8px; background: var(--warn-flaeche); color: var(--warn);
+  font-size: 0.88rem; font-weight: 600; overflow-wrap: anywhere; }
+.plan-el-ohne-zeit { margin: 0 12px 8px; font-size: 0.88rem; }
 .plan-k-text-l textarea { width: 100%; font-size: 15px; }
 .plan-elemente { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .plan-el { border: 1px solid var(--linie); border-radius: 8px; background: var(--flaeche); min-width: 0; }
@@ -970,3 +1014,13 @@ body:has(dialog[open]) .editor-schweb { display: none; }
 .plan-f-kacheln .plan-k-plus { min-height: 150px; flex-direction: column; }
 .plan-plus { font-size: 26px; line-height: 1; font-weight: 400; }
 .plan input.plan-el-titel { border-left: 3px solid var(--lehrkraft-kante); background: var(--lehrkraft); }
+/* AP13.39: zwei Anfänge im leeren Plan, Phase am Element, Warnung mit „Fehlende Phase ergänzen“ */
+.plan-anfang { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 2px dashed var(--linie); border-radius: var(--rund);
+  background: var(--grund); }
+.plan-anfang .plan-arten { margin-bottom: 4px; }
+.plan-anfang-knoepfe { display: flex; flex-wrap: wrap; gap: 8px 12px; }
+.plan-warnung { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.plan-warnung > span { flex: 1 1 16rem; }
+.plan-el-reihe > .plan-el-phase-l { flex: 1 1 14rem; }
+.plan-el-phase-t { font-size: 0.78rem; font-weight: 600; color: var(--text); padding: 0 6px; border: 1px solid var(--linie); border-radius: 4px;
+  overflow-wrap: anywhere; }

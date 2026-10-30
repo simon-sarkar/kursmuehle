@@ -59,9 +59,11 @@
   }
   $("fragen-liste").onclick = function (ev) { var z = ev.target.closest("[data-ziel]"); if (z) zuKarte(z.dataset.ziel);
       };
-  function durchgesehen() {
+  // Nachtrag AP13.41: „Ohne Durchsicht weiter“ merkt `durchsicht: "ohne"` (zählt wie durchgesehen, die Zusammenfassung
+  // sagt aber, was geschah)
+  function durchgesehen(ohne) {
     if (!Z.mappe) return;
-    Z.mappe.durchsicht = true; delete Z.mappe.durchsicht_neu;
+    Z.mappe.durchsicht = ohne === true ? "ohne" : true; delete Z.mappe.durchsicht_neu;
     geaendert(); gehe(7, "herunterladen");
   }
   // AP13.33 §1.4: aus dem Schritt Datei zurück zu den Fragen, die sich geändert haben
@@ -73,7 +75,7 @@
     return w && S.fragenListe.length ? w.id : "durchsicht-ok";
   }
   $("durchsicht-ok").onclick = function () { if (!$("durchsicht-ok").disabled) durchgesehen(); };
-  $("ohne-durchsicht").onclick = durchgesehen;
+  $("ohne-durchsicht").onclick = function () { durchgesehen(true); };
   function nachBildern() {
     if (S.fragenListe.length && !Z.mappe.durchsicht) gehe(6, ersteWahl()); else gehe(7, "herunterladen");
   }

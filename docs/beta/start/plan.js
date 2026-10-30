@@ -5,7 +5,12 @@
  * Titel, Auftrag, Soll-Minuten), ihre Kachel steht in `abschnitt`. Die Kacheln selbst (Reihenfolge, Titel, „Was soll hier
  * rein?“, auch leere) stehen in `Z.mappe.kacheln` ({titel, text, einheit}). Der Text für den Chat entsteht wie bisher
  * (gen/prompt.py einheit, Abschnitt je Kachel; „Kachel für Kachel“ über die Teile der Stückelung). Freitext ist Daten:
- * alles geht über textContent und value. Wortlaut aus katalog.yaml oberflaeche.editor (S.editorText). */
+ * alles geht über textContent und value. Wortlaut aus katalog.yaml oberflaeche.editor (S.editorText).
+ * AP13.39: Der leere Plan hat zwei Anfänge: „Nach Phasen beginnen“ (Phasenfolge der gewählten Art als Elemente mit Phase,
+ * eine Kachel mit dem Thema) und „Leer beginnen“ (eine leere Kachel). Jedes Element hat das Feld „Phase“ wie früher die
+ * Karten (`phase`, Liste #phasen und Freitext). Ist der Plan nach Phasen begonnen (Kachel mit `aufbau`), gelten die
+ * Warnungen der Art über alle Kacheln (gen/mappe.py planung), mit „Fehlende Phase ergänzen“ (gen/mappe.py auffuellen, wie
+ * „Vorlage auffüllen“); leer begonnen ist eine Phase nur ein Etikett. */
 "use strict";
 
 (function () {
@@ -20,7 +25,8 @@
   var rueck = null;
 
   // ---------------------------------------------------------------- Daten
-  function tag() { return S.einheitTag() || ""; }
+  // AP13.40: in einer Sequenz zeigt der Plan die Stunde, die die Lehrkraft gewählt hat (sequenz.js), sonst die laufende
+  function tag() { var t = S.planStundeTag ? S.planStundeTag() : null; return t !== null ? t : S.einheitTag() || ""; }
   function vonEinheit(x) { return (x.einheit || "") === tag(); }
   // Plan: „Ich steuere“, und die laufende Einheit hat noch keinen Baustein mit Inhalt
   function planPhase() {
@@ -31,6 +37,7 @@
   function elementeVon(titel) { return elemente().filter(function (k) { return k.abschnitt === titel; }); }
   function kachelVon(titel) { return kacheln().filter(function (k) { return k.titel === titel; })[0] || null; }
   function themaTitel() {
+    if (S.planStundeThema && S.planStundeThema()) return S.planStundeThema();    // AP13.40: Thema der Stunde
     return String((Z.mappe.einheit && Z.mappe.einheit.thema) || Z.mappe.titel || "").trim() || T("plan_kachel_neu", { n: 1 });
   }
   function freierTitel(wunsch, ausser) {
@@ -191,12 +198,16 @@
     if (sichern()) { S.autosave(); }
     var m = fokusMerken();
     box.textContent = "";
-    box.append(beschreiben(), uebersicht());
+    box.append(beschreiben());
+    var leiste = S.sequenzLeiste ? S.sequenzLeiste() : null;      // AP13.40: Stunden der Sequenz
+    if (leiste) box.append(leiste);
+    box.append(uebersicht());
     S.radioTabs();
     if (S.zeichnePlanung) S.zeichnePlanung();
     var aktiv = elemente().filter(function (k) { return !k.aus; }).length;
-    $("weiter-2").disabled = !aktiv;
+    $("weiter-2").disabled = !aktiv && !(S.sequenzOffen && S.sequenzOffen());   // AP13.40: den Plan macht der Chat
     summeZeigen();
+    hinweiseSpaeter();
     if (fokus) fokusSetzen(fokus);
     else if (m) fokusSetzen(m.schl, m);
   }
@@ -209,8 +220,11 @@
     var zaehlen = elemente().filter(function (k) { return !k.aus && S.mitMinuten(k.typ); });
     zaehlen.forEach(function (k) { var m = parseInt(k.soll, 10) || 0; summe += m; if (!m) offen += 1; });
     p.hidden = !zaehlen.length;                    // ohne Element gibt es nichts zu zählen
-    p.textContent = offen ? T("plan_summe_rest", { summe: summe }) : T("plan_summe", { summe: summe, minuten: soll });
-    p.classList.toggle("warn", !!soll && (offen ? summe > soll : Math.abs(summe - soll) > soll * 0.1));
+    // AP13.41 §3.2: über der Dauer immer gelb, mit dem Satz, dass Schritt 5 mit der Dauer rechnet
+    var ueber = !!soll && summe > soll;
+    p.textContent = offen ? T("plan_summe_rest", { summe: summe }) : ueber ? T("plan_summe_ueber", { summe: summe, minuten: soll })
+        : T("plan_summe", { summe: summe, minuten: soll });
+    p.classList.toggle("warn", ueber || (!!soll && !offen && Math.abs(summe - soll) > soll * 0.1));
   }
 
   function beschreiben() {
@@ -247,24 +261,48 @@
       var els = elementeVon(ka.titel);
       raster.appendChild(kachel(ka, i, liste.length, els, quer, format, function () { return ++nr; }));
     });
-    raster.appendChild(el("button", { type: "button", cls: "plan-k-plus", "data-aktion": "k-plus", "data-fokus": "k-plus" }, [
-      el("span", { cls: "plan-plus", "aria-hidden": "true", text: "+" }), el("span", { text: T("plan_kachel_plus").replace(/^\+\s*/, "") })]));
-    raster.lastChild.setAttribute("aria-label", T("plan_kachel_plus").replace(/^\+\s*/, ""));
+    var leer = !liste.length && !elemente().length;
+    if (!leer) {                // AP13.39: im leeren Plan steht „Leer beginnen“ statt „+ Kachel“ (dieselbe Aktion)
+      raster.appendChild(el("button", { type: "button", cls: "plan-k-plus", "data-aktion": "k-plus", "data-fokus": "k-plus" }, [
+        el("span", { cls: "plan-plus", "aria-hidden": "true", text: "+" }), el("span", { text: T("plan_kachel_plus").replace(/^\+\s*/, "") })]));
+      raster.lastChild.setAttribute("aria-label", T("plan_kachel_plus").replace(/^\+\s*/, ""));
+    }
     var zeit = el("input", { type: "checkbox", id: "plan-zeit", "data-fokus": "zeit", checked: S.zeitSelbst() });
     var teile = [el("h3", { cls: "unterkopf", text: T("uebersicht") }),
       el("p", { cls: "leise plan-zeile", text: T("plan_zeile") }),
       el("label", { cls: "schalter plan-zeit" }, [zeit, T("plan_zeit"), el("span", { cls: "feld-zeile", text: T("plan_zeit_zeile") })])];
     if (S.zeitSelbst()) teile.push(el("p", { id: "plan-summe", cls: "plan-summe", role: "status" }));
-    var v = S.vorlageNach((Z.mappe.einheit || {}).vorlage) || S.katalog.vorlagen[0];
-    if (!liste.length && !elemente().length) teile.push(el("p", { cls: "plan-leer" }, [T("plan_leer") + " ",
-      el("button", { type: "button", cls: "textlink", "data-aktion": "vorschlag", "data-fokus": "vorschlag",
-          text: T("plan_vorschlag", { name: v.name }) })]));
-    teile.push(el("p", { id: "plan-warnung", cls: "karten-warnung", role: "status", hidden: true }));
+    if (leer) teile.push(anfang());
+    // AP13.39: Warnung der Planung über dem Plan (Text: chat.js zeichnePlanung), mit „Fehlende Phase ergänzen“; ohne
+    // role=status (sie wird bei jedem Neuzeichnen neu gebaut), angesagt wird sie über #plan-status (index.html)
+    teile.push(el("div", { id: "plan-warnung", cls: "karten-warnung plan-warnung", hidden: true }, [
+      el("span", { id: "plan-warnung-text" }),
+      el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": "auffuellen", "data-fokus": "auffuellen",
+          text: T("plan_phase_ergaenzen") })]));
     if (rueck && (rueck.art === "kachel" || !kachelVon(rueck.kachel))) teile.push(rueckZeile());
     teile.push(raster);
     if (!elemente().filter(function (k) { return !k.aus; }).length)
       teile.push(el("p", { cls: "leise plan-hinweis", role: "status", text: T("plan_ohne_element") }));
     return el("div", { cls: "plan-uebersicht" }, teile);
+  }
+
+  // AP13.39: Art der Einheit (Radiogruppe wie die Darstellung, Phasenfolge als Zeile) und die zwei Anfänge
+  function anfang() {
+    var gewaehlt = (S.vorlageNach((Z.mappe.einheit || {}).vorlage) || S.katalog.vorlagen[0]).name;
+    var wahl = el("div", { cls: "kacheln-wahl breit plan-arten", role: "radiogroup", "aria-labelledby": "plan-art-t" },
+        S.katalog.vorlagen.filter(S.vorlageSichtbar).map(function (v) {
+      return el("button", { type: "button", cls: "aus-kachel", role: "radio", "aria-checked": String(v.name === gewaehlt),
+          "data-aktion": "art", "data-wert": v.name, "data-fokus": "art:" + v.name }, [
+        el("span", { cls: "aus-name", text: v.name }),
+        el("span", { cls: "aus-zeile", text: v.phasen.map(function (p) { return p.phase; }).join(" · ") })]);
+    }));
+    return el("div", { cls: "plan-anfang" }, [
+      el("p", { cls: "plan-leer", text: T("plan_leer") }),
+      el("span", { cls: "ed-darstellung-t", id: "plan-art-t", text: T("plan_art") }), wahl,
+      el("div", { cls: "plan-anfang-knoepfe" }, [
+        el("button", { type: "button", cls: "knopf haupt", "data-aktion": "vorschlag", "data-fokus": "vorschlag",
+            text: T("plan_nach_phasen") }),
+        el("button", { type: "button", cls: "knopf", "data-aktion": "k-plus", "data-fokus": "leer", text: T("plan_leer_beginnen") })])]);
   }
 
   function kachel(ka, i, n, els, quer, format, zaehle) {
@@ -307,27 +345,64 @@
         "aria-expanded": String(auf) }, [
       el("span", { cls: "plan-el-nr", text: nr }),
       el("span", { cls: "plan-el-text" }, [
-        el("span", { cls: "plan-el-kopf" }, [el("span", { cls: "plan-el-typ-t", text: typName(k.typ) }),
+        el("span", { cls: "plan-el-kopf" }, [phaseZeile(k), el("span", { cls: "plan-el-typ-t", text: typName(k.typ) }),
           el("span", { cls: "plan-el-titel-t", text: standardTitel(k.titel) ? "" : k.titel }), minuten ? el("span", { cls: "plan-el-min-t", text: minuten }) : null]),
         k.auftrag && String(k.auftrag).trim() ? el("span", { cls: "plan-el-satz-t", text: k.auftrag }) : null])]);
     var li = el("li", { cls: "plan-el" + (auf ? " offen" : "") + (k.aus ? " aus" : ""), "data-id": k.id }, [zeile]);
+    var oz = ohneZeit(k);
+    if (oz) li.appendChild(el("p", { cls: "plan-el-ohne-zeit leise", text: oz }));
+    if (hinweise[k.id]) li.appendChild(el("p", { cls: "plan-el-hinweis", text: hinweise[k.id] }));
     if (auf) li.appendChild(formular(k, j, n));
     return li;
+  }
+  // AP13.41 §3.1: Typen ohne Zeit (Glossar, Forum …) sagen das am Element; Minuten von vorher bleiben gespeichert und
+  // zählen sichtbar nicht (Summe, Text für den Chat), bis ein Typ mit Zeit gewählt ist
+  function ohneZeit(k) {
+    if (S.mitMinuten(k.typ) || k.aus) return "";
+    return S.zeitSelbst() && parseInt(k.soll, 10) > 0 ? T("plan_ohne_zeit_min", { n: parseInt(k.soll, 10) }) : T("plan_ohne_zeit");
+  }
+  // AP13.41 §2.1: nennt der Auftrag weniger als das Mindestmaß des Typs, gelb am Element (gen/prompt.py plan_hinweise;
+  // Text und Prüfung nehmen die Zahl des Auftrags). Nachgezogen nach jeder Änderung, ohne Neuzeichnen
+  var hinweise = {}, hinweisTimer = null;
+  function hinweiseSpaeter() {
+    clearTimeout(hinweisTimer);
+    hinweisTimer = setTimeout(async function () {
+      if (!Z.mappe || !planPhase()) return;
+      var m = Z.mappe, h;
+      try { h = await km.prompt("plan_hinweise", [m]); } catch (e) { return; }
+      if (m !== Z.mappe) return;
+      hinweise = h || {};
+      Array.prototype.forEach.call(box.querySelectorAll(".plan-el"), function (li) {
+        var p = li.querySelector(".plan-el-hinweis"), t = hinweise[li.dataset.id] || "";
+        if (!t) { if (p) p.remove(); return; }
+        if (!p) { p = el("p", { cls: "plan-el-hinweis" }); li.insertBefore(p, li.querySelector(".plan-el-form")); }
+        if (p.textContent !== t) p.textContent = t;
+      });
+    }, 300);
+  }
+
+  function phaseZeile(k) {
+    var ph = String(k.phase || "").trim();
+    return ph ? el("span", { cls: "plan-el-phase-t", text: ph }) : null;
   }
 
   function formular(k, j, n) {
     var id = k.id, name = k.titel || typName(k.typ);
     var titel = el("input", { type: "text", cls: "plan-el-titel von-lehrkraft", "data-herkunft": "lehrkraft", maxlength: "120",
-        "data-fokus": "et:" + id, autocomplete: "off" });
-    titel.value = k.titel || "";
+        "data-fokus": "et:" + id, autocomplete: "off", placeholder: T("plan_titel_platzhalter") });
+    titel.value = k.titel === T("plan_neues_element") ? "" : k.titel || "";     // AP13.41 §2.3: alte Mappen
     var satz = el("textarea", { cls: "plan-el-satz von-lehrkraft", rows: "2", maxlength: "600", "data-fokus": "es:" + id,
         placeholder: T("plan_satz_platzhalter") });
     satz.value = k.auftrag || "";
     var typ = typAuswahl(k.typ, T("plan_typ") + ": " + name);
     typ.dataset.fokus = "ey:" + id;
+    var phase = el("input", { type: "text", cls: "plan-el-phase", list: "phasen", maxlength: "60", "data-fokus": "eph:" + id,
+        autocomplete: "off", placeholder: T("plan_auto") });
+    phase.value = k.phase || "";
     var teile = [el("div", { cls: "plan-el-reihe" }, [
         el("label", { cls: "feld" }, [T("plan_typ"), typ]),
-        el("label", { cls: "feld plan-el-titel-l" }, [T("plan_titel"), titel])]),
+        el("label", { cls: "feld plan-el-titel-l" }, [T("plan_titel"), titel]),
+        el("label", { cls: "feld plan-el-phase-l" }, [T("plan_phase"), phase])]),
       el("label", { cls: "feld" }, [T("plan_satz"), satz])];
     if (S.zeitSelbst() && S.mitMinuten(k.typ)) {
       var min = el("input", { type: "number", cls: "plan-el-min", min: "0", max: "300", inputmode: "numeric", "data-fokus": "em:" + id });
@@ -364,7 +439,7 @@
 
   function vertauschen(liste, a, b) { var x = liste[a]; liste[a] = liste[b]; liste[b] = x; }
   function neuesElement(ka) {
-    var k = { id: "b" + S.naechsteNummer(), typ: AUTO, titel: T("plan_neues_element"), abschnitt: ka.titel, minuten: null,
+    var k = { id: "b" + S.naechsteNummer(), typ: AUTO, titel: "", abschnitt: ka.titel, minuten: null,       // AP13.41 §2.3
       auftrag: "", phase: "", soll: null, geplant: true, neu: false };
     if (tag()) k.einheit = tag();
     var els = elementeVon(ka.titel), liste = Z.mappe.bausteine;
@@ -427,13 +502,15 @@
     var k = karteVon(t); if (!k) return;
     bearbeitet(kachelVonKarte(k));
     if (c.contains("plan-el-titel")) {
-      k.titel = t.value.replace(/\s+/g, " ").trim() || T("plan_neues_element");
+      k.titel = t.value.replace(/\s+/g, " ").trim();          // AP13.41 §2.3: leer = der Chat wählt den Titel
       k.herkunft = { titel: "lehrkraft" };                  // wie ein Titel der Lehrkraft an der Karte
     }
     else if (c.contains("plan-el-satz")) k.auftrag = t.value;
     else if (c.contains("plan-el-min")) k.soll = t.value === "" ? null : Math.max(0, Math.min(300, parseInt(t.value, 10) || 0));
+    else if (c.contains("plan-el-phase")) k.phase = t.value;
     else return;
     S.geaendert();
+    if (c.contains("plan-el-satz")) hinweiseSpaeter();
     // die Zeile des Elements zeigt Titel und Satz mit (ohne Neuzeichnen, der Fokus bleibt im Feld)
     var li = t.closest(".plan-el");
     var tt = li.querySelector(".plan-el-titel-t"); if (tt) tt.textContent = standardTitel(k.titel) ? "" : k.titel;
@@ -442,6 +519,12 @@
       if (!st) { st = el("span", { cls: "plan-el-satz-t" }); li.querySelector(".plan-el-text").appendChild(st); }
       st.textContent = k.auftrag;
     } else if (st) st.remove();
+    if (c.contains("plan-el-phase")) {          // AP13.39: die Phase klein vor dem Typ zieht mit
+      var pt = li.querySelector(".plan-el-phase-t"), neuP = phaseZeile(k);
+      if (pt && neuP) pt.textContent = neuP.textContent;
+      else if (pt) pt.remove();
+      else if (neuP) li.querySelector(".plan-el-kopf").prepend(neuP);
+    }
     var mt = li.querySelector(".plan-el-min-t");
     if (c.contains("plan-el-min")) {
       if (k.soll && !mt) { mt = el("span", { cls: "plan-el-min-t" }); li.querySelector(".plan-el-kopf").appendChild(mt); }
@@ -460,9 +543,13 @@
     if (c.contains("plan-el-typ")) {
       var alt = k.typ;
       k.typ = t.value;
-      if (standardTitel(k.titel) || k.titel === S.formularname(alt)) k.titel = istAuto(k.typ) ? T("plan_neues_element") :
-          S.formularname(k.typ);
+      // AP13.41 §2.3: ein Titel, den die Mühle gesetzt hat, fällt weg (der Chat wählt ihn); den der Lehrkraft behält sie
+      if (standardTitel(k.titel) || k.titel === S.formularname(alt)) k.titel = "";
       fertig("ey:" + k.id);
+    } else if (c.contains("plan-el-phase")) {
+      var ph = t.value.replace(/\s+/g, " ").trim();
+      if (ph !== k.phase) { k.phase = ph; S.geaendert(); }
+      if (t.value !== ph) t.value = ph;
     } else if (c.contains("plan-el-an")) {
       if (t.checked) delete k.aus; else k.aus = true;
       fertig("ea:" + k.id);
@@ -497,6 +584,29 @@
       var w = b.dataset.wert;
       if (S.angaben.format !== w) { S.angaben.format = w; S.angabenSchreiben({ format: w }); }
       zeichnePlan("format:" + w);
+      return;
+    }
+    if (a === "art") {             // AP13.39: Art der Einheit im leeren Plan; Elemente entstehen erst mit „Nach Phasen beginnen“
+      var va = S.vorlageNach(b.dataset.wert), ea = Z.mappe.einheit = Z.mappe.einheit || {};
+      if (!va) return;
+      if (ea.vorlage !== va.name) {
+        ea.vorlage = va.name;
+        ea.vorlage_selbst = true;                          // wie die Wahl in „Ich gebe die Richtung“ (AP13.24)
+        var vw = S.vorschlagWeg && S.vorschlagWeg("vorlage");
+        zuMappe(); S.geaendert(); if (vw) S.angabenSchreiben(vw);
+      }
+      // Korrektur AP13.39: der Fokus bleibt in der Radiogruppe (Pfeile, Pos1, Ende); fehlt Material, springt erst
+      // „Nach Phasen beginnen“ ins Materialfeld
+      fokusSetzen("art:" + va.name);
+      return;
+    }
+    if (a === "auffuellen") {      // AP13.39: derselbe Weg wie „Vorlage auffüllen“ (chat.js, gen/mappe.py auffuellen)
+      var da = {};
+      Z.mappe.bausteine.forEach(function (x) { da[x.id] = 1; });
+      Promise.resolve(S.auffuellen && S.auffuellen()).then(function () {
+        var neuE = elemente().filter(function (x) { return !da[x.id]; })[0];
+        if (neuE) fokusSetzen("el:" + neuE.id);
+      });
       return;
     }
     if (a === "vorschlag") {
