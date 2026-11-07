@@ -75,9 +75,13 @@
     aktualisieren();
   }
   function schliessen() { if (dlg.open) dlg.close(); }
+  // fokusDanach: wer die Ansicht schließt und den Fokus woandershin schickt (Firefox feuert `close` erst nach einem
+  // setTimeout 0; sonst holte der Knopf, der die Ansicht geöffnet hat, den Fokus zurück)
+  var fokusDanach = null;
   dlg.addEventListener("close", function () {
     document.body.classList.remove("editor-offen");
     var v = offenVon; offenVon = null;
+    if (fokusDanach) { var f = fokusDanach; fokusDanach = null; setTimeout(f, 0); return; }
     // AP13.33 §2.1: über das Handymenü geöffnet, ist der Knopf jetzt zugeklappt; dann der Menüknopf
     S.fokus([v, "kopf-menue", "editor-auf-2"], true);
   });
@@ -104,6 +108,19 @@
   dlg.addEventListener("cancel", function (ev) { if (escInnen()) ev.preventDefault(); });
   $("editor-zu").onclick = schliessen;
   ["editor-auf", "editor-auf-2", "editor-schweb"].forEach(function (id) { $(id).onclick = function () { oeffnen($(id)); }; });
+  // AP13.42: am schmalen Fenster beim Herunterscrollen ausblenden (verdeckt sonst Inhalt), beim Hochscrollen, am Seitenende
+  // und mit dem Fokus wieder da; nur durchsichtig und nicht antippbar, damit Tab ihn weiter erreicht
+  var SCHMAL = window.matchMedia("(max-width: 999px)"), letzteY = window.scrollY || 0;
+  function schwebWeg(weg) { document.body.classList.toggle("editor-schweb-weg", !!weg); }
+  window.addEventListener("scroll", function () {
+    var y = window.scrollY || 0, d = y - letzteY;
+    if (Math.abs(d) < 8) return;
+    letzteY = y;
+    var unten = window.innerHeight + y >= document.documentElement.scrollHeight - 24;
+    schwebWeg(SCHMAL.matches && d > 0 && y > 80 && !unten && document.activeElement !== $("editor-schweb"));
+  }, { passive: true });
+  $("editor-schweb").addEventListener("focus", function () { schwebWeg(false); });
+  if (SCHMAL.addEventListener) SCHMAL.addEventListener("change", function () { if (!SCHMAL.matches) schwebWeg(false); });
   if (BREIT.addEventListener) BREIT.addEventListener("change", function () {
     $("editor-liste").open = BREIT.matches;
     if (S.katalog) $("editor-liste-titel").textContent = BREIT.matches ? T("liste") : T("liste_auf");
@@ -212,11 +229,23 @@
     });
   }
   function kachelVon(id) { return kacheln().filter(function (a) { return a.ids.indexOf(id) >= 0; })[0] || null; }
+  var importHinweis = {};
   function zeichneVorschau() {
     var box = $("editor-vorschau"), soll = [], gesehen = {}, letzter = null, nAbschnitt = 0, vorige = null;
     if (!stand.bausteine.length) { box.textContent = T("leer"); return; }
     if (stand.uebersicht) { soll.push(uebersichtEintrag().el); gesehen[UE] = 1; }
+    var imp = (Z.mappe && Z.mappe.importiert) || [], letzteU = null;
     stand.bausteine.forEach(function (b, i) {
+      // AP13.42 B6: vor der ersten Karte einer Einheit, die schon im Kurs liegt, steht der Hinweis
+      var einh = karte(b.id) ? S.einheitVon(karte(b.id)) : letzteU || "e1";
+      if (einh !== letzteU) {
+        letzteU = einh;
+        if (imp.indexOf(einh) >= 0) {
+          var hn = importHinweis[einh] || (importHinweis[einh] = el("p", { cls: "ed-importiert", role: "note" }));
+          hn.textContent = T("importiert_hinweis");
+          soll.push(hn); gesehen["imp:" + einh] = 1;
+        }
+      }
       if (b.abschnitt !== letzter) {
         nAbschnitt += 1; letzter = b.abschnitt; vorige = null;
         var schl = nAbschnitt + "|" + (b.abschnitt || "");
@@ -714,8 +743,8 @@
       await S.weitereEinheit(thema, parseInt(minuten, 10));
       if (plan) {                 // AP13.35 §4.1: „Ich steuere“: weiter im Plan der neuen Einheit (Schritt 2)
         ueZu(true);
-        schliessen();
-        setTimeout(function () { S.fokus([document.querySelector("#plan [data-aktion=k-plus]"), "weiter-2"]); }, 0);
+        var zumPlan = function () { S.fokus([document.querySelector("#plan [data-aktion=k-plus]"), "weiter-2"]); };
+        if (dlg.open) { fokusDanach = zumPlan; schliessen(); } else setTimeout(zumPlan, 0);
         return;
       }
       await S.texteErzeugen();

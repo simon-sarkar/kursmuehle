@@ -54,7 +54,10 @@
     try { quelle = await createImageBitmap(datei); }
     catch (e) {
       quelle = new Image(); var url = URL.createObjectURL(datei); quelle.src = url;
-      await quelle.decode(); URL.revokeObjectURL(url);
+      try { await quelle.decode(); }
+      catch (e2) {                    // AP13.42 B1: keine rohe Browsermeldung; die Zeile zeigt einen deutschen Satz
+        var f = new Error(String(e2 && e2.message || e2)); f.bildLesen = datei.name || ""; throw f;
+      } finally { URL.revokeObjectURL(url); }
     }
     var w0 = quelle.width || quelle.naturalWidth, h0 = quelle.height || quelle.naturalHeight, sw = w0, sh = h0;
     if (f) { if (w0 / h0 > f[0] / f[1]) sw = Math.round(h0 * f[0] / f[1]); else sh = Math.round(w0 * f[1] / f[0]); }
@@ -102,11 +105,26 @@
       if (Z.mappe && Z.mappe.bildformat) delete Z.mappe.bildformat[name];      // neues Bild: Format und Prüfung neu
       if (Z.mappe && Z.mappe.bildpruefung) delete Z.mappe.bildpruefung[name];
       bildGroesse[name] = await km.mappeFn("bild_verkleinert", [bild.vorher, bild.nachher]);
+      bildFehlerWeg(name);
       await km.stand(Z.kurs_md);
       await auswertung();
       zeichne();
-    } catch (e) { zeigeFehler(e); }
+    } catch (e) { bildFehler(e, name); }
     finally { bildGezeichnet(name, fokusAb(name) || fokus); }
+  }
+  // AP13.42 B1: Meldung an der Zeile (und im Kopf) für eine Datei, die kein Bild ist; der nächste Erfolg räumt beides ab
+  var bildMeldung = S.bildMeldung = {};      // schritte.js neuStart leert sie beim Mappenwechsel
+  function bildFehler(e, name) {
+    if (!e || e.bildLesen === undefined) { zeigeFehler(e); return; }
+    var satz = S.katalog.oberflaeche.bild_nicht_lesbar.replace("{name}", e.bildLesen || name);
+    console.warn(e.message);
+    bildMeldung[name] = satz;
+    S.status(satz, "fehler");
+  }
+  function bildFehlerWeg(name) {
+    var satz = bildMeldung[name]; delete bildMeldung[name];
+    var k = $("kopf-status");
+    if (satz && k && k.textContent === satz) S.status("Bereit", "ok");
   }
 
   // c7: mittiger Ausschnitt im Format des Prompts aus dem Bild im Speicher; die Wahl steht in der Mappe (`bildformat`)
@@ -118,10 +136,11 @@
       fokus = fokusAb(name);
       formatMerken(name, "zugeschnitten");
       bildGroesse[name] = "Auf " + f[0] + ":" + f[1] + " zugeschnitten, " + bild.breite + " × " + bild.hoehe + " px.";
+      bildFehlerWeg(name);
       await km.stand(Z.kurs_md);
       await auswertung();
       zeichne();
-    } catch (e) { zeigeFehler(e); }
+    } catch (e) { bildFehler(e, name); }
     finally { bildGezeichnet(name, fokusAb(name) || fokus); }
   }
   function formatMerken(name, wahl) { (Z.mappe.bildformat = Z.mappe.bildformat || {})[name] = wahl; }
@@ -155,6 +174,7 @@
     if (document.getElementById("stil-bilder")) return;
     document.head.appendChild(el("style", { id: "stil-bilder", text: [
       ".bild-format { color: var(--leise); font-size: 0.9rem; }",
+      ".bild-fehler { color: var(--fehler); font-size: 0.93rem; margin: 8px 0 0; }",
       ".bild-zeile.zu { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding-top: 8px;",
       "  padding-bottom: 8px; cursor: pointer; }",
       ".bild-zeile.zu:hover, .bild-zeile.zu.ueber { background: var(--grund); }",
@@ -216,9 +236,9 @@
     var da = bildDa(b), geprueft = da && bildGeprueft(b.datei), f = format(b), url = da ? vorschauUrl(b.datei) : "";
     var nr = b.baustein ? Z.mappe.bausteine.findIndex(function (k) { return k.id === b.baustein; }) + 1 : 0;
     var auftrag = b.prompt || b.wunsch || "", frage = offen && da ? formatFrage(b) : null;
-    var stand = (b.datei && bildGroesse[b.datei]) || "";
+    var stand = (b.datei && bildGroesse[b.datei]) || "", meldung = (b.datei && bildMeldung[b.datei]) || "";
     var zustand = JSON.stringify([offen, i, b.datei || "", nr, b.titel || "", auftrag, da, geprueft, f, url,
-      frage && frage.ist, stand]);
+      frage && frage.ist, stand, meldung]);
     var kl = "bild-zeile" + (da ? (geprueft ? " da" : " da ungeprueft") : "");
     function bau() {
       if (!offen) {
@@ -233,7 +253,7 @@
             statusText(da, geprueft)])]);
       }
       var eingabe = b.datei ? el("input", { type: "file", cls: "unsichtbar bild-datei",
-          accept: "image/png,image/jpeg", "data-datei": b.datei }) : null;
+          accept: "image/png,image/jpeg,image/gif,image/webp", "data-datei": b.datei }) : null;
       if (eingabe) {
         eingabe.addEventListener("change", dateiGewaehlt);
         eingabe.addEventListener("cancel", function () { delete eingabe.closest(".bild-zeile").dataset.waehlt; });
@@ -266,6 +286,7 @@
         b.datei ? el("div", { cls: "bild-ablage", "data-datei": b.datei }, [
           el("span", { text: "Bild hierher ziehen oder" }),
           el("label", { cls: "knopf klein-knopf" }, [da ? "Bild ersetzen" : "Bild hochladen", eingabe])]) : null,
+        meldung ? el("p", { cls: "bild-fehler", role: "alert", text: meldung }) : null,
         el("p", { cls: "stand bild-stand", role: "status", text: stand })]);
     }
     return { key: key, zustand: zustand, bau: bau };
@@ -378,7 +399,7 @@
     var z = ablage(ev); if (!z) return;
     ev.preventDefault(); z.classList.remove("ueber");
     var f = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
-    if (!f || !/^image\/(png|jpeg)$/.test(f.type)) return;
+    if (!f) return;                 // AP13.42 B1: jede Datei geht an bildSetzen; die deutsche Meldung kommt von dort
     if (z.classList.contains("zu")) oeffnen(z.dataset.key);
     bildSetzen(f, z.dataset.datei);
   });

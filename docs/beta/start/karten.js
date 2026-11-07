@@ -659,6 +659,7 @@
     $("speichern").disabled = !Z.geladen || !Z.mappe;
     $("wiederherstellen").hidden = !(Z.bau && Z.bau.mbz);
     $("weiter-5").hidden = !(schritt() === 5 && voll && !fehler && !teileOffen());
+    if (S.nachHinweis) S.nachHinweis();                // AP13.42 B6
   }
 
   // AP13.41 §3.2: Soll der Karten über der Dauer der Einheit: gelb, Schritt 5 rechnet mit der Dauer (gen/prompt.py

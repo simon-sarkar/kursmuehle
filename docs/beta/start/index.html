@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand b92d425 vom 30.10.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 1ec2c5e vom 07.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -324,9 +324,9 @@
           <div class="aus-gruppe" data-gruppe="farbe"><h3 class="unterkopf" id="aus-farbe-t">Farbe</h3>
             <div id="aus-farbe" class="kacheln-wahl farben" role="radiogroup" aria-labelledby="aus-farbe-t"></div>
             <!-- die Kachel „Eigene“ trägt den Farbwähler; schritte.js setzt sie als letzte Kachel in #aus-farbe -->
-            <label id="farbe-eigen-l" class="aus-kachel farbe-eigen" data-feld="farbe" data-wert="eigen" role="radio"
+            <div id="farbe-eigen-l" class="aus-kachel farbe-eigen" data-feld="farbe" data-wert="eigen" data-pfeilwahl role="radio"
               aria-checked="false"><input id="farbe-eigen" type="color" value="#1d5fd1" aria-label="Eigene Farbe" tabindex="-1"><span
-              class="aus-name"><span class="aus-name-text">Eigene</span></span></label>
+              class="aus-name"><span class="aus-name-text">Eigene</span></span></div>
             <p id="farbe-fest" class="leise" hidden></p></div>
           <div class="aus-gruppe" data-gruppe="dichte"><h3 class="unterkopf" id="aus-dichte-t">Dichte</h3>
             <div id="aus-dichte" class="kacheln-wahl schmal" role="radiogroup" aria-labelledby="aus-dichte-t"></div></div>
@@ -589,7 +589,9 @@
           <p class="leise">Steht klein am Ende jedes Abschnitts. Gilt für Texte und Aufgaben, nicht für Bilder.</p>
           </div>
         </details>
+        <p id="nl-hinweis" class="stand warn" role="status" hidden></p>
         <button type="button" id="herunterladen" class="knopf ergebnis">Datei für die Lernplattform herunterladen</button>
+        <button type="button" id="herunterladen-ganz" class="knopf" hidden>Ganze Datei herunterladen</button>
         <button type="button" id="glossar-laden" class="knopf" hidden>Glossar-Einträge herunterladen</button>
         <p id="erstellen-stand" class="stand" role="status" aria-live="polite"></p>
         <button type="button" id="zu-durchsicht" class="knopf" hidden>Fragen durchsehen</button>

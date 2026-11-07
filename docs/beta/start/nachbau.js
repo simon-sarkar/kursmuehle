@@ -373,6 +373,46 @@
     return einheitenImKurs().filter(function (e) { return e !== "e1" && imp.indexOf(e) < 0; });
   }
 
+  // AP13.42 B6: Prüfsumme der Bausteine einer Einheit; „Ja, die Einheit ist im Kurs“ merkt sie, Schritt 7 vergleicht
+  function einheitStand(tag) {
+    var s = ((Z.pruefung && Z.pruefung.bausteine) || []).filter(function (b) {
+      var k = S.karteNach(b.id); return k && S.einheitVon(k) === tag; })
+      .map(function (b) { return b.id + "\u0001" + (b.titel || "") + "\u0001" + (b.text || ""); }).join("\u0000"), h = 5381;
+    for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+    return (h >>> 0).toString(36) + "." + s.length;
+  }
+  function geaenderteImportierte() {
+    var m = Z.mappe, st = (m && m.importiert_stand) || {};
+    return ((m && m.importiert) || []).filter(function (t) { return st[t] && st[t] !== einheitStand(t); });
+  }
+  // Nachlieferung mit Änderungen an einer schon importierten Einheit: sie steckt nur in der ganzen Datei
+  S.nachHinweis = function () {
+    var p = $("nl-hinweis"), b = $("herunterladen-ganz"), o = S.katalog && S.katalog.oberflaeche;
+    var neu = Z.mappe && o && !$("herunterladen").hidden && (!Z.bau || Z.bau.nachlieferung) ? nachlieferung() : [];
+    var geaendert = neu.length ? geaenderteImportierte() : [];
+    p.hidden = b.hidden = !geaendert.length;
+    if (!geaendert.length) return;
+    p.textContent = o.nachlieferung_geaendert.replace("{namen}", geaendert.map(function (t) { return S.einheitName(t); })
+        .join(", "));
+    b.textContent = o.nachlieferung_ganz;
+  };
+  $("herunterladen-ganz").onclick = async function () {
+    S.bauLaeuft = true; knoepfe(); status("Datei wird erstellt …", "lauf");
+    try {
+      await km.baue(Object.assign({}, km.bauOptionen || {}));
+      S.bauLaeuft = false;
+      if (Z.bau && Z.bau.mbz) {
+        Z.bau.nachlieferung = null;
+        // die ganze Datei kommt als neuer Kurs: „Importiert?“ fragt wieder, und das Ja merkt den Stand aller Einheiten neu
+        Z.mappe.importiert = []; Z.mappe.importiert_stand = {}; autosave();
+        Z.bau.downloadName = (await km.mappeFn("dateiname", [Z.mappe, heute()])).replace(/\.kursmappe\.zip$/, ".mbz");
+        herunterladen(); status("Bereit", "ok");
+      } else status("Die Datei ließ sich nicht erstellen.", "fehler");
+      zeichneWiederherstellen(); knoepfe(); zeichneSchritte();
+      S.fokusRetten(["herunterladen-ganz"]);
+    } catch (e) { S.bauLaeuft = false; zeigeFehler(e); knoepfe(); }
+  };
+
   function zeichneWiederherstellen() {
     var ol = $("wh-schritte"); ol.innerHTML = "";
     var delta = Z.bau && Z.bau.nachlieferung;
@@ -486,8 +526,9 @@
   };
   $("importiert-ja").onclick = function () {
     if (!Z.mappe) return;
-    var imp = Z.mappe.importiert || [];
-    einheitenImKurs().forEach(function (e) { if (imp.indexOf(e) < 0) imp.push(e); });
+    var imp = Z.mappe.importiert || [], st = Z.mappe.importiert_stand = Z.mappe.importiert_stand || {};
+    // nur neu importierte Einheiten bekommen ihren Stand; eine nach dem Import geänderte bleibt als geändert erkannt
+    einheitenImKurs().forEach(function (e) { if (imp.indexOf(e) < 0) { imp.push(e); st[e] = einheitStand(e); } });
     Z.mappe.importiert = imp;
     zeichneWiederherstellen(); autosave();
     $("naechste-einheit").focus();

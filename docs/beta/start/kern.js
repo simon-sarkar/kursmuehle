@@ -399,7 +399,8 @@ window.km = km;
   // AP13.40 (Korrekturrunde): in einer Sequenz heißen die Einheiten in Namen, Moduswahl und Rückfragen „Stunde“
   // (wie gen/mappe.py stunden_wort)
   var STUNDEN_TEXTE = { einheit_name: 1, modus_ersetzen: 1, modus_baustein: 1, modus_ersetzt: 1, modus_gewechselt: 1,
-    andere_frage: 1, andere_frage_ersetzen: 1, andere_aendern: 1, ersetzen_nur: 1 };
+    andere_frage: 1, andere_frage_ersetzen: 1, andere_aendern: 1, ersetzen_nur: 1, modus_satz_ersetzen: 1,
+    modus_satz_ersetzen_eine: 1, modus_satz_baustein: 1, modus_satz_anhaengen: 1 };
   function stundenWort(t) { return String(t).replace(/Einheit(en)?/g, function (_, en) { return en ? "Stunden" : "Stunde"; }); }
   function editorText(schluessel, werte) {
     var t = (S.katalog && S.katalog.oberflaeche.editor || {})[schluessel] || "";
@@ -440,7 +441,15 @@ window.km = km;
     var d = new Date(), z = function (n) { return (n < 10 ? "0" : "") + n; };
     return d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate());
   }
-  function fehlerText(e) { return (e && e.message) || String(e); }
+  // AP13.42 B2: bei einer Python-Ausnahme nur die letzte Zeile ohne Klassennamen; der volle Text geht in die Konsole
+  function fehlerText(e) {
+    var t = String((e && e.message) || e), z = t.split("\n").filter(function (x) { return x.trim(); });
+    if (z.length > 1 || /^Traceback /.test(t)) {
+      try { console.warn(t); } catch (x) { /* ohne Konsole */ }
+      t = (z[z.length - 1] || t).trim().replace(/^[\w.]+(Error|Fehler|Exception): /, "");
+    }
+    return t;
+  }
   function hoehe(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + 2 + "px"; }
   function kb(n) { return n < 1024 ? n + " Bytes" : (Math.round(n / 102.4) / 10).toString().replace(".", ",") + " KB"; }
   // ein unbekannter Zweig (neuere Mühle) gilt als „Ich steuere“ (AP13.5b)
@@ -671,11 +680,15 @@ window.km = km;
     if (!Z.geladen) { zeichne(); return; }
     await S.steckbriefSicher();
     await km.stand(Z.kurs_md);
-    for (var kette = null; kette !== S.schreibKette;) { kette = S.schreibKette; await kette; }
-    var gelesen = await km.mappeFn("angaben_lesen", [Z.steckbrief_text]);
-    // sonst kam inzwischen ein Klick; dessen Werte gelten. angabenFuer: die Angaben dieser Mappe sind vollständig
-    // gelesen (lehrplan.js belegt den Lehrplan erst danach vor, sonst überschriebe der Vorschlag eine gespeicherte Wahl)
-    if (kette === S.schreibKette) { S.angaben = gelesen; S.angabenFuer = Z.mappe; }
+    // kam während des Lesens ein Klick, gelten dessen Werte: dann noch einmal lesen, sobald er geschrieben ist (der
+    // Steckbrief trägt ihn dann; früher blieb angabenFuer leer, und lehrplan.js belegte nie vor). angabenFuer: die
+    // Angaben dieser Mappe sind vollständig gelesen (lehrplan.js belegt den Lehrplan erst danach vor, sonst überschriebe
+    // der Vorschlag eine gespeicherte Wahl)
+    for (var versuch = 0; versuch < 5; versuch++) {
+      for (var kette = null; kette !== S.schreibKette;) { kette = S.schreibKette; await kette; }
+      var gelesen = await km.mappeFn("angaben_lesen", [Z.steckbrief_text]);
+      if (kette === S.schreibKette) { S.angaben = gelesen; S.angabenFuer = Z.mappe; break; }
+    }
     await auswertung();
     zeichne();
     autosave();
@@ -823,9 +836,9 @@ window.km = km;
 
   // AP13.33 §2.5: Kachelgruppen (role=radiogroup mit Knöpfen role=radio) wie native Radioknöpfe: ein Tab-Halt je Gruppe
   // (die gewählte Kachel, sonst die erste), Pfeiltasten, Pos1 und Ende wechseln Fokus und Wahl (Klick auf die Kachel),
-  // Leertaste wählt. Gilt für jede Gruppe der Seite, auch für später gebaute (Beobachter auf dem Dokument). Eine Kachel,
-  // die ein label ist (Farbe „Eigene“ mit Farbwähler), bekommt statt des Klicks das Ereignis `km-pfeilwahl`: ein Klick
-  // auf das label öffnete den Farbwähler, und der Fokus bliebe darin.
+  // Leertaste wählt. Gilt für jede Gruppe der Seite, auch für später gebaute (Beobachter auf dem Dokument). Eine Kachel
+  // mit `data-pfeilwahl` (Farbe „Eigene“ mit Farbwähler) bekommt statt des Klicks das Ereignis `km-pfeilwahl`: ihr
+  // Klick öffnete den Farbwähler, und der Fokus bliebe darin.
   function radios(gruppe) {
     return Array.prototype.filter.call(gruppe.querySelectorAll("[role=radio]"), function (r) {
       return r.tagName !== "INPUT" && r.closest("[role=radiogroup]") === gruppe;
@@ -837,7 +850,8 @@ window.km = km;
       var rs = radios(g); if (!rs.length) return;
       var halt = rs.filter(function (r) { return r.getAttribute("aria-checked") === "true" && bedienbar(r); })[0] ||
           rs.filter(bedienbar)[0] || rs[0];
-      rs.forEach(function (r) { var soll = r === halt ? 0 : -1; if (r.tabIndex !== soll) r.tabIndex = soll; });
+      // das Attribut, nicht nur tabIndex: ein div ohne tabindex meldet -1 und ließe sich nicht fokussieren
+      rs.forEach(function (r) { var soll = r === halt ? "0" : "-1"; if (r.getAttribute("tabindex") !== soll) r.setAttribute("tabindex", soll); });
     });
   }
   var radioPlan = 0;
@@ -856,7 +870,7 @@ window.km = km;
     if (ziel === r) return;
     var wert = ziel.dataset.wert, sel = wert !== undefined ? "[role=radio][data-wert='" + CSS.escape(wert) + "']" : null;
     ziel.focus();
-    if (ziel.tagName === "LABEL") ziel.dispatchEvent(new CustomEvent("km-pfeilwahl", { bubbles: true }));
+    if (ziel.hasAttribute("data-pfeilwahl")) ziel.dispatchEvent(new CustomEvent("km-pfeilwahl", { bubbles: true }));
     else ziel.click();
     // die Wahl kann die Gruppe neu zeichnen oder den Fokus woandershin schicken; er bleibt auf der gewählten Kachel
     var zurueck = function () {

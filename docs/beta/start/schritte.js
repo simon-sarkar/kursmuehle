@@ -565,6 +565,7 @@
     clearTimeout(S.kennzahlTimer); clearTimeout(S.textTimer); clearTimeout(S.eingabeTimer);
     texte.teile = []; texte.ids = []; texte.teil = 0; texte.art = "einheit"; texte.kopiert = {}; texte.veraltet = false;
     texte.geaendert = []; delete texte.teilMd;                // AP13.41 §1.2
+    Object.keys(S.bildMeldung || {}).forEach(function (k) { delete S.bildMeldung[k]; });     // AP13.42 B1
         S.fragenListe = [];
         S.korrekturen = []; S.korrekturBitte = ""; S.spracheGelb = []; S.letzteAntwort = null;
     S.korrektur = { text: "", offen: false, stand: "", art: "" };
@@ -596,7 +597,11 @@
       // AP13.15: Mappe aus einer neueren Mühle oder aus der Testversion: ein Satz statt „Bereit“, nichts gesperrt
       var satz = Z.gespeichert ? await km.mappeFn("herkunft_hinweis", [Z.gespeichert, km.kanal]) : "";
       if (satz) status(satz, "lauf"); else status("Bereit", "ok");
-    } catch (e) { zeigeFehler(e); }
+    } catch (e) {
+      var m = /^kurs\.md fehlt/.exec(fehlerText(e));
+      if (m) status(S.katalog.oberflaeche.keine_kursmappe.replace("{grund}", "kurs.md fehlt"), "fehler");
+      else zeigeFehler(e);
+    }
   }
   function zeigeFehler(e) { status("Das hat nicht geklappt: " + fehlerText(e), "fehler"); }
 
@@ -1393,8 +1398,9 @@
         '" width="40" height="3" rx="1" fill="#5B6475"/>'; });
     return s + "</svg>";
   }
-  // die Kachel „Eigene“ ist ein label: der Klick öffnet den Farbwähler (Klick auf das Feld, hier übergangen); eine
-  // schon gewählte eigene Farbe gilt sofort. „Benutzerdefiniert“ bei Bilder schreibt die Zahl aus dem Feld darunter.
+  // die Kachel „Eigene“ ist kein label (WebKit gäbe den Fokus beim Pfeilwechsel an das Farbfeld weiter): der Klick
+  // öffnet den Farbwähler von Hand (Klick auf das Feld selbst öffnet ihn ohnehin); eine schon gewählte eigene Farbe
+  // gilt sofort. „Benutzerdefiniert“ bei Bilder schreibt die Zahl aus dem Feld darunter.
   var EIGEN = $("farbe-eigen-l");
   EIGEN.insertBefore(el("span", { cls: "eigen-mini", "aria-hidden": "true" }), EIGEN.firstChild);
   EIGEN.querySelector(".eigen-mini").appendChild($("farbe-eigen"));
@@ -1403,6 +1409,7 @@
     if (!b || !Z.mappe || b.hasAttribute("disabled") || ev.target.id === "farbe-eigen") return;
     var a = {}, wert = b.dataset.wert;
     if (b.dataset.feld === "farbe" && wert === "eigen") {
+      farbwaehlerOeffnen();
       if (!EIGEN.dataset.gewaehlt) { zeichneAussehen(); return; }
       wert = $("farbe-eigen").value.toUpperCase();
     }
@@ -1447,9 +1454,13 @@
   EIGEN.addEventListener("keydown", function (ev) {
     if ((ev.key !== "Enter" && ev.key !== " ") || ev.target !== EIGEN || $("farbe-eigen").disabled) return;
     ev.preventDefault();
-    var f = $("farbe-eigen");
-    try { if (f.showPicker) f.showPicker(); else f.click(); } catch (e) { f.click(); }
+    farbwaehlerOeffnen();
   });
+  function farbwaehlerOeffnen() {
+    var f = $("farbe-eigen");
+    if (f.disabled) return;
+    try { if (f.showPicker) f.showPicker(); else f.click(); } catch (e) { f.click(); }
+  }
   // Farbfeld „Eigene“: schreibt farbe als #RRGGBB in den Steckbrief
   $("farbe-eigen").addEventListener("change", function () {
     farbeEigenWaehlen();

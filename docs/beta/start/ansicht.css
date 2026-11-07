@@ -830,6 +830,9 @@ body.editor-offen { overflow: hidden; }
 .ed-b-titel:focus { outline: 2px solid var(--fokus); outline-offset: 2px; border-radius: 4px; }
 .ed-typ { flex: none; font-size: 0.8rem; font-weight: 600; color: var(--leise); }
 .ed-titel-text { min-width: 0; overflow-wrap: anywhere; }
+.ed-importiert { margin: 14px 0 4px; padding: 6px 10px; border-left: 3px solid var(--warn); background: var(--warn-flaeche); color: var(--text);
+  font-size: 0.9rem; }
+#nl-hinweis { padding: 6px 10px; border-left: 3px solid var(--warn); background: var(--warn-flaeche); color: var(--text); }
 .ed-marken { display: inline-flex; gap: 6px; }
 .ed-marken:empty { display: none; }
 .ed-hand { padding: 1px 8px; border: 1px solid var(--lehrkraft-kante); border-radius: 999px; background: var(--lehrkraft); color: var(--text);
@@ -883,6 +886,10 @@ body.editor-offen { overflow: hidden; }
 .sw-symbol { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%;
   background: #2a2a2a; }
 .sw-symbol img { display: block; width: 44px; height: 44px; }
+/* AP13.42: beim Herunterscrollen am schmalen Fenster weg (editor.js), mit Fokus wieder da */
+.editor-schweb { transition: opacity 0.2s ease, transform 0.2s ease; }
+body.editor-schweb-weg .editor-schweb { opacity: 0; transform: translateY(24px); pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .editor-schweb { transition: none; } }
 body.editor-offen .editor-schweb { display: none; }
 body:has(dialog[open]) .editor-schweb { display: none; }
 @media (max-width: 999px) {

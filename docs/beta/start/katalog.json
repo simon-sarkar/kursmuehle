@@ -181,7 +181,7 @@
      "anteil": 13,
      "rolle": "sichern",
      "bausteine": [
-      "Seite: Hefteintrag | Hefteintrag zum Abschreiben: Begriffe, Kernaussage, ein Beispiel."
+      "Seite: Hefteintrag | Hefteintrag zum Abschreiben: die neuen Begriffe, der Merksatz und der Fall vom Anfang als gelöstes Beispiel."
      ]
     },
     {
@@ -777,6 +777,10 @@
   },
   "bild_pruefung": "Passt, wenn Text im Bild lesbar ist (oder keiner da ist), Pfeile auf das Richtige zeigen und keine fremden Symbole oder Gesten zu sehen sind.",
   "bild_spaeter": "Bild noch nicht hochgeladen (Schritt „Bilder“).",
+  "bild_nicht_lesbar": "Die Datei {name} lässt sich nicht als Bild öffnen. Erlaubt sind PNG, JPEG, GIF, WebP.",
+  "keine_kursmappe": "Das ist keine Kursmappe: {grund}.",
+  "nachlieferung_geaendert": "Nach dem Import geändert: {namen}. Die Nachlieferung enthält diese Änderung nicht; mit der ganzen Datei kommt sie in den Kurs.",
+  "nachlieferung_ganz": "Ganze Datei herunterladen",
   "wiederherstellen_bilder": [],
   "abschluss": [
    {
@@ -1011,10 +1015,10 @@
    "ids_zugeordnet": "Die Bausteine passten nicht zu den Karten; die Mühle hat sie nach Typ und Titel zugeordnet ({titel}).",
    "modus_satz_geplant": "Die Antwort füllt die geplanten Bausteine von {name}.",
    "modus_satz_teil": "Teil {n} von {von}: die Antwort füllt die geplanten Bausteine dieses Teils in {name}.",
-   "modus_satz_ersetzen": "Die Antwort ersetzt {name}; andere Einheiten bleiben.",
-   "modus_satz_ersetzen_eine": "Die Antwort ersetzt die Einheit.",
-   "modus_satz_baustein": "Die Antwort ersetzt nur die Bausteine mit derselben id; die übrigen bleiben.",
-   "modus_satz_anhaengen": "Die Antwort kommt als neue Einheit hinter die letzte.",
+   "modus_satz_ersetzen": "Die Antwort ersetzt den Inhalt von {name} ({bausteine}); andere Einheiten bleiben.",
+   "modus_satz_ersetzen_eine": "Die Antwort ersetzt den Inhalt der Einheit ({bausteine}).",
+   "modus_satz_baustein": "Die Antwort ersetzt nur Bausteine mit derselben id. {name} hat jetzt {bausteine}; die übrigen bleiben.",
+   "modus_satz_anhaengen": "Die Antwort kommt als neue Einheit hinter die letzte, {name}; deren Inhalt ({bausteine}) bleibt unverändert.",
    "modus_satz_spaeter": "Gilt für die nächste Antwort; die letzte bleibt, weil du danach etwas geändert hast.",
    "durchsicht_ohne": "{n} Fragen ohne Durchsicht übernommen",
    "teil_geaendert": "Teil {n} hat sich geändert. Kopiere ihn neu.",
@@ -1027,6 +1031,7 @@
    "weitere_teil_ki": "Teil {n} an meine KI senden",
    "weitere_kopiert": "Kopiert. Füge den Text in ein neues Gespräch ein und die Antwort hier ein.",
    "weitere_teil_kopiert": "Teil {n} kopiert. Füge ihn ein, setze die Antwort hier ein, dann kommt der nächste Teil.",
+   "importiert_hinweis": "Schon im Kurs: Änderungen hier kommen nur mit einer vollständigen Datei in den Kurs.",
    "weitere_eingesetzt": "Eingesetzt. Die neue Einheit steht am Ende der Übersicht.",
    "plan_beschreiben": "Worum geht es in dieser Einheit?",
    "plan_beschreiben_zeile": "Dieser Text steht so im Text für den Chat.",
@@ -1414,5 +1419,5 @@
    }
   ]
  },
- "version": "2.0.0-b17"
+ "version": "2.0.0-b18"
 }

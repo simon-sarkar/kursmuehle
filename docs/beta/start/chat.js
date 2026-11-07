@@ -128,7 +128,7 @@
       basis(mappe0, md0, teile);                    // AP13.35 §3.3: auch ein überholter Lauf setzt den Stand
       if (nr !== texte.laeuft) return texte.lauf;   // ein neuerer Lauf ist schon unterwegs
       if (art !== texte.art || teile.length !== texte.teile.length) { texte.teil = 0; texte.kopiert = {}; texte.geaendert = []; }
-      else teilePruefen(teile, md0);
+      else teilePruefen(teile, md0, e.ids || []);
       texte.art = art; texte.teile = teile; texte.ids = e.ids || [];
       veraltetPruefen();
       if (texte.teil >= teile.length) texte.teil = 0;
@@ -200,14 +200,24 @@
   // verliert „kopiert“, Schritt 4 meldet ihn einmal. Kam die Kursdatei aus einer Antwort (S.ausAntwort vor km.stand),
   // gilt der neue Text als Stand wie bei basis(). Ohne neue Kursdatei (Plan geändert) greift veraltetPruefen für alles
   S.ausAntwort = function (md) { texte.antwortMd = pruefsumme(md); };
-  function teilePruefen(teile, md) {
+  // AP13.42 B3: hat die Lehrkraft nur den Inhalt eines Bausteins von Hand geändert (`mappe.hand` ist anders, die Bausteine
+  // des Teils sind dieselben), ist das kein Grund, den Teil neu zu kopieren: seine Antwort ist eingesetzt, der Text bleibt
+  function handStand() { return pruefsumme(JSON.stringify((Z.mappe && Z.mappe.hand) || {})); }
+  function nurInhalt(i, ids, vor, handVor, hand) {
+    var jetzt = (ids || [])[i] || [], davor = (vor || [])[i] || [];
+    return jetzt.length > 0 && jetzt.join("|") === davor.join("|") && hand !== handVor && jetzt.every(function (id) {
+      var k = karteNach(id); return !k || !k.geplant; });         // noch geplante Karten ändern den Text des Teils wirklich
+  }
+  function teilePruefen(teile, md, ids) {
+    var vor = texte.teilIds, hand = handStand(), handVor = texte.handStand;
+    texte.teilIds = ids; texte.handStand = hand;
     if (texte.teilMd === undefined || texte.teilMd === md) { texte.teilMd = md; return; }
     var antwort = md === texte.antwortMd, neu = [];
     texte.teilMd = md;
     Object.keys(texte.kopiert).forEach(function (i) {
       var jetzt = textStand([teile[i] || ""]);
       if (texte.kopiert[i] === jetzt || typeof texte.kopiert[i] !== "string") return;
-      if (antwort) { texte.kopiert[i] = jetzt; return; }
+      if (antwort || nurInhalt(i, ids, vor, handVor, hand)) { texte.kopiert[i] = jetzt; return; }
       delete texte.kopiert[i];
       neu.push(parseInt(i, 10));
     });
@@ -723,6 +733,19 @@
     });
   });
   // AP13.41 §3.3: ein Satz unter der Wahl sagt, was mit der Antwort geschieht (geplante Einheit füllen, Teil n, Art)
+  function bausteineVon(tag) {
+    var n = Z.mappe.bausteine.filter(function (k) { return S.einheitVon(k) === tag; }).length;
+    return n + (n === 1 ? " Baustein" : " Bausteine");
+  }
+  // „Einheit 2: Thema“ -> „Einheit 2 („Thema“)“: im Satz kein Doppelpunkt mitten drin
+  function nameImSatz(tag) {
+    return S.einheitName(tag).replace(/^((?:Einheit|Stunde) \d+): (.+)$/, "$1 („$2“)");
+  }
+  function letzteEinheit() {
+    var h = 1;
+    Z.mappe.bausteine.forEach(function (k) { h = Math.max(h, parseInt(String(S.einheitVon(k)).replace(/^e/, ""), 10) || 1); });
+    return "e" + h;
+  }
   function modusSatzZeigen() {
     var p = $("modus-satz"); if (!p) return;
     var t = "", m = Z.mappe, r = document.querySelector("input[name=modus]:checked");
@@ -734,8 +757,12 @@
       else if (teileOffen() && st && naechsterTeil() >= 0)
         t = S.editorText("modus_satz_teil", { n: naechsterTeil() + 1, von: st.ids.length, name: name });
       else if (r && r.value === "ersetzen")
-        t = S.mehrereEinheiten() ? S.editorText("modus_satz_ersetzen", { name: name }) : S.editorText("modus_satz_ersetzen_eine");
-      else if (r) t = S.editorText("modus_satz_" + r.value);
+        t = S.editorText(S.mehrereEinheiten() ? "modus_satz_ersetzen" : "modus_satz_ersetzen_eine",
+            { name: nameImSatz(tag), bausteine: bausteineVon(tag) });
+      else if (r && r.value === "anhaengen") {
+        var l = letzteEinheit();
+        t = S.editorText("modus_satz_anhaengen", { name: nameImSatz(l), bausteine: bausteineVon(l) });
+      } else if (r) t = S.editorText("modus_satz_" + r.value, { name: nameImSatz(tag), bausteine: bausteineVon(tag) });
     }
     p.hidden = !t;
     if (p.textContent !== t) p.textContent = t;
