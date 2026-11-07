@@ -1,14 +1,15 @@
 /* Kursmühle – Kursseiten-Vorschau in Schritt 3 (AP13.5g b3): eine Kursseite im gewählten Format als zweite Karte
  * unter der Design-Vorschau. Reines HTML und CSS (Klassen fv-* in ansicht.css), kein Pyodide; Farben und Name der
  * Titelschrift aus web/familien.json, Akzent aus der Farbwahl. Inhalt nur Struktur: Thema aus Schritt 1 als
- * Kurstitel, Abschnitte „Einstieg“, „Erarbeitung“, „Übung“, Aktivitäten als Balken. */
+ * Kurstitel, Abschnitte nach der Planung der Lehrkraft (ohne Planung „Einstieg“, „Erarbeitung“, „Übung“), Aktivitäten
+ * als Balken. */
 "use strict";
 
 (function () {
   if (!document.getElementById("format-vorschau")) return;
   var S = km.seite;
   var $ = S.$, Z = S.Z, el = S.el;
-  var TITEL = ["Einstieg", "Erarbeitung", "Übung"];
+  var STANDARD = ["Einstieg", "Erarbeitung", "Übung"];
   var MONATE = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober",
     "November", "Dezember"];
 
@@ -31,9 +32,16 @@
     return el("div", { cls: "fv-abschnitt" }, offen === false ? [kopf] : [kopf, aktivitaet(62), aktivitaet(44)]);
   }
 
+  // AP13.34 §4: Namen der geplanten Abschnitte (höchstens fünf), ohne Planung die drei Standardnamen
+  function titelListe() {
+    var n = S.abschnittsnamen ? S.abschnittsnamen().slice(0, 5) : [];
+    return n.length ? n : STANDARD;
+  }
+
   function inhalt(format, start) {
+    var TITEL = titelListe();
     if (format === "kacheln") {
-      return [el("div", { cls: "fv-kacheln" }, TITEL.concat(["Abschnitt 4", "Abschnitt 5", "Abschnitt 6"])
+      return [el("div", { cls: "fv-kacheln" }, TITEL.concat([1, 2, 3, 4, 5, 6].slice(TITEL.length).map(function (k) { return "Abschnitt " + k; }))
         .map(function (t) { return el("div", { cls: "fv-kachel" }, [el("span", { cls: "fv-kachel-bild" }),
           el("span", { cls: "fv-kachel-titel", text: t })]); }))];
     }
@@ -57,8 +65,8 @@
     var name = S.angaben.familie || S.familien.standard;
     var f = S.familien.familien.filter(function (x) { return x.name === name; })[0] || S.familien.familien[0];
     var format = S.angaben.format || "themen", start = S.angaben.start || "", hue = S.akzent();
-    var titel = ((Z.mappe.einheit && Z.mappe.einheit.thema) || Z.mappe.titel || "").trim() || "Kurs";
-    var schluessel = [format, f.name, hue, start, titel].join("|");
+    var titel = (S.vorschauThema ? S.vorschauThema() : "") || "Kurs";
+    var schluessel = [format, f.name, hue, start, titel, titelListe().join("/")].join("|");
     if (schluessel === stand) return;
     stand = schluessel;
     var fa = f.farben || {};

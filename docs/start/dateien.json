@@ -1,10 +1,11 @@
 {
-"version": "2.0.0-b16",
-"generator": "7d1f2be32047cbac",
+"version": "2.0.0-b18",
+"generator": "7c446d6f3733e722",
 "dateien": [
 "ansicht.css",
 "bilder.js",
 "chat.js",
+"editor.js",
 "familien.json",
 "formate.js",
 "generator.zip",
@@ -23,7 +24,9 @@
 "muster-locker-dunkel.svg",
 "muster-locker.svg",
 "nachbau.js",
+"plan.js",
 "schritte.js",
+"sequenz.js",
 "themen.js",
 "verbindung.js",
 "worker.js",

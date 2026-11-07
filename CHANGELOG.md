@@ -1,5 +1,97 @@
 # Changelog
 
+## 2.0.0-b18 – 2026-11-07 (AP13.42: Testrunde vor der Freigabe)
+
+* Fehler aus Chat-Antworten werden gemeldet statt still übernommen
+* Verständlichere Meldungen bei Bildern, Teilen und Nachlieferung
+* Editor-Knopf am Handy blendet beim Scrollen aus
+
+- Am Handy verschwindet der Knopf „Editor“ beim Herunterscrollen und kommt beim Hochscrollen wieder.
+- Eine Datei, die kein Bild ist, meldet sich an der Bildzeile auf Deutsch mit ihrem Namen.
+- „Einheit öffnen“ mit einer Datei, die keine Kursmappe ist, sagt das in einem Satz.
+- Schritt 4 verlangt nach einer Handänderung an einer eingesetzten Einheit kein neues Kopieren mehr.
+- Unter „Einheit ersetzen“, „Nur Baustein ersetzen“ und „Als weitere Einheit anhängen“ steht ein Satz mit den Zahlen der betroffenen Bausteine.
+- Der Kopf jedes Teils im Text für den Chat nennt die Dauer der Einheit.
+- Der Editor weist an Einheiten, die schon im Kurs liegen, auf Änderungen hin; Schritt 7 bietet dann die ganze Datei an.
+- Ein Tipp hinter der Lücke (`*Wort*:Tipp`) ist eine rote Karte mit Korrekturbitte statt Text im Kurs.
+- Steht eine Antwort in einer Frage zweimal, ist das eine rote Karte mit Korrekturbitte.
+- Bildnamen mit Leerzeichen gelten mit „-“ statt Leerzeichen; ein unlesbarer Name ist schon beim Einsetzen rot.
+- Ein vom Chat ergänzter Baustein bleibt nach „Fortsetzung folgt“ und über Teile hinter seinem Bezugsbaustein.
+- Ein Bruch als ganze Lücke (`*1/2*`) ist eine rote Karte; die Übung nähme sonst 1 oder 2 als richtig an.
+- Ein Malpunkt in einer Rückmeldung (`→ 2 · 2 · 2 = 8`) teilt die Rückmeldung nicht mehr in Antworten.
+- In Safari bleibt der Fokus bei den Pfeiltasten in der Farbwahl auf der Kachel „Eigene“, statt im Farbfeld festzuhängen.
+- In Firefox steht der Fokus nach „Weitere Einheit“ im Plan der neuen Einheit.
+- Fett mit `**` in einem Lückentext ist eine rote Karte mit Korrekturbitte, statt die Lücken zu verschieben.
+- Der passende Lehrplan wird auch vorbelegt, wenn direkt nach dem Anlegen eine Angabe geändert wird.
+
+## 2.0.0-b17 – 2026-10-30 (AP13.11, AP13.28–AP13.31, AP13.33–AP13.41: Editor, Plan, Sequenz)
+
+* Editor: Einheit ansehen und Bausteine direkt ändern
+* „Ich steuere“ plant Kacheln, Elemente und Phasen
+* Sequenz: mehrere Stunden aus einem Anfang
+
+- Quizfragen mit Malpunkt (`4³ · 4²`) bleiben ganz, wenn die Frage mit „?“ endet.
+- Nummerierte Fragen im Lesebuch werden als Fragen gelesen.
+- Eine Quizzeile, die als Text im Kurs landen würde, ist eine rote Karte.
+- Nennt ein Auftrag im Plan eine Zahl, auch „Drei Beispielsätze“, gilt sie im Text für den Chat und in der Prüfung.
+- „+ Element“ legt ein Element ohne Titel an; den Titel wählt der Chat.
+- Liegt die Summe der Minuten im Plan über der Dauer, ist sie gelb, und Schritt 5 rechnet mit der Dauer.
+- Ändert sich ein schon kopierter Teil, verliert er „kopiert“, und Schritt 4 sagt es.
+- Nach einer Korrektur setzt die Wahl in Schritt 5 die alte Antwort nicht noch einmal ein.
+- In Schritt 1 wählst du „Stunde“ oder „Sequenz“; bei einer Sequenz plant der Chat zuerst alle Stunden, den Plan kannst du ändern.
+- Danach kommt Stunde für Stunde ein eigener Text für den Chat („Stunde 2 von 6“); die fertigen Stunden kannst du jederzeit als Sicherung laden.
+- Mit eigener KI laufen die Stunden nacheinander ohne Klick und halten bei einem Fehler an.
+- Ein leerer Plan beginnt nach den Phasen der gewählten Art oder leer.
+- Im Plan hat jedes Element wieder ein Feld für die Phase.
+- „Einheit ersetzen“ ersetzt bei mehreren Einheiten nur die laufende Einheit.
+- Ändert eine Antwort Bausteine einer anderen Einheit, fragt die Mühle vorher und nennt die Einheit.
+- „Kachel für Kachel“ legt die Kacheln des Plans an, auch wenn der Chat in einem Teil die Kachelzeile weglässt.
+- Hat der Chat die Bausteine anders nummeriert, ordnet die Mühle sie nach Typ und Titel den Karten zu.
+- Im Plan ist das Feld „Worum geht es in dieser Einheit?“ leer statt mit dem Thema vorbelegt, und die Aufgabenzahl im Text für den Chat liegt nicht unter dem Mindestmaß des Typs.
+- Sobald die Einheit Bausteine hat, steht unten links ein runder Knopf „Editor“ mit dem Mühlensymbol; er öffnet „Einheit ansehen und bearbeiten“ und liegt am Handy über der Vorschauleiste. Nach „Einheit schließen“ verschwinden Knopf und Link in der Kopfzeile.
+- Im Plan bleibt jeder getippte Kachelname und Satz „Was soll hier rein?“ stehen, auch bei schnellem Wechsel mit Tab; die vergebenen Minuten stehen neben der Dauer.
+- „Worum geht es in dieser Einheit?“ gilt je Einheit; ab der zweiten Einheit steht die Kursbeschreibung darüber und lässt sich dort ändern, und „Weitere Einheit“ in „Ich steuere“ öffnet einen leeren Plan.
+- Der Text für den Chat nennt für die Einheit überall dieselbe Zahl Minuten; füllt die Antwort weniger als 70 % davon, steht das gelb über den Karten, und „Verlängern lassen“ bittet den Chat darum.
+- Eine Korrekturbitte hat eine einzige Ausgabeanweisung und zitiert die Zeile „Angenommen:“; Meldungen zu Listen und Lückentexten nennen die Zeile des betroffenen Punkts.
+- „Neu schreiben lassen“ zeigt den Auftrag aus dem Plan über einem leeren Wunschfeld; Schritt 4 sagt „Text geändert, noch einmal kopieren“, und Karten, Editor und Fragen gliedern sich nach Einheit.
+- Die Formatbeispiele im Text für den Chat enthalten keinen Fachinhalt mehr; der Chat füllt sie zum Thema.
+- Ein Stern mit Leerzeichen davor oder danach (3 * 4) bleibt ein Stern im Text; eine Lücke braucht den Stern direkt vor und hinter dem Wort.
+- Die Vorschau in Schritt 3 zeigt dein Thema und die Namen deiner geplanten Abschnitte; die Zusammenfassung von Schritt 2 nennt in „Mach du“ keine Art der Einheit, die du nicht gewählt hast.
+- Meldungen der Prüfung zählen die Zeile im Feld, das du im Editor siehst; nach einer Korrektur mit gelben Hinweisen steht „Keine Fehler“ mit der Zahl der Hinweise, und die Rückmeldung nennt Korrekturrunden nur, wenn eine Korrektur lief.
+- Ein hochgeladenes Bild erscheint sofort in der Karte im Schritt „Bilder“, mit Vorschau und „Passt“; das gilt auch beim Ablegen und wenn danach etwas schiefgeht.
+- Ein Bild, das noch nicht hochgeladen ist, steht am Rand grau („Bild noch nicht hochgeladen (Schritt „Bilder“).“); es färbt keine Karte gelb und gibt keine Korrekturbitte.
+- Wer im Designer war, sieht in Schritt 3 alle Gruppen, auch nach „Fertig“ oder einem Wechsel zu „Mach du“ oder „Ich gebe die Richtung“; „Ränder“ verschwindet nicht mehr.
+- Der Stern an Merksätzen und Aufgaben erscheint auch im Lesebuch und in H5P als Bild, nicht mehr als Text.
+- Ohne angehakte Ziele wählt der Text für den Chat die Lehrplan-Erwartungen, die zu Thema und Kontext passen, aus allen Lernbereichen; das Gegenprüfen nennt dieselben.
+- Eine Zeile „Angenommen:“, die nur die Minuten der Bausteine einteilt, gilt nicht mehr als Zeit außerhalb des Kurses.
+- Eine Lesebuch-Seite ohne Frage meldet die Mühle gelb mit einem Satz für die Korrektur.
+- Beim Gegenprüfen zählen Elemente in der Zone „–“ als „keine“ und nicht mehr als falsch zugeordnet.
+- „Einheit ansehen und bearbeiten“ zeigt die ganze Einheit, wie sie im Kurs aussieht; jeder Baustein lässt sich dort ändern.
+- Mit „Neu schreiben lassen“ an einem Baustein der Ansicht sagst du in einem Satz, was anders sein soll, und setzt die Antwort des Chats gleich dort ein.
+- Von Hand geänderte Bausteine tragen „von Hand geändert“; eine neue Antwort fragt vorher, ob die Änderungen bleiben.
+- „Handänderung zurücknehmen“ holt den Stand vor der ersten eigenen Änderung zurück.
+- „Selbst anpassen“ an einer roten Karte setzt nur ein, wenn der Text keinen Fehler hat, und markiert den Baustein ebenso.
+- Die Ansicht beginnt mit der Kursübersicht im gewählten Format; Kurstitel, Abschnitte und Kacheln lassen sich dort mit einem Klick ändern.
+- Ein Klick auf eine Kachel öffnet ein kleines Formular für ihren Titel, ihr Bild, ihr Symbol und ihre Farbe; Pfeile ändern die Reihenfolge der Abschnitte.
+- Die Darstellung des Kurses lässt sich auch in der Übersicht wechseln.
+- In der Ansicht teilt „Hier neue Kachel beginnen“ eine Stunde auf zwei Kacheln, „In Kachel …“ setzt einen Baustein in eine andere Kachel seiner Einheit, eine leere Kachel lässt sich löschen; die Minuten zählt die Mühle neu.
+- Eine neue Antwort des Chats fragt, ob deine Aufteilung auf Kacheln bleibt; „Behalten“ ordnet die Bausteine wieder so ein.
+- „Weitere Einheit“ am Ende der Übersicht braucht nur Thema und Dauer; die Antwort steht danach als neue Kachel am Ende, auch nachgeliefert auf mehreren Kacheln.
+- Eine angehängte Einheit bekommt eigene Nummern für ihre Bausteine; der Text für den Chat nennt nur ihre Bausteine, das Gegenprüfen wählt die Lehrplan-Erwartungen nach ihrem Thema.
+- Bleibt ein geplanter Baustein nach der Antwort leer, steht das am Rand und an der Karte, mit einem Satz, der genau ihn beim Chat anfordert; kommt er mit gleichem Typ und Titel, aber ohne Nummer zurück, ordnet die Mühle ihn seiner Karte zu.
+- „Neu schreiben lassen“ kopiert deinen Wunsch schon beim ersten Klick und für jeden Baustein nur seinen Auftrag.
+- Eine neue Antwort des Chats fragt auch nach Bausteinen, die du neu schreiben lassen hast, bevor sie sie ersetzt.
+- Nach einer Änderung im Editor bleibt der Download, solange sich keine Frage und keine Lösung ändert; sonst nennt „Datei für die Lernplattform“ die Fragen, die du neu durchsehen sollst.
+- „Handänderung zurücknehmen“ holt nach einer neuen Antwort deren Fassung, nicht die der ersten.
+- Nach Infobox, Chat-Wahl, Einfügen, Download und Esc bleibt der Fokus der Tastatur an einer sichtbaren Stelle.
+- „Ich steuere“ beginnt mit dem Plan: Du beschreibst den Kurs, wählst die Darstellung und legst mit „+ Kachel“ und „+ Element“ an, was hineinsoll; die Kartenliste vor der ersten Antwort entfällt.
+- Was du in einer Kachel unter „Was soll hier rein?“ und an einem Element schreibst, steht wörtlich im Text für den Chat; bei mehreren Kacheln gibt es ihn auch Kachel für Kachel.
+- Jede weitere Einheit plant in „Ich steuere“ ebenso über den Plan; ältere Einheiten öffnen ihre Karten als Elemente einer Kachel.
+- Nach „Hinweise ausblenden“, „Neue Einheit“ und dem Einfügen einer Antwort geht der Fokus an eine sinnvolle Stelle (die Meldung oder die erste rote Karte, nicht „Weiter“); die drei Wege wählst du mit den Pfeiltasten, und am Handy öffnet die Wahl keine Tastatur.
+- „Abbrechen“ im Bearbeiten-Feld fragt wie Esc, die Rückmeldung lässt sich mit „Schließen“ oder Esc schließen, die Bitte „Sprache anpassen lassen“ steht unter der Karte; an einem Quiz mit Bestehensgrenze steht, dass es eine eigene Aktivität wird, und die Kursübersicht nennt es „Quiz“.
+- Der Fokusring ist im hellen Schema auf allen Flächen zu sehen; im dunklen Schema sind Platzhalter lesbar und Eingabefelder deutlich umrandet.
+- Am Tablet und Handy sagt der Hinweis in der Kursübersicht „Tippe“ statt „Klicke“.
+
 ## 2.0.0-b16 – 2026-10-29 (AP13.27, AP13.32: Prompt-Caching, Hinweis im Aufbau)
 
 * Hinweis beim Öffnen: Die Kursmühle ist noch im Aufbau

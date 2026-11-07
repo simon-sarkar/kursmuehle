@@ -85,11 +85,46 @@ var km = (function () {
     return a.ergebnis;
   }
 
+  // AP13.31: Benennt die Antwort des Chats oder der Editor einen Abschnitt um, trägt die Kachel des Plans (`kacheln`) den
+  // neuen Titel; „Was soll hier rein?“ gilt so weiter. Zuordnung über die Bausteine, deren `abschnitt` die Kachel war: alle
+  // tragen danach denselben neuen Titel, keiner mehr den alten, und den neuen hat noch keine Kachel der Einheit.
+  function kachelnNachziehen(mappe, neu) {
+    var kacheln = mappe.kacheln || [];
+    if (!kacheln.length) return;
+    var nachId = {};
+    (neu || []).forEach(function (b) { nachId[b.id] = b; });
+    kacheln.forEach(function (ka) {
+      var tag = ka.einheit || "";
+      var vorher = (mappe.bausteine || []).filter(function (b) { return b.abschnitt === ka.titel && (b.einheit || "") === tag; });
+      var titel = {};
+      vorher.forEach(function (b) { var n = nachId[b.id]; if (n && n.abschnitt) titel[n.abschnitt] = 1; });
+      var t = Object.keys(titel);
+      if (t.length !== 1 || t[0] === ka.titel) return;
+      var bleibt = (neu || []).some(function (b) { return b.abschnitt === ka.titel && (b.einheit || "") === tag; });
+      var schon = kacheln.some(function (x) { return x !== ka && x.titel === t[0] && (x.einheit || "") === tag; });
+      if (!bleibt && !schon) ka.titel = t[0];
+    });
+  }
+
   // Der Worker gleicht eine Kopie der Mappe ab und ändert dabei nur diese Schlüssel. Was die Seite während der Anfrage
   // an derselben Mappe gesetzt hat (Schritt, Durchsicht, Prüffragen), ginge sonst mit der Antwort verloren.
   function mappeUebernehmen(gesendet, antwort) {
     if (zustand.mappe !== gesendet) { zustand.mappe = antwort; return; }
+    kachelnNachziehen(gesendet, antwort.bausteine);
     ["bausteine", "format", "kursmuehle"].forEach(function (k) { gesendet[k] = antwort[k]; });
+    // AP13.11: Handänderungen ohne Baustein fallen weg (wie gen/mappe.py abgleich); was die Seite inzwischen gesetzt hat, bleibt
+    if (gesendet.hand) {
+      var da = {}, titel = {};
+      var falte = function (t) { return String(t || "").replace(/\s*·\s*(?:ca\.\s*)?\d+\s*min\.?\s*$/, "")
+          .replace(/\s+/g, " ").trim().toLowerCase(); };
+      antwort.bausteine.forEach(function (b) { if (!b.geplant) { da[b.id] = 1; titel[falte(b.abschnitt)] = 1; } });
+      Object.keys(gesendet.hand).forEach(function (id) {
+        var v = gesendet.hand[id] || {};
+        var abschnitt = id.indexOf("abschnitt:") === 0 && titel[falte(String(v.nachher || "").split("\n")[0]
+            .replace(/^##\s*/, ""))];
+        if (!da[id] && id !== "kopf" && !abschnitt) delete gesendet.hand[id];
+      });
+    }
   }
 
   // Prüfen, Mappe abgleichen und Kennzahlen in einem Lauf; leere Kursdatei = nur geplante Bausteine
@@ -100,8 +135,10 @@ var km = (function () {
     if (!String(text || "").trim()) {
       zustand.kurs_md = "";
       zustand.pruefung = { ok: true, bausteine: [], diagnosen: [], adressen: [], kursdatei: "" };
+      var vorher = JSON.stringify(gesendet.bausteine);
       var g = await anfrage("abgleich", { mappe: gesendet, bausteine: [] });
-      mappeUebernehmen(gesendet, g.ergebnis);
+      // AP13.31: hat die Seite die geplanten Karten inzwischen geändert (Plan in „Ich steuere“), gilt ihr Stand
+      if (JSON.stringify(gesendet.bausteine) === vorher) mappeUebernehmen(gesendet, g.ergebnis);
       zustand.kennzahlen = await mappeFn("kennzahlen", [zustand.mappe, zustand.pruefung, null,
           zustand.steckbrief_text]);
       return zustand.pruefung;
@@ -112,6 +149,7 @@ var km = (function () {
     zustand.kurs_md = a.ergebnis.pruefung.kursdatei;
     mappeUebernehmen(gesendet, a.ergebnis.mappe);
     zustand.kennzahlen = a.ergebnis.kennzahlen;
+    if (km.seite && km.seite.nachStand) km.seite.nachStand();     // AP13.35 §3.3 (chat.js)
     messen("pruefe", zustand.beispiel, a, { bausteine: zustand.pruefung.bausteine.length, zeichen: (text || "").length,
       fehler: zustand.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler"; }).length });
     return zustand.pruefung;
@@ -132,6 +170,14 @@ var km = (function () {
   async function designVorschau(hebel, familie) {
     var a = await anfrage("design_vorschau", { hebel: hebel || {}, familie: familie || null });
     messen("design_vorschau", familie || "alle", a);
+    return a.ergebnis;
+  }
+
+  // AP13.11: Vorschau der ganzen Einheit für die Ansicht „Einheit ansehen und bearbeiten“ (gen/api.einheit_vorschau)
+  async function einheitVorschau() {
+    var a = await anfrage("einheit_vorschau", { kurs_md: zustand.kurs_md, steckbrief: zustand.steckbrief_text,
+        assets: assetsKopie() });
+    messen("einheit_vorschau", zustand.beispiel, a, { bausteine: a.ergebnis.bausteine.length });
     return a.ergebnis;
   }
 
@@ -233,6 +279,8 @@ var km = (function () {
     var m = await mappeSchreiben();
     var d = await db();
     var titel = (zustand.mappe.einheit && zustand.mappe.einheit.thema) || zustand.mappe.titel || "";
+    // AP13.40: „Weiter mit …“ nennt bei einer Sequenz die Sequenz und die Stunde
+    if (zustand.mappe.sequenz && km.seite && km.seite.sequenzName) titel = km.seite.sequenzName() || titel;
     return new Promise(function (resolve, reject) {
       var tx = d.transaction(STORE, "readwrite");
       tx.objectStore(STORE).put({ zip: m.zip.buffer, dateiname: m.dateiname, titel: titel, zeit: Date.now() },
@@ -273,7 +321,7 @@ var km = (function () {
   }
 
   return { anfrage: anfrage, laden: laden, bereit: bereit, pruefe: pruefe, stand: stand, mappeFn: mappeFn,
-      prompt: prompt, baue: baue, designVorschau: designVorschau, lehrplanVorschlag: lehrplanVorschlag,
+      prompt: prompt, baue: baue, designVorschau: designVorschau, einheitVorschau: einheitVorschau, lehrplanVorschlag: lehrplanVorschlag,
     mappeAusBytes: mappeAusBytes, mappeAusDateien: mappeAusDateien, mappeSchreiben: mappeSchreiben,
     mappeUebernehmen: mappeUebernehmen,
     neueMappe: neueMappe, heap: heap, beenden: beenden, sha256: sha256, autosaveSchreiben: autosaveSchreiben,
@@ -304,8 +352,10 @@ window.km = km;
   var texte = { teile: [], ids: [], art: "einheit", teil: 0, laeuft: 0, kopiert: {} };
   S.fragenListe = [];
   S.korrekturen = [];
+  S.korrekturBitte = "";
   S.spracheGelb = [];             // AP13.14: ids mit „Sprache anpassen lassen“ (flüchtig, nicht in der Mappe)
   S.letzteAntwort = null;
+  S.modusSpaeter = false;         // AP13.41 §1.3: die Moduswahl gilt erst für die nächste Antwort (chat.js)
   S.infoboxAus = false;
   S.schreibKette = Promise.resolve();
   S.angabenFuer = null;            // Mappe, deren Angaben aus dem Steckbrief gelesen sind (neuPruefen)
@@ -345,11 +395,29 @@ window.km = km;
     return d.toDateString() === heute.toDateString() ? "um " + zeit(t) : "am " + d.toLocaleDateString("de-DE") +
         " um " + zeit(t);
   }
+  // AP13.11: Wortlaut der Ansicht „Einheit ansehen und bearbeiten“ aus katalog.yaml (oberflaeche.editor)
+  // AP13.40 (Korrekturrunde): in einer Sequenz heißen die Einheiten in Namen, Moduswahl und Rückfragen „Stunde“
+  // (wie gen/mappe.py stunden_wort)
+  var STUNDEN_TEXTE = { einheit_name: 1, modus_ersetzen: 1, modus_baustein: 1, modus_ersetzt: 1, modus_gewechselt: 1,
+    andere_frage: 1, andere_frage_ersetzen: 1, andere_aendern: 1, ersetzen_nur: 1, modus_satz_ersetzen: 1,
+    modus_satz_ersetzen_eine: 1, modus_satz_baustein: 1, modus_satz_anhaengen: 1 };
+  function stundenWort(t) { return String(t).replace(/Einheit(en)?/g, function (_, en) { return en ? "Stunden" : "Stunde"; }); }
+  function editorText(schluessel, werte) {
+    var t = (S.katalog && S.katalog.oberflaeche.editor || {})[schluessel] || "";
+    if (STUNDEN_TEXTE[schluessel] && Z.mappe && Z.mappe.sequenz) t = stundenWort(t);
+    Object.keys(werte || {}).forEach(function (k) { t = t.split("{" + k + "}").join(werte[k]); });
+    return t;
+  }
   function typInfo(typ) { return S.katalog && S.katalog.typen.filter(function (x) { return x.typ === typ; })[0]; }
   function formularname(typ) { if (typ === AUTO) return "Typ automatisch"; var t = typInfo(typ); return t ?
       t.formularname : typ; }
   // wie gen/prompt.py zeit_selbst(): ohne Schlüssel gelten die Soll-Minuten
   function zeitSelbst() { return !!Z.mappe && Z.mappe.zeit_selbst !== false; }
+  // AP13.35 §1.2: „Worum geht es?“ der laufenden Einheit (wie gen/prompt.py einheit_kontext): die erste im Steckbrief
+  // (`kurs.kontext`, zugleich die Beschreibung des Kurses), eine angehängte in der Mappe (`einheit.kontext`)
+  function kontextJetzt() {
+    return einheitTag() ? String(((Z.mappe && Z.mappe.einheit) || {}).kontext || "") : String(S.angaben.kontext || "");
+  }
   function mitMinuten(typ) { var t = typInfo(typ); return !t || t.minuten !== false; }
   function chatInfo(wert) { return S.katalog && S.katalog.chats.filter(function (c) { return c.wert === wert; })[0]; }
   function oberText(feld, wert) {
@@ -373,7 +441,15 @@ window.km = km;
     var d = new Date(), z = function (n) { return (n < 10 ? "0" : "") + n; };
     return d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate());
   }
-  function fehlerText(e) { return (e && e.message) || String(e); }
+  // AP13.42 B2: bei einer Python-Ausnahme nur die letzte Zeile ohne Klassennamen; der volle Text geht in die Konsole
+  function fehlerText(e) {
+    var t = String((e && e.message) || e), z = t.split("\n").filter(function (x) { return x.trim(); });
+    if (z.length > 1 || /^Traceback /.test(t)) {
+      try { console.warn(t); } catch (x) { /* ohne Konsole */ }
+      t = (z[z.length - 1] || t).trim().replace(/^[\w.]+(Error|Fehler|Exception): /, "");
+    }
+    return t;
+  }
   function hoehe(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + 2 + "px"; }
   function kb(n) { return n < 1024 ? n + " Bytes" : (Math.round(n / 102.4) / 10).toString().replace(".", ",") + " KB"; }
   // ein unbekannter Zweig (neuere Mühle) gilt als „Ich steuere“ (AP13.5b)
@@ -382,6 +458,18 @@ window.km = km;
   function sektion(n) { return $(n === 1 ? "start" : n === 5.5 ? "schritt-bilder" : "schritt-" + n); }
   // laufende Einheit: „e2“ … beim Anhängen und danach, "" = die erste; Bilder, Rand und Text nur für sie
   function einheitTag() { return Z.mappe ? (Z.mappe.anhaengen || Z.mappe.laufend || "") : ""; }
+  // AP13.35 §4.2: Einheiten der Mappe („e1“ = erste, Karten ohne `einheit`) mit Nummer und Thema; Listen gliedern danach,
+  // sobald es mehr als eine gibt. Thema aus `themen` (seit AP13.35), sonst die laufende nach `einheit.thema`, die erste
+  // nach dem Titel der Mappe
+  function einheitVon(k) { return (k && k.einheit) || "e1"; }
+  function mehrereEinheiten() { return !!Z.mappe && Z.mappe.bausteine.some(function (k) { return !!k.einheit; }); }
+  function einheitName(tag) {
+    var th = (Z.mappe && Z.mappe.themen) || {}, lauf = einheitTag() || "e1";
+    var thema = th[tag] || (tag === lauf ? ((Z.mappe && Z.mappe.einheit) || {}).thema : "") ||
+        (tag === "e1" ? (Z.mappe && Z.mappe.titel) || "" : "");
+    var n = parseInt(String(tag).replace(/^e/, ""), 10) || 1;
+    return editorText("einheit_name", { n: n }) + (thema ? ": " + thema : "");
+  }
   function karteNach(id) { return Z.mappe ? Z.mappe.bausteine.filter(function (k) { return k.id === id; })[0] : null; }
   function inEinheit(id) { var k = karteNach(id); return !!k && (k.einheit || "") === einheitTag(); }
   function bildwuensche() {
@@ -401,6 +489,9 @@ window.km = km;
   function nrVon(n) { return sichtbareSchritte().indexOf(n) + 1; }      // angezeigte Nummer (mit Bildern acht Schritte)
   function inhalt() { return !!(Z.kurs_md && Z.kurs_md.trim()); }
   function fehlerZahl() { return Z.pruefung ? Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler"; })
+      .length : 0; }
+  // AP13.34 §3.3: gelbe Hinweise der Prüfung (die Karten zeigen sie als „Hinweis“)
+  function gelbZahl() { return Z.pruefung ? Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "warnung"; })
       .length : 0; }
   function markiert() { return Z.mappe ? Z.mappe.bausteine.filter(function (k) { return k.neu; }) : []; }
 
@@ -425,6 +516,26 @@ window.km = km;
           fertig(true); }, rueckfall);
       else rueckfall();
     } catch (e) { rueckfall(); }
+  }
+
+  // AP13.33 N5: Kopieren eines Textes, der erst noch entsteht (`versprechen` -> Text). Mit ClipboardItem geht der Auftrag
+  // an die Zwischenablage noch in der Geste (Safari und Chromium nehmen ein Versprechen als Inhalt); sonst nach dem
+  // Warten wie kopieren() (writeText, Rückfall Markieren und execCommand; lehnt der Browser ab, steht dort, dass es
+  // nicht ging, nie „Kopiert“)
+  function kopierenSpaeter(versprechen, feld, stand, satz, fertigCb) {
+    var mitItem = typeof window.ClipboardItem === "function" && navigator.clipboard && navigator.clipboard.write;
+    if (!mitItem) {
+      return versprechen.then(function (t) { if (t) { feld.value = t; kopieren(t, feld, stand, satz, fertigCb); } });
+    }
+    var text = versprechen.then(function (t) { if (!t) throw new Error("kein Text"); feld.value = t; return t; });
+    var blob = text.then(function (t) { return new Blob([t], { type: "text/plain" }); });
+    var geschrieben;
+    try { geschrieben = navigator.clipboard.write([new ClipboardItem({ "text/plain": blob })]); }
+    catch (e) { geschrieben = Promise.reject(e); }
+    return geschrieben.then(function () {
+      stand.textContent = satz; stand.classList.remove("fehler"); stand.classList.add("stand", "ok");
+      if (fertigCb) fertigCb();
+    }, function () { return text.then(function (t) { kopieren(t, feld, stand, satz, fertigCb); }, function () {}); });
   }
 
   // c5: kurze Meldung unter einem Knopf („Text kopiert“): Mühle ohne Drehung (S.muehleSymbol aus chat.js) und Text,
@@ -569,11 +680,15 @@ window.km = km;
     if (!Z.geladen) { zeichne(); return; }
     await S.steckbriefSicher();
     await km.stand(Z.kurs_md);
-    for (var kette = null; kette !== S.schreibKette;) { kette = S.schreibKette; await kette; }
-    var gelesen = await km.mappeFn("angaben_lesen", [Z.steckbrief_text]);
-    // sonst kam inzwischen ein Klick; dessen Werte gelten. angabenFuer: die Angaben dieser Mappe sind vollständig
-    // gelesen (lehrplan.js belegt den Lehrplan erst danach vor, sonst überschriebe der Vorschlag eine gespeicherte Wahl)
-    if (kette === S.schreibKette) { S.angaben = gelesen; S.angabenFuer = Z.mappe; }
+    // kam während des Lesens ein Klick, gelten dessen Werte: dann noch einmal lesen, sobald er geschrieben ist (der
+    // Steckbrief trägt ihn dann; früher blieb angabenFuer leer, und lehrplan.js belegte nie vor). angabenFuer: die
+    // Angaben dieser Mappe sind vollständig gelesen (lehrplan.js belegt den Lehrplan erst danach vor, sonst überschriebe
+    // der Vorschlag eine gespeicherte Wahl)
+    for (var versuch = 0; versuch < 5; versuch++) {
+      for (var kette = null; kette !== S.schreibKette;) { kette = S.schreibKette; await kette; }
+      var gelesen = await km.mappeFn("angaben_lesen", [Z.steckbrief_text]);
+      if (kette === S.schreibKette) { S.angaben = gelesen; S.angabenFuer = Z.mappe; break; }
+    }
     await auswertung();
     zeichne();
     autosave();
@@ -583,10 +698,17 @@ window.km = km;
     var pr = Z.pruefung || { bausteine: [], diagnosen: [] };
     S.fragenListe = await km.prompt("fragen", [pr]);
     // AP13.14: gelbe Sprach-Hinweise nur für Karten mit „Sprache anpassen lassen“ (ids nur noch, wenn die Karte gelb ist)
+    // AP13.35 §2.3: dazu die Regel einer gelben Zeile der Einheit („Verlängern lassen“), solange sie gilt
     S.spracheGelb = S.spracheGelb.filter(function (id) { return pr.diagnosen.some(function (d) {
-        return d.baustein === id && d.regel === "sprache.lang"; }); });
-    S.korrekturen = await km.prompt("korrektur", [pr, S.spracheGelb]);
-    var fc = await km.prompt("fachcheck", [pr, Z.steckbrief_text]);
+        return (d.baustein === id && d.regel === "sprache.lang") || (!d.baustein && d.regel === id); }); });
+    // AP13.11 §8.9: gelbe Bitten nicht für von Hand geänderte Bausteine, rote Fehler bleiben
+    // AP13.30 §4a: mit der Mappe auch die Bitte um geplante Bausteine, die nach der Antwort leer blieben
+    S.korrekturen = await km.prompt("korrektur", [pr, S.spracheGelb, Z.mappe && Z.mappe.hand ? Object.keys(Z.mappe.hand) :
+        [], Z.mappe || null]);
+    // AP13.35 §3.1: die Bitte an den Chat mit genau einer Ausgabeanweisung (gen/prompt.py korrektur_bitte)
+    S.korrekturBitte = await km.prompt("korrektur_bitte", [S.korrekturen]);
+    // AP13.30 §4b: Thema der laufenden Einheit wie im Auftrag
+    var fc = await km.prompt("fachcheck", [pr, Z.steckbrief_text, Z.mappe || {}]);
     $("gegen-text-feld").value = fc.text;
     Z.fragen = S.fragenListe; Z.korrekturen = S.korrekturen;
     S.korrektur.text = "";
@@ -623,15 +745,17 @@ window.km = km;
 
   function zeichne() {
     S.zeichneSchritte();
-    if (!Z.mappe || !S.katalog) { S.knoepfe(); return; }
+    if (S.zeichneSequenz) S.zeichneSequenz();      // AP13.40 (sequenz.js), auch ohne Mappe: Umschalter in Schritt 1
+    if (!Z.mappe || !S.katalog) { S.knoepfe(); if (S.zeichneEditor) S.zeichneEditor(); return; }   // AP13.38: auch ohne Einheit blenden die Editor-Knöpfe sich aus
     felderFuellen();
     Array.prototype.forEach.call(document.querySelectorAll(".vorlage"), function (b) {
       b.setAttribute("aria-pressed", String(S.katalog.vorlagen[b.dataset.vorlage].name === (Z.mappe.einheit || {})
           .vorlage));
     });
     var v = (Z.mappe.einheit || {}).vorlage;
-    $("vorlage-zeile").textContent = inhalt() ? "Aufbau: " + (v || "eigener Aufbau") +
-        ". Du kannst ihn ändern, bis die erste Antwort eingefügt ist."
+    // AP13.35 §4.3: mit eigenem Plan heißt der Aufbau so, nicht nach der Voreinstellung
+    if (S.eigenerPlan && S.eigenerPlan()) v = editorText("eigener_plan");
+    $("vorlage-zeile").textContent = inhalt() ? "Aufbau: " + (v || "eigener Aufbau") + "."
       : "Wähle den Aufbau; die Bausteine darunter folgen ihm.";
     S.zeichneAussehen();
     S.zeichneKarten();
@@ -647,6 +771,8 @@ window.km = km;
     S.rueckmeldungFuellen();
     S.knoepfe();
     S.zeichneSchritte();
+    if (S.zeichneEditor) S.zeichneEditor();
+    if (S.zeichnePlan) S.zeichnePlan();
   }
 
   function felderFuellen() {
@@ -657,14 +783,16 @@ window.km = km;
     var werte = { "a-thema": e.thema || S.angaben.thema || "", "a-jahrgang": zgA ? "" : jgA, "a-zielgruppe": zgA,
       "a-minuten": e.minuten || S.angaben.minuten || "", "a-schulart": zgA ? "" : S.angaben.schulart || "",
       "f-schulart": zgF ? "" : S.angaben.schulart || "",
-      "fach": S.angaben.fach || "", "a-kontext": S.angaben.kontext || "", "m-kontext": S.angaben.kontext || "",
+      "fach": S.angaben.fach || "", "a-kontext": kontextJetzt(), "m-kontext": kontextJetzt(),
       "a-format": S.angaben.format, "a-familie": S.angaben.familie,
       "a-farbe": /^#/.test(S.angaben.farbe || "") ? "eigen" : S.angaben.farbe,
       "a-farbe-hex": /^#/.test(S.angaben.farbe || "") ? S.angaben.farbe : "",
       "a-abschluss": S.angaben.abschluss, "a-portionierung": S.angaben.portionierung, "a-chat": Z.mappe.chat || "",
       "a-material": Z.mappe.material || "", "f-thema": e.thema || "", "f-jahrgang": zgF ? "" : jgF,
           "f-zielgruppe": zgF, "f-minuten": e.minuten || 45 };
-    if (Z.mappe.anhaengen && !Z.mappe.bausteine.some(function (k) { return k.einheit === Z.mappe.anhaengen; })) {
+    if (Z.mappe.sequenz) werte["f-thema"] = Z.mappe.titel || e.thema || "";    // AP13.40: Thema der Sequenz
+    if (Z.mappe.anhaengen && Z.mappe.laufend !== Z.mappe.anhaengen && !Z.mappe.bausteine.some(function (k) {
+        return k.einheit === Z.mappe.anhaengen; })) {
       werte["f-thema"] = undefined; werte["f-minuten"] = undefined;    // nächste Einheit: Felder gehören der Lehrkraft
     }
     Object.keys(werte).forEach(function (id) {
@@ -685,13 +813,81 @@ window.km = km;
     ["material-grenze", "r-material-grenze"].forEach(function (id) {
       $(id).textContent = zeile; $(id).classList.toggle("fehler", zuViel); });
   }
-  Object.assign(S, { $: $, AUTO: AUTO, FARBEN: FARBEN, KOPIERT: KOPIERT, SCHRITTE: SCHRITTE,
+  // AP13.33 §2.1: Fokus an die erste Stelle der Liste (Element oder id), die zu sehen und bedienbar ist. Für Knöpfe, die
+  // sich beim Klick selbst ausblenden, sperren oder ersetzen: sonst fällt der Fokus auf body. -> Element oder null
+  function fokus(liste, ruhig) {
+    for (var i = 0; i < liste.length; i++) {
+      var e = typeof liste[i] === "string" ? $(liste[i]) : liste[i];
+      if (!e || !e.focus || !document.contains(e) || e.disabled || !e.getClientRects().length ||
+          e.closest("[hidden], [inert]")) continue;
+      e.focus({ preventScroll: !!ruhig });
+      if (document.activeElement === e) return e;
+    }
+    return null;
+  }
+  // AP13.36: Bedienung mit dem Finger; dort öffnet ein Fokus im Textfeld die Bildschirmtastatur
+  function beruehrung() { return !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches); }
+  // nur, wenn der Fokus nirgends mehr ist (body) oder in einem Teil, der gerade verschwindet
+  function fokusRetten(liste, teil) {
+    var a = document.activeElement;
+    if (a && a !== document.body && !(teil && teil.contains(a)) && a.getClientRects().length) return null;
+    return fokus(liste);
+  }
+
+  // AP13.33 §2.5: Kachelgruppen (role=radiogroup mit Knöpfen role=radio) wie native Radioknöpfe: ein Tab-Halt je Gruppe
+  // (die gewählte Kachel, sonst die erste), Pfeiltasten, Pos1 und Ende wechseln Fokus und Wahl (Klick auf die Kachel),
+  // Leertaste wählt. Gilt für jede Gruppe der Seite, auch für später gebaute (Beobachter auf dem Dokument). Eine Kachel
+  // mit `data-pfeilwahl` (Farbe „Eigene“ mit Farbwähler) bekommt statt des Klicks das Ereignis `km-pfeilwahl`: ihr
+  // Klick öffnete den Farbwähler, und der Fokus bliebe darin.
+  function radios(gruppe) {
+    return Array.prototype.filter.call(gruppe.querySelectorAll("[role=radio]"), function (r) {
+      return r.tagName !== "INPUT" && r.closest("[role=radiogroup]") === gruppe;
+    });
+  }
+  function bedienbar(r) { return !r.disabled && !r.hidden && !!r.getClientRects().length; }
+  function radioTabs() {
+    Array.prototype.forEach.call(document.querySelectorAll("[role=radiogroup]"), function (g) {
+      var rs = radios(g); if (!rs.length) return;
+      var halt = rs.filter(function (r) { return r.getAttribute("aria-checked") === "true" && bedienbar(r); })[0] ||
+          rs.filter(bedienbar)[0] || rs[0];
+      // das Attribut, nicht nur tabIndex: ein div ohne tabindex meldet -1 und ließe sich nicht fokussieren
+      rs.forEach(function (r) { var soll = r === halt ? "0" : "-1"; if (r.getAttribute("tabindex") !== soll) r.setAttribute("tabindex", soll); });
+    });
+  }
+  var radioPlan = 0;
+  function radioSpaeter() { if (!radioPlan) radioPlan = requestAnimationFrame(function () { radioPlan = 0; radioTabs(); }); }
+  if (window.MutationObserver) new MutationObserver(radioSpaeter).observe(document.documentElement, { subtree: true,
+      childList: true, attributes: true, attributeFilter: ["aria-checked", "hidden", "disabled", "open"] });
+  document.addEventListener("keydown", function (ev) {
+    var r = ev.target, schritt = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[ev.key];
+    if (!r || !r.getAttribute || r.getAttribute("role") !== "radio" || r.tagName === "INPUT" || ev.altKey || ev.ctrlKey ||
+        ev.metaKey) return;
+    var g = r.closest("[role=radiogroup]"); if (!g) return;
+    var rs = radios(g).filter(function (x) { return x === r || bedienbar(x); }), i = rs.indexOf(r);
+    if (i < 0 || (!schritt && ev.key !== "Home" && ev.key !== "End")) return;
+    ev.preventDefault();
+    var ziel = ev.key === "Home" ? rs[0] : ev.key === "End" ? rs[rs.length - 1] : rs[(i + schritt + rs.length) % rs.length];
+    if (ziel === r) return;
+    var wert = ziel.dataset.wert, sel = wert !== undefined ? "[role=radio][data-wert='" + CSS.escape(wert) + "']" : null;
+    ziel.focus();
+    if (ziel.hasAttribute("data-pfeilwahl")) ziel.dispatchEvent(new CustomEvent("km-pfeilwahl", { bubbles: true }));
+    else ziel.click();
+    // die Wahl kann die Gruppe neu zeichnen oder den Fokus woandershin schicken; er bleibt auf der gewählten Kachel
+    var zurueck = function () {
+      var x = document.contains(ziel) ? ziel : sel && g.isConnected ? g.querySelector(sel) : null;
+      if (x && document.activeElement !== x && bedienbar(x)) x.focus();
+    };
+    zurueck(); setTimeout(zurueck, 0);
+  });
+
+  Object.assign(S, { $: $, AUTO: AUTO, FARBEN: FARBEN, KOPIERT: KOPIERT, SCHRITTE: SCHRITTE, fokus: fokus,
+    fokusRetten: fokusRetten, radioTabs: radioTabs, beruehrung: beruehrung,
     STANDARD_FARBE: STANDARD_FARBE, Z: Z, ZWEIG_TEXT: ZWEIG_TEXT, auswertung: auswertung, autosave: autosave,
     bildGroesse: bildGroesse, bilderStandard: bilderStandard, bilderWert: bilderWert, bildwuensche: bildwuensche,
-    chatInfo: chatInfo, datumZeit: datumZeit, download: download, einheitTag: einheitTag, el: el,
-    erledigtBis: erledigtBis, fehlerText: fehlerText, fehlerZahl: fehlerZahl, felderFuellen: felderFuellen,
+    chatInfo: chatInfo, datumZeit: datumZeit, download: download, editorText: editorText, einheitTag: einheitTag, el: el,
+    erledigtBis: erledigtBis, fehlerText: fehlerText, fehlerZahl: fehlerZahl, gelbZahl: gelbZahl, felderFuellen: felderFuellen,
     formularname: formularname, geaendert: geaendert, heute: heute, hinweiseSichern: hinweiseSichern, hoehe: hoehe,
-    inhalt: inhalt, karteNach: karteNach, kb: kb, kopieren: kopieren, ladenStarten: ladenStarten, markiert: markiert,
+    inhalt: inhalt, einheitName: einheitName, einheitVon: einheitVon, mehrereEinheiten: mehrereEinheiten, karteNach: karteNach, kb: kb, kontextJetzt: kontextJetzt, kopieren: kopieren, kopierenSpaeter: kopierenSpaeter, ladenStarten: ladenStarten, markiert: markiert,
     mitMinuten: mitMinuten, neuPruefen: neuPruefen, nrVon: nrVon, oberText: oberText, schritt: schritt,
     sektion: sektion, sichtbareSchritte: sichtbareSchritte, status: status, teileOffen: teileOffen, texte: texte,
     zeichne: zeichne, zeit: zeit, zeitSelbst: zeitSelbst, zweig: zweig });

@@ -15,10 +15,31 @@
   var BUCHST = "ABCDEFGHIJ";
   function zeichneFragen() {
     var ol = $("fragen-liste"); ol.innerHTML = "";
-    $("fragen-zeile").textContent = S.fragenListe.length
-      ? S.fragenListe.length + " Fragen mit ihren Lösungen, ohne Rückmeldungen. Prüfe, ob jede Lösung stimmt." : "";
+    // AP13.35 §4.2: mit mehreren Einheiten die Fragen der laufenden offen, die früheren je Einheit zugeklappt darunter
+    var mehr = S.mehrereEinheiten(), jetzt = S.einheitTag() || "e1", frueher = {}, reihe = [];
+    var eigene = S.fragenListe.filter(function (f) {
+      var e = S.einheitVon(S.karteNach(f.baustein));
+      if (!mehr || e === jetzt) return true;
+      if (!frueher[e]) { frueher[e] = []; reihe.push(e); }
+      frueher[e].push(f);
+      return false;
+    });
+    $("fragen-zeile").textContent = eigene.length
+      ? eigene.length + " Fragen mit ihren Lösungen, ohne Rückmeldungen. Prüfe, ob jede Lösung stimmt." : "";
+    if (mehr && eigene.length) ol.appendChild(el("li", { cls: "f-einheit" }, [el("h3", { cls: "f-einheit-t",
+        text: S.einheitName(jetzt) })]));
+    fragenZeichnen(ol, eigene);
+    reihe.forEach(function (e) {
+      var unter = el("ol", { cls: "fragen-liste" });
+      fragenZeichnen(unter, frueher[e]);
+      ol.appendChild(el("li", { cls: "f-einheit f-frueher" }, [el("details", {}, [el("summary", { cls: "f-einheit-t",
+          text: S.editorText("fragen_frueher", { name: S.einheitName(e), zahl: frueher[e].length }) }), unter])]));
+    });
+    zeichneGegen();
+  }
+  function fragenZeichnen(ol, liste) {
     var letzter = null;
-    S.fragenListe.forEach(function (f) {
+    liste.forEach(function (f) {
       var kopf = f.baustein !== letzter ? el("p", { cls: "f-baustein" }, [el("button", { type: "button",
           cls: "hinweis-link", "data-ziel": f.baustein, text: f.titel })]) : null;
       letzter = f.baustein;
@@ -35,15 +56,28 @@
       ol.appendChild(el("li", { cls: "frage" }, [kopf, el("p", { cls: "f-frage", text: (f.art === "rf" ?
           "Richtig oder falsch: " : "") + f.frage }), optionen, loesung]));
     });
-    zeichneGegen();
   }
   $("fragen-liste").onclick = function (ev) { var z = ev.target.closest("[data-ziel]"); if (z) zuKarte(z.dataset.ziel);
       };
-  function durchgesehen() { if (Z.mappe) { Z.mappe.durchsicht = true; geaendert(); gehe(7, "herunterladen"); } }
+  // Nachtrag AP13.41: „Ohne Durchsicht weiter“ merkt `durchsicht: "ohne"` (zählt wie durchgesehen, die Zusammenfassung
+  // sagt aber, was geschah)
+  function durchgesehen(ohne) {
+    if (!Z.mappe) return;
+    Z.mappe.durchsicht = ohne === true ? "ohne" : true; delete Z.mappe.durchsicht_neu;
+    geaendert(); gehe(7, "herunterladen");
+  }
+  // AP13.33 §1.4: aus dem Schritt Datei zurück zu den Fragen, die sich geändert haben
+  $("zu-durchsicht").onclick = function () { if (Z.mappe) gehe(6, ersteWahl()); };
+  // §2.3: der Schritt beginnt bei der Wahl des Wegs (der gewählten, sonst der ersten Kachel), nicht beim Hauptknopf
+  function ersteWahl() {
+    var w = $("durchsicht-wahl").querySelector("[aria-checked=true]:not([hidden])") ||
+        $("durchsicht-wahl").querySelector("[data-weg]:not([hidden])");
+    return w && S.fragenListe.length ? w.id : "durchsicht-ok";
+  }
   $("durchsicht-ok").onclick = function () { if (!$("durchsicht-ok").disabled) durchgesehen(); };
-  $("ohne-durchsicht").onclick = durchgesehen;
+  $("ohne-durchsicht").onclick = function () { durchgesehen(true); };
   function nachBildern() {
-    if (S.fragenListe.length && !Z.mappe.durchsicht) gehe(6, "durchsicht-ok"); else gehe(7, "herunterladen");
+    if (S.fragenListe.length && !Z.mappe.durchsicht) gehe(6, ersteWahl()); else gehe(7, "herunterladen");
   }
   $("weiter-5").onclick = function () {
     if (!Z.mappe) return;
@@ -146,6 +180,8 @@
     $("durchsicht-satz").textContent = n ? (n === 1 ? "Eine Frage" : n + " Fragen") + " mit Lösungen. Wie prüfst du, " +
         "ob die Lösungen stimmen?" : "In dieser Einheit stehen noch keine Fragen.";
     $("durchsicht-wahl").hidden = !n;
+    var neuSatz = S.durchsichtNeuText ? S.durchsichtNeuText() : "";
+    $("durchsicht-neu").textContent = neuSatz; $("durchsicht-neu").hidden = !neuSatz;
     $("weg-ki").hidden = !ki;
     Array.prototype.forEach.call($("durchsicht-wahl").querySelectorAll("[data-weg]"), function (b) {
       b.setAttribute("aria-checked", String(b.dataset.weg === w));
@@ -232,6 +268,9 @@
     Z.mappe.durchsicht_weg = b.dataset.weg;
     autosave();
     zeichneGegen();
+    // AP13.33 §2.3: bei „Ich prüfe selbst“ auf die erste Frage (im Bild), sonst auf den Knopf des Wegs
+    var erste = b.dataset.weg === "selbst" && $("fragen-liste").querySelector("li.frage");
+    if (erste) { erste.tabIndex = -1; erste.scrollIntoView({ block: "nearest" }); erste.focus({ preventScroll: true }); return; }
     var f = { ki: "gegen-senden", chat: "gegen-kopieren", selbst: "durchsicht-ok" }[b.dataset.weg];
     if ($(f) && !$(f).disabled) $(f).focus({ preventScroll: true });
   };
@@ -334,6 +373,46 @@
     return einheitenImKurs().filter(function (e) { return e !== "e1" && imp.indexOf(e) < 0; });
   }
 
+  // AP13.42 B6: Prüfsumme der Bausteine einer Einheit; „Ja, die Einheit ist im Kurs“ merkt sie, Schritt 7 vergleicht
+  function einheitStand(tag) {
+    var s = ((Z.pruefung && Z.pruefung.bausteine) || []).filter(function (b) {
+      var k = S.karteNach(b.id); return k && S.einheitVon(k) === tag; })
+      .map(function (b) { return b.id + "\u0001" + (b.titel || "") + "\u0001" + (b.text || ""); }).join("\u0000"), h = 5381;
+    for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+    return (h >>> 0).toString(36) + "." + s.length;
+  }
+  function geaenderteImportierte() {
+    var m = Z.mappe, st = (m && m.importiert_stand) || {};
+    return ((m && m.importiert) || []).filter(function (t) { return st[t] && st[t] !== einheitStand(t); });
+  }
+  // Nachlieferung mit Änderungen an einer schon importierten Einheit: sie steckt nur in der ganzen Datei
+  S.nachHinweis = function () {
+    var p = $("nl-hinweis"), b = $("herunterladen-ganz"), o = S.katalog && S.katalog.oberflaeche;
+    var neu = Z.mappe && o && !$("herunterladen").hidden && (!Z.bau || Z.bau.nachlieferung) ? nachlieferung() : [];
+    var geaendert = neu.length ? geaenderteImportierte() : [];
+    p.hidden = b.hidden = !geaendert.length;
+    if (!geaendert.length) return;
+    p.textContent = o.nachlieferung_geaendert.replace("{namen}", geaendert.map(function (t) { return S.einheitName(t); })
+        .join(", "));
+    b.textContent = o.nachlieferung_ganz;
+  };
+  $("herunterladen-ganz").onclick = async function () {
+    S.bauLaeuft = true; knoepfe(); status("Datei wird erstellt …", "lauf");
+    try {
+      await km.baue(Object.assign({}, km.bauOptionen || {}));
+      S.bauLaeuft = false;
+      if (Z.bau && Z.bau.mbz) {
+        Z.bau.nachlieferung = null;
+        // die ganze Datei kommt als neuer Kurs: „Importiert?“ fragt wieder, und das Ja merkt den Stand aller Einheiten neu
+        Z.mappe.importiert = []; Z.mappe.importiert_stand = {}; autosave();
+        Z.bau.downloadName = (await km.mappeFn("dateiname", [Z.mappe, heute()])).replace(/\.kursmappe\.zip$/, ".mbz");
+        herunterladen(); status("Bereit", "ok");
+      } else status("Die Datei ließ sich nicht erstellen.", "fehler");
+      zeichneWiederherstellen(); knoepfe(); zeichneSchritte();
+      S.fokusRetten(["herunterladen-ganz"]);
+    } catch (e) { S.bauLaeuft = false; zeigeFehler(e); knoepfe(); }
+  };
+
   function zeichneWiederherstellen() {
     var ol = $("wh-schritte"); ol.innerHTML = "";
     var delta = Z.bau && Z.bau.nachlieferung;
@@ -434,7 +513,9 @@
       }
       else status("Die Datei ließ sich nicht erstellen.", "fehler");
       zeichneWiederherstellen(); knoepfe(); zeichneSchritte(); rueckmeldungFuellen();
-    } catch (e) { S.bauLaeuft = false; zeigeFehler(e); knoepfe(); }
+      // AP13.33 §2.1: der Knopf war beim Bauen gesperrt (Fokus auf body); der Fokus kehrt zu ihm zurück
+      S.fokusRetten(["herunterladen", "importiert-ja"]);
+    } catch (e) { S.bauLaeuft = false; zeigeFehler(e); knoepfe(); S.fokusRetten(["herunterladen"]); }
   };
   function herunterladen() {
     var b = Z.bau; if (b && b.mbz) download(b.mbz, b.downloadName || b.dateiname, "application/vnd.moodle.backup");
@@ -445,23 +526,40 @@
   };
   $("importiert-ja").onclick = function () {
     if (!Z.mappe) return;
-    var imp = Z.mappe.importiert || [];
-    einheitenImKurs().forEach(function (e) { if (imp.indexOf(e) < 0) imp.push(e); });
+    var imp = Z.mappe.importiert || [], st = Z.mappe.importiert_stand = Z.mappe.importiert_stand || {};
+    // nur neu importierte Einheiten bekommen ihren Stand; eine nach dem Import geänderte bleibt als geändert erkannt
+    einheitenImKurs().forEach(function (e) { if (imp.indexOf(e) < 0) { imp.push(e); st[e] = einheitStand(e); } });
     Z.mappe.importiert = imp;
     zeichneWiederherstellen(); autosave();
     $("naechste-einheit").focus();
   };
-  $("naechste-einheit").onclick = function () {
-    if (!Z.mappe) return;
+  // Nächste Einheit vorbereiten: Nummer, Teil „e<n>“, Bau ungültig, KI-Hinweis und Material gehören zur vorigen
+  function naechsteEinheit() {
     var n = (Z.mappe.einheiten || einheitenImKurs().length) + 1;
     Z.mappe.einheiten = n;
     Z.mappe.anhaengen = "e" + n;
     Z.bau = null;
     if (S.angaben.ki_hinweis === "ja") kursangabe({ ki_hinweis: "nein" });   // AP13.15: je Einheit neu gesetzt
-    $("f-thema").value = ""; $("f-minuten").value = (Z.mappe.einheit && Z.mappe.einheit.minuten) || 45;
     delete Z.mappe.material;                      // AP13.19 §1: das Material gehört zur vorigen Einheit
+  }
+  $("naechste-einheit").onclick = function () {
+    if (!Z.mappe) return;
+    naechsteEinheit();
+    $("f-thema").value = ""; $("f-minuten").value = (Z.mappe.einheit && Z.mappe.einheit.minuten) || 45;
     gehe(1, "f-thema");
     $("s1-titel").textContent = "Worum geht es in der nächsten Einheit?";
+  };
+  // AP13.30: „Weitere Einheit“ im Editor: derselbe Weg wie „Einheit hinzufügen“ und Schritt 1 (schritte.js
+  // einheitAnhaengen), nur mit Thema und Dauer; Zielgruppe bzw. Jahrgangsstufe, Schulart, Aussehen, Lehrplan und Chat
+  // bleiben die des Kurses. Die Schrittfolge springt nicht. -> Versprechen, erfüllt nach der Prüfung
+  S.weitereEinheit = function (thema, minuten) {
+    if (!Z.mappe) return Promise.resolve();
+    var alt = Z.mappe.einheit || {};
+    var e = { thema: thema, jahrgang: alt.jahrgang || "", minuten: minuten };
+    if (alt.jahrgang_zuletzt) e.jahrgang_zuletzt = alt.jahrgang_zuletzt;
+    naechsteEinheit();
+    // AP13.35 §4.1: in „Ich steuere“ plant die Lehrkraft auch diese Einheit im Plan (derselbe Weg wie Schritt 2)
+    return S.einheitAnhaengen(e, zweig() !== "steuer");
   };
   $("speichern").onclick = async function () {
     try {
@@ -484,8 +582,11 @@
         /* Hinweis steht schon unter der Kursdatei */ } }
     leeren();
     weiterAnzeigen();
+    // AP13.36 §1.1: der Knopf ist weg; der Fokus geht ins Feld „Thema“, am Handy auf die Überschrift (keine Tastatur)
+    S.fokus(S.beruehrung() ? [document.querySelector("#start .s-kopf"), "f-thema"] : ["f-thema"], true);
   };
   function leeren() {
+    delete $("rueckmeldung").dataset.offen; delete $("rueckmeldung").dataset.zu;
     Z.mappe = null; Z.kurs_md = ""; Z.steckbrief_text = ""; Z.assets = {}; Z.pruefung = null; Z.kennzahlen = null;
         Z.bau = null; Z.vergleich = null; korrigieren = {}; gegenFuer = null;
     S.rueckgaengig = null; $("rueckgaengig").hidden = true; S.angaben = {};
@@ -507,30 +608,40 @@
     var a = Date.parse(m.zeit_start || ""), b = Date.parse(m.zeit_download || "");
     return a && b && b >= a ? Math.round((b - a) / 60000) : null;
   }
+  // AP13.34 §5: Ereignisse „neu.auftrag“ sind Aufträge für neue oder neu geschriebene Karten, keine Korrekturen einer
+  // Antwort; ohne echte Korrektur stehen weder „Korrekturrunden“ noch „Korrekturen“ im Rückmeldungstext
+  function echteKorrekturen(m) {
+    return ((m && m.korrekturen) || []).filter(function (x) { return x.regel !== "neu.auftrag"; });
+  }
   function runden(m) {
     var tag = S.einheitTag();
-    return ((m && m.korrekturen) || []).filter(function (x) { return (x.einheit || "") === tag; })
+    return echteKorrekturen(m).filter(function (x) { return (x.einheit || "") === tag; })
       .reduce(function (n, x) { return Math.max(n, x.runde || 0); }, 0);
   }
   function rueckmeldungText() {
     var m = Z.mappe || {}, e = m.einheit || {}, c = chatInfo(m.chat), min = minutenBisDatei(m);
     var ohneLp = S.angaben.lehrplanbezug === "nein", jg = ohneLp ? S.jahrgangZahl(e.jahrgang || S.angaben.jahrgang) :
         e.jahrgang || S.angaben.jahrgang;
+    var echt = echteKorrekturen(m).length > 0;
     var imp = einheitenImKurs().every(function (x) { return (m.importiert || []).indexOf(x) >= 0; });
     var frei = rmErgebnis && rmErgebnis !== "lief" ? ["Was ist passiert?", $("rm-passiert").value.trim(), "",
       "Fehlermeldung der Plattform:", $("rm-meldung").value.trim(), ""] : [];
     return ["Rückmeldung zu Kursmühle " + ((S.katalog && S.katalog.version) || ""), "",
-      "Ergebnis: " + (ERGEBNIS[rmErgebnis] || "–"), "Importiert: " + (Z.mappe && imp ? "ja" : "nein"),
-      "Minuten bis zur Datei: " + (min === null ? "–" : min), "Korrekturrunden: " + runden(m),
+      // AP13.35 §4.3: „ja“ erst, wenn die Lehrkraft es bestätigt hat; vorher weiß die Mühle es nicht
+      "Ergebnis: " + (ERGEBNIS[rmErgebnis] || "–"), "Importiert: " + (Z.mappe && imp ? "ja" : "–"),
+      "Minuten bis zur Datei: " + (min === null ? "–" : min)]
+      .concat(echt ? ["Korrekturrunden: " + runden(m)] : [], [
       "Chat: " + (c ? (m.chat === "eigene" && S.kiName ? S.kiName() : c.text) : "–"), "Fach: " + (S.angaben.fach || "–"),
       ohneLp && !jg ? "Lehrplanbezug: nein" : "Jahrgangsstufe: " + (jg || "–"),
-      "Vorlage: " + (e.vorlage || "–") + (m.zweig ? " (" + ZWEIG_TEXT[m.zweig] + ")" : ""), korrekturZeile(m), ""]
-      .concat(frei, ["Wo hat es gestockt?", "", "", "Was hättest du anders gewollt?", "", "",
+      // AP13.35 §4.3: die Vorlage nur, wenn eine gewählt wurde; ein eigener Plan heißt so
+      "Vorlage: " + (S.eigenerPlan() ? S.editorText("eigener_plan") : S.vorlageGewaehlt() && e.vorlage || "–") +
+          (m.zweig ? " (" + ZWEIG_TEXT[m.zweig] + ")" : "")], echt ? [korrekturZeile(m)] : [],
+      [""], frei, ["Wo hat es gestockt?", "", "", "Was hättest du anders gewollt?", "", "",
           "Nimmst du es für deine nächste Einheit wieder? Wenn nicht, woran liegt es?", "", ""]).join("\n");
   }
   // „Korrekturen: 2 · mindest.quiz, zeit.annahme · Chat: ByLKI“ aus den Ereignissen der Kursmappe
   function korrekturZeile(m) {
-    var k = (m && m.korrekturen) || [];
+    var k = echteKorrekturen(m);
     var regeln = k.map(function (x) { return x.regel; }).filter(function (r, i, a) { return r && a.indexOf(r) === i; });
     var chats = k.map(function (x) { return x.chat; }).filter(function (c, i, a) { return c && a.indexOf(c) === i; });
     return "Korrekturen: " + k.length + (regeln.length ? " · " + regeln.join(", ") : "") + (chats.length ? " · Chat: " +
@@ -574,13 +685,30 @@
     if (rmErgebnis !== "lief") $("rm-passiert").focus({ preventScroll: true });
   };
   ["rm-passiert", "rm-meldung"].forEach(function (id) { $(id).addEventListener("input", rueckmeldungFuellen); });
+  // AP13.36 §1.4: der Bereich lässt sich schließen (Knopf „Schließen“ und Esc); der Fokus geht zurück an die Stelle, die
+  // ihn geöffnet hat (`rmDavor`), sonst zu einem der Links
+  var rmDavor = null;
   function rueckmeldungOeffnen() {
-    $("rueckmeldung").dataset.offen = "1";
+    var a = document.activeElement, sec = $("rueckmeldung");
+    if (a && a !== document.body && !sec.contains(a) && !a.closest("dialog")) rmDavor = a;
+    delete sec.dataset.zu;
+    sec.dataset.offen = "1";
     rueckmeldungFuellen();
     zeichneSchritte();
-    $("rueckmeldung").scrollIntoView({ block: "start" });
+    sec.scrollIntoView({ block: "start" });
     $("rm-text-kopieren").focus({ preventScroll: true });
   }
+  function rueckmeldungSchliessen() {
+    var sec = $("rueckmeldung"), davor = rmDavor;
+    rmDavor = null;
+    delete sec.dataset.offen; sec.dataset.zu = "1";
+    zeichneSchritte();
+    S.fokus([davor, "rueckmeldung-auf", "fuss-rueckmeldung"]);
+  }
+  $("rm-zu").onclick = rueckmeldungSchliessen;
+  $("rueckmeldung").addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape" && !ev.defaultPrevented) { ev.preventDefault(); rueckmeldungSchliessen(); }
+  });
   $("rueckmeldung-auf").onclick = rueckmeldungOeffnen;
   $("fuss-rueckmeldung").onclick = rueckmeldungOeffnen;
   $("rm-mail").addEventListener("click", function () { bitteMerken({ nie: true }); });
@@ -652,9 +780,8 @@
       try { localStorage.setItem(HINWEIS, "aus"); } catch (e) { /* ohne Speicher */ }
     }
     if (d.open) d.close();
-    if (zurueck && hinweisDavor && document.contains(hinweisDavor) && !hinweisDavor.disabled && !hinweisDavor.hidden) {
-      hinweisDavor.focus({ preventScroll: true });
-    }
+    // AP13.33 §2.1: ohne Stelle davor (Seite gerade geladen) auf das erste Feld oder „Weiter mit …“
+    if (zurueck) S.fokus([hinweisDavor, "weiter-knopf", "f-thema", "kopf-menue"], true);
     hinweisDavor = null;
   }
   var hinweisDavor = null;
@@ -675,6 +802,8 @@
   $("hinweis-aufbau-zu").onclick = function () { hinweisSchliessen(true); };
   $("hinweis-aufbau").addEventListener("click", function (ev) { if (ev.target === ev.currentTarget) hinweisSchliessen(true); });
   $("hinweis-aufbau").addEventListener("cancel", function () {   // Escape wirkt wie „Schließen“
+    // „Nicht mehr anzeigen“ sofort merken: der Dialog ist zu, bevor die Aufgabe unten läuft
+    if ($("hinweis-aufbau-nie").checked) { try { localStorage.setItem(HINWEIS, "aus"); } catch (e) { /* ohne Speicher */ } }
     setTimeout(function () { hinweisSchliessen(true); }, 0);
   });
 

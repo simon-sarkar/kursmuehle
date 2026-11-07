@@ -18,7 +18,8 @@
   --ergebnis-text: #2a2a2a;      /* Schrift auf Ocker, in beiden Schemata */
   --ocker-tief: #8a6416;
   --link: #2a2a2a;
-  --fokus: #d9a441;
+  --fokus: #a07416;              /* Fokusring hell: mindestens 3 : 1 auf Weiß, Creme, Lehrkraft-Ocker und der dunklen Kopfleiste (AP13.36) */
+  --feld-rand: var(--linie);     /* Rahmen von Eingabefeldern; im dunklen Schema stärker (AP13.36) */
   --haupt: #2a2a2a;              /* Hauptknopf, aktive Schrittnummer */
   --haupt-text: #f3e9d8;
   --haupt-hover: #3d3d3d;
@@ -52,6 +53,9 @@
   --leise: #b9ae9c;
   --linie: #423e37;
   --rand-linie: #4a463e;
+  --fokus: #d9a441;
+  --feld-rand: #8f8678;          /* 3,3 : 1 auf dem Ocker der Lehrkraft, 4,8 : 1 auf der Fläche */
+  --platzhalter: #aaa090;        /* 4,6 : 1 auf dem Ocker der Lehrkraft, 6,7 : 1 auf der Fläche */
   --ocker-tief: #d9a441;
   --link: #f3e9d8;
   --haupt: #f3e9d8;
@@ -90,7 +94,7 @@ p { margin: 0 0 10px; }
 .kopf .innen { max-width: 1180px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }   /* Lesebreite wie .seite.mit-rand, Band volle Breite (wie die Startseite) */
 .marke { display: inline-flex; align-items: center; gap: 10px; color: var(--kopf-text); text-decoration: none; font-weight: 700; font-size: 1.1rem; }
 .marke img { display: block; border-radius: 7px; box-shadow: 0 0 0 1px var(--kopf-strich); }
-.status { margin: 0; font-size: 0.9rem; color: var(--kopf-leise); flex: 1 1 12rem; }
+.status { margin: 0; font-size: 0.9rem; color: var(--kopf-leise); flex: 1 1 4rem; }   /* AP13.11: schmale Basis, die Links passen in eine Zeile */
 .status::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; background: var(--leer); vertical-align: 1px; }
 .status.ok::before { background: var(--kopf-ok); }
 .status.lauf::before { background: var(--ocker); }
@@ -106,6 +110,7 @@ p { margin: 0 0 10px; }
 .kopf-x { background: none; border: 0; border-radius: 6px; width: 36px; height: 36px; font: inherit; font-size: 1.35rem; line-height: 1;
   color: inherit; cursor: pointer; opacity: 0.8; }
 .kopf-x:hover { opacity: 1; background: var(--kopf-hover); }
+.kopf-x:focus-visible { opacity: 1; }   /* Ring sonst nur mit 80 % Deckkraft, unter 3:1 (Sachprüfung AP13.36) */
 .kopf-menue { display: none; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 0;
   border-radius: 6px; background: none; color: inherit; cursor: pointer; }
 .kopf-menue:hover, .kopf-menue[aria-expanded=true] { background: var(--kopf-hover); }
@@ -141,7 +146,8 @@ p { margin: 0 0 10px; }
 .textlink { background: none; border: 0; padding: 6px 0; font: inherit; color: var(--link); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .feld { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: var(--leise); }
 input[type=text], input[type=number], select, textarea { font: inherit; font-size: 16px; color: var(--text); background: var(--flaeche);
-  border: 1px solid var(--linie); border-radius: 8px; padding: 9px 10px; min-height: 44px; width: 100%; }
+  border: 1px solid var(--feld-rand); border-radius: 8px; padding: 9px 10px; min-height: 44px; width: 100%; }
+:root[data-theme="dark"] ::placeholder { color: var(--platzhalter); opacity: 1; }
 textarea { min-height: 0; resize: vertical; }
 select { appearance: auto; }
 .feld-breit { grid-column: 1 / -1; }
@@ -194,13 +200,52 @@ select { appearance: auto; }
 .start-form { display: grid; grid-template-columns: 1fr 12rem 9rem 7rem; gap: 12px; align-items: end; }
 .start-form .knopf { grid-column: 1 / -1; justify-self: start; min-width: 9rem; }
 .zeit-vorab { grid-column: 1 / -1; margin: -4px 0 0; font-size: 0.85rem; }
+/* AP13.40: Sequenz (sequenz.js): Umschalter in Schritt 1, Themen je Stunde, Stunden im Plan, Übersicht in Schritt 4 */
+.seq-zeile { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 16px; }
+.seq-zeile[hidden] { display: none; }
+.seq-art .aus-kachel { min-width: 96px; }
+.seq-stunden-l { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 10px; flex: 1 1 16rem; min-width: 0; }
+.seq-stunden-l .feld-kopf { color: var(--leise); }
+button.info-knopf { border: 0; background: transparent; padding: 0; font: inherit; color: inherit; cursor: pointer; }
+.seq-thema-zeile { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 14px; }
+.seq-thema-zeile .seq-thema-l { flex: 1 1 100%; margin: 0; }
+.seq-thema-zeile .seq-thema { flex: 1 1 16rem; min-width: 0; max-width: 32rem; }
+.seq-hinweis { margin: 6px 0; overflow-wrap: anywhere; }
+.seq-stunden-l input { flex: none; width: 5.5rem; }
+.seq-stunden-l .info-text { flex: 1 1 100%; }
+@media (min-width: 641px) { .start-form.mit-sequenz { grid-template-columns: 1fr 11rem 7rem 9.5rem; } }
+.r-stunden { margin-bottom: 14px; }
+.r-stunden-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 6px 14px; }
+.r-stunde { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.r-stunde-nr { flex: none; min-width: 4.8rem; font-size: 0.9rem; color: var(--leise); }
+.r-stunde input { flex: 1 1 auto; min-width: 0; }
+.seq-leiste { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 6px; padding: 12px; border: 1px solid var(--linie);
+  border-radius: var(--rund); background: var(--flaeche); }
+.seq-leiste .unterkopf { margin: 0; }
+.seq-reiter-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.seq-reiter { gap: 6px; }
+.seq-reiter .aus-kachel { flex-direction: row; justify-content: center; min-width: 0; padding: 6px 10px; }
+.seq-reiter-zahl { color: var(--leise); font-weight: 400; }
+.seq-ziel { margin: 0; }
+.sequenz-box { margin-bottom: 14px; padding: 12px; border: 1px solid var(--linie); border-radius: var(--rund); background: var(--flaeche); }
+.sequenz-box p { margin: 0 0 6px; }
+.seq-kopf { font-weight: 650; overflow-wrap: anywhere; }
+.seq-liste { margin: 8px 0 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.seq-stunde { display: flex; flex-direction: column; gap: 2px; padding-left: 10px; border-left: 3px solid var(--linie);
+  overflow-wrap: anywhere; }
+.seq-stunde.jetzt { border-left-color: var(--text); }
+.seq-stunde.fertig .seq-st-stand { color: var(--ok, inherit); }
+.seq-st-teile, .seq-st-ziel { font-size: 0.88rem; }
+.seq-knoepfe { margin-top: 8px; flex-wrap: wrap; }
+.sequenz-weiter { margin-top: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.sequenz-weiter p { flex: 1 1 100%; margin: 0; }
 
 /* 2 Zweige, Vorlagen, Mehr */
 .zweige { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 .zweig { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 16px; border-radius: var(--rund); border: 1px solid var(--linie);
   background: var(--flaeche); font: inherit; color: var(--text); cursor: pointer; }
 .zweig:hover { border-color: var(--text); }
-.zweig[aria-pressed=true] { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); background: var(--gewaehlt); }
+.zweig[aria-checked=true] { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); background: var(--gewaehlt); }
 .zweig-name { font-weight: 700; font-size: 1.1rem; }
 .zweig-zeile { color: var(--leise); font-size: 0.93rem; }
 .steuer-teil { margin-top: 6px; }
@@ -360,6 +405,7 @@ select { appearance: auto; }
 .text-art label, .modus label { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 6px 12px; border-radius: 8px;
   background: var(--flaeche); border: 1px solid var(--linie); cursor: pointer; font-size: 0.95rem; }
 .text-art label:has(input:checked), .modus label:has(input:checked) { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
+.modus-satz { margin: -4px 0 10px; font-size: 0.92rem; }   /* AP13.41 §3.3 */
 .text-art input, .modus input { accent-color: var(--ocker-tief); margin: 0; }
 .teil-wahl { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 8px; }
 .teil-knopf[aria-pressed=true] { color: var(--text); font-weight: 650; background: var(--creme); }
@@ -439,6 +485,8 @@ select { appearance: auto; }
 .teil-stand { margin-top: 14px; padding: 12px 14px; border-radius: var(--rund); background: var(--creme); }
 .teil-stand p { margin: 0 0 8px; }
 .teil-stand .stand { margin: 6px 0 0; }
+.k-korrektur-ort { list-style: none; padding: 0 14px 12px; }
+.k-korrektur-ort .korrektur { margin-top: 0; }
 .korrektur { margin-top: 14px; padding: 12px 14px; border: 1px solid var(--fehler); border-radius: var(--rund); background: var(--flaeche); }
 .korrektur .unterkopf { margin-top: 0; }
 .korrektur-liste { margin: 0 0 10px; padding-left: 18px; font-size: 0.93rem; }
@@ -453,6 +501,7 @@ select { appearance: auto; }
 .karten > .karte:first-child, .karten > .k-zwischen:first-child + .karte { border-top: 0; }
 .karte.neu { box-shadow: inset 4px 0 0 var(--text); }
 .karte.aus { opacity: 0.62; }
+.karte.aus:focus-within { opacity: 1; }
 .k-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 0.85rem; color: var(--leise); }
 .k-nr { min-width: 1.6em; height: 1.6em; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
   background: var(--creme); color: var(--text); font-weight: 650; font-size: 0.8rem; }
@@ -566,6 +615,10 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .fragen-liste { list-style: none; margin: 0 0 12px; padding: 0; border: 1px solid var(--linie); border-radius: var(--rund); }
 .frage { padding: 12px 14px; border-top: 1px solid var(--linie); }
 .frage:first-child { border-top: 0; }
+.f-einheit { padding: 10px 14px; border-top: 1px solid var(--linie); background: var(--grund); }
+.f-einheit:first-child { border-top: 0; }
+.f-frueher summary { cursor: pointer; color: var(--link); }
+.f-frueher .fragen-liste { margin: 8px 0 0; background: var(--flaeche); }
 .f-baustein { margin: 0 0 6px; font-size: 0.85rem; color: var(--leise); }
 .f-frage { margin: 0 0 4px; font-weight: 600; }
 .f-optionen { list-style: none; margin: 0; padding: 0; font-size: 0.95rem; }
@@ -609,6 +662,8 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 
 /* Rückmeldung */
 .rueckmeldung { background: var(--flaeche); border-radius: var(--rund); padding: 16px; margin: 0 0 12px; box-shadow: 0 1px 2px var(--schatten); }
+.rm-kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.rm-kopf h2 { margin: 0 0 10px; }
 .rueckmeldung textarea { margin-top: 10px; font-size: 15px; }
 .rm-felder { display: grid; gap: 8px; margin: 0 0 12px; }
 .rm-felder textarea { margin-top: 4px; }
@@ -688,6 +743,19 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
   .kopf.menue-auf .kopf-links { display: flex; }
   .kopf-links .kopf-link { display: flex; align-items: center; min-height: 44px; padding: 8px 16px; text-align: left; }
 }
+/* AP13.11: zwischen 641 und 1199 px passen die Textlinks (mit „Einheit ansehen und bearbeiten“) nicht in eine Zeile;
+   dort stehen sie im Menü wie auf dem Handy, Status und Sicherung bleiben in der Zeile */
+@media (min-width: 641px) and (max-width: 1199px) {
+  .kopf { position: relative; }
+  .kopf .innen { flex-wrap: nowrap; }
+  .status, .kopf-stand { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kopf-menue { display: inline-flex; margin-left: auto; }
+  .kopf-links { display: none; position: absolute; top: 100%; right: 8px; z-index: 40; min-width: 15rem; flex-direction: column;
+    align-items: stretch; gap: 0; padding: 4px 0; background: var(--kopf); border-radius: 0 0 10px 10px;
+    box-shadow: 0 8px 18px var(--schatten); }
+  .kopf.menue-auf .kopf-links { display: flex; }
+  .kopf-links .kopf-link { display: flex; align-items: center; min-height: 44px; padding: 8px 16px; text-align: left; }
+}
 
 /* Schleife: drei Wege unter der Karte; weggelassene Karte gestrichen */
 .ausweg { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--linie); border-left: 4px solid var(--warn); border-radius: 8px; background: var(--warn-flaeche); }
@@ -710,3 +778,256 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
   color: var(--link); cursor: pointer; font-size: 1rem; line-height: 1; user-select: none; }
 .info-knopf:hover, .info-knopf[aria-expanded=true] { background: var(--creme); }
 .info-text { background: var(--creme); border-radius: var(--rund); padding: 10px 12px; line-height: 1.45; }
+/* AP13.11: Ansicht „Einheit ansehen und bearbeiten“ (editor.js). Eine Fläche über der Schrittfolge; ab 1100 px links die
+ * Vorschau in Lesebreite, rechts die Liste der Bausteine; schmaler die Liste als aufklappbare Leiste oben. Jeder Baustein
+ * steht auf weißer Fläche wie auf der Kursseite; Knöpfe sind immer sichtbar. „Von Hand geändert“ in Ocker wie alles, was
+ * von der Lehrkraft kommt. */
+.editor { width: 100vw; max-width: 100vw; height: 100vh; max-height: 100vh; margin: 0; padding: 0; border: 0; background: var(--grund);
+  color: var(--text); overflow: hidden; overflow: clip; }
+.editor[open] { display: flex; flex-direction: column; }
+.editor::backdrop { background: rgba(0, 0, 0, 0.45); }
+body.editor-offen { overflow: hidden; }
+.ed-kopf { flex: none; display: flex; align-items: center; gap: 8px 16px; padding: 10px 16px; background: var(--kopf); color: var(--kopf-text); }
+.ed-kopf h2 { flex: 1 1 auto; margin: 0; font-size: 1.05rem; font-weight: 650; }
+.ed-zu { flex: none; width: 44px; height: 44px; border: 0; border-radius: 8px; background: none; color: var(--kopf-text); font-size: 1.6rem;
+  line-height: 1; cursor: pointer; }
+.ed-zu:hover { background: var(--kopf-hover); }
+.ed-rumpf { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
+.ed-vorschau { width: 100%; max-width: 900px; margin: 0 auto; padding: 8px 16px 48px; }
+.ed-liste { position: sticky; top: 0; z-index: 2; background: var(--flaeche); border-bottom: 1px solid var(--linie); }
+.ed-liste > summary { padding: 10px 16px; min-height: 44px; font-weight: 650; cursor: pointer; }
+.ed-liste-ol { list-style: none; margin: 0; padding: 0 8px 10px; max-height: 50vh; overflow-y: auto; }
+.ed-sprung { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 40px; padding: 6px 8px; border: 0; border-radius: 6px;
+  background: none; font: inherit; font-size: 0.9rem; color: var(--text); text-align: left; cursor: pointer; }
+.ed-sprung:hover { background: var(--grund); }
+.ed-l-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.ed-l-typ { font-size: 0.75rem; color: var(--leise); }
+.ed-l-titel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ed-l-hand { color: var(--ocker-tief); }
+.ed-punkt { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--leer); }
+.ed-punkt.status-ok { background: var(--ok); }
+.ed-punkt.status-warnung { background: var(--warn); }
+.ed-punkt.status-fehler { background: var(--fehler); }
+.ed-nr { flex: none; min-width: 1.6em; height: 1.6em; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
+  background: var(--creme); color: var(--text); font-weight: 650; font-size: 0.78rem; }
+@media (min-width: 1100px) {
+  .ed-rumpf { flex-direction: row-reverse; align-items: flex-start; }
+  .ed-vorschau { flex: 1 1 auto; margin: 0; padding: 12px 24px 64px; max-width: none; display: block; }
+  .ed-vorschau > * { max-width: 880px; margin-left: auto; margin-right: auto; }
+  .ed-liste { flex: none; width: 300px; position: sticky; top: 0; align-self: flex-start; max-height: 100%; overflow-y: auto;
+    border-bottom: 0; border-left: 1px solid var(--linie); min-height: 100%; }
+  .ed-liste > summary { pointer-events: none; list-style: none; color: var(--leise); font-size: 0.85rem; text-transform: uppercase;
+    letter-spacing: 0.05em; }
+  .ed-liste > summary::-webkit-details-marker { display: none; }
+  .ed-liste-ol { max-height: none; }
+}
+.ed-abschnitt { margin: 22px 0 8px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--leise); }
+.ed-b { margin: 0 0 14px; padding: 10px 12px 12px; border: 1px solid var(--linie); border-radius: var(--rund); background: var(--flaeche); }
+.ed-b.status-fehler { border-color: var(--fehler); }
+.ed-b.ed-unter { padding: 6px 12px; background: none; border-style: dashed; }
+.ed-b-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 8px; }
+.ed-b-titel { flex: 1 1 16rem; min-width: 0; display: flex; align-items: baseline; gap: 8px; margin: 0; font-size: 1rem; font-weight: 650; }
+.ed-b-titel:focus { outline: 2px solid var(--fokus); outline-offset: 2px; border-radius: 4px; }
+.ed-typ { flex: none; font-size: 0.8rem; font-weight: 600; color: var(--leise); }
+.ed-titel-text { min-width: 0; overflow-wrap: anywhere; }
+.ed-importiert { margin: 14px 0 4px; padding: 6px 10px; border-left: 3px solid var(--warn); background: var(--warn-flaeche); color: var(--text);
+  font-size: 0.9rem; }
+#nl-hinweis { padding: 6px 10px; border-left: 3px solid var(--warn); background: var(--warn-flaeche); color: var(--text); }
+.ed-marken { display: inline-flex; gap: 6px; }
+.ed-marken:empty { display: none; }
+.ed-hand { padding: 1px 8px; border: 1px solid var(--lehrkraft-kante); border-radius: 999px; background: var(--lehrkraft); color: var(--text);
+  font-size: 0.78rem; white-space: nowrap; }
+.ed-status.fehler { color: var(--fehler); font-size: 0.85rem; font-weight: 600; }
+.ed-b-knoepfe { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-left: auto; }
+.ed-zurueck { font-size: 0.88rem; }
+/* AP13.33 §1.5: Meldung zur letzten Handlung am Baustein (unter seinem Kopf), bis zur nächsten Handlung */
+.ed-b-meldung { margin: -2px 0 8px; font-size: 0.9rem; font-weight: 600; color: var(--ok); }
+.ed-b-meldung.fehler { color: var(--fehler); }
+.ed-b-meldung:empty { display: none; }
+/* §2.2: Frage „Änderungen verwerfen?“ unter den Knöpfen des Textfelds */
+.ed-verwerfen { padding: 10px 12px; border: 1px solid var(--warn); border-radius: 8px; background: var(--flaeche); }
+.ed-verwerfen p { margin: 0 0 8px; font-weight: 600; }
+/* §1.4: welche Fragen nach einer Änderung neu durchzusehen sind (Schritt Fragen) */
+.durchsicht-neu { margin: 0 0 10px; padding: 8px 12px; border-left: 4px solid var(--warn); border-radius: 6px;
+  background: var(--flaeche); font-weight: 600; }
+/* §1.8: Hinweise im Formular einer Kachel */
+.ed-ue-hinweis { margin: -4px 0 0; font-size: 0.85rem; color: var(--leise); }
+.ed-meldungen { list-style: none; width: 100%; margin: 4px 0 0; padding: 0; font-size: 0.9rem; }
+.ed-meldungen:empty { display: none; }
+.ed-meldungen li.fehler { color: var(--fehler); }
+.ed-meldungen li.warnung { color: var(--warn); }
+.ed-meldungen li.ok { color: var(--ok); }
+.ed-flaeche { border: 1px solid #d6d9de; border-radius: 8px; }
+.ed-platz { padding: 12px 14px; border: 1px dashed var(--chat-kante); border-radius: 8px; background: var(--chat); font-size: 0.92rem; }
+.ed-platz p { margin: 0; }
+.ed-platz + .ed-flaeche { margin-top: 8px; }
+.ed-platz-fehler { border-color: var(--fehler); }
+.ed-b-werk, .ed-b-neu { display: flex; flex-direction: column; gap: 8px; }
+.ed-b-neu { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--linie); }
+.ed-plan-auftrag { margin: 0; font-size: 0.93rem; color: var(--leise); overflow-wrap: anywhere; }
+.ed-feld textarea { width: 100%; }
+.ed-text, .ed-antwort { font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace; }
+.ed-knoepfe { display: flex; flex-wrap: wrap; gap: 8px; }
+.ed-format { font-size: 0.85rem; color: var(--leise); }
+.ed-format p { margin: 0 0 4px; }
+.ed-format .ed-format-titel { font-weight: 650; }
+.ed-format code { font-size: 0.82rem; }
+.editor-auf-2 { margin-top: 12px; }
+/* AP13.38: schwebender Knopf unten links, fest am Fensterrand; öffnet dieselbe Ansicht wie der Link in der Kopfzeile. Fläche und
+ * Rand aus den Tokens (Rand --leise, Schrift --text); das Symbol sitzt auf dem festen Anthrazit des Logos in beiden Schemata.
+ * Am Handy in Schritt 3 liegt er über der Vorschauleiste (96 px, aufgeklappt 60 vh); ohne ihn stünde er auf ihr. Die Fußzeile
+ * bekommt unten Platz, damit am Seitenende nichts unter ihm liegt. Sichtbar nur ohne offenen Dialog (die Ansicht selbst ist
+ * einer). */
+.editor-schweb { position: fixed; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 15; display: flex;
+  flex-direction: column; align-items: center; gap: 2px; min-width: 72px; padding: 6px 8px 5px; border: 2px solid var(--leise);
+  border-radius: 20px; background: var(--flaeche); color: var(--text); font: inherit; font-size: 0.8rem; font-weight: 650;
+  line-height: 1.25; cursor: pointer; box-shadow: 0 2px 10px var(--schatten); }
+.editor-schweb:hover { background: var(--gewaehlt); border-color: var(--text); }
+.sw-symbol { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%;
+  background: #2a2a2a; }
+.sw-symbol img { display: block; width: 44px; height: 44px; }
+/* AP13.42: beim Herunterscrollen am schmalen Fenster weg (editor.js), mit Fokus wieder da */
+.editor-schweb { transition: opacity 0.2s ease, transform 0.2s ease; }
+body.editor-schweb-weg .editor-schweb { opacity: 0; transform: translateY(24px); pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .editor-schweb { transition: none; } }
+body.editor-offen .editor-schweb { display: none; }
+body:has(dialog[open]) .editor-schweb { display: none; }
+@media (max-width: 999px) {
+  body.mit-editor-schweb .fuss { padding-bottom: calc(28px + 100px + env(safe-area-inset-bottom, 0px)); }
+  /* die haftende Zeile „Übernehmen“ der Lehrplanwahl bleibt über dem Knopf statt hinter ihm */
+  body.mit-editor-schweb .lp-fuss { bottom: calc(114px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 1099px) {
+  body[data-schritt="3"] .editor-schweb { bottom: calc(96px + 16px + env(safe-area-inset-bottom, 0px)); }
+  body[data-schritt="3"]:has(.vorschau-spalte.offen) .editor-schweb { bottom: calc(60vh + 16px); }
+  body.mit-editor-schweb[data-schritt="3"] .fuss { padding-bottom: calc(28px + 100px + 96px + env(safe-area-inset-bottom, 0px)); }
+}
+/* Frage vor dem Einsetzen über Handänderungen (§4) */
+.hand-frage { width: min(32rem, calc(100vw - 32px)); padding: 20px 22px; border: 1px solid var(--linie); border-radius: var(--rund);
+  background: var(--flaeche); color: var(--text); }
+.hand-frage::backdrop { background: rgba(0, 0, 0, 0.45); }
+.hand-frage p { margin: 0 0 10px; }
+.hand-frage-liste { margin: 0 0 16px; padding-left: 20px; }
+.hand-frage-knoepfe { display: flex; flex-wrap: wrap; gap: 8px 12px; }
+.k-hand { padding: 1px 8px; border: 1px solid var(--lehrkraft-kante); border-radius: 999px; background: var(--lehrkraft); color: var(--text);
+  font-size: 0.78rem; white-space: nowrap; }
+/* §9: Kursübersicht als erster Eintrag; „Darstellung“ mit denselben Bildchen wie im Schritt Aussehen */
+.ed-ue { border-width: 2px; }
+.ed-darstellung-l { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; width: 100%; }
+.ed-darstellung-t { font-size: 0.85rem; font-weight: 600; color: var(--leise); }
+.ed-darstellung { display: flex; flex-wrap: wrap; gap: 6px; }
+.ed-format-wahl { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; width: 92px; padding: 4px; border: 1px solid var(--linie);
+  border-radius: 8px; background: var(--flaeche); color: var(--text); font: inherit; font-size: 0.75rem; line-height: 1.2; cursor: pointer; }
+.ed-format-wahl[aria-checked=true] { border: 2px solid var(--ocker-tief); background: var(--gewaehlt); font-weight: 650; }
+.ed-format-mini svg { display: block; width: 72px; height: 46px; border-radius: 4px; }
+.ed-ue-zeile { margin: 0 0 8px; font-size: 0.88rem; color: var(--leise); }
+.ed-ue-werk { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--linie); scroll-margin: 24px 0; }
+.ed-b-werk { scroll-margin: 24px 0; }
+.ed-ue-werk select, .ed-ue-werk input[type=text] { max-width: 28rem; }
+.ed-ue-reihe { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 12px; }
+.ed-ue-hochladen:focus-within { outline: 3px solid var(--fokus); outline-offset: 2px; }
+.ed-ue-meldung.fehler { color: var(--fehler); }
+/* AP13.30: Gliederung im Editor: „Hier neue Kachel beginnen“ zwischen zwei Bausteinen (breit beim Überfahren, schmal
+   immer), Auswahl „In Kachel“ am Baustein, Formular „Weitere Einheit“ */
+.ed-teilen { display: flex; align-items: center; justify-content: center; min-height: 28px; margin: -8px 0 6px; }
+.ed-teilen::before, .ed-teilen::after { content: ""; flex: 1 1 auto; border-top: 1px dashed var(--linie); }
+.ed-teilen-knopf { flex: none; margin: 0 10px; min-height: 32px; padding: 2px 12px; border: 1px dashed var(--ocker-tief);
+  border-radius: 999px; background: var(--flaeche); color: var(--text); font: inherit; font-size: 0.85rem; cursor: pointer; }
+.ed-teilen-knopf:hover { background: var(--lehrkraft); }
+.ed-teilen.offen { flex-direction: column; align-items: stretch; gap: 8px; margin: 0 0 14px; padding: 10px 12px;
+  border: 1px dashed var(--ocker-tief); border-radius: var(--rund); background: var(--flaeche); }
+.ed-teilen.offen::before, .ed-teilen.offen::after { display: none; }
+.ed-teilen-titel { max-width: 28rem; }
+@media (min-width: 1100px) and (hover: hover) {
+  .ed-teilen:not(.offen) .ed-teilen-knopf { opacity: 0; transition: opacity 0.12s; }
+  .ed-teilen:not(.offen)::before, .ed-teilen:not(.offen)::after { border-top-color: transparent; }
+  .ed-teilen:not(.offen):hover .ed-teilen-knopf, .ed-teilen:not(.offen) .ed-teilen-knopf:focus-visible { opacity: 1; }
+  .ed-teilen:not(.offen):hover::before, .ed-teilen:not(.offen):hover::after,
+  .ed-teilen:not(.offen):focus-within::before, .ed-teilen:not(.offen):focus-within::after { border-top-color: var(--linie); }
+}
+.ed-in-kachel-l { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--leise); white-space: nowrap; }
+.ed-in-kachel { max-width: 14rem; min-height: 32px; font-size: 0.85rem; }
+.ed-w-thema-l { flex: 1 1 18rem; }
+.ed-w-thema-l input { width: 100%; max-width: 28rem; }
+.ed-w-minuten-l input { width: 7rem; }
+/* AP13.31: Plan in „Ich steuere“: Kurs beschreiben, Darstellung, Kacheln mit Elementen. Im Format „Kacheln“ ein Raster
+   mit Fläche oben (wie die Kachel auf der Kursseite), sonst Abschnitte untereinander. */
+.plan { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
+.plan-beschreiben { display: flex; flex-direction: column; gap: 12px; }
+.plan-beschreiben textarea { width: 100%; }
+.plan .unterkopf { margin: 6px 0 0; }
+.plan-uebersicht { display: flex; flex-direction: column; gap: 10px; }
+.plan-zeile, .plan-leer, .plan-hinweis { margin: 0; }
+.plan-zeit { margin: 0; }
+.plan-kacheln { display: flex; flex-direction: column; gap: 12px; }
+.plan-f-kacheln { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); align-items: start; gap: 14px; }
+.plan-kachel { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 10px 12px 12px; border: 1px solid var(--linie);
+  border-radius: var(--rund); background: var(--flaeche); }
+.plan-f-kacheln .plan-kachel::before { content: ""; display: block; height: 34px; margin: -10px -12px 0; border-radius: var(--rund) var(--rund) 0 0;
+  background: var(--creme); }
+.plan-k-kopf { display: flex; align-items: center; gap: 4px 6px; min-width: 0; }
+.plan-k-woche { flex: none; font-size: 0.8rem; color: var(--leise); }
+.plan input.plan-k-titel { flex: 1 1 auto; width: auto; min-width: 0; min-height: 38px; padding: 4px 8px; border: 0; border-left: 3px solid var(--lehrkraft-kante);
+  border-radius: 0; background: transparent; font-size: 1.02rem; font-weight: 650; }
+.plan input.plan-k-titel:hover, .plan input.plan-k-titel:focus { background: var(--grund); }
+.plan-k-pfeile { flex: none; display: inline-flex; }
+.k-einheit { list-style: none; margin: 0; padding: 12px 14px 4px; border-top: 2px solid var(--linie); background: var(--grund); }
+.k-einheit:first-child { border-top: 0; border-radius: var(--rund) var(--rund) 0 0; }
+.k-einheit-t, .ed-l-einheit, .f-einheit-t { margin: 0; font-size: 1rem; font-weight: 700; overflow-wrap: anywhere; }
+.ed-l-einheit { padding: 10px 8px 4px; font-size: 0.9rem; color: var(--leise); }
+.plan-k-fuss { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; }
+/* AP13.35 M1: Kursbeschreibung ab Einheit 2, über dem Feld der Einheit */
+.kurs-zeile { display: flex; flex-direction: column; gap: 6px; }
+.kurs-zeile .kurs-text { margin: 0; overflow-wrap: anywhere; }
+.kurs-zeile .textlink { font-size: inherit; }
+#m-kurs:not(:empty) { margin-bottom: 12px; }
+.plan-summe { margin: 0; font-size: 0.92rem; }
+.plan-summe.warn { padding: 4px 10px; border-radius: 8px; background: var(--warn-flaeche); color: var(--warn); font-weight: 600; }
+/* AP13.41: gelber Hinweis am Element (Zahl im Auftrag unter dem Mindestmaß) und „Zählt nicht zur Zeit“ */
+.plan-el-hinweis { margin: 0 8px 8px; padding: 4px 10px; border-radius: 8px; background: var(--warn-flaeche); color: var(--warn);
+  font-size: 0.88rem; font-weight: 600; overflow-wrap: anywhere; }
+.plan-el-ohne-zeit { margin: 0 12px 8px; font-size: 0.88rem; }
+.plan-k-text-l textarea { width: 100%; font-size: 15px; }
+.plan-elemente { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.plan-el { border: 1px solid var(--linie); border-radius: 8px; background: var(--flaeche); min-width: 0; }
+.plan-el.offen { border-color: var(--ocker-tief); }
+.plan-el.aus { opacity: 0.62; }
+.plan-el.aus:focus-within { opacity: 1; }
+.plan-el-zeile { display: flex; align-items: flex-start; gap: 8px; width: 100%; min-height: 44px; padding: 8px 10px; border: 0; border-radius: 8px;
+  background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.plan-el-zeile:hover { background: var(--grund); }
+.plan-el-nr { flex: none; min-width: 1.6em; height: 1.6em; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
+  background: var(--creme); font-weight: 650; font-size: 0.8rem; }
+.plan-el-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.plan-el-kopf { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.plan-el-typ-t, .plan-el-min-t { font-size: 0.8rem; font-weight: 600; color: var(--leise); }
+.plan-el-titel-t { font-weight: 600; overflow-wrap: anywhere; }
+.plan-el-satz-t { font-size: 0.88rem; color: var(--leise); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden; }
+.plan-el-form { display: flex; flex-direction: column; gap: 8px; padding: 8px 10px 10px; border-top: 1px solid var(--linie); }
+.plan-el-reihe { display: flex; flex-wrap: wrap; gap: 8px 12px; }
+.plan-el-reihe > .feld { flex: 1 1 10rem; min-width: 0; }
+.plan-el-form select, .plan-el-form input[type=text], .plan-el-form textarea { width: 100%; max-width: 100%; }
+.plan-el-min-l input { width: 6rem; }
+.plan-el-kachel-l { white-space: normal; }
+.plan-el-kachel { max-width: 100%; }
+.plan-el-knoepfe { align-items: center; }
+.plan-el-knoepfe .klein { font-size: 1.05rem; }
+.plan-k-leer, .plan-rueck { margin: 0; font-size: 0.9rem; }
+.plan-el-plus { align-self: flex-start; }
+.plan-k-plus { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 64px; padding: 10px; border: 2px dashed var(--linie);
+  border-radius: var(--rund); background: var(--grund); color: var(--text); font: inherit; font-weight: 650; cursor: pointer; }
+.plan-k-plus:hover { border-color: var(--ocker-tief); }
+.plan-f-kacheln .plan-k-plus { min-height: 150px; flex-direction: column; }
+.plan-plus { font-size: 26px; line-height: 1; font-weight: 400; }
+.plan input.plan-el-titel { border-left: 3px solid var(--lehrkraft-kante); background: var(--lehrkraft); }
+/* AP13.39: zwei Anfänge im leeren Plan, Phase am Element, Warnung mit „Fehlende Phase ergänzen“ */
+.plan-anfang { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 2px dashed var(--linie); border-radius: var(--rund);
+  background: var(--grund); }
+.plan-anfang .plan-arten { margin-bottom: 4px; }
+.plan-anfang-knoepfe { display: flex; flex-wrap: wrap; gap: 8px 12px; }
+.plan-warnung { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.plan-warnung > span { flex: 1 1 16rem; }
+.plan-el-reihe > .plan-el-phase-l { flex: 1 1 14rem; }
+.plan-el-phase-t { font-size: 0.78rem; font-weight: 600; color: var(--text); padding: 0 6px; border: 1px solid var(--linie); border-radius: 4px;
+  overflow-wrap: anywhere; }

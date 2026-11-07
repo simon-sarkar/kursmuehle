@@ -8,7 +8,7 @@ Kurssicherung (.mbz) herunter, die du in deinem Kurs über „Wiederherstellen�
 [kursmuehle.de](https://kursmuehle.de/), installiert wird nichts.
 
 In Schritt 2 wählst du, wie viel du vorgibst: „Mach du“ legt den Aufbau selbst fest, „Ich gebe die Richtung“ nimmt Art,
-Schwerpunkt, Übungen und Sprache auf einer Karte an, „Ich steuere“ zeigt jeden Baustein mit Auftrag.
+Schwerpunkt, Übungen und Sprache auf einer Karte an, „Ich steuere“ baut den Kurs aus Kacheln und Elementen, die du beschreibst.
 
 ![Status: Beta](docs/badge-status.svg) ![Lizenz: nicht kommerziell](docs/badge-lizenz.svg) ![Plattform: ByCS-Lernplattform, Moodle 5.2](docs/badge-plattform.svg)
 
@@ -31,6 +31,8 @@ und einzelne Chats antworten noch in einer Form, die die Seite nicht lesen kann.
 | Lizenz für Texte und Aufgaben (CC BY 4.0, CC BY-SA 4.0, alle Rechte vorbehalten) und der Satz „Mit KI erstellt, von der Lehrkraft geprüft.“ als kleine Zeile am Ende jedes Abschnitts | Lizenz je Baustein, Lizenz in den Datei- und H5P-Angaben der Plattform |
 | Eigene KI direkt anbinden: ein Programm wie Claude Code oder Codex (mit seinem Namen in der Mühle), ein eigener Zugangsschlüssel (OpenAI, Anthropic, Mistral) oder Ollama; Teile gehen von selbst nacheinander, Korrekturen ohne Kopieren | Bilder über die Verbindung, Verbindung vom iPad oder aus dem Schulnetz |
 | Prüfung der Antwort vor dem Bau mit Sätzen, was im Chat zu korrigieren ist, und Auswegen, wenn der Chat dieselbe Antwort wiederholt | Fachliche Prüfung des Inhalts; die bleibt bei der Lehrkraft |
+| Einheit ansehen, wie sie im Kurs aussieht, mit Kursübersicht im gewählten Format (Kacheln, Abschnitte, Kurstitel zum Anklicken und Ändern); Bausteine von Hand ändern oder einzeln neu schreiben lassen; von Hand Geändertes bleibt auf Wunsch bei einer neuen Antwort; eine Stunde auf zwei Kacheln teilen, Bausteine in eine andere Kachel setzen, eine weitere Einheit anhängen; in „Ich steuere“ den Kurs vorher in Kacheln, Elementen und Phasen planen | Direkt in der Vorschau tippen, Übungen als eigene Aktivität in der Vorschau bedienen |
+| Sequenz mit 2 bis 20 Stunden: Sequenzplan vom Chat oder selbst geplant, danach Stunde für Stunde über dieselben Wege; mit eigener KI nacheinander ohne Klick | Mehrere Sequenzen in einem Kurs, Stunden umsortieren |
 | Satzlänge und Lesbarkeitswert (LIX) je Lesetext gegen einen Richtwert der Jahrgangsstufe, auf Wunsch mit Satz für den Chat | Lesbarkeitsformeln mit Silben, Texte selbst vereinfachen |
 | Material aus Word, LibreOffice, PowerPoint, PDF und Textdateien einlesen; die Dateien bleiben auf dem Rechner | Scans und Fotos von Arbeitsblättern |
 | Lehrplan: Grundschule, Mittelschule, Realschule, Gymnasium, Förderschule (Lernen, geistige Entwicklung) (LehrplanPLUS, Lernbereiche mit Kompetenzerwartungen als Ziel der Einheit im Auftrag) | Wirtschaftsschule, berufliche Schulen, weitere Förderschwerpunkte als eigene Lehrpläne |
@@ -85,6 +87,10 @@ Seit 2.0 läuft alles im Browser. Die Einzelheiten jeder Version stehen im [CHAN
       Schwerpunkte mit Vorschlag aus dem Lehrplan; Dateien und Bilder im Chat als Material
 - [x] 2.0.0-b16 Hinweis „Die Kursmühle ist noch im Aufbau“ mit Bitte um Rückmeldung; Korrekturrunden mit der
       Kursmühle-KI günstiger
+- [x] 2.0.0-b17 Editor zum Ansehen und Ändern der Einheit; „Ich steuere“ als Plan mit Kacheln, Elementen
+      und Phasen; Sequenz mit mehreren Stunden; mehrere Einheiten ohne Verlust beim Einsetzen
+- [x] 2.0.0-b18 Testrunde mit sechs Agenten: Tipps, Brüche und doppelte Antworten in Chat-Antworten werden
+      gemeldet; Bildnamen mit Leerzeichen; verständlichere Meldungen
 - [ ] Erste Testerinnen und Tester (Testphase mit Code seit 26.10.2026), Rückmeldungen einarbeiten
 - [ ] Prüfwoche: Sicherheit, Import aller Formate, Barrierefreiheit
 - [ ] 2.0 ohne Beta-Marke

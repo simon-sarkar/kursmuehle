@@ -20,19 +20,32 @@
     var e = (Z.mappe && Z.mappe.einheit) || {};
     var ohneLp = S.angaben.lehrplanbezug === "nein";       // AP13.6: ohne Lehrplan heißt das Feld „Zielgruppe“
     var jg = ohneLp ? jahrgangZahl(e.jahrgang) : e.jahrgang;   // eine Zahl darin ist die Jahrgangsstufe
-    if (n === 1) return [e.thema, zielgruppeAus(e.jahrgang) ? "Zielgruppe: " + zielgruppeAus(e.jahrgang) : jg ?
+    if (n === 1) return [Z.mappe.sequenz ? Z.mappe.titel || e.thema : e.thema, zielgruppeAus(e.jahrgang) ? "Zielgruppe: " + zielgruppeAus(e.jahrgang) : jg ?
       "Jahrgangsstufe " + jg : e.jahrgang ? "Zielgruppe: " + e.jahrgang : "",
-      e.minuten ? e.minuten + " Minuten" : ""].filter(Boolean).join(" · ");
+      // AP13.40: eine Sequenz nennt ihr Thema (nicht das der laufenden Stunde) und die Zahl der Stunden
+      e.minuten ? (Z.mappe.sequenz && Z.mappe.sequenz.stunden ? Z.mappe.sequenz.stunden.length + " Stunden zu " : "") +
+          e.minuten + " Minuten" : ""].filter(Boolean).join(" · ");
     if (n === 2) {
       var z = ZWEIG_TEXT[zweig()] || "";
-      var n = Z.mappe.bausteine.filter(function (k) { return !k.aus; }).length;
-      return [z, e.vorlage, zweig() === "steuer" ? n + " Bausteine" : ""].concat(zweig() === "richtung" ?
+      if (Z.mappe.sequenz && S.sequenzKopf) return [z, S.sequenzKopf()].filter(Boolean).join(" · ");   // AP13.40
+      var n = Z.mappe.bausteine.filter(function (k) { return !k.aus && (k.einheit || "") === einheitTag(); }).length;
+      // AP13.35 §4.3: mit eigenem Plan „Eigener Plan · N Kacheln“, nicht der Name eines Aufbaus, den niemand gewählt hat
+      if (zweig() === "steuer" && eigenerPlan()) {
+        var nk = planKacheln();
+        return [z, S.editorText("eigener_plan"), S.editorText(nk === 1 ? "kachel_eine" : "kacheln_zahl", { n: nk })].join(" · ");
+      }
+      // AP13.34 §5: „Mach du“ nennt die Art der Einheit nur, wenn die Lehrkraft sie gewählt hat oder sie als Vorschlag
+      // auf der Seite steht; die Standardart, die niemand gewählt hat, bleibt aus der Zusammenfassung
+      var art = zweig() !== "mach" || vorlageGewaehlt() ? e.vorlage : "";
+      return [z, art, zweig() === "steuer" ? n + " Bausteine" : ""].concat(zweig() === "richtung" ?
           richtungText() : []).filter(Boolean).join(" · ");
     }
     if (n === 3) return [oberText("familie", S.angaben.familie || "sachlich"), feinheitenText(),
       oberText("format", S.angaben.format), bilderText(), oberText("website", S.angaben.website ||
           "textfeld")].filter(Boolean).join(" · ");
-    if (n === 4) { var c = chatInfo(Z.mappe.chat); return c ? c.text + (!Z.mappe.kopiert ? "" : S.textGesendet &&
+    if (n === 4) { var c = chatInfo(Z.mappe.chat); return c ? c.text + (!Z.mappe.kopiert ? "" : S.teilGeaendert &&
+        S.teilGeaendert() ? " · " + S.teilGeaendert() : texte.veraltet ?
+        " · " + S.editorText(S.anKiAktiv && S.anKiAktiv() ? "text_geaendert_ki" : "text_geaendert") : S.textGesendet &&
         S.textGesendet() ? " · Text gesendet" : " · Text kopiert") : ""; }
     if (n === 5) {
       var voll = Z.mappe.bausteine.filter(function (k) { return !k.geplant && (k.einheit || "") === einheitTag(); })
@@ -45,11 +58,23 @@
       return !w.length ? "" : da === w.length ? (da === 1 ? "Bild da" : "alle " + da + " Bilder da") : da + " von " +
           w.length + " Bildern da, sonst Platzhalter";
     }
-    if (n === 6) return S.fragenListe.length ? S.fragenListe.length + " Fragen" + (Z.mappe.durchsicht ?
-        " durchgesehen" : "") : "keine Fragen";
+    if (n === 6) return !S.fragenListe.length ? "keine Fragen" : Z.mappe.durchsicht === "ohne" ?
+        S.editorText("durchsicht_ohne", { n: S.fragenListe.length }) : S.fragenListe.length + " Fragen" +
+        (Z.mappe.durchsicht ? " durchgesehen" : "");
     return "";
   }
 
+  // AP13.35 §4.3: eigener Plan in „Ich steuere“ (eine eigene Kachel, eine Beschreibung oder eine Änderung am Aufbau)
+  function eigenerPlan() { return !!(S.planBelegt && S.planBelegt()); }
+  function planKacheln() { return ((Z.mappe && Z.mappe.kacheln) || []).filter(function (k) { return (k.einheit || "") ===
+      einheitTag(); }).length; }
+  // Hat die Lehrkraft eine Art der Einheit (Vorlage) gewählt? Selbst gewählt, als Vorschlag des Lehrplans übernommen
+  // oder in „Ich steuere“ mit „Nach Phasen beginnen“ geholt; die Standardart allein zählt nicht
+  function vorlageGewaehlt() {
+    var e = (Z.mappe && Z.mappe.einheit) || {};
+    return !!(e.vorlage_selbst || (S.angaben.vorschlag || []).indexOf("vorlage") >= 0 ||
+        (zweig() === "steuer" && !eigenerPlan() && planKacheln() > 0) || zweig() === "richtung");
+  }
   // AP13.12: Ausklappteile. Geöffnet bleibt, was die Lehrkraft einmal geöffnet hat (je Teil ein Schlüssel
   // „kursmuehle-offen-<name>“ in localStorage, unter /beta/ mit dem Zusatz von km.speicher); öffnet die Seite einen
   // Teil selbst (Testcode, gewählte Kachel), merkt sie nichts
@@ -85,9 +110,12 @@
   }
   document.querySelector(".spalte-haupt").addEventListener("click", function (ev) {
     if (!ev.target.closest(".hinweis-aus")) return;
+    var kopf = ev.target.closest(".schritt").querySelector(".s-kopf");
     S.hinweise.an = false; hinweiseSichern(); zeichneSchritte();
+    S.fokus([kopf], true);                  // AP13.36 §1.1: der Knopf verschwindet; der Fokus bleibt in diesem Schritt
   });
 
+  var modusVorgewaehlt = null;      // AP13.33 M2: Einheit, für die „Als weitere Einheit anhängen“ schon vorgewählt ist
   function zeichneSchritte() {
     var s = schritt(), z = zweig(), d = !!S.designer;
     // Bildwünsche inzwischen weg oder Bilder „keine“: weiter mit den Fragen
@@ -117,32 +145,45 @@
       zeichneHinweis(sec, n, stand === "aktiv" && !d);
     });
     $("hinweise-an").checked = S.hinweise.an;
-    ["mach", "richtung", "steuer"].forEach(function (w) { $("zweig-" + w).setAttribute("aria-pressed", String(z === w));
+    ["mach", "richtung", "steuer"].forEach(function (w) { $("zweig-" + w).setAttribute("aria-checked", String(z === w));
         });
     $("steuer-teil").hidden = z !== "steuer";
     $("mach-teil").hidden = z !== "mach" && z !== "richtung";
     $("richtung-teil").hidden = z !== "richtung";
+    kursZeigen();
     if (z === "richtung" || z === "steuer") zeichneRichtung();
     if (S.katalog) { vorlagenZeigen(); zeichneMachArt(); }
     materialOrt();
-    $("vorlagen").hidden = inhalt();
+    // AP13.31: in „Ich steuere“ steht vor der ersten Antwort der Einheit der Plan (plan.js) statt Aufbau und Karten
+    var plan = !!(S.planPhase && S.planPhase());
+    $("aufbau-titel").hidden = plan; $("vorlage-zeile").hidden = plan;
+    $("vorlagen").hidden = inhalt() || plan;
     $("weiter-2").hidden = s > 2 || !z;
     zeichneGruppen(s);
-    // Karten: in „Ich steuere“ unter Schritt 2, bis die erste Antwort da ist; danach in beiden Zweigen unter Schritt 5
+    // Karten: unter Schritt 5, sobald die erste Antwort da ist (AP13.31: davor plant „Ich steuere“ im Plan)
     var ort = inhalt() ? $("karten-ort-5") : $("karten-ort-2");
     if ($("tafel-bausteine").parentNode !== ort) ort.appendChild($("tafel-bausteine"));
-    $("tafel-bausteine").hidden = !(inhalt() || z === "steuer");
+    $("tafel-bausteine").hidden = !inhalt();
     $("karten").classList.toggle("kompakt", z !== "steuer");
     $("hinzufuegen").hidden = z !== "steuer";
     $("text-art").hidden = z !== "steuer";
     $("modus").hidden = z !== "steuer";
+    // AP13.33 §1.9: solange die angehängte Einheit leer ist, hängt die Mühle die Antwort an; die Wahl zeigt das vorher,
+    // einmal je Einheit beim Erreichen von Schritt 5 (M2: danach gilt, was die Lehrkraft wählt)
+    var vorwahl = Z.mappe && Z.mappe.anhaengen ? [Z.mappe.erzeugt, Z.mappe.titel, Z.mappe.anhaengen].join("|") : null;
+    if (vorwahl && s === 5 && modusVorgewaehlt !== vorwahl &&
+        Z.mappe.bausteine.some(function (k) { return k.einheit === Z.mappe.anhaengen && k.geplant; })) {
+      modusVorgewaehlt = vorwahl;
+      document.querySelector("input[name=modus][value=anhaengen]").checked = true;
+    }
     document.querySelector(".spalte-rand").hidden = s < 5;
     document.querySelector(".seite").classList.toggle("mit-rand", s >= 5);
     $("weiter").hidden = !!Z.mappe || !$("weiter").dataset.da;
     $("weiter-5").hidden = !(s === 5 && inhalt() && !fehlerZahl() && !teileOffen());
     $("weiter-5").textContent = sichtbareSchritte().indexOf(5.5) >= 0 ? "Weiter zu den Bildern" : S.fragenListe.length ?
         "Weiter zu den Fragen und Lösungen" : "Weiter zur Datei";
-    $("rueckmeldung").hidden = !(s >= 7 && Z.bau && Z.bau.mbz) && !$("rueckmeldung").dataset.offen;
+    $("rueckmeldung").hidden = !!$("rueckmeldung").dataset.zu ||
+        (!(s >= 7 && Z.bau && Z.bau.mbz) && !$("rueckmeldung").dataset.offen);
     $("speichern").hidden = !Z.mappe;
     $("neue-einheit").hidden = !Z.mappe;
     $("schliessen").hidden = !Z.mappe;
@@ -162,7 +203,7 @@
     if (n > schritt() && n > 2 && materialFehlt()) { materialZeigen(true); return; }
     if (n > schritt()) erledigtBis(n);
     Z.mappe.schritt = n;
-    S.auf = {}; S.designer = null;
+    S.auf = {}; designerBeenden();
     zeichne();
     autosave();
     var sec = sektion(n);
@@ -239,8 +280,10 @@
     if (art === "zielgruppe" && /\d/.test(w)) return "Ohne Zahl; die Jahrgangsstufe gehört ins Feld oben.";
     return "";
   }
+  // AP13.31: in „Ich steuere“ beginnt die angehängte Einheit ohne Karten; angelegt ist sie, sobald `laufend` auf sie zeigt
   function neueEinheit() {
-    return !Z.mappe || !!(Z.mappe.anhaengen && !Z.mappe.bausteine.some(function (k) { return k.einheit === Z.mappe.anhaengen; }));
+    return !Z.mappe || !!(Z.mappe.anhaengen && Z.mappe.laufend !== Z.mappe.anhaengen && !Z.mappe.bausteine.some(function (k) {
+      return k.einheit === Z.mappe.anhaengen; }));
   }
   function feldMeldung(feld, satz) {
     if (!document.getElementById("stil-meldung")) {
@@ -327,28 +370,38 @@
   ].join("\n") }));
 
   $("start-form").onsubmit = function (ev) { ev.preventDefault(); startAbsenden(); };
-  function startAbsenden() {
+  function startAbsenden(bestaetigt) {
     var thema = $("f-thema").value.trim();
     if (!felderPruefen(["f-thema", "f-schulart", "f-jahrgang", "f-minuten", "f-zielgruppe"])) return;
+    var stunden = S.sequenzWahl ? S.sequenzWahl() : 0;      // AP13.40: 0 = eine Stunde, sonst die Zahl der Stunden
+    if (stunden === null) return;
+    // AP13.40 (Korrekturrunde): fallen dabei Stunden mit Themen oder Elementen weg, erst fragen
+    var frage = bestaetigt !== true && Z.mappe && S.sequenzFrage ? S.sequenzFrage(stunden) : null;
+    if (frage) { frage.then(function (ja) { if (ja) startAbsenden(true); }); return; }
     var zg = $("f-zielgruppe").value.trim(), schulart = zg ? "" : $("f-schulart").value;
     if (schulart) schulartMerken(schulart);
     var e = { thema: thema, jahrgang: zg || $("f-jahrgang").value.trim(), minuten: parseInt($("f-minuten").value, 10) || 45 };
     if (zg) e.jahrgang_zuletzt = $("f-jahrgang").dataset.zuletzt || ((Z.mappe && Z.mappe.einheit) || {}).jahrgang_zuletzt || "";
     if (!S.katalog) return;
-    if (!Z.mappe) { einheitAnlegen(e, S.katalog.vorlagen[0], schulart); return; }
+    if (!Z.mappe) { einheitAnlegen(e, S.katalog.vorlagen[0], schulart, stunden); return; }
     if (neueEinheit()) {
       S.angaben.schulart = schulart; angabenSchreiben({ schulart: schulart });
       einheitAnhaengen(e); return;
     }
-    // Schritt 1 nachträglich geändert: Angaben übernehmen; ohne Inhalt die Bausteine der Vorlage neu rechnen
+    // Schritt 1 nachträglich geändert: Angaben übernehmen; ohne Inhalt die Bausteine der Vorlage neu rechnen.
+    // AP13.40: in einer Sequenz ist das Thema das der Sequenz (Titel); die laufende Stunde behält ihr Thema
+    var sequenz = !!Z.mappe.sequenz;
+    if (sequenz && Z.mappe.einheit && einheitTag()) e.thema = Z.mappe.einheit.thema || thema;
     Z.mappe.einheit = Object.assign({}, Z.mappe.einheit || {}, e);
-    if (!Z.mappe.anhaengen) Z.mappe.titel = thema;
+    if (!Z.mappe.anhaengen || sequenz) Z.mappe.titel = thema;
+    if (Z.mappe.themen && !sequenz) Z.mappe.themen[einheitTag() || "e1"] = thema;
     var v = vorlageNach(Z.mappe.einheit.vorlage);
     if (v && !inhalt() && Z.mappe.bausteine.every(function (k) { return k.geplant; })) karteVorlage(v);
     S.angaben.thema = thema; S.angaben.jahrgang = e.jahrgang; S.angaben.minuten = e.minuten;
     // AP13.20 §3: eine ältere Mappe ohne Schulart bleibt ohne, solange die Lehrkraft keine wählt
     var sa = zg || schulart ? { schulart: schulart } : {};
     Object.assign(S.angaben, sa);
+    if (S.sequenzSetzen) S.sequenzSetzen(stunden);
     Z.mappe.schritt = Math.max(schritt(), 2);
     S.auf = {};
     zeichne();
@@ -382,7 +435,9 @@
         karten.push(karte);
       });
     });
-    var summe = karten.reduce(function (s, k) { return s + k.soll; }, 0), diff = minuten - summe;
+    // AP13.35 M2: die eingeschalteten Karten ergeben zusammen die Dauer (die Summe gilt mit „Zeit selbst einteilen“ als
+    // Zahl der Einheit im Text für den Chat)
+    var summe = karten.reduce(function (s, k) { return s + (k.aus ? 0 : k.soll); }, 0), diff = minuten - summe;
     var groesste = karten.filter(function (k) { return k._dehnbar; }).sort(function (a, b) { return b.soll - a.soll;
         })[0];
     if (groesste && groesste.soll + diff >= 1) groesste.soll += diff;
@@ -390,10 +445,18 @@
     return karten;
   }
 
-  function karteVorlage(v) {
+  // AP13.31: Hat die Lehrkraft im Plan („Ich steuere“) etwas angelegt, ersetzt keine Vorlage ihn (Schritt 1, Art der
+  // Einheit, Lehrplan); die Art gilt dann nur als Angabe. `erzwingen`: der Plan holt den Aufbau selbst (plan.js)
+  function karteVorlage(v, erzwingen) {
     var e = Z.mappe.einheit, alt = {};
+    // AP13.40: in einer Sequenz ersetzt keine Vorlage still die Karten einer Stunde (Schritt 1, Art); nur „Nach Phasen
+    // beginnen“ im Plan holt den Aufbau (`erzwingen`). Die Art gilt sonst nur als Angabe
+    if (!erzwingen && Z.mappe.sequenz) { e.vorlage = v.name; return false; }
+    if (!erzwingen && S.planBelegt && S.planBelegt()) { e.vorlage = v.name; return false; }
     Z.mappe.bausteine.forEach(function (k) { if (k.auftrag) alt[k.id] = k.auftrag; });
-    Z.mappe.bausteine = vorlageKarten(v, e.minuten || 45);
+    // AP13.40: in einer Sequenz bleiben die Karten der übrigen Stunden (mit `einheit`), die neuen zählen hinter ihnen weiter
+    var andere = Z.mappe.sequenz ? Z.mappe.bausteine.filter(function (k) { return !!k.einheit; }) : [];
+    Z.mappe.bausteine = vorlageKarten(v, e.minuten || 45, andere.length ? S.naechsteNummer() : 1).concat(andere);
     Z.mappe.bausteine.forEach(function (k) { if (alt[k.id]) k.auftrag = alt[k.id]; });
     e.vorlage = v.name;
     if (S.angaben.differenzierung) zusatzKarte();     // AP13.14: neue Karten, Schalter an: Karte „Zusatz“ wieder dazu
@@ -444,7 +507,7 @@
       lizenz_name: g.lizenz ? g.name : "" }]);
   }
 
-  function einheitAnlegen(e, v, schulart) {
+  function einheitAnlegen(e, v, schulart, stunden) {
     e.vorlage = v.name;
     Z.mappe = km.neueMappe(e.thema, e, vorlageKarten(v, e.minuten));
     Z.mappe.schritt = 2;
@@ -452,6 +515,7 @@
     Z.mappe.zeit_start = new Date().toISOString();  // AP13.12 a11: Minuten bis zum Download für die Rückmeldung
     Z.kurs_md = ""; Z.steckbrief_text = ""; Z.assets = {}; Z.pruefung = null; Z.kennzahlen = null; Z.bau = null;
         Z.beispiel = null;
+    if (stunden && S.sequenzSetzen) S.sequenzSetzen(stunden);    // AP13.40: Sequenz, Stunde 1 ist diese Einheit
     S.angaben = { thema: e.thema, jahrgang: e.jahrgang, minuten: e.minuten, schulart: schulart || "", familie: "sachlich", dichte: "normal",
         kasten: "familie", format: "themen", farbe: "" };
     neuStart();
@@ -459,34 +523,51 @@
     if (Z.geladen) neuPruefen().catch(zeigeFehler);
   }
 
-  // Nächste Einheit: geplante Karten hinten an, mit neuen Nummern und dem Teil „e<n>“ (Nachlieferung beim Bau)
-  function einheitAnhaengen(e) {
-    var ids = {}, n = 1;
-    Z.mappe.bausteine.forEach(function (k) { ids[k.id] = 1; });
-    while (ids["b" + n]) n += 1;
+  // Nächste Einheit: geplante Karten hinten an, mit neuen Nummern und dem Teil „e<n>“ (Nachlieferung beim Bau).
+  // AP13.30: `ohneSprung` (Editor, „Weitere Einheit“): die Schrittfolge springt nicht nach Schritt 2; mit gewähltem
+  // Chat und Aussehen steht sie auf Schritt 4 (Text für den Chat). -> Versprechen, erfüllt nach der Prüfung
+  function einheitAnhaengen(e, ohneSprung) {
+    var n = S.naechsteNummer();   // AP13.30: hinter der höchsten Nummer, sonst träfe b6 der neuen Einheit eine alte Karte
     var alteEinheit = Z.mappe.einheit || {};
     var v = vorlageNach(alteEinheit.vorlage) || S.katalog.vorlagen[0];
     e.vorlage = v.name;
-    var karten = vorlageKarten(v, e.minuten, n);
+    // AP13.31: in „Ich steuere“ (außer „Weitere Einheit“ im Editor) plant die Lehrkraft die Einheit im leeren Plan
+    // AP13.40: hat die Einheit schon Karten (Stunde einer Sequenz aus dem Sequenzplan), bleiben es ihre
+    var schon = Z.mappe.bausteine.some(function (k) { return k.einheit === Z.mappe.anhaengen; });
+    var karten = schon || (zweig() === "steuer" && !ohneSprung) ? [] : vorlageKarten(v, e.minuten, n);
     karten.forEach(function (k) { k.einheit = Z.mappe.anhaengen; });
     Z.mappe.bausteine = Z.mappe.bausteine.concat(karten);
+    // AP13.35 §4.2: Thema je Einheit, für die Gliederung der Listen
+    var th = Z.mappe.themen = Z.mappe.themen || {};
+    var vorige = Z.mappe.laufend || "e1";
+    if (!th[vorige] && (alteEinheit.thema || Z.mappe.titel)) th[vorige] = alteEinheit.thema || Z.mappe.titel;
+    th[Z.mappe.anhaengen] = e.thema;
     Z.mappe.einheit = e;
     Z.mappe.laufend = Z.mappe.anhaengen;           // Text, Bilder und Rand gehören jetzt zu dieser Einheit
     delete Z.mappe.stueckelung;
-    Z.mappe.durchsicht = false; delete Z.mappe.kopiert;
+    Z.mappe.durchsicht = false; delete Z.mappe.kopiert; delete Z.mappe.durchsicht_neu;
     Z.mappe.zeit_start = new Date().toISOString(); delete Z.mappe.zeit_download;
     Z.bau = null;
     neuStart();
     document.querySelector("input[name=text-art][value=leer]").checked = true;
     texte.art = "leer";
+    if (ohneSprung) {
+      Z.mappe.schritt = zweig() && Z.mappe.aussehen && chatInfo(Z.mappe.chat) ? 4 : 2;
+      S.auf = {}; zeichne(); autosave();
+      return Z.geladen ? neuPruefen() : Promise.resolve();
+    }
     gehe(2, zweig() ? "weiter-2" : "zweig-mach");
     if (Z.geladen) neuPruefen().catch(zeigeFehler);
+    return Promise.resolve();
   }
 
   function neuStart() {
     clearTimeout(S.kennzahlTimer); clearTimeout(S.textTimer); clearTimeout(S.eingabeTimer);
-    texte.teile = []; texte.ids = []; texte.teil = 0; texte.art = "einheit"; texte.kopiert = {}; S.fragenListe = [];
-        S.korrekturen = []; S.spracheGelb = []; S.letzteAntwort = null;
+    texte.teile = []; texte.ids = []; texte.teil = 0; texte.art = "einheit"; texte.kopiert = {}; texte.veraltet = false;
+    texte.geaendert = []; delete texte.teilMd;                // AP13.41 §1.2
+    Object.keys(S.bildMeldung || {}).forEach(function (k) { delete S.bildMeldung[k]; });     // AP13.42 B1
+        S.fragenListe = [];
+        S.korrekturen = []; S.korrekturBitte = ""; S.spracheGelb = []; S.letzteAntwort = null;
     S.korrektur = { text: "", offen: false, stand: "", art: "" };
     $("korrektur-eingabe").value = ""; $("eingabe-stand").hidden = true;
     S.chatWahlOffen = false; S.auf = {}; S.designer = null;
@@ -516,7 +597,11 @@
       // AP13.15: Mappe aus einer neueren Mühle oder aus der Testversion: ein Satz statt „Bereit“, nichts gesperrt
       var satz = Z.gespeichert ? await km.mappeFn("herkunft_hinweis", [Z.gespeichert, km.kanal]) : "";
       if (satz) status(satz, "lauf"); else status("Bereit", "ok");
-    } catch (e) { zeigeFehler(e); }
+    } catch (e) {
+      var m = /^kurs\.md fehlt/.exec(fehlerText(e));
+      if (m) status(S.katalog.oberflaeche.keine_kursmappe.replace("{grund}", "kurs.md fehlt"), "fehler");
+      else zeigeFehler(e);
+    }
   }
   function zeigeFehler(e) { status("Das hat nicht geklappt: " + fehlerText(e), "fehler"); }
 
@@ -559,17 +644,27 @@
     var b = ev.target.closest("[data-zweig]"); if (!b || !Z.mappe) return;
     var vorher = zweig();
     Z.mappe.zweig = b.dataset.zweig;
-    S.designer = null;
+    designerBeenden();
     if (vorher !== b.dataset.zweig && S.lehrplanVorbelegen) S.lehrplanVorbelegen();   // AP13.24: Felder des neuen Wegs
     if (vorher === "richtung" && b.dataset.zweig === "steuer") typenUebernehmen();
-    if (b.dataset.zweig === "mach" || b.dataset.zweig === "richtung") {
-      if (schritt() <= 2) { zeichne(); geaendert(); $("m-kontext").focus({ preventScroll: true }); }
-      else { S.auf[2] = true; zeichne(); geaendert(); }
-    } else {
-      if (schritt() <= 2) { zeichne(); geaendert(); var k = $("vorlagen").querySelector("button"); if (k &&
-          !inhalt()) k.focus({ preventScroll: true }); }
-      else { S.auf[2] = true; zeichne(); geaendert(); }
-    }
+    if (S.planZweig) S.planZweig(vorher, b.dataset.zweig);     // AP13.31: Plan leeren bzw. Aufbau zurückholen
+    // AP13.36 §1.5: der Fokus bleibt auf dem gewählten Weg (eine Radiogruppe: die Pfeiltasten wählen weiter); ein Sprung
+    // in ein Textfeld öffnete am Handy die Tastatur
+    if (schritt() <= 2) { zeichne(); geaendert(); }
+    else { S.auf[2] = true; zeichne(); geaendert(); }
+  });
+  // AP13.37 §3 (e7-11): der Fokus bleibt nach der Wahl auf dem Weg (AP13.36 §1.5); wer gleich tippt, schreibt in das
+  // Textfeld dieses Wegs („Worum geht es genau?“ bzw. im Plan „Worum geht es in dieser Einheit?“), nichts geht verloren.
+  // Leertaste, Pfeile und Tasten mit Strg, Alt oder Cmd bleiben bei der Radiogruppe
+  document.querySelector(".zweige").addEventListener("keydown", function (ev) {
+    if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.isComposing || String(ev.key).length !== 1 || ev.key === " ") return;
+    var f = zweig() === "steuer" ? $("plan-beschreibung") : zweig() ? $("m-kontext") : null;
+    if (!f || !f.getClientRects().length || f.disabled || f.readOnly) return;
+    ev.preventDefault();
+    f.focus();
+    var pos = f.value.length;
+    f.setRangeText(ev.key, pos, pos, "end");
+    f.dispatchEvent(new Event("input", { bubbles: true }));
   });
   $("weiter-2").onclick = function () { gehe(nachZwei()); };
 
@@ -623,6 +718,9 @@
     ["r-differenzierung", "a-differenzierung"].forEach(function (id) { textKacheln($(id), "differenzierung",
         o.differenzierung, a.differenzierung ? "an" : "aus", false); });
     Array.prototype.forEach.call($("r-art").querySelectorAll(".aus-kachel"), function (b) { b.disabled = inhalt(); });
+    // AP13.35 §3.4: nach der ersten Antwort ist die Art fest; ein Satz sagt, warum, und was noch geht
+    $("r-art-gesperrt").hidden = !inhalt();
+    $("r-art-gesperrt").textContent = inhalt() ? S.editorText("art_gesperrt") : "";
     if (document.activeElement !== $("r-material")) $("r-material").value = Z.mappe.material || "";
     vorschlagZeilen();
   }
@@ -839,7 +937,7 @@
   // Wechsel „Ich gebe die Richtung“ → „Ich steuere“: die Übungskarten der Vorlage bekommen die bevorzugten Typen
   function typenUebernehmen() {
     var wunsch = S.angaben.uebungstypen || [], v = vorlageNach((Z.mappe.einheit || {}).vorlage);
-    if (!wunsch.length || !v || inhalt()) return;
+    if (!wunsch.length || !v || inhalt() || (S.planBelegt && S.planBelegt())) return;
     var ueben = v.phasen.filter(function (p) { return p.rolle === "üben"; }).map(function (p) { return p.phase; });
     var n = 0;
     Z.mappe.bausteine.forEach(function (k) {
@@ -871,7 +969,7 @@
   // AP13.24 §9: Infoknopf ⓘ am Materialfeld; der Text steht in katalog.yaml (oberflaeche.material_info) und kommt erst beim
   // Öffnen in die Seite. Das Feld sitzt in einem Label: ein Klick auf ⓘ soll weder das Feld fokussieren noch absenden.
   function infoUmschalten(k) {
-    var t = k.closest("label").querySelector(".info-text"), auf = t.hidden;
+    var t = (k.closest(".info-ort") || k.closest("label")).querySelector(".info-text"), auf = t.hidden;
     if (auf && S.katalog) t.textContent = S.katalog.oberflaeche[k.dataset.info] || "";
     t.hidden = !auf;
     k.setAttribute("aria-expanded", String(auf));
@@ -881,7 +979,8 @@
     ev.preventDefault(); infoUmschalten(k);
   });
   document.addEventListener("keydown", function (ev) {
-    var k = ev.target.classList && ev.target.classList.contains("info-knopf") ? ev.target : null;
+    // ein echter Knopf (AP13.40) klickt mit Enter und Leertaste selbst
+    var k = ev.target.classList && ev.target.classList.contains("info-knopf") && ev.target.tagName !== "BUTTON" ? ev.target : null;
     if (k && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); infoUmschalten(k); }
   });
 
@@ -909,8 +1008,27 @@
       dichte === "normal" ? "" : klein(oberText("dichte", dichte)),
       kasten === "familie" ? "" : klein(oberText("kasten", kasten))].filter(Boolean).join(" · ");
   }
+  // AP13.34 §4: Namen der Abschnitte aus der Planung der Lehrkraft (Abschnitt der Karte, sonst ihre Phase), ohne
+  // ausgeschaltete Karten und ohne Doppelte; leer, solange noch nichts geplant ist
+  function abschnittsnamen() {
+    var m = Z.mappe, namen = [];
+    // AP13.40: in einer Sequenz zeigt die Vorschau die Stunden, nicht die Phasen einer Stunde
+    if (m && m.sequenz && m.sequenz.stunden) return m.sequenz.stunden.map(function (st, i) {
+      return String(st.thema || "").trim() || S.editorText("einheit_name", { n: i + 1 }); });
+    ((m && m.bausteine) || []).forEach(function (b) {
+      var n = String(b.abschnitt || b.phase || "").trim();
+      if (n && !b.aus && namen.indexOf(n) < 0) namen.push(n);
+    });
+    return namen;
+  }
+  function vorschauThema() {
+    var m = Z.mappe || {};
+    if (m.sequenz) return String(m.titel || "").trim();                 // AP13.40: Thema der Sequenz
+    return String((m.einheit && m.einheit.thema) || m.titel || "").trim();
+  }
   function hebel() {
-    return { akzent: S.angaben.farbe || "", dichte: S.angaben.dichte || "normal", kasten: S.angaben.kasten || "familie" };
+    return { akzent: S.angaben.farbe || "", dichte: S.angaben.dichte || "normal", kasten: S.angaben.kasten || "familie",
+      titel: vorschauThema(), phasen: abschnittsnamen() };
   }
   // kleines Dreieck mit Tooltip: Importprobe der Familie oder Import des Formats steht aus
   var PROBE_SVG = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1.5 15 14.5H1z" ' +
@@ -1153,12 +1271,19 @@
     return bis === 1 && f && f.akzent_fest ? 2 : bis;     // Farbe gesperrt: Dichte gleich mit, sonst ginge es nicht weiter
   }
   function aussehenGewaehlt(feld) {
-    if (!Z.mappe || S.designer) return;
+    if (!Z.mappe) return;
     var i = feld === "bilder" || feld === "bildbeschriftung" ? 0 : FOLGE.indexOf(feld);
     if (i < 0) return;
     var bis = Math.max(aussehenBis(), i + 1), f = familieInfo(familieJetzt());
     if (bis === 1 && f && f.akzent_fest) bis = 2;          // bleibt, auch wenn danach ein anderes Design gilt
     Z.mappe.aussehen_bis = Math.min(FOLGE.length - 1, bis);
+  }
+  // AP13.28: Im Designer sind alle Gruppen zu sehen. Wer ihn verlässt („Fertig“, Wechsel des Zweigs, Weiter), hat sie
+  // gesehen: Schritt 3 zeigt danach alle, nie weniger als vorher. Ohne das fiel „Ränder“ nach dem Designer wieder weg
+  // (`aussehen_bis` stand noch auf der Stelle vor dem Designer), auch mit einer eigenen Wahl gleich dem Standard.
+  function designerBeenden() {
+    if (S.designer && Z.mappe) Z.mappe.aussehen_bis = FOLGE.length - 1;
+    S.designer = null;
   }
   function gruppe(g) { return document.querySelector('#schritt-3 .aus-gruppe[data-gruppe="' + g + '"]'); }
   function zeichneGruppen(s) {
@@ -1273,8 +1398,9 @@
         '" width="40" height="3" rx="1" fill="#5B6475"/>'; });
     return s + "</svg>";
   }
-  // die Kachel „Eigene“ ist ein label: der Klick öffnet den Farbwähler (Klick auf das Feld, hier übergangen); eine
-  // schon gewählte eigene Farbe gilt sofort. „Benutzerdefiniert“ bei Bilder schreibt die Zahl aus dem Feld darunter.
+  // die Kachel „Eigene“ ist kein label (WebKit gäbe den Fokus beim Pfeilwechsel an das Farbfeld weiter): der Klick
+  // öffnet den Farbwähler von Hand (Klick auf das Feld selbst öffnet ihn ohnehin); eine schon gewählte eigene Farbe
+  // gilt sofort. „Benutzerdefiniert“ bei Bilder schreibt die Zahl aus dem Feld darunter.
   var EIGEN = $("farbe-eigen-l");
   EIGEN.insertBefore(el("span", { cls: "eigen-mini", "aria-hidden": "true" }), EIGEN.firstChild);
   EIGEN.querySelector(".eigen-mini").appendChild($("farbe-eigen"));
@@ -1283,6 +1409,7 @@
     if (!b || !Z.mappe || b.hasAttribute("disabled") || ev.target.id === "farbe-eigen") return;
     var a = {}, wert = b.dataset.wert;
     if (b.dataset.feld === "farbe" && wert === "eigen") {
+      farbwaehlerOeffnen();
       if (!EIGEN.dataset.gewaehlt) { zeichneAussehen(); return; }
       wert = $("farbe-eigen").value.toUpperCase();
     }
@@ -1312,15 +1439,32 @@
     S.angaben.start = w;
     angabenSchreiben({ start: w }, false);
   });
-  // Farbfeld „Eigene“: schreibt farbe als #RRGGBB in den Steckbrief
-  $("farbe-eigen").addEventListener("change", function () {
-    if (!Z.mappe) return;
+  // AP13.33 M1: mit der Tastatur ist „Eigene“ ein Radio der Gruppe (ein Tab-Halt, das Farbfeld hat keinen eigenen).
+  // Pfeile wählen die eigene Farbe, ohne den Farbwähler zu öffnen; Enter oder Leertaste auf der Kachel öffnen ihn
+  function farbeEigenWaehlen() {
+    if (!Z.mappe || $("farbe-eigen").disabled) return;
     var w = $("farbe-eigen").value.toUpperCase();
     EIGEN.dataset.gewaehlt = "1";
     S.angaben.farbe = w;
     aussehenGewaehlt("farbe");
     zeichneAussehen(); felderFuellen(); zeichneSchritte();
     angabenSchreiben({ farbe: w }, true);
+  }
+  EIGEN.addEventListener("km-pfeilwahl", farbeEigenWaehlen);
+  EIGEN.addEventListener("keydown", function (ev) {
+    if ((ev.key !== "Enter" && ev.key !== " ") || ev.target !== EIGEN || $("farbe-eigen").disabled) return;
+    ev.preventDefault();
+    farbwaehlerOeffnen();
+  });
+  function farbwaehlerOeffnen() {
+    var f = $("farbe-eigen");
+    if (f.disabled) return;
+    try { if (f.showPicker) f.showPicker(); else f.click(); } catch (e) { f.click(); }
+  }
+  // Farbfeld „Eigene“: schreibt farbe als #RRGGBB in den Steckbrief
+  $("farbe-eigen").addEventListener("change", function () {
+    farbeEigenWaehlen();
+    if (document.activeElement === $("farbe-eigen")) EIGEN.focus({ preventScroll: true });
   });
   // „Standard nehmen und weiter“: die verborgenen Gruppen tragen den Standard (sonst wären sie sichtbar, aussehenBis)
   $("weiter-3").onclick = $("standard-weiter").onclick = function () {
@@ -1339,10 +1483,11 @@
   $("designer-fertig").onclick = function () {
     if (!S.designer) return;
     var y = S.designer.y;
-    S.designer = null;
+    designerBeenden();
     if (schritt() > 2) S.auf[2] = true;
     $("mehr").open = true;
     zeichne();
+    geaendert();
     window.scrollTo(0, y);
     $("zum-designer").focus({ preventScroll: true });
   };
@@ -1385,15 +1530,26 @@
   }
 
   var verwerfenAktion = null;
+  var frageVon = null;               // AP13.33 §2.1: Knopf, der die Frage geöffnet hat (× oder „verwerfen“)
   function frage(text, aktion) {
     verwerfenAktion = aktion;
+    frageVon = document.activeElement !== document.body ? document.activeElement : null;
     $("verwerfen-text").textContent = text;
     $("verwerfen-frage").hidden = false;
     $("verwerfen-nein").focus();
   }
-  $("verwerfen-nein").onclick = function () { $("verwerfen-frage").hidden = true; verwerfenAktion = null; };
+  function frageZu() {
+    $("verwerfen-frage").hidden = true; verwerfenAktion = null;
+    var v = frageVon; frageVon = null;
+    S.fokus([v, "schliessen", "weiter-knopf", "f-thema"], true);
+  }
+  $("verwerfen-nein").onclick = frageZu;
+  // §2.2: Esc wirkt wie „Nein“
+  $("verwerfen-frage").addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape") { ev.preventDefault(); frageZu(); }
+  });
   $("verwerfen-ja").onclick = async function () {
-    $("verwerfen-frage").hidden = true;
+    $("verwerfen-frage").hidden = true; frageVon = null;
     var a = verwerfenAktion; verwerfenAktion = null;
     if (a) { try { await a(); } catch (e) { zeigeFehler(e); } }
   };
@@ -1414,6 +1570,7 @@
       await km.autosaveLoeschen();
       S.leeren();
       weiterAnzeigen();
+      S.fokus(["f-thema"], true);
     });
   };
 
@@ -1429,6 +1586,7 @@
       zeichne(); geaendert(); S.textSpaeter(0);
       return;
     }
+    if (ev.target.id === "a-kontext") { kontextSchreiben("kontext", ev.target.value); zeichne(); return; }
     var feld = FELDER[ev.target.id]; if (!feld) return;
     if (/^a-(thema|jahrgang|minuten|zielgruppe)$/.test(ev.target.id) && !felderPruefen([ev.target.id])) return;
     var wert = ev.target.value;
@@ -1455,14 +1613,60 @@
     angabenSchreiben(a, feld === "farbe" || feld === "familie");
   });
   var kontextTimer = null, kontextOffen = {};
-  function kontextSchreiben(feld, wert) {
+  // AP13.35 §1.2: „Worum geht es?“ einer angehängten Einheit steht in ihrer Einheit der Mappe; die erste Einheit schreibt
+  // den Steckbrief (`kurs.kontext`) wie bisher. Ein Weg für die drei Felder (Plan, „Mach du“, „Mehr einstellen“)
+  // `kurs` (AP13.35 M1): ab Einheit 2 das Feld „ändern“ der Kursbeschreibung, das den Steckbrief schreibt
+  function kontextSchreiben(feld, wert, kurs) {
     if (!Z.mappe) return;
+    if (feld === "kontext" && einheitTag() && !kurs) {
+      Z.mappe.einheit = Object.assign({}, Z.mappe.einheit || {}, { kontext: wert });
+      geaendert();
+      return;
+    }
     S.angaben[feld] = wert; kontextOffen[feld] = wert;
     clearTimeout(kontextTimer);
     kontextTimer = setTimeout(function () { var a = kontextOffen; kontextOffen = {}; angabenSchreiben(a);
         S.textSpaeter(); }, 400);
   }
   $("m-kontext").addEventListener("input", function () { kontextSchreiben("kontext", $("m-kontext").value); });
+  // AP13.35 M1: ab Einheit 2 steht die Beschreibung des Kurses (Text der ersten Einheit, `kurs.kontext`) über dem Feld der
+  // Einheit, im Plan und in „Mach du“/„Ich gebe die Richtung“, mit „ändern“; das Feld dazu schreibt den Steckbrief. Leer:
+  // keine Zeile „Kurs:“ im Text für den Chat. Ein Zustand für beide Stellen
+  var kursOffen = false;
+  function kursZeile() {
+    var a = String(S.angaben.kontext || "").trim(), T = S.editorText;
+    var box = el("div", { cls: "kurs-zeile" });
+    box.appendChild(el("p", { cls: "feld-zeile kurs-text" }, [el("span", { cls: "kurs-wert", text: a ? T("kurs_zeile",
+        { text: a }) : T("kurs_leer") }), " · ", el("button", { type: "button", cls: "textlink kurs-aendern", "data-fokus": "kurs",
+        "aria-expanded": String(kursOffen), text: T(a ? "kurs_aendern" : "kurs_ergaenzen") })]));
+    if (kursOffen) {
+      var f = el("textarea", { cls: "von-lehrkraft kurs-feld", rows: "2", maxlength: "600", spellcheck: "true",
+          "data-fokus": "kurs-feld" });
+      f.value = S.angaben.kontext || "";
+      box.appendChild(el("label", { cls: "feld feld-breit" }, [T("kurs_feld"), f]));
+    }
+    return box;
+  }
+  function kursZeigen() {
+    var c = $("m-kurs"); if (!c || c.contains(document.activeElement) && document.activeElement.tagName === "TEXTAREA") return;
+    c.textContent = "";
+    if (Z.mappe && S.katalog && einheitTag()) c.appendChild(kursZeile());
+  }
+  document.addEventListener("click", function (ev) {
+    var b = ev.target.closest && ev.target.closest(".kurs-aendern"); if (!b) return;
+    var imPlan = !!b.closest("#plan");
+    kursOffen = !kursOffen;
+    kursZeigen();
+    if (S.zeichnePlan) S.zeichnePlan();
+    var ort = imPlan ? $("plan") : $("m-kurs");
+    S.fokus([ort.querySelector(kursOffen ? ".kurs-feld" : ".kurs-aendern")]);
+  });
+  document.addEventListener("input", function (ev) {
+    if (!ev.target.classList || !ev.target.classList.contains("kurs-feld")) return;
+    kontextSchreiben("kontext", ev.target.value, true);
+    var w = ev.target.closest(".kurs-zeile").querySelector(".kurs-wert"), t = ev.target.value.trim();
+    if (w) w.textContent = t ? S.editorText("kurs_zeile", { text: t }) : S.editorText("kurs_leer");
+  });
   $("fach").addEventListener("input", function () {
     kontextSchreiben("fach", $("fach").value.trim());
     if (Z.mappe && S.katalog) { zeichneRichtung(); vorlagenZeigen(); zeichneMachArt(); }   // AP13.24: Wörter und Arten nach dem Fach
@@ -1504,12 +1708,14 @@
         /* ohne Speicher: nur diese Seite */ }
     schemaZeigen();
   };
-  Object.assign(S, { schulartGemerkt: schulartGemerkt, adresseLesen: adresseLesen, angabenSchreiben: angabenSchreiben, ausklapp: ausklapp,
-    kursangabenMerken: kursangabenMerken,
-    felderPruefen: felderPruefen, feldOk: feldOk,
-    akzent: akzent, gehe: gehe, jahrgangZahl: jahrgangZahl, nachZwei: nachZwei, neuStart: neuStart,
-    schemaZeigen: schemaZeigen, steckbriefSicher: steckbriefSicher, vorlageNach: vorlageNach, vorschauLaden: vorschauLaden,
+  Object.assign(S, { kursZeile: kursZeile, eigenerPlan: eigenerPlan, vorlageGewaehlt: vorlageGewaehlt, kontextSetzen: function (wert) { kontextSchreiben("kontext", wert); }, schulartGemerkt: schulartGemerkt, adresseLesen: adresseLesen, angabenSchreiben: angabenSchreiben, ausklapp: ausklapp,
+    kursangabenMerken: kursangabenMerken, einheitAnhaengen: einheitAnhaengen,
+    felderPruefen: felderPruefen, feldOk: feldOk, feldMeldung: feldMeldung, karteVorlage: karteVorlage, vorlageKarten: vorlageKarten,
+    typenUebernehmen: typenUebernehmen, materialFehlt: materialFehlt, materialZeigen: materialZeigen,
+    akzent: akzent, gehe: gehe, miniFormat: miniFormat, jahrgangZahl: jahrgangZahl, nachZwei: nachZwei, neuStart: neuStart,
+    fazit: fazit, abschnittsnamen: abschnittsnamen, vorschauThema: vorschauThema, schemaZeigen: schemaZeigen, steckbriefSicher: steckbriefSicher, vorlageNach: vorlageNach, vorschauLaden: vorschauLaden,
     vorlagenZeigen: vorlagenZeigen, vorschlagAnwenden: vorschlagAnwenden, vorschlagLoesen: vorschlagLoesen,
+    vorlageSichtbar: vorlageSichtbar, vorschlagWeg: vorschlagWeg,      // AP13.39: Art der Einheit im Plan
     fachWoerter: fachWoerter, fachJetzt: fachJetzt, weiterAnzeigen: weiterAnzeigen, zeichneAussehen: zeichneAussehen,
     zeichneSchritte: zeichneSchritte, zeigeFehler: zeigeFehler });
 })();
