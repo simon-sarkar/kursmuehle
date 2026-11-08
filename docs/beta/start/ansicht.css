@@ -784,6 +784,7 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
  * von der Lehrkraft kommt. */
 .editor { width: 100vw; max-width: 100vw; height: 100vh; max-height: 100vh; margin: 0; padding: 0; border: 0; background: var(--grund);
   color: var(--text); overflow: hidden; overflow: clip; }
+.editor { height: 100dvh; max-height: 100dvh; }            /* AP13.44: die Leiste unten bleibt am Handy über der Browserleiste */
 .editor[open] { display: flex; flex-direction: column; }
 .editor::backdrop { background: rgba(0, 0, 0, 0.45); }
 body.editor-offen { overflow: hidden; }
@@ -793,6 +794,16 @@ body.editor-offen { overflow: hidden; }
   line-height: 1; cursor: pointer; }
 .ed-zu:hover { background: var(--kopf-hover); }
 .ed-rumpf { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
+/* AP13.44 §3: feste Leiste unten, „Zurück zu den Schritten“ links, „Weiter: …“ rechts; schmal untereinander */
+.ed-fuss { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); background: var(--flaeche); border-top: 1px solid var(--linie);
+  box-shadow: 0 -2px 10px var(--schatten); }
+.ed-fuss .knopf { margin: 0; }
+.ed-fuss .knopf[hidden] { display: none; }
+@media (max-width: 640px) {
+  .ed-fuss { padding-top: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+  .ed-fuss .knopf { flex: 1 1 auto; }
+}
 .ed-vorschau { width: 100%; max-width: 900px; margin: 0 auto; padding: 8px 16px 48px; }
 .ed-liste { position: sticky; top: 0; z-index: 2; background: var(--flaeche); border-bottom: 1px solid var(--linie); }
 .ed-liste > summary { padding: 10px 16px; min-height: 44px; font-weight: 650; cursor: pointer; }
@@ -873,7 +884,7 @@ body.editor-offen { overflow: hidden; }
 .ed-format .ed-format-titel { font-weight: 650; }
 .ed-format code { font-size: 0.82rem; }
 .editor-auf-2 { margin-top: 12px; }
-/* AP13.38: schwebender Knopf unten links, fest am Fensterrand; öffnet dieselbe Ansicht wie der Link in der Kopfzeile. Fläche und
+/* AP13.38: schwebender Knopf, fest am Fensterrand; öffnet dieselbe Ansicht wie der Link in der Kopfzeile. Fläche und
  * Rand aus den Tokens (Rand --leise, Schrift --text); das Symbol sitzt auf dem festen Anthrazit des Logos in beiden Schemata.
  * Am Handy in Schritt 3 liegt er über der Vorschauleiste (96 px, aufgeklappt 60 vh); ohne ihn stünde er auf ihr. Die Fußzeile
  * bekommt unten Platz, damit am Seitenende nichts unter ihm liegt. Sichtbar nur ohne offenen Dialog (die Ansicht selbst ist
@@ -881,7 +892,7 @@ body.editor-offen { overflow: hidden; }
 .editor-schweb { position: fixed; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 15; display: flex;
   flex-direction: column; align-items: center; gap: 2px; min-width: 72px; padding: 6px 8px 5px; border: 2px solid var(--leise);
   border-radius: 20px; background: var(--flaeche); color: var(--text); font: inherit; font-size: 0.8rem; font-weight: 650;
-  line-height: 1.25; cursor: pointer; box-shadow: 0 2px 10px var(--schatten); }
+  line-height: 1.25; cursor: pointer; box-shadow: 0 2px 10px var(--schatten); white-space: nowrap; }
 .editor-schweb:hover { background: var(--gewaehlt); border-color: var(--text); }
 .sw-symbol { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%;
   background: #2a2a2a; }
@@ -892,12 +903,31 @@ body.editor-schweb-weg .editor-schweb { opacity: 0; transform: translateY(24px);
 @media (prefers-reduced-motion: reduce) { .editor-schweb { transition: none; } }
 body.editor-offen .editor-schweb { display: none; }
 body:has(dialog[open]) .editor-schweb { display: none; }
+/* AP13.44 §2: ab 1000 px als Lasche am linken Rand, senkrecht mittig (Rand zur Fensterkante offen, Wort in zwei Zeilen);
+ * die Seite hält links so viel frei, dass der Knopf nicht über der Hauptspalte liegt: 96 px (76 px Knopf, 20 px Abstand)
+ * abzüglich des freien Rands neben der Seite */
+@media (min-width: 1000px) {
+  .editor-schweb { left: 0; top: 50%; bottom: auto; transform: translateY(-50%); width: 76px; min-width: 0; padding: 8px 6px 7px 4px;
+    border-left: 0; border-radius: 0 20px 20px 0; white-space: normal; text-align: center; }
+  body.editor-schweb-weg .editor-schweb { opacity: 1; transform: translateY(-50%); pointer-events: auto; }
+  body.mit-editor-schweb .seite { padding-left: max(16px, calc(96px - max(0px, (100vw - 760px) / 2))); }
+  body.mit-editor-schweb .seite.mit-rand { padding-left: max(16px, calc(96px - max(0px, (100vw - 1180px) / 2))); }
+}
+@media (min-width: 1100px) {
+  body.mit-editor-schweb[data-schritt="3"] .seite { padding-left: max(16px, calc(96px - max(0px, (100vw - 1180px) / 2))); }
+}
+@media (min-width: 1000px) and (max-width: 1099px) {
+  /* aufgeklappte Vorschau (60 vh von unten): mittig in der freien Fläche darüber */
+  body[data-schritt="3"]:has(.vorschau-spalte.offen) .editor-schweb { top: 20vh; }
+  /* die Fußzeile endet über der Vorschauleiste (96 px) */
+  body[data-schritt="3"] .fuss { padding-bottom: calc(28px + 96px + env(safe-area-inset-bottom, 0px)); }
+}
 @media (max-width: 999px) {
   body.mit-editor-schweb .fuss { padding-bottom: calc(28px + 100px + env(safe-area-inset-bottom, 0px)); }
   /* die haftende Zeile „Übernehmen“ der Lehrplanwahl bleibt über dem Knopf statt hinter ihm */
   body.mit-editor-schweb .lp-fuss { bottom: calc(114px + env(safe-area-inset-bottom, 0px)); }
 }
-@media (max-width: 1099px) {
+@media (max-width: 999px) {
   body[data-schritt="3"] .editor-schweb { bottom: calc(96px + 16px + env(safe-area-inset-bottom, 0px)); }
   body[data-schritt="3"]:has(.vorschau-spalte.offen) .editor-schweb { bottom: calc(60vh + 16px); }
   body.mit-editor-schweb[data-schritt="3"] .fuss { padding-bottom: calc(28px + 100px + 96px + env(safe-area-inset-bottom, 0px)); }
@@ -1031,3 +1061,9 @@ body:has(dialog[open]) .editor-schweb { display: none; }
 .plan-el-reihe > .plan-el-phase-l { flex: 1 1 14rem; }
 .plan-el-phase-t { font-size: 0.78rem; font-weight: 600; color: var(--text); padding: 0 6px; border: 1px solid var(--linie); border-radius: 4px;
   overflow-wrap: anywhere; }
+/* AP13.43 §4/§5: Bausteine bei roten Karten zugeklappt; Editor in Schritt 5 und vor dem Herunterladen */
+.tafel-auf { display: block; margin: 4px 0 8px; }
+.editor-auf-5 { display: inline-block; margin: 8px 12px 8px 0; }
+.editor-auf-8 { display: block; margin: 0 0 10px; }  /* Nebenweg neben dem einen Ergebnis-Knopf */
+.editor-auf-5[hidden], .editor-auf-8[hidden] { display: none; }
+.k-im-editor { margin-top: 6px; }

@@ -76,9 +76,23 @@
   }
   $("durchsicht-ok").onclick = function () { if (!$("durchsicht-ok").disabled) durchgesehen(); };
   $("ohne-durchsicht").onclick = function () { durchgesehen(true); };
+  function durchsichtOffen() { return !!(S.fragenListe.length && !Z.mappe.durchsicht); }
   function nachBildern() {
-    if (S.fragenListe.length && !Z.mappe.durchsicht) gehe(6, ersteWahl()); else gehe(7, "herunterladen");
+    if (durchsichtOffen()) gehe(6, ersteWahl()); else gehe(7, "herunterladen");
   }
+  // AP13.44 §3: nächster offener Schritt für die Leiste im Editor, erst wenn die Antwort ohne Rot eingesetzt ist: nach
+  // Schritt 5 die Bilder (nur mit Bildwünschen), dann die Durchsicht (solange offen), dann die Datei. null vor Schritt 5,
+  // mit Rot und wenn der offene Schritt der aktuelle ist (Durchsicht in Schritt 6, Datei in Schritt 7)
+  S.naechsterOffen = function () {
+    if (!Z.mappe || !S.inhalt() || S.fehlerZahl() || S.teileOffen()) return null;
+    var s = S.schritt(), n = s === 5 && S.sichtbareSchritte().indexOf(5.5) >= 0 ? 5.5 : durchsichtOffen() ? 6 : 7;
+    return s < 5 || n === s ? null : n;
+  };
+  // dorthin wie die Weiter-Knöpfe der Schritte (Durchsicht bei der Wahl des Wegs, Datei beim Herunterladen)
+  S.weiterZu = function (n) {
+    if (!Z.mappe) return;
+    if (n === 6) gehe(6, ersteWahl()); else if (n === 7) gehe(7, "herunterladen"); else gehe(n);
+  };
   $("weiter-5").onclick = function () {
     if (!Z.mappe) return;
     // Schritt Bilder nur, wenn er sichtbar ist: Bildwünsche trotz „keine“ (Standard seit AP13.12 a2) führen weiter

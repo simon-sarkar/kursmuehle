@@ -899,9 +899,11 @@
   ],
   "editor": {
    "knopf": "Einheit ansehen und bearbeiten",
-   "schweb": "Editor",
+   "schweb": "Zum Editor",
    "titel": "Einheit ansehen und bearbeiten",
    "schliessen": "Schließen",
+   "zurueck_schritte": "Zurück zu den Schritten",
+   "weiter_zu": "Weiter: {titel}",
    "liste": "Bausteine",
    "liste_auf": "Bausteine anzeigen",
    "laedt": "Die Vorschau entsteht …",

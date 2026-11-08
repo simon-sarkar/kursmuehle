@@ -130,19 +130,11 @@
       } else if (minuten && b && b.minuten) ist = el("span", { cls: "k-ist geschaetzt", text: "im Inhalt " + b.minuten +
           " min" });
       var korrektur = S.korrekturen.filter(function (x) { return x.baustein === k.id; });
-      var inhaltEl = null;
-      if (b && !k.geplant) {
-        // nur Text, nie HTML aus der Chat-Antwort
-        var pre = el("pre", { cls: "k-text von-chat" }); pre.textContent = b.text;
-        inhaltEl = el("details", { cls: "k-inhalt" }, [el("summary", { text: "Inhalt ansehen" }), pre]);
-      }
-      var namen = b && !k.geplant ? S.bildnamen(b.text) : [];
-      var hochladen = namen.length ? el("div", { cls: "k-bilder" }, namen.map(function (name) {
-        var da = !!Z.assets[name];
-        return el("label", { cls: "knopf klein-knopf" + (da ? " da" : "") }, [(da ? "Bild „" + name +
-            "“ ersetzen" : "Bild „" + name + "“ hochladen"),
-          el("input", { type: "file", cls: "unsichtbar k-bild", accept: "image/png,image/jpeg", "data-datei": name })]);
-      })) : null;
+      // AP13.43 §5: statt des Drehbuch-Texts („Inhalt ansehen“) die Vorschau im Editor an diesem Baustein; Bilder kommen
+      // im Schritt „Bilder“ oder im Editor, nicht an der Karte (vor dem Schritt Bilder verwirrte der Knopf)
+      var inhaltEl = b && !k.geplant ? el("button", { type: "button", cls: "textlink k-im-editor", "data-aktion": "im-editor",
+        text: "Im Editor ansehen" }) : null;
+      var hochladen = null;
       var herkunft = titelHerkunft(k);
       if (k.aus && !steuer && !k.weggelassen) return;  // ausgeschaltete Karte: nur in „Ich steuere“ sichtbar
       if (mehrE && S.einheitVon(k) !== letzteE) {
@@ -754,6 +746,7 @@
     var liste = Z.mappe.bausteine, i = liste.indexOf(k), a = knopf.dataset.aktion;
     try {
       if (a === "zur-korrektur") { ev.preventDefault(); zurKorrektur(); }
+      else if (a === "im-editor") { await S.editorBei(k.id, knopf); }
       else if (a === "sprache") {
         var pos = S.spracheGelb.indexOf(k.id);
         if (pos >= 0) S.spracheGelb.splice(pos, 1); else S.spracheGelb.push(k.id);

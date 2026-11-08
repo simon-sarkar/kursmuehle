@@ -39,6 +39,8 @@
     ".km-ed-inhalt table { max-width: 100%; }",
     ".km-ed-inhalt .km-nojs { display: none; }",
     ".km-ed-inhalt [data-ziel], .km-ed-inhalt [data-aktion] { pointer-events: auto; }",
+    // AP13.44 §1: Übungsblöcke sind bedienbar wie im Kurs (uebungen.js je Block, siehe uebungenAn)
+    ".km-ed-inhalt .kmb { pointer-events: auto; }",
     ".km-vorschau-video { background: #eef0f3; color: #4b5563; padding: 28px 16px; text-align: center; border-radius: 6px; }"
   ].join("\n");
 
@@ -49,16 +51,54 @@
 
   function knoepfeZeigen() {
     var da = sichtbar();
-    ["editor-auf", "editor-auf-2"].forEach(function (id) {
+    ["editor-auf", "editor-auf-2", "editor-auf-5", "editor-auf-8"].forEach(function (id) {
       var b = $(id); b.hidden = !da;
       if (S.katalog) b.textContent = T("knopf");
     });
-    // AP13.38: der schwebende Knopf unter derselben Bedingung; das Wort darauf ist kürzer, der Name für Vorlesegeräte nicht
-    var sw = $("editor-schweb");
-    sw.hidden = !da;
-    document.body.classList.toggle("mit-editor-schweb", da);
+    // AP13.43 §5: in Schritt 5 erst, wenn nichts mehr rot ist (vorher steht dort die Korrektur)
+    $("editor-auf-5").hidden = !da || S.fehlerZahl() > 0 || S.teileOffen();
+    // AP13.38: der schwebende Knopf; AP13.44 §2: wie in Schritt 5 erst, wenn nichts rot ist. Das Wort darauf ist kürzer,
+    // der Name für Vorlesegeräte nicht
+    var sw = $("editor-schweb"), gruen = da && !S.fehlerZahl() && !S.teileOffen();
+    sw.hidden = !gruen;
+    document.body.classList.toggle("mit-editor-schweb", gruen);
     if (S.katalog) { $("editor-schweb-text").textContent = T("schweb"); sw.setAttribute("aria-label", T("schweb") + ": " + T("knopf")); }   // WCAG 2.5.3: Name beginnt mit dem sichtbaren Wort
+    leisteZeigen();
   }
+
+  // ---------------------------------------------------------------- Leiste unten (AP13.44 §3)
+  // „Zurück zu den Schritten“ und „Weiter: <nächster offener Schritt>“ (nachbau.js S.naechsterOffen, S.weiterZu); ohne
+  // nächsten Schritt (etwas rot, vor Schritt 5, offen ist der aktuelle) ist „Zurück“ der Hauptknopf
+  function leisteZeigen() {
+    if (!S.katalog) return;
+    var n = S.naechsterOffen ? S.naechsterOffen() : null, sec = n ? S.sektion(n) : null;
+    var titel = sec ? sec.querySelector(".s-titel").textContent.trim() : "";
+    var w = $("editor-weiter"), z = $("editor-zurueck");
+    z.textContent = T("zurueck_schritte");
+    w.hidden = !titel;
+    w.dataset.nr = titel ? String(n) : "";
+    w.textContent = titel ? T("weiter_zu", { titel: titel }) : "";
+    z.classList.toggle("haupt", !titel);
+  }
+  function zurueck() {
+    var v = offenVon, s = S.schritt(), sec = S.sektion(s);
+    fokusDanach = function () {
+      // der Knopf, der den Editor geöffnet hat, wenn er im aktuellen Schritt steht; sonst die Überschrift des Schritts
+      if (v && sec && sec.contains(v) && S.fokus([v])) { v.scrollIntoView({ block: "center" }); return; }
+      if (!sec || sec.hidden) { S.fokus([v, "kopf-menue", "editor-auf-2"], true); return; }
+      sec.scrollIntoView({ block: "start" });
+      S.fokus([sec.querySelector(".s-kopf")], true);
+    };
+    schliessen();
+  }
+  function weiter() {
+    var n = parseFloat($("editor-weiter").dataset.nr);
+    if (!n) return;
+    fokusDanach = function () { S.weiterZu(n); };
+    schliessen();
+  }
+  $("editor-zurueck").onclick = zurueck;
+  $("editor-weiter").onclick = weiter;
 
   // ---------------------------------------------------------------- Öffnen, Schließen, Esc
   function oeffnen(von) {
@@ -70,9 +110,10 @@
     $("editor-liste-titel").textContent = BREIT.matches ? T("liste") : T("liste_auf");
     $("editor-liste").open = BREIT.matches;
     meldungenWeg();
+    leisteZeigen();
     if (typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open", "");
     document.body.classList.add("editor-offen");
-    aktualisieren();
+    return aktualisieren();
   }
   function schliessen() { if (dlg.open) dlg.close(); }
   // fokusDanach: wer die Ansicht schließt und den Fokus woandershin schickt (Firefox feuert `close` erst nach einem
@@ -107,7 +148,8 @@
   });
   dlg.addEventListener("cancel", function (ev) { if (escInnen()) ev.preventDefault(); });
   $("editor-zu").onclick = schliessen;
-  ["editor-auf", "editor-auf-2", "editor-schweb"].forEach(function (id) { $(id).onclick = function () { oeffnen($(id)); }; });
+  ["editor-auf", "editor-auf-2", "editor-auf-5", "editor-auf-8", "editor-schweb"].forEach(function (id) {
+    $(id).onclick = function () { oeffnen($(id)); }; });
   // AP13.42: am schmalen Fenster beim Herunterscrollen ausblenden (verdeckt sonst Inhalt), beim Hochscrollen, am Seitenende
   // und mit dem Fokus wieder da; nur durchsichtig und nicht antippbar, damit Tab ihn weiter erreicht
   var SCHMAL = window.matchMedia("(max-width: 999px)"), letzteY = window.scrollY || 0;
@@ -387,6 +429,7 @@
     var root = host;
     if (host.attachShadow) { root = host.attachShadow({ mode: "open" }); root.append(stil, innen); }
     else host.append(stil, innen);
+    uebungenAn(innen);
     if (aktiv) {
       // §9: Kurstitel, Abschnitte und Kacheln sind bedienbar (Tabulator, Enter, Leertaste); Pfeile verschieben
       Array.prototype.forEach.call(innen.querySelectorAll("[data-ziel]"), function (x) {
@@ -404,6 +447,25 @@
       });
     }
     return host;
+  }
+
+  // AP13.44 §1: je Übungsblock (`.kmb`) das Skript der Übungen aus dem Kurs (web/uebungen.js aus
+  // scripts/templates/uebungen.js); nur das HTML des Generators, nichts aus der Antwort wird ausgeführt. Ein Block wird
+  // einmal angebunden (`data-km-an` wie im Kurs); eine neu gezeichnete Fläche ist ein neuer Block. Die Bedienelemente
+  // bekommen ihren Tab-Halt zurück (api.vorschau_sicher nimmt ihn allen). Bilder: Adresse aus den hochgeladenen Bildern,
+  // sonst der graue Platzhalter
+  function uebungenAn(innen) {
+    if (!km.uebungenAn) return;
+    Array.prototype.forEach.call(innen.querySelectorAll(".kmb"), function (R) {
+      if (R.getAttribute("data-km-an")) return;
+      R.setAttribute("data-km-an", "1");
+      Array.prototype.forEach.call(R.querySelectorAll("button, input, select, textarea, summary"), function (x) {
+        if (x.getAttribute("tabindex") === "-1") x.removeAttribute("tabindex"); });
+      var IMG = {};
+      Array.prototype.forEach.call(R.querySelectorAll("[data-km-img]"), function (x) {
+        var n = x.getAttribute("data-km-img"); IMG[n] = Z.assets[n] ? S.vorschauUrl(n) : BILD_FEHLT; });
+      try { km.uebungenAn(R, IMG); } catch (e) { console.error("Übung in der Vorschau", e); }
+    });
   }
 
   // ---------------------------------------------------------------- Kursübersicht (§9)
@@ -1143,4 +1205,9 @@
   S.zeichneEditor = zeichneEditor;
   S.editorOeffnen = oeffnen;
   S.editorZeigen = function (id) { if (knoten[id]) zeigen(knoten[id].el); };
+  // AP13.43 §5: „Im Editor ansehen“ an der Karte öffnet die Ansicht an diesem Baustein
+  S.editorBei = function (id, von) {
+    var p = oeffnen(von);
+    return Promise.resolve(p).then(function () { if (knoten[id]) zeigen(knoten[id].el); });
+  };
 })();

@@ -1,6 +1,6 @@
 {
 "version": "2.0.0-b18",
-"generator": "998c4d830c7f3c28",
+"generator": "ed5628d29e8d739c",
 "dateien": [
 "ansicht.css",
 "bilder.js",
@@ -28,6 +28,7 @@
 "schritte.js",
 "sequenz.js",
 "themen.js",
+"uebungen.js",
 "verbindung.js",
 "worker.js",
 "lehrplan/index.json",

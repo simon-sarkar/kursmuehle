@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 1ec2c5e vom 07.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 2b2e658 vom 08.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -55,6 +55,11 @@
       <ol id="editor-liste-ol" class="ed-liste-ol"></ol>
     </details>
     <div id="editor-vorschau" class="ed-vorschau"></div>
+  </div>
+  <!-- AP13.44 §3: zurück in die Schritte oder weiter zum nächsten offenen Schritt (editor.js leisteZeigen) -->
+  <div class="ed-fuss">
+    <button type="button" id="editor-zurueck" class="knopf">Zurück zu den Schritten</button>
+    <button type="button" id="editor-weiter" class="knopf haupt" hidden></button>
   </div>
 </dialog>
 <!-- AP13.11 §4: Frage vor dem Einsetzen einer Antwort, die von Hand geänderte Bausteine betrifft -->
@@ -451,6 +456,8 @@
         </div>
         <p id="eingabe-stand" class="stand-karte" role="status" aria-live="polite" tabindex="-1" hidden></p>
         <button type="button" id="eingabe-nochmal" class="textlink" hidden>Noch einmal einfügen</button>
+        <!-- AP13.43 §5: der Editor dort, wo man ihn braucht (nach dem Einsetzen ohne rote Karten und vor dem Herunterladen) -->
+        <button type="button" id="editor-auf-5" class="knopf editor-auf-5" hidden>Einheit ansehen und bearbeiten</button>
         <!-- die Antwort ergab keinen Baustein: die ersten drei Meldungen mit Zeile und Zitat, Satz für den Chat -->
         <div id="eingabe-diagnose" class="stand-karte fehler diagnose-karte" role="status" hidden></div>
       </div>
@@ -478,6 +485,8 @@
           <div id="korrektur-diagnose" class="stand-karte fehler diagnose-karte" role="status" hidden></div>
         </div>
       </div>
+      <!-- AP13.43 §4: mit roten Karten zuerst nur die Korrektur; die Bausteine klappt dieser Knopf auf -->
+      <button type="button" id="tafel-auf" class="textlink tafel-auf" aria-controls="tafel-bausteine" hidden></button>
       <div id="karten-ort-5" class="karten-ort"></div>
       <button type="button" id="weiter-5" class="knopf haupt" hidden>Weiter</button>
       <!-- AP13.40: weiter mit der nächsten Stunde der Sequenz (sequenz.js) -->
@@ -590,6 +599,7 @@
           </div>
         </details>
         <p id="nl-hinweis" class="stand warn" role="status" hidden></p>
+        <button type="button" id="editor-auf-8" class="textlink editor-auf-8" hidden>Einheit ansehen und bearbeiten</button>
         <button type="button" id="herunterladen" class="knopf ergebnis">Datei für die Lernplattform herunterladen</button>
         <button type="button" id="herunterladen-ganz" class="knopf" hidden>Ganze Datei herunterladen</button>
         <button type="button" id="glossar-laden" class="knopf" hidden>Glossar-Einträge herunterladen</button>
@@ -695,11 +705,12 @@
  <input id="ordner-oeffnen" class="unsichtbar" type="file" tabindex="-1" multiple webkitdirectory>
  <datalist id="phasen"></datalist>
 </main>
-<!-- AP13.38: schwebender Knopf unten links, öffnet dieselbe Ansicht wie der Link in der Kopfzeile (editor.js, Text aus
-     katalog.yaml oberflaeche.editor); im Tab-Lauf nach dem Hauptinhalt, vor der Fußzeile -->
-<button type="button" id="editor-schweb" class="editor-schweb" aria-label="Editor: Einheit ansehen und bearbeiten" hidden>
+<!-- AP13.38: schwebender Knopf, öffnet dieselbe Ansicht wie der Link in der Kopfzeile (editor.js, Text aus katalog.yaml
+     oberflaeche.editor); im Tab-Lauf nach dem Hauptinhalt, vor der Fußzeile. AP13.44: ab 1000 px am linken Rand mittig,
+     schmaler unten links; erst ohne rote Karten -->
+<button type="button" id="editor-schweb" class="editor-schweb" aria-label="Zum Editor: Einheit ansehen und bearbeiten" hidden>
   <span class="sw-symbol" aria-hidden="true"><img src="logo.svg" alt="" width="44" height="44"></span>
-  <span id="editor-schweb-text" class="sw-text">Editor</span></button>
+  <span id="editor-schweb-text" class="sw-text">Zum Editor</span></button>
 <footer class="fuss">
   <button type="button" id="fuss-rueckmeldung" class="textlink">Rückmeldung</button>
   <a href="../impressum.html" class="fuss-klein">Impressum und Datenschutz</a>
@@ -732,6 +743,7 @@
 <script src="nachbau.js"></script>
 <script src="verbindung.js"></script>
 <script src="lehrplan.js"></script>
+<script src="uebungen.js"></script>
 <script src="editor.js"></script>
 <script src="plan.js"></script>
 <script src="sequenz.js"></script>

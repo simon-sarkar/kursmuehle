@@ -163,7 +163,24 @@
     // Karten: unter Schritt 5, sobald die erste Antwort da ist (AP13.31: davor plant „Ich steuere“ im Plan)
     var ort = inhalt() ? $("karten-ort-5") : $("karten-ort-2");
     if ($("tafel-bausteine").parentNode !== ort) ort.appendChild($("tafel-bausteine"));
-    $("tafel-bausteine").hidden = !inhalt();
+    // AP13.43 §4: nach dem Einfügen mit roten Karten zeigt Schritt 5 zuerst nur die Korrektur; Phasen, Zeit und
+    // Bild-Knöpfe der Bausteine kommen mit „Bausteine ansehen“ oder von selbst, sobald nichts mehr rot ist
+    var rot = ort === $("karten-ort-5") && fehlerZahl() > 0 && !teileOffen();
+    if (!rot) S.tafelOffen = false;
+    // offen bleiben die Bausteine, wenn eine rote Karte nach zwei Runden die Auswege zeigt („So geht es weiter“) oder
+    // die Bitte an einer Karte steht (Sprache anpassen, neu beauftragen)
+    var sl = (Z.mappe && Z.mappe.schleife) || {};
+    var anKarte = !!(S.korrektur && S.korrektur.ort) || !!(Z.pruefung && Z.pruefung.bausteine.some(function (b) {
+      return b.status === "fehler" && sl[b.id] && sl[b.id].rot >= 2; }));
+    var tafelZu = rot && !S.tafelOffen && !anKarte;
+    $("tafel-bausteine").hidden = !inhalt() || tafelZu;
+    $("tafel-auf").hidden = !rot || anKarte;
+    if (rot) {
+      var nB = Z.mappe.bausteine.filter(function (k) { return !k.geplant && !k.aus; }).length,
+          nR = Z.pruefung ? Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler"; }).length : 0;
+      $("tafel-auf").textContent = tafelZu ? "Bausteine ansehen (" + nB + ", davon " + nR + " mit Fehler)" : "Bausteine zuklappen";
+      $("tafel-auf").setAttribute("aria-expanded", String(!tafelZu));
+    }
     $("karten").classList.toggle("kompakt", z !== "steuer");
     $("hinzufuegen").hidden = z !== "steuer";
     $("text-art").hidden = z !== "steuer";
@@ -781,6 +798,12 @@
     $("m-vorlage-text").textContent = "Art der Einheit: " + e.vorlage + " (Vorschlag aus dem Lehrplan)";
     textKacheln($("m-art"), "art", artKacheln(), e.vorlage, false);
   }
+  // AP13.43 §4: Bausteine bei roten Karten auf- und zuklappen
+  $("tafel-auf").addEventListener("click", function () {
+    S.tafelOffen = !S.tafelOffen;
+    zeichneSchritte();
+    if (S.tafelOffen) $("tafel-bausteine").scrollIntoView({ block: "nearest" });
+  });
   $("m-vorlage-aendern").addEventListener("click", function () {
     var auf = $("m-art").hidden;
     $("m-art").hidden = !auf;
