@@ -1061,7 +1061,6 @@
    "modus_satz_baustein": "Die Antwort ersetzt nur Bausteine mit derselben id. {name} hat jetzt {bausteine}; die übrigen bleiben.",
    "modus_satz_anhaengen": "Die Antwort kommt als neue Einheit hinter die letzte, {name}; deren Inhalt ({bausteine}) bleibt unverändert.",
    "modus_satz_spaeter": "Gilt für die nächste Antwort; die letzte bleibt, weil du danach etwas geändert hast.",
-   "durchsicht_ohne": "{n} Fragen ohne Durchsicht übernommen",
    "teil_geaendert": "Teil {n} hat sich geändert. Kopiere ihn neu.",
    "teil_geaendert_ki": "Teil {n} hat sich geändert. Sende ihn neu.",
    "modus_gewechselt": "Du hattest „{gewaehlt}“ gewählt; die Bausteine der Antwort passen zu Karten dieser Einheit, darum ersetzt die Mühle nur diese Bausteine. Klick „{gewaehlt}“ noch einmal, um die ganze Einheit zu ersetzen.",
@@ -1135,8 +1134,41 @@
    "kachelbild_hinweis": "Mit Kachelbild zeigt die Kachel weder Symbol noch Farbe.",
    "farbe_hinweis_kachel": "Färbt die Kachel und alles darin, auch Kästen und Rahmen.",
    "farbe_hinweis_abschnitt": "Färbt den Abschnitt und alles darin, auch Kästen und Rahmen.",
-   "durchsicht_neu": "Neu durchzusehen: die Fragen in {titel}.",
-   "durchsicht_neu_knopf": "Fragen durchsehen"
+   "durchsicht_neu": "Neu durchzusehen: die Fragen in {titel}."
+  },
+  "pruefseite": {
+   "fragen_zeile": "{n} Fragen. Lies jede Lösung, bevor der Kurs zur Klasse geht.",
+   "fragen_zeile_eine": "Eine Frage. Lies die Lösung, bevor der Kurs zur Klasse geht.",
+   "zweite": "Zweite Meinung: Lass einen neuen Chat die Lösungen nachrechnen.",
+   "zweite_ki": "Zweite Meinung: Lass deine KI die Lösungen in einem neuen Gespräch nachrechnen.",
+   "zweite_1": "Füg den Prüfauftrag in ein neues Gespräch ein, nicht in das der Einheit, und schick ihn ab.",
+   "zweite_2": "Kopier die ganze Antwort und füg sie hier ein.",
+   "geprueft": "Im Chat geprüft: {zahl}",
+   "geprueft_ki": "Mit deiner KI geprüft: {zahl}",
+   "stimmt": "Chat stimmt zu",
+   "stimmt_ki": "Deine KI stimmt zu",
+   "anders": "Chat sieht es anders:",
+   "anders_ki": "Deine KI sieht es anders:",
+   "ohne_antwort": "Ohne Antwort des Chats",
+   "ohne_antwort_ki": "Ohne Antwort deiner KI",
+   "korrektur_satz": "Korrigieren lassen: {fragen}. Die Bitte geht in das Gespräch der Einheit, die Antwort fügst du im Schritt „Antwort einfügen“ ein.",
+   "angesehen": "Lösungen angesehen",
+   "nicht_angesehen": "Lösungen nicht angesehen",
+   "satz": "Das kommt in deinen Kurs.",
+   "heruntergeladen": "Heruntergeladen: {name} ({kb} KB), im Ordner „Downloads“ deines Browsers.",
+   "nur_neue": "Sie enthält nur die neue Einheit.",
+   "importiert": "Vermerkt: Die Einheit ist im Kurs. Eine weitere Einheit kommt als Nachlieferung in denselben Kurs.",
+   "wiederherstellen": [
+    "Leg auf der ByCS-Lernplattform einen leeren Kurs an.",
+    "Im Kurs: Mehr → Kurs wiederverwenden → Sicherung wiederherstellen, Datei hochladen.",
+    "Bei „Ziel“ „Alle Inhalte dieses Kurses löschen und dann wiederherstellen“ wählen, dann Weiter bis zum Ende."
+   ],
+   "wiederherstellen_nachlieferung": [
+    "Öffne auf der ByCS-Lernplattform den Kurs mit der ersten Einheit.",
+    "Im Kurs: Mehr → Kurs wiederverwenden → Sicherung wiederherstellen, Datei hochladen.",
+    "Bei „Ziel“ „Den gesicherten Kurs mit diesem Kurs verschmelzen“ wählen, dann Weiter bis zum Ende."
+   ],
+   "schema": "Bei „Schema“ „Kurseinstellungen überschreiben“ auf „Ja“, sonst fehlt das Kursformat."
   }
  },
  "chats": [

@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand b022a66 vom 08.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand ea48450 vom 08.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -620,125 +620,132 @@
     </div>
   </section>
 
-  <!-- 6 Fragen und Lösungen: erst der Weg (Kacheln), dann nur dessen Teil (AP13.5g) -->
+  <!-- 6 Fragen und Lösungen (MF4, Konzept §3.7): die Liste direkt, je Frage „Ändern“ (Editor am Baustein); kein
+       „Erweitert“. Die Prüfung im Chat steht als schmale Zeile darüber („Zweite Meinung …“, „Prüfauftrag kopieren“), danach
+       an derselben Stelle das Feld; das Ergebnis steht je Frage in der Liste. Hauptknopf neutral „Weiter: Kursdatei“;
+       „angesehen“ ist die Liste, wenn ihr Ende eine Sekunde im Blick war (nachbau.js) -->
   <section id="schritt-6" class="schritt" data-nr="6" data-kurz="Fragen und Lösungen" aria-labelledby="s6-titel" hidden>
     <div class="s-zeile" data-nr="6"><span class="s-nr" aria-hidden="true">6</span>
       <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="s6-titel">Fragen und Lösungen</span></h2><span class="s-fazit"></span></div>
     <div class="s-inhalt">
-      <!-- AP13.12 a10: Zeilen `Offen:` der Kursdatei (gen/api.offen), je Zeile mit dem Baustein, unter dem sie steht -->
+      <p id="fragen-zeile" class="fragen-zeile"></p>
+      <p id="durchsicht-neu" class="durchsicht-neu" role="status" hidden></p>
+      <!-- AP13.12 a10: Zeilen `Offen:` der Kursdatei (gen/api.offen), je Zeile mit „Im Editor ändern“ am Baustein -->
       <div id="offen-kasten" class="offen-kasten" hidden>
         <h3 class="unterkopf">Hier war sich die KI nicht sicher</h3>
         <ul id="offen-liste" class="offen-liste"></ul>
       </div>
-      <p id="durchsicht-neu" class="durchsicht-neu" role="status" hidden></p>
-      <p id="durchsicht-satz" class="leise"></p>
-      <div id="durchsicht-wahl" class="kacheln-wahl durchsicht-wahl" role="radiogroup" aria-labelledby="durchsicht-satz">
-        <button type="button" id="weg-ki" class="aus-kachel" role="radio" aria-checked="false" data-weg="ki" hidden>
-          <span class="aus-name">Mit meiner KI prüfen</span>
-          <span class="aus-zeile">Deine KI löst die Aufgaben in einem neuen Gespräch, ohne die Lösungen zu sehen.</span></button>
-        <button type="button" id="weg-chat" class="aus-kachel" role="radio" aria-checked="false" data-weg="chat">
-          <span class="aus-name">In einem neuen Chat prüfen</span>
-          <span class="aus-zeile">Du kopierst die Aufgaben in einen neuen Chat und fügst seine Antwort hier ein.</span></button>
-        <button type="button" id="weg-selbst" class="aus-kachel" role="radio" aria-checked="false" data-weg="selbst">
-          <span class="aus-name">Ich prüfe selbst</span>
-          <span class="aus-zeile">Du liest jede Frage mit ihrer Lösung.</span></button>
-      </div>
-      <div id="weg-selbst-teil" hidden>
-        <p id="fragen-zeile" class="leise"></p>
-        <ol id="fragen-liste" class="fragen-liste"></ol>
-      </div>
-      <div id="gegenpruefen" class="gegenpruefen" hidden>
-        <div id="gegen-ki" class="kopieren" hidden>
-          <button type="button" id="gegen-senden" class="knopf haupt">Aufgaben an meine KI senden</button>
-        </div>
-        <div id="gegen-chat" hidden>
-          <div class="kopieren">
-            <button type="button" id="gegen-kopieren" class="knopf haupt">Aufgaben für einen neuen Chat kopieren</button>
+      <!-- Zweite Meinung: Zustand a die Zeile mit „Prüfauftrag kopieren“ (verbunden: „Mit meiner KI prüfen“), b nach dem
+           Kopieren das Feld, c mit Ergebnis „Im Chat geprüft: 2 Abweichungen“ und „Andere Antwort einfügen“ -->
+      <div id="zweite" class="zweite" hidden>
+        <div class="zweite-zeile">
+          <p id="zweite-satz" class="zweite-satz" role="status"></p>
+          <div class="zweite-knoepfe">
+            <button type="button" id="gegen-kopieren" class="knopf zweite-knopf">Prüfauftrag kopieren</button>
+            <button type="button" id="gegen-senden" class="knopf zweite-knopf" hidden>Mit meiner KI prüfen</button>
+            <button type="button" id="gegen-nochmal" class="textlink" hidden>Andere Antwort einfügen</button>
+            <button type="button" class="info-knopf" aria-expanded="false" aria-controls="zweite-info"
+              aria-label="Wie prüft der Chat?" data-hinweis="6-zweite">i</button>
           </div>
-          <p id="gegen-kopiert" class="stand" role="status" aria-live="polite"></p>
-          <details class="text-ansehen">
-            <summary>Text ansehen und selbst markieren</summary>
-            <textarea id="gegen-text-feld" rows="10" readonly spellcheck="false" aria-label="Aufgaben für einen neuen Chat"></textarea>
-          </details>
         </div>
-        <div id="gegen-einfuegen">
-          <label for="gegen-antwort" class="feld">Antwort des neuen Chats</label>
-          <textarea id="gegen-antwort" rows="4" spellcheck="false" placeholder="Hier einfügen"></textarea>
+        <p id="zweite-info" class="info-text" hidden></p>
+        <p id="gegen-kopiert" class="stand" role="status" aria-live="polite"></p>
+        <ol id="gegen-schritte" class="kopiert-schritte" hidden><li id="gegen-1"></li><li id="gegen-2"></li></ol>
+        <!-- nur, wenn der Browser das Kopieren ablehnt: der Prüfauftrag zum Markieren -->
+        <textarea id="gegen-text-feld" class="unsichtbar" readonly aria-hidden="true" tabindex="-1"></textarea>
+        <details id="gegen-text" class="text-ansehen" hidden>
+          <summary>Text ansehen</summary>
+          <textarea id="gegen-text-zeigen" rows="8" readonly spellcheck="false" aria-label="Prüfauftrag für einen neuen Chat"></textarea>
+        </details>
+        <!-- verbindung.js blendet „gegen-einfuegen“ aus, solange die eigene KI schreibt; den Zustand trägt „gegen-feld“ -->
+        <div id="gegen-feld" hidden>
+          <div id="gegen-einfuegen">
+            <label for="gegen-antwort" class="feld eingabe-l">Antwort des Chats hier einfügen</label>
+            <textarea id="gegen-antwort" rows="5" spellcheck="false"></textarea>
+          </div>
         </div>
         <p id="gegen-ki-stand" class="stand-karte" role="status" aria-live="polite" hidden></p>
         <p id="gegen-stand" class="stand" role="status" aria-live="polite"></p>
-        <!-- je Abweichung: Aufgabe, Lösung laut Kursdatei, Antwort des Chats, drei Wege -->
-        <ul id="gegen-ergebnis" class="gegen-ergebnis"></ul>
-        <div id="gegen-korrektur-teil" class="kopieren" hidden>
-          <button type="button" id="gegen-korrektur" class="knopf">Korrekturen kopieren</button>
-          <p id="gegen-korrektur-stand" class="stand" role="status" aria-live="polite"></p>
-          <p id="gegen-korrektur-ki" class="stand-karte" role="status" aria-live="polite" hidden></p>
-          <textarea id="gegen-korrektur-feld" class="unsichtbar" readonly aria-hidden="true" tabindex="-1"></textarea>
-        </div>
-        <details id="gegen-gleich" class="gegen-gleich" hidden>
-          <summary id="gegen-gleich-titel"></summary>
-          <ul id="gegen-gleich-liste"></ul>
-        </details>
       </div>
-      <div class="durchsicht">
-        <button type="button" id="durchsicht-ok" class="knopf haupt">Lösungen stimmen, weiter</button>
-        <button type="button" id="ohne-durchsicht" class="textlink">Ohne Durchsicht weiter</button>
-        <p class="leise ohne-satz">Die Lösungen sind dann ungeprüft.</p>
+      <ol id="fragen-liste" class="fragen-liste"></ol>
+      <div id="fragen-ende" class="fragen-ende" aria-hidden="true"></div>
+      <!-- Korrekturen der Abweichungen mit „Korrigieren lassen“: eine Bitte je Baustein in das Gespräch der Einheit -->
+      <div id="gegen-korrektur-teil" class="gegen-korrektur" hidden>
+        <p id="gegen-korrektur-satz" class="leise"></p>
+        <button type="button" id="gegen-korrektur" class="knopf">Korrekturbitte kopieren</button>
+        <p id="gegen-korrektur-stand" class="stand" role="status" aria-live="polite"></p>
+        <p id="gegen-korrektur-ki" class="stand-karte" role="status" aria-live="polite" hidden></p>
+        <textarea id="gegen-korrektur-feld" class="unsichtbar" readonly aria-hidden="true" tabindex="-1"></textarea>
       </div>
+      <div class="knopf-reihe">
+        <button type="button" id="weiter-6" class="knopf haupt">Weiter</button>
+      </div>
+      <button type="button" id="zurueck-6" class="knopf haupt s-zurueck" data-nr="6" hidden></button>
     </div>
   </section>
 
-  <!-- 7 Datei erstellen, wiederherstellen, weiter -->
-  <section id="schritt-7" class="schritt" data-nr="7" data-kurz="Datei für die Lernplattform" aria-labelledby="s7-titel" hidden>
+  <!-- 7 Kursdatei (MF4, Konzept §2.5, §3.8): Prüfseite mit einer Zeile je Schritt und „Ändern“, der einzige Ocker-Knopf
+       „Kursdatei herunterladen“; danach an derselben Stelle „Heruntergeladen: …“, drei Zeilen zum Wiederherstellen, die
+       genaue Anleitung zum Aufklappen und „Hat es geklappt?“. Lizenz, KI-Hinweis und „Nächste Einheit anhängen“ unter
+       „Erweitert“ -->
+  <section id="schritt-7" class="schritt" data-nr="7" data-kurz="Kursdatei" aria-labelledby="s7-titel" hidden>
     <div class="s-zeile" data-nr="7"><span class="s-nr" aria-hidden="true">7</span>
-      <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="s7-titel">Datei für die Lernplattform</span></h2><span class="s-fazit"></span></div>
+      <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="s7-titel">Kursdatei</span></h2><span class="s-fazit"></span></div>
     <div class="s-inhalt">
+      <p id="pruef-satz" class="pruef-satz">Das kommt in deinen Kurs.</p>
+      <dl id="pruef-liste" class="pruef-liste"></dl>
+      <button type="button" id="editor-auf-8" class="textlink pruef-aendern" aria-label="Ansehen: Einheit" hidden>Ansehen</button>
+      <p id="nl-hinweis" class="stand warn" role="status" hidden></p>
       <div class="erstellen">
-        <!-- AP13.15: Lizenz und KI-Hinweis als kleine Zeile am Ende jedes Abschnitts (Steckbrief kurs.lizenz,
-             kurs.lizenz_name, kurs.ki_hinweis; Liste und Satz aus katalog.yaml, oberflaeche.lizenz und .ki_hinweis);
-             die Zusammenfassung nennt den Stand, nachbau.js füllt sie -->
-        <details id="kursangaben" class="ausklapp kursangaben" data-merken="kursangaben">
-          <summary id="kursangaben-stand">Lizenz und KI-Hinweis im Kurs: keine</summary>
-          <div class="ka-inhalt">
-          <label class="schalter ki-schalter"><input id="k-ki" type="checkbox"> <span id="k-ki-text">Hinweis im Kurs</span></label>
-          <label class="feld">Lizenz der Texte und Aufgaben <select id="k-lizenz"></select></label>
-          <label id="k-name-l" class="feld" hidden>Name für die Namensnennung (optional)
-            <input id="k-name" type="text" maxlength="80" autocomplete="name" spellcheck="false"></label>
-          <p class="leise">Steht klein am Ende jedes Abschnitts. Gilt für Texte und Aufgaben, nicht für Bilder.</p>
-          </div>
-        </details>
-        <p id="nl-hinweis" class="stand warn" role="status" hidden></p>
-        <button type="button" id="editor-auf-8" class="textlink editor-auf-8" hidden>Einheit ansehen und bearbeiten</button>
-        <button type="button" id="herunterladen" class="knopf ergebnis">Datei für die Lernplattform herunterladen</button>
+        <button type="button" id="herunterladen" class="knopf ergebnis">Kursdatei herunterladen</button>
         <button type="button" id="herunterladen-ganz" class="knopf" hidden>Ganze Datei herunterladen</button>
         <button type="button" id="glossar-laden" class="knopf" hidden>Glossar-Einträge herunterladen</button>
         <p id="erstellen-stand" class="stand" role="status" aria-live="polite"></p>
-        <button type="button" id="zu-durchsicht" class="knopf" hidden>Fragen durchsehen</button>
       </div>
+      <p id="nur-diese" class="leise nur-diese">Nur diese Datei kommt auf die ByCS-Lernplattform. „Zwischenstand speichern“
+        im Menü ist für dich, um später weiterzuarbeiten.</p>
       <div id="wiederherstellen" class="wiederherstellen" hidden>
         <h3 class="unterkopf">So kommt die Datei in deinen Kurs</h3>
-        <ol id="wh-schritte" class="wh-schritte"></ol>
-        <!-- Bildschirmfotos je Schritt (web/hilfe/, Liste oberflaeche.wiederherstellen_bilder in katalog.yaml); ohne
-             Einträge ausgeblendet -->
-        <details id="wh-bilder" class="ausklapp wh-bilder" hidden>
-          <summary>Mit Bildern</summary>
-          <div id="wh-bilder-liste" class="wh-bilder-liste"></div>
+        <ol id="wh-kurz" class="wh-kurz"></ol>
+        <details id="wh-genau" class="wh-genau">
+          <summary>Genaue Anleitung</summary>
+          <ol id="wh-schritte" class="wh-schritte"></ol>
+          <!-- Bildschirmfotos je Schritt (web/hilfe/, Liste oberflaeche.wiederherstellen_bilder in katalog.yaml); ohne
+               Einträge ausgeblendet -->
+          <details id="wh-bilder" class="ausklapp wh-bilder" hidden>
+            <summary>Mit Bildern</summary>
+            <div id="wh-bilder-liste" class="wh-bilder-liste"></div>
+          </details>
+          <p class="leise">Klappt der Import nicht, kopiere die Fehlermeldung wörtlich und schick sie mit „Nein, es hakt“.</p>
+          <p class="leise">Übungen auf der Kursseite nach dem Import nie im Editor der Lernplattform öffnen und speichern; der Editor entfernt ihr Skript.</p>
         </details>
-        <p class="leise">Klappt der Import nicht, kopiere die Fehlermeldung wörtlich und schick sie mit „Hat gehakt“.</p>
-        <p class="leise">Übungen auf der Kursseite nach dem Import nie im Editor der Lernplattform öffnen und speichern; der Editor entfernt ihr Skript.</p>
-        <p id="importiert-frage" class="importiert">Importiert?
-          <button type="button" id="importiert-ja" class="knopf">Ja, die Einheit ist im Kurs</button></p>
-        <p id="importiert-stand" class="stand ok" hidden></p>
-        <!-- AP13.12 a11: Rückmeldung mit einem Klick; füllt den Text unter „Rückmeldung“ vor -->
-        <div id="ergebnis-wahl" class="ergebnis-wahl" role="group" aria-labelledby="ergebnis-frage">
-          <p id="ergebnis-frage">Wie lief es?</p>
-          <button type="button" class="knopf" data-ergebnis="lief">Lief</button>
-          <button type="button" class="knopf" data-ergebnis="gehakt">Hat gehakt</button>
-          <button type="button" class="knopf" data-ergebnis="abgebrochen">Abgebrochen</button>
-        </div>
+        <!-- AP13.12 a11: Rückmeldung mit einem Klick; „Ja“ vermerkt den Import (Nachlieferung, AP13.42 B6), „Nein, es hakt“
+             öffnet die Rückmeldung mit dem Feld für die Fehlermeldung -->
+        <p id="importiert-frage" class="importiert"><span id="geklappt-frage">Hat es geklappt?</span>
+          <button type="button" id="importiert-ja" class="knopf">Ja</button>
+          <button type="button" id="geklappt-nein" class="knopf" data-ergebnis="gehakt">Nein, es hakt</button></p>
+        <p id="importiert-stand" class="stand ok" tabindex="-1" hidden></p>
         <div class="danach">
-          <button type="button" id="naechste-einheit" class="knopf">Nächste Einheit anhängen</button>
           <button type="button" id="rueckmeldung-auf" class="textlink">Rückmeldung geben</button>
+        </div>
+      </div>
+      <!-- Lizenz und KI-Hinweis (AP13.15: Steckbrief kurs.lizenz, kurs.lizenz_name, kurs.ki_hinweis; Liste und Satz aus
+           katalog.yaml oberflaeche.lizenz und .ki_hinweis), nach dem Download „Nächste Einheit anhängen“ -->
+      <div id="erweitert-7" class="erw">
+        <button type="button" id="erweitert-7-knopf" class="erw-knopf" aria-expanded="false" aria-controls="erweitert-7-inhalt"><span
+          class="erw-wort">Erweitert</span><span class="erw-was"><span id="kursangaben-stand">Lizenz und KI-Hinweis im Kurs: keine</span><span
+          id="erweitert-7-mehr" hidden>, Nächste Einheit</span></span></button>
+        <div id="erweitert-7-inhalt" class="erw-inhalt" hidden>
+          <div id="kursangaben" class="kursangaben">
+            <label class="schalter ki-schalter"><input id="k-ki" type="checkbox"> <span id="k-ki-text">Hinweis im Kurs</span></label>
+            <label class="feld">Lizenz der Texte und Aufgaben <select id="k-lizenz"></select></label>
+            <label id="k-name-l" class="feld" hidden>Name für die Namensnennung (optional)
+              <input id="k-name" type="text" maxlength="80" autocomplete="name" spellcheck="false"></label>
+            <p class="leise">Steht klein am Ende jedes Abschnitts. Gilt für Texte und Aufgaben, nicht für Bilder.</p>
+          </div>
+          <div id="naechste-teil" class="naechste-teil" hidden>
+            <button type="button" id="naechste-einheit" class="knopf">Nächste Einheit anhängen</button>
+          </div>
         </div>
       </div>
     </div>

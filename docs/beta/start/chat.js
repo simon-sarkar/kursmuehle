@@ -798,6 +798,8 @@
   // AP13.33 §1.5: die Meldung zur vorigen Antwort gilt für das leere Feld nicht mehr
   $("eingabe-nochmal").onclick = function () { feldOffenFuer = Z.mappe; eingabeZu(false); standKarte($("eingabe-stand"), "");
       $("eingabe").focus(); };
+  // MF4: die Korrekturbitte aus „Fragen und Lösungen“ führt hierher; das Feld steht dann offen
+  S.antwortFeldAuf = function () { feldOffenFuer = Z.mappe; eingabeZu(false); };
   // Knopf zusätzlich zur Automatik: nach dem Einfügen fehlt sonst etwas zum Klicken
   $("eingabe-uebernehmen").onclick = function () { clearTimeout(S.eingabeTimer); eingabeUebernehmen(null); };
   // Anderen Modus gewählt: die letzte Antwort vom Stand davor aus neu einsetzen, statt der ersten Fassung, nie zusätzlich.

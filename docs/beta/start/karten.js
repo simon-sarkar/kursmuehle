@@ -636,33 +636,31 @@
   }
   function knoepfe() {
     var fehler = fehlerZahl(), voll = inhalt();
-    // Fragen und Lösungen einmal ansehen (oder bewusst überspringen), bevor die Datei entsteht
-    var durchsicht = !S.fragenListe.length || !!(Z.mappe && Z.mappe.durchsicht);
+    // MF4 (Konzept §3.7, Entscheidung 7): die Datei entsteht ohne Bestätigung der Lösungen; die Prüfseite nennt, ob sie
+    // angesehen sind
     var fertig = !!(Z.bau && Z.bau.mbz);
-    $("herunterladen").hidden = !(voll && !fehler && durchsicht) && !fertig;
+    $("herunterladen").hidden = !(voll && !fehler) && !fertig;
     $("herunterladen").disabled = S.bauLaeuft;
     $("glossar-laden").hidden = !(fertig && Z.bau.glossare && Z.bau.glossare.length);
-    var t = "";
+    var t = "", art = "";
     if (S.bauLaeuft) t = "Datei wird erstellt …";
     else if (!voll) t = "";
     else if (fehler) t = "In der Antwort " + (fehler === 1 ? "steht 1 Fehler" : "stehen " + fehler + " Fehler") +
         "; behebe sie in Schritt " + nrVon(5) + ".";
-    else if (!durchsicht && durchsichtNeuText()) t = durchsichtNeuText();
-    else if (!durchsicht) t = "Sieh vorher in Schritt " + nrVon(6) + " die " + S.fragenListe.length +
-        " Fragen und ihre Lösungen durch.";
-    else if (fertig) t = "Die Datei ist heruntergeladen (" + Math.round(Z.bau.mbz.length / 1024) + " KB)" +
-        (Z.bau.nachlieferung ? " und enthält nur die neue Einheit." : ".");
+    else if (fertig) {
+      t = S.pruefText("heruntergeladen", { name: Z.bau.downloadName || Z.bau.dateiname || "", kb: Math.max(1,
+          Math.round(Z.bau.mbz.length / 1024)) }) + (Z.bau.nachlieferung ? " " + S.pruefText("nur_neue") : "");
+      art = "ok";
+    }
     else if (Z.bau && !Z.bau.mbz) t = "Die Datei ließ sich nicht erstellen: " + ((Z.bau.diagnosen || [])
         .filter(function (d) { return d.stufe === "fehler"; }).map(function (d) { return d.text; })[0] || "");
     else if (!Z.geladen) t = "Wird vorbereitet …";
-    // beim Bauen dreht sich die Mühle neben dem Satz (wie bei „Deine KI schreibt …“)
+    // beim Bauen dreht sich die Mühle neben dem Satz (wie bei „Deine KI schreibt …“); fertig: Stand-Karte mit Wort
     var es = $("erstellen-stand");
+    es.className = art ? "stand-karte ok" : "stand";
     if (S.bauLaeuft && es.querySelector(".muehle-warten")) es.querySelector(".laeuft-text").textContent = t;
     else if (S.bauLaeuft) { es.textContent = ""; es.append(S.wartezeichen(), el("span", { cls: "laeuft-text", text: t })); }
     else es.textContent = t;
-    // AP13.33 §1.4: nach einer Änderung an Fragen ein Knopf zum Schritt Fragen (dort steht, was neu durchzusehen ist)
-    $("zu-durchsicht").hidden = !(voll && !fehler && !durchsicht && !S.bauLaeuft && schritt() >= 7);
-    $("zu-durchsicht").textContent = S.editorText("durchsicht_neu_knopf");
     $("speichern").disabled = !Z.geladen || !Z.mappe;
     $("wiederherstellen").hidden = !(Z.bau && Z.bau.mbz);
     $("weiter-5").hidden = !(schritt() === 5 && voll && !fehler && !teileOffen());

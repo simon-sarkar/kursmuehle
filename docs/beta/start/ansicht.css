@@ -685,7 +685,23 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .material-knoepfe { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 8px; }
 .feld-zeile.fehler { color: var(--fehler); }
 
-/* 6 Fragen und Lösungen */
+/* 6 Fragen und Lösungen (MF4, Konzept §3.7): ein Satz, die schmale Zeile „Zweite Meinung“, die Liste mit „Ändern“ je
+   Frage und dem Ergebnis der Prüfung an der Frage; kein „Erweitert“ */
+.fragen-zeile { margin: 0 0 14px; }
+.zweite { margin: 0 0 16px; padding: 8px 8px 8px 14px; border: 1px solid var(--linie); border-radius: var(--rund);
+  background: var(--grund); }
+.zweite-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.zweite-satz { flex: 1 1 16rem; margin: 0; font-size: 0.95rem; }
+.zweite.geprueft .zweite-satz { font-weight: 650; }
+.zweite-knoepfe { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.zweite-knopf { min-height: 44px; }
+.zweite-knoepfe .textlink { min-height: 44px; padding: 6px 4px; }
+.zweite .info-text { margin: 8px 6px 4px 0; }
+.zweite .kopiert-schritte { margin: 8px 0 0; }
+.zweite .stand:empty { display: none; }
+#gegen-feld { margin: 10px 6px 4px 0; }
+#gegen-feld textarea { min-height: 7rem; }
+#gegen-ki-stand { margin-right: 6px; }
 .fragen-liste { list-style: none; margin: 0 0 12px; padding: 0; border: 1px solid var(--linie); border-radius: var(--rund); }
 .frage { padding: 12px 14px; border-top: 1px solid var(--linie); }
 .frage:first-child { border-top: 0; }
@@ -694,45 +710,79 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .f-frueher summary { cursor: pointer; color: var(--link); }
 .f-frueher .fragen-liste { margin: 8px 0 0; background: var(--flaeche); }
 .f-baustein { margin: 0 0 6px; font-size: 0.85rem; color: var(--leise); }
-.f-frage { margin: 0 0 4px; font-weight: 600; }
+.f-zeile { display: flex; align-items: flex-start; gap: 4px 14px; }
+.f-frage { flex: 1 1 auto; min-width: 0; margin: 0 0 4px; font-weight: 600; overflow-wrap: anywhere; }
+.f-aendern { flex: none; margin: -6px -2px 0 0; padding: 6px 4px; min-height: 32px; font-size: 0.9rem; }
 .f-optionen { list-style: none; margin: 0; padding: 0; font-size: 0.95rem; }
 .f-optionen li { padding: 2px 0; color: var(--leise); }
 .f-optionen li.richtig { color: var(--text); font-weight: 600; }
 .f-marke { color: var(--ok); font-weight: 600; }
 .f-loesung { margin: 0; font-size: 0.95rem; }
-.durchsicht { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
-.durchsicht .ohne-satz { flex-basis: 100%; margin: -4px 0 0; font-size: 0.9rem; }
+.f-chat { margin: 8px 0 0; font-size: 0.93rem; }
+.f-gleich { display: flex; align-items: center; gap: 8px; color: var(--ok); font-weight: 600; }
+.f-haken { flex: none; width: 12px; height: 7px; margin: -4px 2px 0 2px; border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor; transform: rotate(-45deg); }
+.fragen-ende { height: 1px; }
+.gegen-korrektur { margin: 4px 0 0; padding: 10px 14px; border-left: 4px solid var(--warn); border-radius: 8px;
+  background: var(--warn-flaeche); }
+.gegen-korrektur .leise { margin: 0 0 8px; color: var(--text); }
+.durchsicht-neu { margin: 0 0 10px; padding: 8px 12px; border-left: 4px solid var(--warn); border-radius: 6px;
+  background: var(--flaeche); font-weight: 600; }
 .offen-kasten { margin: 0 0 14px; padding: 10px 14px; border-radius: var(--rund); background: var(--creme); }
 .offen-kasten .unterkopf { margin: 0 0 4px; }
 .offen-liste { margin: 0; padding-left: 20px; font-size: 0.95rem; }
 .offen-liste li { margin-top: 4px; }
-.gegenpruefen { margin-top: 16px; }
-.gegenpruefen > summary { cursor: pointer; color: var(--link); padding: 6px 0; }
-.gegenpruefen .feld { margin-top: 14px; }
-.gegen-ergebnis { list-style: none; margin: 8px 0 0; padding: 0; font-size: 0.93rem; }
-.gegen-ergebnis li { margin-bottom: 6px; }
+.offen-liste .f-aendern { margin: 0; }
 
-/* 7 Datei, Wiederherstellen */
+/* 7 Kursdatei (MF4, Konzept §2.5, §3.8): Prüfseite als Liste Begriff, Wert, „Ändern“; ein Ocker-Knopf; danach drei Zeilen
+   und die genaue Anleitung zum Aufklappen */
+.pruef-satz { margin: 0 0 8px; }
+.pruef-liste { margin: 0 0 18px; }
+.pruef-zeile { display: grid; grid-template-columns: 7rem minmax(0, 1fr) auto; align-items: baseline; gap: 2px 14px;
+  padding: 9px 0; border-top: 1px solid var(--linie); }
+.pruef-zeile:last-child { border-bottom: 1px solid var(--linie); }
+.pruef-zeile dt { font-weight: 600; }
+.pruef-zeile dd { margin: 0; }
+.pruef-wert { color: var(--text); overflow-wrap: anywhere; }
+.pruef-knopf .textlink { padding: 4px 2px; min-height: 32px; font-size: 0.9rem; }
 .erstellen { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.erstellen .stand { flex-basis: 100%; margin: 0; }
-/* AP13.15: Lizenz und KI-Hinweis über dem Download; der Satz am Haken darf umbrechen */
-.kursangaben { flex-basis: 100%; }
-.ka-inhalt { display: grid; gap: 10px; justify-items: start; margin-bottom: 4px; }
+.erstellen > .stand { flex-basis: 100%; margin: 0; }
+.erstellen > .stand:empty { display: none; }
+.erstellen > .stand-karte { flex-basis: 100%; margin: 4px 0 0; font-weight: 600; }
+.nur-diese { margin: 12px 0 0; }
+.kursangaben { display: grid; gap: 10px; justify-items: start; margin-bottom: 4px; }
 .kursangaben .feld { width: 100%; max-width: 24rem; }
 .kursangaben .ki-schalter { flex-wrap: nowrap; align-items: flex-start; }
 .kursangaben .ki-schalter span { min-width: 0; }
 .kursangaben .leise { margin: 0; }
-.wiederherstellen { margin-top: 10px; }
+.naechste-teil { margin-top: 16px; }
+.wiederherstellen { margin-top: 18px; }
+.wiederherstellen > .unterkopf { margin-top: 0; }
+.wh-kurz { margin: 0 0 10px; padding-left: 1.4em; }
+.wh-kurz li + li { margin-top: 6px; }
+.wh-genau { margin: 0 0 14px; }
+.wh-genau > summary { display: inline-block; cursor: pointer; padding: 6px 0; text-decoration: underline; text-underline-offset: 3px; }
+.wh-genau[open] > summary { margin-bottom: 6px; }
 .wh-schritte { margin: 0 0 12px; padding-left: 22px; }
 .wh-schritte li { margin-bottom: 8px; }
-.importiert { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-weight: 600; }
+.importiert { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 16px 0 0; font-weight: 600; }
+.importiert [aria-pressed=true] { box-shadow: inset 0 0 0 2px var(--text); }
+#importiert-stand { margin-top: 12px; }
 .wh-bilder { margin: 0 0 10px; }
 .wh-bilder-liste figure { margin: 8px 0 12px; }
 .wh-bilder-liste img { display: block; max-width: 100%; height: auto; border: 1px solid var(--linie); border-radius: 6px; }
-.ergebnis-wahl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 12px; }
-.ergebnis-wahl p { margin: 0; font-weight: 600; }
-.ergebnis-wahl [aria-pressed=true] { box-shadow: inset 0 0 0 2px var(--text); }
-.danach { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--linie); }
+.danach { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 14px; }
+@media (max-width: 640px) {
+  .pruef-zeile { grid-template-columns: minmax(0, 1fr) auto; }
+  .pruef-zeile dt { grid-column: 1; grid-row: 1; }
+  .pruef-wert { grid-column: 1 / -1; grid-row: 2; color: var(--leise); font-size: 0.93rem; }
+  .pruef-knopf { grid-column: 2; grid-row: 1; }
+  .erstellen > .knopf { width: 100%; }
+  #geklappt-frage { flex-basis: 100%; }
+  .importiert .knopf { flex: 1 1 0; }
+  .zweite-knoepfe { width: 100%; }
+  .zweite-knopf { flex: 1 1 auto; }
+}
 
 /* Rückmeldung */
 .rueckmeldung { background: var(--flaeche); border-radius: var(--rund); padding: 16px; margin: 0 0 12px; box-shadow: 0 1px 2px var(--schatten); }
@@ -914,9 +964,6 @@ body.editor-offen { overflow: hidden; }
 /* §2.2: Frage „Änderungen verwerfen?“ unter den Knöpfen des Textfelds */
 .ed-verwerfen { padding: 10px 12px; border: 1px solid var(--warn); border-radius: 8px; background: var(--flaeche); }
 .ed-verwerfen p { margin: 0 0 8px; font-weight: 600; }
-/* §1.4: welche Fragen nach einer Änderung neu durchzusehen sind (Schritt Fragen) */
-.durchsicht-neu { margin: 0 0 10px; padding: 8px 12px; border-left: 4px solid var(--warn); border-radius: 6px;
-  background: var(--flaeche); font-weight: 600; }
 /* §1.8: Hinweise im Formular einer Kachel */
 .ed-ue-hinweis { margin: -4px 0 0; font-size: 0.85rem; color: var(--leise); }
 .ed-meldungen { list-style: none; width: 100%; margin: 4px 0 0; padding: 0; font-size: 0.9rem; }
@@ -1119,7 +1166,6 @@ body:has(dialog[open]) .editor-schweb { display: none; }
 /* AP13.43 §4/§5: Bausteine bei roten Karten zugeklappt; Editor in Schritt 5 und vor dem Herunterladen */
 .tafel-auf { display: block; margin: 4px 0 8px; }
 .editor-auf-5 { display: inline-block; margin: 8px 12px 8px 0; }
-.editor-auf-8 { display: block; margin: 0 0 10px; }  /* Nebenweg neben dem einen Ergebnis-Knopf */
 .editor-auf-5[hidden], .editor-auf-8[hidden] { display: none; }
 .k-im-editor { margin-top: 6px; }
 
@@ -1164,6 +1210,9 @@ body:has(dialog[open]) .editor-schweb { display: none; }
  * Karte steht rechts, wo der Knopf (links unten) nie liegt */
 @media (max-width: 999px) {
   :root:has(body.mit-editor-schweb) { scroll-padding-bottom: calc(16px + 104px + env(safe-area-inset-bottom, 0px)); }
+  /* MF4: die grauen Zeilen der kommenden Schritte stehen unter dem offenen Schritt oft genau auf Höhe des Knopfs (links
+     unten, 16 px + 88 px); sie beginnen rechts davon */
+  body.mit-editor-schweb .schritt[data-stand=kommend]:not(.auf) > .s-zeile { padding-left: 104px; }
   .karte .k-im-editor { display: block; width: fit-content; margin-left: auto; }
 }
 @media (max-width: 640px) {

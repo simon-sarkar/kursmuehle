@@ -53,7 +53,7 @@
     var da = sichtbar();
     ["editor-auf", "editor-auf-2", "editor-auf-5", "editor-auf-8"].forEach(function (id) {
       var b = $(id); b.hidden = !da;
-      if (S.katalog) b.textContent = T("knopf");
+      if (S.katalog && id !== "editor-auf-8") b.textContent = T("knopf");   // MF4: an der Zeile „Einheit“ heißt er „Ansehen“
     });
     // AP13.43 §5: in Schritt 5 erst, wenn nichts mehr rot ist (vorher steht dort die Korrektur)
     $("editor-auf-5").hidden = !da || S.fehlerZahl() > 0 || S.teileOffen();

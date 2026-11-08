@@ -58,9 +58,12 @@
       return !w.length ? "" : da === w.length ? (da === 1 ? "Bild da" : "alle " + da + " Bilder da") : da + " von " +
           w.length + " Bildern da, sonst Platzhalter";
     }
-    if (n === 6) return !S.fragenListe.length ? "keine Fragen" : Z.mappe.durchsicht === "ohne" ?
-        S.editorText("durchsicht_ohne", { n: S.fragenListe.length }) : S.fragenListe.length + " Fragen" +
-        (Z.mappe.durchsicht ? " durchgesehen" : "");
+    // MF4: „11 Fragen · Lösungen angesehen · Im Chat geprüft: 2 Abweichungen“ (angesehen: S.loesungenAngesehen, nachbau.js)
+    if (n === 6) {
+      var nf = S.fragenListe.length;
+      return !nf ? "keine Fragen" : [nf === 1 ? "1 Frage" : nf + " Fragen", S.pruefText(S.loesungenAngesehen() ? "angesehen" :
+          "nicht_angesehen"), S.pruefStand()].filter(Boolean).join(" · ");
+    }
     return "";
   }
 
@@ -106,11 +109,10 @@
     return z;
   }
   function kurzName(n) { var sec = sektion(n); return sec ? sec.dataset.kurz : ""; }
-  // Text eines (i) aus hinweise.json; AP13.5h a3: mit Verbindung nennt der Text zu Schritt 6 auch die eigene KI. MF2: das
+  // Text eines (i) aus hinweise.json. MF2: das
   // (i) zum Modell beginnt mit dem Satz des gewählten Chats (katalog.yaml chats.aufwand)
   function hinweisText(schl) {
     var t = S.hinweisTexte[schl] || "";
-    if (schl === "6" && t && S.anKiAktiv && S.anKiAktiv()) t = t.replace(", in einem neuen Chat", ", mit deiner KI, in einem neuen Chat");
     if (schl === "4-modell") { var c = Z.mappe && chatInfo(Z.mappe.chat); if (c && c.aufwand) t = c.aufwand + " " + t; }
     // MF3: am Auftrag eines Bildes dazu der Satz des Chats zu seinem Bildgenerator (katalog.yaml chats.bilder_hinweis)
     if (schl === "5.5-auftrag") { var cb = Z.mappe && chatInfo(Z.mappe.chat); if (cb && cb.bilder_hinweis) t += " " + cb.bilder_hinweis; }
@@ -233,6 +235,9 @@
     // MF1: die Hauptknöpfe nennen den nächsten Schritt
     $("weiter-5").textContent = "Weiter: " + kurzName(sichtbar.indexOf(5.5) >= 0 ? 5.5 : S.fragenListe.length ? 6 : 7);
     $("weiter-bilder").hidden = S.aendern === 5.5;
+    // MF4: „Weiter: Kursdatei“ neutral, ohne Bestätigung; nach „Ändern“ steht dort „Zurück zu“ (zurueck-6)
+    $("weiter-6").hidden = S.aendern === 6;
+    $("weiter-6").textContent = "Weiter: " + kurzName(7);
     $("weiter-2").textContent = "Weiter: " + kurzName(nachZwei());
     $("weiter-3").textContent = "Weiter: " + kurzName(4);
     $("einheit-anlegen").textContent = !Z.mappe || neueEinheit() || s <= 2 ? "Weiter: " + kurzName(2) : zielText(1, s);
@@ -242,8 +247,8 @@
       b.hidden = d || S.aendern !== n;
       if (!b.hidden) b.textContent = zielText(n, s);
     });
-    $("rueckmeldung").hidden = !!$("rueckmeldung").dataset.zu ||
-        (!(s >= 7 && Z.bau && Z.bau.mbz) && !$("rueckmeldung").dataset.offen);
+    // MF4 (Konzept §3.8): die Rückmeldung öffnet „Nein, es hakt“ oder „Rückmeldung geben“, nicht der Download selbst
+    $("rueckmeldung").hidden = !!$("rueckmeldung").dataset.zu || !$("rueckmeldung").dataset.offen;
     $("speichern").hidden = !Z.mappe;
     $("neue-einheit").hidden = !Z.mappe;
     $("schliessen").hidden = !Z.mappe;
@@ -294,7 +299,7 @@
     if (sec && !sec.hidden) {
       sec.scrollIntoView({ block: "start" });
       var f = fokus ?
-          $(fokus) : sec.querySelector(".s-inhalt button:not([hidden]):not(:disabled), .s-inhalt input, .s-inhalt " +
+          (typeof fokus === "string" ? $(fokus) : fokus) : sec.querySelector(".s-inhalt button:not([hidden]):not(:disabled), .s-inhalt input, .s-inhalt " +
           "textarea");
       if (f) f.focus({ preventScroll: true });
     }
@@ -632,6 +637,7 @@
     Z.mappe.laufend = Z.mappe.anhaengen;           // Text, Bilder und Rand gehören jetzt zu dieser Einheit
     delete Z.mappe.stueckelung;
     Z.mappe.durchsicht = false; delete Z.mappe.kopiert; delete Z.mappe.durchsicht_neu;
+    delete Z.mappe.durchsicht_antwort; delete Z.mappe.durchsicht_weg;      // MF4: die Prüfung im Chat zählt die Fragen neu
     Z.mappe.zeit_start = new Date().toISOString(); delete Z.mappe.zeit_download;
     Z.bau = null;
     neuStart();
@@ -658,7 +664,7 @@
     $("korrektur-eingabe").value = ""; $("eingabe-stand").hidden = true;
     S.chatWahlOffen = false; S.chatZurKorrektur = false; S.aendern = null; S.designer = null;
     $("chat-text-feld").value = ""; $("gegen-text-feld").value = ""; $("gegen-antwort").value = "";
-    $("gegen-ergebnis").innerHTML = ""; $("gegen-stand").textContent = ""; $("kopiert").textContent = "";
+    $("gegen-stand").textContent = ""; $("gegen-kopiert").textContent = ""; $("kopiert").textContent = "";
     $("eingabe-stand").textContent = ""; $("importiert-stand").hidden = true;
     S.diagnoseKarte($("eingabe-diagnose"), null); S.diagnoseKarte($("korrektur-diagnose"), null);
     document.querySelector("input[name=text-art][value=einheit]").checked = true;

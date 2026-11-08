@@ -495,11 +495,13 @@ window.km = km;
   function markiert() { return Z.mappe ? Z.mappe.bausteine.filter(function (k) { return k.neu; }) : []; }
 
   // Kopieren nur in der Geste (Safari): der Text liegt fertig im Feld; ohne Zwischenablage markieren, execCommand
-  function kopieren(text, feld, stand, satz, fertigCb) {
+  // `fehlerCb` (MF4): der Aufrufer zeigt den Text zum Markieren, wenn der Browser das Kopieren ablehnt
+  function kopieren(text, feld, stand, satz, fertigCb, fehlerCb) {
     function fertig(ok) {
       stand.textContent = ok ? satz : "Kopieren ging nicht. Öffne „Text ansehen“, markiere den Text und kopiere ihn.";
       stand.classList.remove("ok", "fehler"); stand.classList.add("stand", ok ? "ok" : "fehler");
       if (ok && fertigCb) fertigCb();
+      if (!ok && fehlerCb) fehlerCb();
     }
     function rueckfall() {
       var ok = false;
