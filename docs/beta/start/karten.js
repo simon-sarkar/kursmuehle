@@ -371,11 +371,13 @@
     S.letzteAntwort = null;
   }
   // `angezeigt` = Text, den das Feld anfangs zeigte: unverändert übernommen, passiert nichts (keine Markierung)
-  async function handUebernehmen(id, text, angezeigt) {
+  // MF5: `vorgeprueft` (Feld für eine Stelle, gen/stelle.py setzen): der Text ist schon geprüft; Fehler, die der Baustein
+  // vorher hatte, halten dort nicht auf
+  async function handUebernehmen(id, text, angezeigt, vorgeprueft) {
     if (angezeigt !== undefined && angezeigt !== null && String(text).trim() === String(angezeigt).trim())
       return { ok: true, unveraendert: true, meldungen: [] };
     await km.bereit();
-    var pr = await km.mappeFn("hand_pruefen", [Z.mappe, text, id]);
+    var pr = vorgeprueft ? { ok: true, meldungen: [] } : await km.mappeFn("hand_pruefen", [Z.mappe, text, id]);
     if (!pr.ok) return pr;
     var b = pruefBaustein(id), vorher = b ? b.text : "";
     var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, text, id, true, true]);
@@ -664,6 +666,7 @@
     $("speichern").disabled = !Z.geladen || !Z.mappe;
     $("wiederherstellen").hidden = !(Z.bau && Z.bau.mbz);
     $("weiter-5").hidden = !(schritt() === 5 && voll && !fehler && !teileOffen());
+    if (S.weiterFuenf) S.weiterFuenf();
     if (S.nachHinweis) S.nachHinweis();                // AP13.42 B6
   }
 
@@ -921,6 +924,16 @@
   }
   // MF3 (Konzept §3.5, Befund 12): bleibt ein Baustein nach einer Antwort auf die Bitte rot (`schleife`, Runde 1), stehen
   // in der roten Karte die Wege ohne den Chat: im Editor selbst ändern, den Baustein weglassen
+  // MF5: „Im Editor selbst ändern“ öffnet das Feld an der Stelle des ersten Fehlers (Zeile der Meldung im Feld, beim
+  // Lückentext sonst der Text mit Lücken); ohne passende Stelle steht „Erweitert“ mit dem ganzen Text offen
+  function editorAnFehler(id, von) {
+    if (!S.editorStelle) return S.editorBei(id, von);
+    var d = (Z.pruefung ? Z.pruefung.diagnosen : []).filter(function (x) { return x.baustein === id && x.stufe === "fehler"; });
+    var z = d.map(function (x) { return x.zeile_editor || x.zeile_im_baustein; }).filter(Boolean)[0];
+    var b = pruefBaustein(id) || {};
+    var wo = { zeile: z || 0, art: b.typ === "Lückentext" ? "luecken" : "", erweitert: true };
+    return S.editorStelle(id, wo, von);
+  }
   function auswegeKorrektur(zeigen) {
     var box = $("korrektur-auswege"), sl = schleife();
     var ids = zeigen ? korrekturZiele().filter(function (id) { var b = pruefBaustein(id);
@@ -947,7 +960,7 @@
     var b = ev.target.closest("[data-ausweg]"); if (!b) return;
     var k = S.karteNach(b.dataset.id); if (!k) return;
     try {
-      if (b.dataset.ausweg === "editor") await S.editorBei(k.id, b);
+      if (b.dataset.ausweg === "editor") await editorAnFehler(k.id, b);
       else {
         await auswegAktion("weglassen", k);
         S.standKarte($("eingabe-stand"), "„" + k.titel + "“ weggelassen." + (fehlerZahl() ? "" : " Keine Fehler mehr."),
@@ -1078,6 +1091,7 @@
         hv = await handVorEinsetzen(Z.mappe, Z.kurs_md, text, "ersetzen", null, null);
         var ganz = await km.mappeFn("einheit_ersetzen", [Z.mappe, Z.kurs_md, hv.text]);   // AP13.37 §1.2
         if (S.ausAntwort) S.ausAntwort(ganz);       // MF3: Antwort des Chats, kein Grund, Teile neu zu kopieren
+        S.einheitGesehen = false;                    // MF5: neuer Inhalt
         await km.stand(ganz);
         // AP13.37: gezählt werden die Bausteine der laufenden Einheit, nicht die des ganzen Kurses
         ids = Z.pruefung.bausteine.map(function (b) { return b.id; }).filter(function (id) {
@@ -1088,6 +1102,7 @@
         return false;
       } else {
         if (S.ausAntwort) S.ausAntwort(r.kurs_md);  // MF3 (Befund 3): sonst hieße es in Schritt 4 „Teil 1 hat sich geändert“
+        S.einheitGesehen = false;                    // MF5: neuer Inhalt
         await km.stand(r.kurs_md);
       }
       var fr = fragenStand(ids);

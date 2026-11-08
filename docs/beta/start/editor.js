@@ -13,11 +13,19 @@
   var S = km.seite;
   var $ = S.$, Z = S.Z, el = S.el;
   function T(k, w) { return S.editorText(k, w); }
+  // MF5: Wortlaut des Felds für eine Stelle aus katalog.yaml oberflaeche.stelle
+  function TS(k, w) {
+    var t = ((S.katalog && S.katalog.oberflaeche.stelle) || {})[k] || "";
+    Object.keys(w || {}).forEach(function (x) { t = t.split("{" + x + "}").join(w[x]); });
+    return t;
+  }
   var dlg = $("editor");
   var offenVon = null;          // Knopf, der die Ansicht geöffnet hat
   var knoten = {};              // id -> {el, kopf, koerper, werk, neu, sig}
   var abschnittKnoten = {};     // Schlüssel -> <h3>
   var bearbeiten = {};          // id -> {text, meldungen}: offenes Textfeld
+  var erw = {};                 // MF5: id -> true: „Erweitert“ am Baustein offen (Text des ganzen Bausteins)
+  var offen = null;             // MF5: offenes Feld einer Stelle {id, nr, panel, ziel, slot, s}
   var neuOffen = {};            // id -> true: Teil „Neu schreiben lassen“ offen
   var neuText = {};             // id -> Text für den Chat, vorbereitet (Kopieren in der Geste, Safari)
   var stand = null, standSig = "", lauf = 0, timer = null, pruefTimer = {}, wunschTimer = {}, bilderSig = "";
@@ -41,7 +49,13 @@
     ".km-ed-inhalt [data-ziel], .km-ed-inhalt [data-aktion] { pointer-events: auto; }",
     // AP13.44 §1: Übungsblöcke sind bedienbar wie im Kurs (uebungen.js je Block, siehe uebungenAn)
     ".km-ed-inhalt .kmb { pointer-events: auto; }",
-    ".km-vorschau-video { background: #eef0f3; color: #4b5563; padding: 28px 16px; text-align: center; border-radius: 6px; }"
+    ".km-vorschau-video { background: #eef0f3; color: #4b5563; padding: 28px 16px; text-align: center; border-radius: 6px; }",
+    // MF5: Stellen zum Ändern (Absatz, Liste); das Feld steht an ihrem Platz (slot), die Stelle ist solange verborgen
+    ".km-ed-inhalt .km-stelle { pointer-events: auto; cursor: pointer; border-radius: 4px; }",
+    ".km-ed-inhalt .km-stelle:hover { outline: 2px dashed #8a6416; outline-offset: 3px; }",
+    ".km-ed-inhalt .km-stelle:focus-visible { outline: 3px solid #8a6416; outline-offset: 3px; }",
+    ".km-ed-inhalt .km-stelle-offen { display: none !important; }",
+    "slot[name=km-stelle] { display: block; }"
   ].join("\n");
 
   function sichtbar() { return !!(Z.mappe && Z.pruefung && Z.pruefung.bausteine && Z.pruefung.bausteine.length); }
@@ -53,7 +67,8 @@
     var da = sichtbar();
     ["editor-auf", "editor-auf-2", "editor-auf-5", "editor-auf-8"].forEach(function (id) {
       var b = $(id); b.hidden = !da;
-      if (S.katalog && id !== "editor-auf-8") b.textContent = T("knopf");   // MF4: an der Zeile „Einheit“ heißt er „Ansehen“
+      // MF4: an der Zeile „Einheit“ heißt er „Ansehen“; MF5: in Schritt 5 „Einheit ansehen“ (schritte.js weiterFuenf)
+      if (S.katalog && id !== "editor-auf-8" && id !== "editor-auf-5") b.textContent = T("knopf");
     });
     // AP13.43 §5: in Schritt 5 erst, wenn nichts mehr rot ist (vorher steht dort die Korrektur)
     $("editor-auf-5").hidden = !da || S.fehlerZahl() > 0 || S.teileOffen();
@@ -64,6 +79,7 @@
     var sw = $("editor-schweb"), gruen = da && !S.fehlerZahl() && !S.teileOffen();
     sw.hidden = !gruen;
     document.body.classList.toggle("mit-editor-schweb", gruen);
+    if (S.weiterFuenf) S.weiterFuenf();
     if (S.katalog) { $("editor-schweb-text").textContent = T("schweb"); sw.setAttribute("aria-label", T("schweb") + ": " + T("knopf")); }   // WCAG 2.5.3: Name beginnt mit dem sichtbaren Wort
     leisteZeigen();
   }
@@ -113,16 +129,19 @@
     $("editor-liste").open = BREIT.matches;
     meldungenWeg();
     leisteZeigen();
+    S.einheitGesehen = true;       // MF5: Schritt 5 zeigt danach „Weiter: …“ als Hauptknopf
     if (typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open", "");
     document.body.classList.add("editor-offen");
     return aktualisieren();
   }
-  function schliessen() { if (dlg.open) dlg.close(); }
+  function schliessen() { stelleZu(false); if (dlg.open) dlg.close(); }
   // fokusDanach: wer die Ansicht schließt und den Fokus woandershin schickt (Firefox feuert `close` erst nach einem
   // setTimeout 0; sonst holte der Knopf, der die Ansicht geöffnet hat, den Fokus zurück)
   var fokusDanach = null;
   dlg.addEventListener("close", function () {
     document.body.classList.remove("editor-offen");
+    stelleZu(false);
+    if (S.weiterFuenf) S.weiterFuenf();
     var v = offenVon; offenVon = null;
     if (fokusDanach) { var f = fokusDanach; fokusDanach = null; setTimeout(f, 0); return; }
     // AP13.33 §2.1: über das Handymenü geöffnet, ist der Knopf jetzt zugeklappt; dann der Menüknopf
@@ -134,9 +153,10 @@
   // Chromium lässt ein abgefangenes `cancel` ohne Nutzeraktion dazwischen nur einmal zu (Esc zählt nicht); darum wirkt Esc
   // schon beim Tastendruck, `cancel` bleibt für andere Wege (Zurück-Geste)
   function escInnen() {
+    if (offen) { stelleZu(true); return true; }
     if (ueZiel) { ueZu(); return true; }
-    var offen = Object.keys(teilKnoten).filter(function (id) { return teilKnoten[id].offen; })[0];
-    if (offen) { teilenZu(offen, true); return true; }
+    var teilOffen = Object.keys(teilKnoten).filter(function (id) { return teilKnoten[id].offen; })[0];
+    if (teilOffen) { teilenZu(teilOffen, true); return true; }
     var a = document.activeElement, drin = a && a.closest && a.closest(".ed-b"), id = drin ? drin.dataset.id : null;
     var imNeu = !!(id && neuOffen[id] && a.closest(".ed-b-neu"));
     if (imNeu || (id && neuOffen[id] && !bearbeiten[id])) { neuZu(id, true, true); return true; }
@@ -274,10 +294,14 @@
   }
   function kachelVon(id) { return kacheln().filter(function (a) { return a.ids.indexOf(id) >= 0; })[0] || null; }
   var importHinweis = {};
+  var hinweisEl = el("p", { cls: "ed-stelle-hinweis" });
   function zeichneVorschau() {
     var box = $("editor-vorschau"), soll = [], gesehen = {}, letzter = null, nAbschnitt = 0, vorige = null;
     if (!stand.bausteine.length) { box.textContent = T("leer"); return; }
     if (stand.uebersicht) { soll.push(uebersichtEintrag().el); gesehen[UE] = 1; }
+    // MF5: ein Satz über den Bausteinen (nach der Kursübersicht, die ihren eigenen hat), wie man eine Stelle ändert
+    hinweisEl.textContent = TS(S.beruehrung && S.beruehrung() ? "hinweis_touch" : "hinweis");
+    soll.push(hinweisEl);
     var imp = (Z.mappe && Z.mappe.importiert) || [], letzteU = null;
     stand.bausteine.forEach(function (b, i) {
       // AP13.42 B6: vor der ersten Karte einer Einheit, die schon im Kurs liegt, steht der Hinweis
@@ -308,7 +332,7 @@
       soll.push(k.el);
     });
     Object.keys(knoten).forEach(function (id) { if (!gesehen[id]) { delete knoten[id]; delete bearbeiten[id];
-        delete neuOffen[id]; } });
+        delete neuOffen[id]; delete erw[id]; if (offen && offen.id === id) offen = null; } });
     Object.keys(teilKnoten).forEach(function (id) { if (!gesehen["teilen:" + id]) delete teilKnoten[id]; });
     var ist = Array.prototype.slice.call(box.children);
     var gleich = ist.length === soll.length && ist.every(function (x, i) { return x === soll[i]; });
@@ -323,28 +347,32 @@
       k.kopf = el("div", { cls: "ed-b-kopf" });
       k.meldung = el("p", { cls: "ed-b-meldung", role: "status" });
       k.koerper = el("div", { cls: "ed-b-koerper" });
+      k.liste = el("div", { cls: "ed-stellen", hidden: true });   // MF5: Stellen, die die Vorschau nicht zeigt
       k.werk = el("div", { cls: "ed-b-werk", hidden: true });
       k.neu = el("div", { cls: "ed-b-neu", hidden: true });
-      k.el.append(k.kopf, k.meldung, k.koerper, k.werk, k.neu);
+      k.el.append(k.kopf, k.meldung, k.koerper, k.liste, k.werk, k.neu);
     }
     k.b = b;
     zeichneKopf(k, b, i);
-    var s = JSON.stringify([b.html, b.platzhalter, bilderSig]);
+    var s = JSON.stringify([b.html, b.platzhalter, bilderSig, b.stellen, frageVor(b.id)]);
     if (s !== k.sig) {
       k.sig = s;
+      if (offen && offen.id === b.id) stelleZu(false);
       try { zeichneKoerper(k, b); } catch (e) {        // eine Fläche hält die übrigen nicht auf
         console.error("Vorschau", b.id, e);
         k.koerper.textContent = "";
         k.koerper.appendChild(el("div", { cls: "ed-platz ed-platz-fehler" }, [el("p", { text: T("platzhalter_fehler") })]));
       }
+      try { stellenAn(k, b); } catch (e) { console.error("Stellen", b.id, e); }
     }
     k.koerper.hidden = !!bearbeiten[b.id];
+    k.liste.hidden = !!bearbeiten[b.id] || !k.liste.childNodes.length;
     if (neuOffen[b.id] && !(karte(b.id) || {}).neu) neuZu(b.id);       // eingesetzt oder an der Karte zurückgenommen
     return k;
   }
 
   function zeichneKopf(k, b, i) {
-    var st = statusVon(b), hand = S.handGeaendert(b.id), offen = !!bearbeiten[b.id], neu = !!neuOffen[b.id];
+    var st = statusVon(b), hand = S.handGeaendert(b.id), offen = !!bearbeiten[b.id], neu = !!neuOffen[b.id], roh = null;
     var fokus = document.activeElement && k.kopf.contains(document.activeElement) ? document.activeElement.dataset.aktion ||
         (document.activeElement.classList.contains("ed-b-titel") ? "titel" : "") : "";
     k.kopf.textContent = "";
@@ -360,15 +388,21 @@
       st === "fehler" ? el("span", { cls: "ed-status fehler", text: STATUS.fehler }) : null]);
     var knoepfe = null;
     if (b.typ !== "Unterabschnitt") {
+      // MF5 (Befund 14): der Text des ganzen Bausteins (`### Typ`, Drehbuch-Zeichen) liegt hinter „Erweitert“; der erste
+      // Weg zum Ändern ist das Feld an der Stelle
+      var eo = !!(erw[b.id] || offen);
       knoepfe = el("span", { cls: "ed-b-knoepfe" }, [
-        el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": "bearbeiten", "aria-expanded": String(offen),
-            "aria-label": T("bearbeiten") + ": " + b.titel, text: T("bearbeiten") }),
         el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": "neu", "aria-expanded": String(neu),
             "aria-label": T("neu_schreiben") + ": " + b.titel, text: T("neu_schreiben") }),
         hand ? el("button", { type: "button", cls: "textlink ed-zurueck", "data-aktion": "zuruecknehmen",
-            text: handArt(b.id) === "neu" ? T("neu_zuruecknehmen") : T("zuruecknehmen") }) : null, inKachel(b)]);
+            text: handArt(b.id) === "neu" ? T("neu_zuruecknehmen") : T("zuruecknehmen") }) : null, inKachel(b),
+        el("button", { type: "button", cls: "textlink ed-erweitert", "data-aktion": "erweitert", "aria-expanded": String(eo),
+            "aria-label": TS("erweitert") + ": " + b.titel, text: TS("erweitert") })]);
+      var roh = eo ? el("div", { cls: "ed-b-erweitert" }, [
+        el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": "bearbeiten", "aria-expanded": String(offen),
+            "aria-label": TS("als_text") + ": " + b.titel, text: TS("als_text") })]) : null;
     }
-    k.kopf.append(titel, marken, knoepfe || "");
+    k.kopf.append(titel, marken, knoepfe || "", roh || "");
     // rote Meldungen wie an der Karte (auch Regeln der Einheit, die erst der ganze Stand kennt)
     var dg = Z.pruefung ? Z.pruefung.diagnosen.filter(function (d) { return d.baustein === b.id && d.stufe === "fehler"; })
       : [];
@@ -897,6 +931,8 @@
 
   async function bearbeitenAuf(id) {
     var k = knoten[id]; if (!k) return;
+    stelleZu(false);
+    erw[id] = true;
     var b = k.b;
     bearbeiten[id] = { text: b.text, meldungen: [] };
     var feld = el("textarea", { cls: "ed-text", rows: String(zeilen(b.text)), spellcheck: "true" });
@@ -914,6 +950,7 @@
       format);
     k.werk.hidden = false;
     k.koerper.hidden = true;
+    k.liste.hidden = true;
     zeichneKopf(k, b, 0);
     // AP13.33 §2.6: Cursor und Ansicht am Textanfang (Überschrift und erster Satz im Blick)
     feld.focus({ preventScroll: true });
@@ -962,7 +999,7 @@
     var k = knoten[id];
     delete bearbeiten[id];
     if (!k) return;
-    k.werk.hidden = true; k.werk.textContent = ""; k.koerper.hidden = false;
+    k.werk.hidden = true; k.werk.textContent = ""; k.koerper.hidden = false; k.liste.hidden = !k.liste.childNodes.length;
     zeichneKopf(k, k.b, 0);
     var f = k.kopf.querySelector("[data-aktion=bearbeiten]"); if (f) f.focus();
   }
@@ -976,7 +1013,7 @@
           knoten[id].werk.querySelector(".ed-text"); if (f) f.focus(); return; }
       delete bearbeiten[id];
       var k = knoten[id];
-      if (k) { k.werk.hidden = true; k.werk.textContent = ""; k.koerper.hidden = false; }
+      if (k) { k.werk.hidden = true; k.werk.textContent = ""; k.koerper.hidden = false; k.liste.hidden = !k.liste.childNodes.length; }
       await aktualisieren();
       meldung(id, T("uebernommen"));
       k = knoten[id];
@@ -1096,6 +1133,292 @@
     }
   }
 
+  // ---------------------------------------------------------------- Feld für eine Stelle (MF5, Befund 14)
+  // Die Stellen kommen aus gen/stelle.py (api.einheit_vorschau, `stellen`): Absatz, Liste, Frage (MC), Aussage (RF), Text mit
+  // Lücken. Absätze und Listen sind in der Vorschau anklickbar (`data-km-z`, Zeile im Feld); die übrigen (Übungen als
+  // Platzhalter oder als bedienbarer Block) stehen als Liste unter der Vorschau. Das Feld zeigt keinen Rohtext: Haken,
+  // Malpunkte, Pfeile und Sterne setzt gen/stelle.py. „Übernehmen“ geht über denselben Parser (stelle_setzen, dann
+  // karten.js handUebernehmen); ein Fehler kommt als Satz für die Seite zurück, übernommen wird dann nichts.
+  var UEBUNG = { Quiz: 1, Test: 1, Lesebuch: 1, "Lückentext": 1 };
+  function stellen(id) { return ((knoten[id] || {}).b || {}).stellen || []; }
+  function stelleVon(id, nr) { return stellen(id).filter(function (s) { return s.nr === nr; })[0] || null; }
+  // Nummer der ersten Frage des Bausteins in „Fragen und Lösungen“ (über die Einheit gezählt), 0 ohne Fragen
+  function frageVor(id) {
+    var f = (S.fragenListe || []).filter(function (x) { return x.baustein === id; })[0];
+    return f ? f.nr - 1 : 0;
+  }
+  // Fragen heißen wie in „Fragen und Lösungen“ („Frage 3“, über die Einheit gezählt), die übrigen nach ihrer Art
+  function stelleName(id, s) {
+    var namen = (S.katalog && S.katalog.oberflaeche.stelle && S.katalog.oberflaeche.stelle.name) || {};
+    return s.frage ? (namen.Frage || "Frage") + " " + (frageVor(id) + s.frage) : namen[s.name] || s.name;
+  }
+  function stelleKurz(s) {
+    var w = s.werte, t = s.art === "liste" ? w.punkte.join(" · ") : s.art === "mc" ? w.frage : s.art === "rf" ? w.aussage :
+        s.art === "luecken" ? (w.aufgabe || w.text) : w.text;
+    t = String(t || "").replace(/\s+/g, " ").trim();
+    return t.length > 60 ? t.slice(0, 59) + "…" : t;
+  }
+  function stelleLabel(id, s) { return TS("aendern") + ": " + stelleName(id, s) + " „" + stelleKurz(s) + "“"; }
+  function stellenAn(k, b) {
+    var st = b.stellen || [], host = k.koerper.querySelector(".ed-flaeche"), root = host && host.shadowRoot, da = {};
+    if (root) {
+      Array.prototype.forEach.call(root.querySelectorAll("[data-km-z]"), function (x) {
+        if (x.closest(".kmb")) return;                          // bedienbare Übung: ihre Stellen stehen in der Liste
+        var s = st.filter(function (y) { return String(y.z) === x.getAttribute("data-km-z") && !da[y.nr] &&
+            (y.art === "absatz" || y.art === "liste"); })[0];
+        if (!s) return;
+        da[s.nr] = true;
+        x.classList.add("km-stelle");
+        x.setAttribute("data-km-nr", String(s.nr));
+        x.setAttribute("tabindex", "0");
+        x.setAttribute("role", "button");
+        x.setAttribute("aria-label", stelleLabel(b.id, s));
+      });
+      root.addEventListener("click", function (ev) {
+        var x = ev.target.closest && ev.target.closest(".km-stelle"); if (!x) return;
+        ev.preventDefault();
+        stelleAuf(b.id, parseInt(x.getAttribute("data-km-nr"), 10), x);
+      });
+      root.addEventListener("keydown", function (ev) {
+        var x = ev.target.closest && ev.target.closest(".km-stelle");
+        if (x && x === ev.target && (ev.key === "Enter" || ev.key === " ")) {
+          ev.preventDefault(); stelleAuf(b.id, parseInt(x.getAttribute("data-km-nr"), 10), x);
+        }
+      });
+    }
+    var rest = st.filter(function (s) { return !da[s.nr]; });
+    k.liste.textContent = "";
+    if (rest.length) {
+      k.liste.append(el("p", { cls: "ed-stellen-titel", text: TS(UEBUNG[b.typ] ? "liste_uebung" : "liste_sonst") }),
+        el("ul", { cls: "ed-stellen-ul" }, rest.map(function (s) {
+          return el("li", { cls: "ed-stelle-zeile", "data-nr": String(s.nr) }, [
+            el("span", { cls: "ed-stelle-name", text: stelleName(b.id, s) }),
+            el("span", { cls: "ed-stelle-kurz", text: stelleKurz(s) }),
+            el("button", { type: "button", cls: "knopf klein-knopf ed-stelle-auf", "data-aktion": "stelle-auf",
+                "data-nr": String(s.nr), "aria-label": stelleLabel(b.id, s), text: TS("aendern") })]);
+        })));
+    }
+    k.liste.hidden = !rest.length || !!bearbeiten[b.id];
+  }
+  // Ort der Stelle: das anklickbare Element in der Vorschau oder ihre Zeile in der Liste
+  function stelleOrt(id, nr) {
+    var k = knoten[id]; if (!k) return null;
+    var host = k.koerper.querySelector(".ed-flaeche"), root = host && host.shadowRoot;
+    return (root && root.querySelector(".km-stelle[data-km-nr='" + nr + "']")) ||
+        k.liste.querySelector(".ed-stelle-zeile[data-nr='" + nr + "']");
+  }
+
+  function feld(label, eingabe, cls) { return el("label", { cls: "feld ed-feld " + (cls || "") }, [label, eingabe]); }
+  function textfeld(cls, wert, zeilenzahl) {
+    var t = el("textarea", { cls: cls, rows: String(zeilenzahl || Math.min(8, Math.max(2, Math.ceil(String(wert || "").length / 70)))),
+        spellcheck: "true" });
+    t.value = wert || "";
+    return t;
+  }
+  function zeile(cls, wert, label) {
+    var i = el("input", { type: "text", cls: cls, spellcheck: "true" });
+    if (label) i.setAttribute("aria-label", label);
+    i.value = wert || "";
+    return i;
+  }
+  function antwortZeile(n, a) {
+    var r = el("div", { cls: "ed-st-antwort" });
+    var c = el("input", { type: "checkbox", cls: "ed-st-richtig" }); c.checked = !!a.richtig;
+    r.append(el("label", { cls: "ed-st-richtig-l" }, [c, el("span", { text: TS("feld_richtig") })]),
+        zeile("ed-st-antwort-text", a.text, TS("feld_antwort", { n: n })));
+    var cb = r.querySelector(".ed-st-richtig");
+    cb.setAttribute("aria-label", TS("feld_richtig") + ": " + TS("feld_antwort", { n: n }));
+    return r;
+  }
+  function lueckeZeile(n, l) {
+    var r = el("div", { cls: "ed-st-luecke" });
+    r.append(feld(TS("feld_luecke", { n: n }), zeile("ed-st-loesung", l.loesung)),
+        feld(TS("feld_auch"), zeile("ed-st-auch", (l.auch || []).join(", "))));
+    if (l.tipp !== null && l.tipp !== undefined) r.appendChild(feld(TS("feld_tipp"), zeile("ed-st-tipp", l.tipp)));
+    return r;
+  }
+  function lueckenNummern(box) {
+    Array.prototype.forEach.call(box.querySelectorAll(".ed-st-luecke"), function (r, i) {
+      var l = r.querySelector(".ed-feld"); if (l && l.firstChild && l.firstChild.nodeType === 3) l.firstChild.nodeValue = TS("feld_luecke", { n: i + 1 });
+    });
+  }
+  // Zahl der ___ im Text und Zeilen der Lösungen gleich halten: neue ___ bekommen an ihrer Stelle eine leere Zeile, eine
+  // gelöschte ___ nimmt ihre Zeile mit (Stelle über den gemeinsamen Anfang des alten und neuen Texts)
+  function lueckenAbgleich(feldT) {
+    var p = feldT.closest(".ed-stelle"), box = p && p.querySelector(".ed-st-luecken"); if (!box) return;
+    var alt = feldT.dataset.alt || "", neu = feldT.value, re = /_{3,}/g;
+    var zahl = function (t) { return (t.match(re) || []).length; };
+    var d = zahl(neu) - box.querySelectorAll(".ed-st-luecke").length;
+    if (d) {
+      var gemein = 0;
+      while (gemein < alt.length && gemein < neu.length && alt[gemein] === neu[gemein]) gemein += 1;
+      while (gemein > 0 && alt[gemein - 1] === "_") gemein -= 1;        // mitten in ___ zählt die Lücke ab ihrem Anfang
+      var vorher = zahl(neu.slice(0, gemein)), zeilen = box.querySelectorAll(".ed-st-luecke");
+      if (d > 0) for (var i = 0; i < d; i++) {
+        var z = lueckeZeile(0, { loesung: "", auch: [] }), nach = zeilen[vorher + i - 1];
+        if (vorher + i === 0) box.insertBefore(z, box.firstChild); else if (nach) nach.after(z); else box.appendChild(z);
+        zeilen = box.querySelectorAll(".ed-st-luecke");
+      } else for (var j = 0; j < -d; j++) { var w = box.querySelectorAll(".ed-st-luecke")[vorher]; if (w) w.remove(); }
+      lueckenNummern(box);
+    }
+    feldT.dataset.alt = neu;
+  }
+  function antwortDazu() {
+    if (!offen) return;
+    var box = offen.panel.querySelector(".ed-st-antworten"); if (!box) return;
+    var r = antwortZeile(box.querySelectorAll(".ed-st-antwort").length + 1, { text: "", richtig: false });
+    box.appendChild(r);
+    r.querySelector(".ed-st-antwort-text").focus();
+  }
+  function stellePanel(id, s) {
+    var w = s.werte, teile = [], titel = stelleName(id, s);
+    // Absatz und Liste: der Name der Stelle ist die Beschriftung des Felds (keine Überschrift darüber)
+    if (s.art === "absatz") teile.push(feld(titel, textfeld("ed-st-text", w.text)));
+    else if (s.art === "liste") {
+      teile.push(feld(titel + " · " + TS("feld_liste"), textfeld("ed-st-punkte", w.punkte.join("\n"), Math.min(10, w.punkte.length + 1))));
+    } else if (s.art === "mc") {
+      teile.push(feld(TS("feld_frage"), textfeld("ed-st-frage", w.frage, 2)));
+      var box = el("div", { cls: "ed-st-antworten" });
+      w.antworten.forEach(function (a, i) { box.appendChild(antwortZeile(i + 1, a)); });
+      teile.push(el("fieldset", { cls: "ed-st-gruppe" }, [el("legend", { text: TS("feld_antworten") }),
+        el("p", { cls: "ed-st-satz", text: TS("satz_richtig") }), box,
+        el("button", { type: "button", cls: "textlink ed-st-dazu", "data-aktion": "stelle-dazu", text: TS("antwort_dazu") })]));
+    } else if (s.art === "rf") {
+      teile.push(feld(TS("feld_aussage"), textfeld("ed-st-aussage", w.aussage, 2)));
+      var name = "ed-st-rf-" + id + "-" + s.nr;
+      var radio = function (wert, text) {
+        var r = el("input", { type: "radio", name: name, value: wert, cls: "ed-st-rf" }); r.checked = (wert === "ja") === !!w.richtig;
+        return el("label", { cls: "ed-st-wahl" }, [r, el("span", { text: text })]);
+      };
+      teile.push(el("fieldset", { cls: "ed-st-gruppe" }, [el("legend", { text: TS("rf_gruppe") }), radio("ja", TS("rf_ja")),
+        radio("nein", TS("rf_nein"))]));
+    } else if (s.art === "luecken") {
+      if (w.aufgabe !== null && w.aufgabe !== undefined) teile.push(feld(TS("feld_aufgabe"), zeile("ed-st-aufgabe", w.aufgabe)));
+      var lt = textfeld("ed-st-luecken-text", w.text, Math.min(8, Math.max(3, Math.ceil(w.text.length / 70) + w.text.split("\n").length - 1)));
+      lt.dataset.alt = w.text;
+      teile.push(feld(TS("feld_luecken_text"), lt), el("p", { cls: "ed-st-satz", text: TS("satz_luecken") }));
+      var lb = el("div", { cls: "ed-st-luecken" });
+      w.luecken.forEach(function (l, i) { lb.appendChild(lueckeZeile(i + 1, l)); });
+      teile.push(lb);
+    }
+    teile.push(el("div", { cls: "ed-stelle-meldung", role: "alert", hidden: true }),
+      el("div", { cls: "ed-knoepfe" }, [
+        el("button", { type: "button", cls: "knopf haupt", "data-aktion": "stelle-ok", text: T("uebernehmen") }),
+        el("button", { type: "button", cls: "knopf", "data-aktion": "stelle-abbrechen", text: T("abbrechen") })]));
+    return el("div", { cls: "ed-stelle", role: "group", "aria-label": TS("aendern") + ": " + titel },
+      (s.art === "absatz" || s.art === "liste" ? [] : [el("p", { cls: "ed-stelle-titel", text: titel })]).concat(teile));
+  }
+  function stelleWerte(p, s) {
+    var q = function (c) { var x = p.querySelector("." + c); return x ? x.value : ""; };
+    if (s.art === "absatz") return { text: q("ed-st-text") };
+    if (s.art === "liste") return { punkte: q("ed-st-punkte").split("\n") };
+    if (s.art === "mc") return { frage: q("ed-st-frage"), antworten: Array.prototype.map.call(p.querySelectorAll(".ed-st-antwort"),
+        function (r) { return { text: r.querySelector(".ed-st-antwort-text").value, richtig: r.querySelector(".ed-st-richtig").checked }; }) };
+    if (s.art === "rf") { var r = p.querySelector(".ed-st-rf:checked"); return { aussage: q("ed-st-aussage"), richtig: !!r && r.value === "ja" }; }
+    var w = { text: q("ed-st-luecken-text"), luecken: Array.prototype.map.call(p.querySelectorAll(".ed-st-luecke"), function (r) {
+      var t = r.querySelector(".ed-st-tipp");
+      return { loesung: r.querySelector(".ed-st-loesung").value, auch: r.querySelector(".ed-st-auch").value, tipp: t ? t.value : null };
+    }) };
+    if (s.werte.aufgabe !== null && s.werte.aufgabe !== undefined) w.aufgabe = q("ed-st-aufgabe");
+    return w;
+  }
+  // Feld öffnen an der Stelle `ort` (Element in der Vorschau: das Feld steht an seinem Platz; Zeile der Liste: in ihr)
+  function stelleAuf(id, nr, ort) {
+    var k = knoten[id], s = stelleVon(id, nr); if (!k || !s) return false;
+    if (offen && offen.id === id && offen.nr === nr) { fokusIn(offen.panel); return true; }
+    stelleZu(false);
+    if (bearbeiten[id]) return false;                      // der ganze Text ist offen: dort ändern
+    meldungenWeg();
+    ort = ort || stelleOrt(id, nr);
+    var p = stellePanel(id, s), slot = null;
+    if (ort && ort.getRootNode && ort.getRootNode() !== document && ort.getRootNode().host) {
+      slot = document.createElement("slot");
+      slot.name = "km-stelle";
+      ort.after(slot);
+      ort.classList.add("km-stelle-offen");
+      p.setAttribute("slot", "km-stelle");
+      ort.getRootNode().host.appendChild(p);
+    } else if (ort) {
+      ort.classList.add("offen");
+      ort.appendChild(p);
+    } else k.liste.after(p);
+    offen = { id: id, nr: nr, panel: p, ort: ort, slot: slot, s: s };
+    zeichneKopf(k, k.b, 0);
+    p.scrollIntoView({ block: "nearest" });
+    fokusIn(p);
+    return true;
+  }
+  function fokusIn(p) {
+    var f = p.querySelector("textarea, input[type=text]");
+    if (f) { f.focus({ preventScroll: true }); if (f.tagName === "TEXTAREA") { f.setSelectionRange(0, 0); f.scrollTop = 0; } }
+  }
+  // `fokus`: der Fokus geht zurück an die Stelle (Esc, Abbrechen)
+  function stelleZu(fokus) {
+    var o = offen; if (!o) return;
+    offen = null;
+    if (o.panel.parentNode) o.panel.remove();
+    if (o.slot && o.slot.parentNode) o.slot.remove();
+    if (o.ort) { o.ort.classList.remove("km-stelle-offen"); o.ort.classList.remove("offen"); }
+    var k = knoten[o.id];
+    if (k) zeichneKopf(k, k.b, 0);
+    if (fokus) {
+      var f = o.ort && o.ort.isConnected ? (o.ort.classList.contains("ed-stelle-zeile") ? o.ort.querySelector(".ed-stelle-auf") : o.ort)
+          : k && k.kopf.querySelector(".ed-b-titel");
+      if (f) f.focus({ preventScroll: true });
+    }
+  }
+  function stelleMeldung(p, saetze) {
+    var m = p.querySelector(".ed-stelle-meldung"); if (!m) return;
+    m.textContent = "";
+    m.append(el("p", { cls: "ed-stelle-meldung-kopf", text: TS("nicht_uebernommen") }));
+    (saetze || []).forEach(function (x) { m.appendChild(el("p", { text: x })); });
+    m.hidden = false;
+  }
+  async function stelleUebernehmen(knopf) {
+    var o = offen; if (!o) return;
+    var k = knoten[o.id]; if (!k) return;
+    var w = stelleWerte(o.panel, o.s);
+    knopf.disabled = true;
+    try {
+      await km.bereit();
+      var r = await km.mappeFn("stelle_setzen", [Z.mappe, k.b.text, o.id, o.nr, w]);
+      if (offen !== o) return;
+      if (!r.ok) { stelleMeldung(o.panel, r.meldungen); return; }
+      if (r.unveraendert) { stelleZu(true); return; }
+      var e = await S.handUebernehmen(o.id, r.text, k.b.text, true);
+      if (!e.ok) { stelleMeldung(o.panel, (e.meldungen || []).map(function (x) { return x.text; })); return; }
+      stelleZu(false);
+      await aktualisieren();
+      meldung(o.id, T("uebernommen"));
+      var neu = stelleOrt(o.id, o.nr), k2 = knoten[o.id];
+      var f = neu ? (neu.classList.contains("ed-stelle-zeile") ? neu.querySelector(".ed-stelle-auf") : neu) :
+          k2 && k2.kopf.querySelector(".ed-b-titel");
+      if (f) f.focus({ preventScroll: true });
+    } catch (err) { S.zeigeFehler(err); }
+    finally { knopf.disabled = false; }
+  }
+  // Sprung von außen (Fragen und Lösungen, rote Karte): die Stelle zur Frage `frage` (Nummer im Baustein) oder zur Zeile
+  // `zeile` (im Feld) öffnen; ohne passende Stelle der Baustein mit offenem „Erweitert“ (ganzer Text)
+  function stelleSuchen(id, wo) {
+    var st = stellen(id), x = null;
+    if (wo.frage) x = st.filter(function (s) { return s.frage === wo.frage; })[0];
+    if (!x && wo.zeile) x = st.filter(function (s) { return s.zeilen.indexOf(wo.zeile) >= 0; })[0];
+    if (!x && wo.art) x = st.filter(function (s) { return s.art === wo.art; })[0];
+    return x || null;
+  }
+  S.editorStelle = function (id, wo, von) {
+    return Promise.resolve(oeffnen(von)).then(function () {
+      var k = knoten[id]; if (!k) return false;
+      var s = stelleSuchen(id, wo || {});
+      if (s && stelleAuf(id, s.nr)) { offen.panel.scrollIntoView({ block: "center" }); return true; }
+      zeigen(k.el);
+      if (wo && wo.erweitert) { erw[id] = true; zeichneKopf(k, k.b, 0); }
+      var t = k.kopf.querySelector(wo && wo.erweitert ? "[data-aktion=bearbeiten]" : ".ed-b-titel");
+      if (t) t.focus({ preventScroll: true });
+      return false;
+    });
+  };
+
   // ---------------------------------------------------------------- Ereignisse in der Vorschau
   $("editor-vorschau").addEventListener("click", async function (ev) {
     var knopf = ev.target.closest("[data-aktion]"); if (!knopf) return;
@@ -1131,6 +1454,18 @@
         var nr = parseInt(String(ueZiel).replace("abschnitt:", ""), 10);
         return await verschieben(nr, a === "ue-hoch" ? -1 : 1);
       }
+      if (a === "erweitert") {
+        erw[id] = !erw[id];
+        if (!erw[id] && bearbeiten[id]) { erw[id] = true; abbrechenFragen(id, false); return; }
+        zeichneKopf(knoten[id], knoten[id].b, 0);
+        var ek = knoten[id].kopf.querySelector(erw[id] ? "[data-aktion=bearbeiten]" : "[data-aktion=erweitert]");
+        if (ek) ek.focus();
+        return;
+      }
+      if (a === "stelle-auf") return stelleAuf(id, parseInt(knopf.dataset.nr, 10), knopf.closest(".ed-stelle-zeile"));
+      if (a === "stelle-ok") return await stelleUebernehmen(knopf);
+      if (a === "stelle-abbrechen") return stelleZu(true);
+      if (a === "stelle-dazu") return antwortDazu();
       if (a === "bearbeiten") { if (bearbeiten[id]) abbrechenFragen(id, false); else await bearbeitenAuf(id); }
       else if (a === "abbrechen") abbrechenFragen(id, false);
       else if (a === "verwerfen-ja") abbrechen(id);
@@ -1172,6 +1507,12 @@
     }
   });
   $("editor-vorschau").addEventListener("keydown", function (ev) {
+    // MF5: Enter in einer Zeile des Felds übernimmt (in mehrzeiligen Feldern bleibt Enter ein Zeilenumbruch)
+    if (ev.key === "Enter" && offen && ev.target.tagName === "INPUT" && ev.target.type === "text" && offen.panel.contains(ev.target)) {
+      ev.preventDefault();
+      var ok = offen.panel.querySelector("[data-aktion=stelle-ok]"); if (ok && !ok.disabled) stelleUebernehmen(ok).catch(S.zeigeFehler);
+      return;
+    }
     if (ev.key === "Enter" && ev.target.classList.contains("ed-ue-titel")) { ev.preventDefault(); ueUebernehmen()
         .catch(S.zeigeFehler); }
     if (ev.key === "Enter" && ev.target.classList.contains("ed-teilen-titel")) {
@@ -1183,6 +1524,7 @@
     }
   });
   $("editor-vorschau").addEventListener("input", function (ev) {
+    if (ev.target.classList.contains("ed-st-luecken-text")) { lueckenAbgleich(ev.target); return; }
     var sec = ev.target.closest(".ed-b"); if (!sec) return;
     var id = sec.dataset.id;
     if (ev.target.classList.contains("ed-w-antwort")) {

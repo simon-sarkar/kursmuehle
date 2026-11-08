@@ -99,7 +99,9 @@
         cls += " abw" + (ent ? " " + ent : korrigieren[key] && !ent ? " korrigieren" : "");
         extra = abwTeil(r.a, key, ent);
       }
-      var aendern = el("button", { type: "button", cls: "textlink f-aendern", "data-ziel": f.baustein,
+      // MF5: die Nummer der Frage im Baustein; der Editor öffnet das Feld dieser Frage
+      var imB = S.fragenListe.filter(function (x) { return x.baustein === f.baustein && x.nr <= f.nr; }).length;
+      var aendern = el("button", { type: "button", cls: "textlink f-aendern", "data-ziel": f.baustein, "data-frage": String(imB),
         "aria-label": "Ändern: Frage " + f.nr + " in „" + f.titel + "“", text: "Ändern" });
       ol.appendChild(el("li", { cls: cls, "data-nr": f.nr, "data-key": key }, [kopf, el("div", { cls: "f-zeile" }, [
         el("p", { cls: "f-frage", text: (f.art === "rf" ? "Richtig oder falsch: " : "") + f.frage }), aendern]),
@@ -132,7 +134,7 @@
         a.zulassen && !mehrere ? zulassen(a.luecken && a.luecken.length ? a.luecken[0].nr : 1) : null])]));
   }
   $("fragen-liste").addEventListener("click", function (ev) {
-    var z = ev.target.closest(".f-aendern"); if (z) { editorAm(z.dataset.ziel, z); return; }
+    var z = ev.target.closest(".f-aendern"); if (z) { editorAm(z.dataset.ziel, z, parseInt(z.dataset.frage, 10)); return; }
     var b = ev.target.closest("[data-aktion]");
     if (!b || !Z.mappe) return;
     if (b.dataset.aktion === "zulassen") { zulassen(b.dataset.key, parseInt(b.dataset.luecke, 10)); return; }
@@ -151,8 +153,9 @@
   });
   // „Ändern“ an einer Frage und „Im Editor ändern“ an einer Zeile `Offen:`: der Editor am Baustein (AP13.44 macht Quiz dort
   // bedienbar); ohne Editor (Seite noch ohne Prüfung) die Karte in Schritt 5
-  function editorAm(id, von) {
-    if (S.editorBei && Z.pruefung && Z.pruefung.bausteine.length) S.editorBei(id, von); else zuKarte(id);
+  function editorAm(id, von, frage) {
+    if (!(S.editorBei && Z.pruefung && Z.pruefung.bausteine.length)) { zuKarte(id); return; }
+    if (frage && S.editorStelle) S.editorStelle(id, { frage: frage }, von); else S.editorBei(id, von);
   }
 
   // MF4, offene Entscheidung 7: „Lösungen angesehen“, wenn das Ende der Liste eine Sekunde im Blick war, während der

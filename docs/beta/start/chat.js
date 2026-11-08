@@ -420,6 +420,26 @@
     var jetzt = { mappe: JSON.parse(JSON.stringify(Z.mappe)), kurs_md: Z.kurs_md };
     Z.mappe = JSON.parse(JSON.stringify(vorher.mappe)); Z.kurs_md = vorher.kurs_md;
     var neu, meldung = "", erlaubt = [];
+    // MF5 (Befund 15): „Ich steuere“, die erste Antwort der Einheit passt nicht zum Plan: „Einheit ersetzen“ ersetzte die
+    // eigenen Kacheln. Die Seite fragt einmal je Antwort (`merk.plan`); „Nur die leeren Bausteine füllen“ setzt nur die
+    // Bausteine ein, deren id eine leere geplante Karte trägt (gen/mappe.py plan_rueckfrage), sonst steht „Abbrechen“ da
+    if (modus === "ersetzen" && zweig() === "steuer" && !(merk && merk.plan)) {
+      var pf = await km.mappeFn("plan_rueckfrage", [Z.mappe, text]);
+      if (pf.frage) {
+        var TS = function (k, w) { var t = ((S.katalog && S.katalog.oberflaeche.stelle) || {})[k] || "";
+          Object.keys(w || {}).forEach(function (x) { t = t.split("{" + x + "}").join(w[x]); }); return t; };
+        var wahl = await S.frage(pf.kacheln === 1 ? TS("plan_frage_eine") : TS("plan_frage", { n: pf.kacheln }), [],
+            pf.leer ? TS("plan_leer") : TS("plan_abbrechen"), TS("plan_ersetzen"), "sicher");
+        if (merk) merk.plan = wahl === "riskant" ? "ersetzen" : pf.leer ? "leer" : "abbrechen";
+        if (wahl !== "riskant" && !pf.leer) {
+          Z.mappe = JSON.parse(JSON.stringify(vorher.mappe));
+          await km.stand(vorher.kurs_md);
+          if (merk) delete merk.plan;
+          return { ok: false, art: "ok", text: S.editorText("abgebrochen"), zurueck: true };
+        }
+        if (wahl !== "riskant") { text = pf.text; modus = "baustein"; }
+      }
+    }
     // AP13.37: trifft die Antwort Bausteine einer anderen Einheit (Typ und Titel passen), fragt die Seite mit Namen.
     // „Einheit ersetzen“ ersetzt nur die laufende Einheit („Nur Einheit 3 ersetzen“), „Nur Baustein ersetzen“ ändert
     // sie dort erst nach „In Einheit 1 ändern“. „Abbrechen“ und Esc setzen nichts ein; die Antwort bleibt im Feld
@@ -455,7 +475,7 @@
       S.handNachEinsetzen(ids, hv);
       Z.mappe.bausteine.forEach(function (k) { if (ids.indexOf(k.id) >= 0) k.neu = false; });
       if (r.fehler.length) meldung = " " + r.fehler.join(" ");
-      return { ok: true, n: ids.length, ids: ids, text: meldung };
+      return { ok: true, n: ids.length, ids: ids, text: meldung, modus: modus };
     }
     if (modus === "anhaengen") neu = await km.mappeFn("anhaengen", [Z.kurs_md, text, Z.mappe.anhaengen || null]);
     else neu = await km.mappeFn("einheit_ersetzen", [Z.mappe, Z.kurs_md, text]);
@@ -691,6 +711,8 @@
       } else { ergaenzt = S.letzteAntwort.ergaenzt || []; umbenannt = S.letzteAntwort.umbenannt || []; }
       diagnose(null);
       var e = await einsetzen(text, modus, S.letzteAntwort.vorher, S.letzteAntwort);
+      if (e.ok && e.modus && e.modus !== modus) { modus = e.modus; setzeModus(modus); }    // MF5: nur die leeren gefüllt
+      if (e.ok) S.einheitGesehen = false;                 // MF5: neuer Inhalt, Schritt 5 bietet wieder „Einheit ansehen“
       if (!e.ok) {
         S.letzteAntwort.nach = antwortStand();
         // die Meldung sagt, die Antwort stehe noch im Feld: dann steht sie dort auch

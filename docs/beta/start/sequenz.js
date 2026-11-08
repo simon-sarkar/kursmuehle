@@ -422,7 +422,8 @@
     }
     $("naechste-einheit").hidden = !!s && n < s.stunden.length;
     var von = s ? s.stunden.length : 0;
-    $("weiter-5").classList.toggle("haupt", !(an && n < von));
+    S.sequenzHaupt = !!(an && n < von);             // MF5: Schritt 5 setzt danach seine Knöpfe (schritte.js weiterFuenf)
+    if (S.weiterFuenf) S.weiterFuenf();
     box.hidden = !s || S.schritt() < 5 || (!an && !(S.inhalt() && !offen()));
     if (box.hidden) return;
     var rot = S.fehlerZahl() > 0 || S.teileOffen();

@@ -132,6 +132,29 @@
 
   var modusVorgewaehlt = null;      // AP13.33 M2: Einheit, für die „Als weitere Einheit anhängen“ schon vorgewählt ist
   var kopfStand = "";
+  // MF5 (Konzept §3.5, Entscheidung 2): nach dem Einsetzen ohne rote Karten ist „Einheit ansehen“ der Hauptknopf, daneben
+  // der Textlink „Weiter ohne Ansehen“ (auch nach „Alle 2 Teile eingesetzt“). Nach dem Ansehen (S.einheitGesehen, bis zur
+  // nächsten Antwort) wieder „Weiter: …“ als Hauptknopf mit „Einheit ansehen“ daneben; ist die nächste Stunde einer Sequenz
+  // der Hauptknopf (S.sequenzHaupt, sequenz.js), bleiben beide Nebenknöpfe
+  function weiterFuenf() {
+    var w = $("weiter-5"), e = $("editor-auf-5"); if (!w || !e) return;
+    var st = (S.katalog && S.katalog.oberflaeche.stelle) || {};
+    var zuerst = !w.hidden && !e.hidden && !S.einheitGesehen && !S.sequenzHaupt;
+    var text = zuerst ? st.ohne_ansehen || "Weiter ohne Ansehen" : w.dataset.ziel || "Weiter";
+    if (w.textContent !== text) w.textContent = text;
+    w.className = zuerst ? "textlink ohne-ansehen" : "knopf" + (S.sequenzHaupt ? "" : " haupt");
+    e.className = "knopf editor-auf-5" + (zuerst ? " haupt" : "");
+    if (st.ansehen && e.textContent !== st.ansehen) e.textContent = st.ansehen;
+    // der Hauptknopf steht vorn (Lese- und Tab-Folge)
+    if (zuerst ? e.nextElementSibling !== w : w.nextElementSibling !== e) {
+      var f = document.activeElement;
+      if (zuerst) w.before(e); else e.before(w);
+      if (f && (f === e || f === w)) f.focus({ preventScroll: true });
+    }
+  }
+  S.weiterFuenf = weiterFuenf;
+  S.einheitGesehen = false;
+  S.sequenzHaupt = false;
   function zeichneSchritte() {
     var s = schritt(), z = zweig(), d = !!S.designer;
     // Bildwünsche inzwischen weg oder Bilder „keine“: weiter mit den Fragen
@@ -233,7 +256,8 @@
     $("weiter").hidden = !!Z.mappe || !$("weiter").dataset.da;
     $("weiter-5").hidden = !(s === 5 && inhalt() && !fehlerZahl() && !teileOffen());
     // MF1: die Hauptknöpfe nennen den nächsten Schritt
-    $("weiter-5").textContent = "Weiter: " + kurzName(sichtbar.indexOf(5.5) >= 0 ? 5.5 : S.fragenListe.length ? 6 : 7);
+    $("weiter-5").dataset.ziel = "Weiter: " + kurzName(sichtbar.indexOf(5.5) >= 0 ? 5.5 : S.fragenListe.length ? 6 : 7);
+    weiterFuenf();
     $("weiter-bilder").hidden = S.aendern === 5.5;
     // MF4: „Weiter: Kursdatei“ neutral, ohne Bestätigung; nach „Ändern“ steht dort „Zurück zu“ (zurueck-6)
     $("weiter-6").hidden = S.aendern === 6;
