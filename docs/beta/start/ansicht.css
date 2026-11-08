@@ -455,9 +455,10 @@ select { appearance: auto; }
 .chat-gruppe-info { flex: 1 1 100%; margin: 0; }
 .ki-eigene > .chat-gruppe { margin-top: 6px; }
 /* MF2: Zustand b. Der gewählte Chat mit „Anderer Chat“, ein Satz zum Modell mit (i), der Kopierknopf mit (i) */
-.chat-fuer { margin: 0 0 4px; font-weight: 600; }
+.chat-fuer { margin: 0 0 14px; font-weight: 600; }
 .chat-fuer .textlink { font-weight: 400; margin-left: 8px; }
-.chat-modell-zeile { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; }
+/* MF6: das (i) zum Modell steht in der Zeile des Chats, der Satz nur im (i) */
+.chat-modell-zeile { display: inline-flex; vertical-align: middle; margin-left: 8px; }
 #chat-modell-info, #rechte-info { margin: 0 0 14px; }
 .kopiert-block #kopiert:empty { display: none; }
 .kopiert-block:has(#kopiert.ok:not(:empty)) { margin-top: 14px; padding: 10px 14px 12px; border: 1px solid var(--linie);
@@ -568,6 +569,18 @@ select { appearance: auto; }
 .korrektur-antwort { margin-top: 12px; }
 .korrektur-antwort textarea { min-height: 7rem; font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace; }
 .korrektur-antwort .kopieren { margin-top: 8px; }
+/* MF6: eine Bitte, um die die Lehrkraft gebeten hat („Verlängern lassen“, kürzere Sätze), ist kein Fehler: kein Rot */
+.korrektur.neutral { border-color: var(--linie); border-left-color: var(--text); }
+.korrektur-abbrechen { margin-left: 14px; }
+#korrektur-einfuegen.zu { display: none; }
+.einheit-warnung-info { margin: 6px 0 0; }
+.offen-satz { margin: 0 0 6px; font-size: 0.95rem; }
+.f-offen { margin: 8px 0 0; padding: 8px 12px; border-left: 4px solid var(--warn); border-radius: 6px; background: var(--warn-flaeche); }
+.f-offen p { margin: 0; }
+.f-offen p + p { margin-top: 4px; }
+.f-offen-wort { font-weight: 650; }
+#gegen-einfuegen .kopieren { margin-top: 8px; }
+.vs-muster { font-weight: 400; }
 .karten-ort:not(:empty) { margin-top: 16px; }
 .zeit-schalter { margin: 4px 0 12px; }
 .karten { list-style: none; margin: 0; padding: 0; background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--rund); }

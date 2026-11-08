@@ -39,7 +39,7 @@
     var mehr = S.mehrereEinheiten(), jetzt = S.einheitTag() || "e1", frueher = {}, reihe = [];
     // nur neu zeichnen, wenn sich Fragen oder Ergebnis geändert haben (Fokus auf „Ändern“ bleibt nach dem Editor)
     var sig = JSON.stringify([S.fragenListe, ergebnisJe(), entschieden(), korrigieren, weg(), mehr, jetzt,
-        S.katalog ? 1 : 0]);
+        S.katalog ? 1 : 0, offenZeilen()]);
     if (sig === listeSig) return;
     listeSig = sig;
     ol.innerHTML = "";
@@ -103,9 +103,14 @@
       var imB = S.fragenListe.filter(function (x) { return x.baustein === f.baustein && x.nr <= f.nr; }).length;
       var aendern = el("button", { type: "button", cls: "textlink f-aendern", "data-ziel": f.baustein, "data-frage": String(imB),
         "aria-label": "Ändern: Frage " + f.nr + " in „" + f.titel + "“", text: "Ändern" });
+      // MF6: Zeilen `Offen:` direkt unter dieser Frage stehen an ihr, mit dem Satz, was zu tun ist
+      var unsicher = offenZeilen().filter(function (o) { return o.baustein === f.baustein && o.frage === imB; });
+      var offenTeil = unsicher.length ? el("div", { cls: "f-offen" }, [el("p", {}, [el("span", { cls: "f-offen-wort",
+          text: PT("offen_frage") + " " }), unsicher.map(function (o) { return o.text; }).join(" ")]),
+          el("p", { cls: "leise", text: PT("offen_frage_satz") })]) : null;
       ol.appendChild(el("li", { cls: cls, "data-nr": f.nr, "data-key": key }, [kopf, el("div", { cls: "f-zeile" }, [
         el("p", { cls: "f-frage", text: (f.art === "rf" ? "Richtig oder falsch: " : "") + f.frage }), aendern]),
-        optionen, loesung, extra]));
+        offenTeil, optionen, loesung, extra]));
     });
   }
   // „Chat sieht es anders: …“ mit den Wegen: korrigieren lassen (Bitte in das Gespräch der Einheit), „Meine Lösung gilt“,
@@ -275,18 +280,28 @@
   S.pruefStand = pruefStand;
   // AP13.12 a10: Zeilen `Offen:` der Kursdatei (gen/api.offen) oben in Schritt 6, je Zeile mit ihrem Baustein; wie bei
   // den Bildwünschen nur die laufende Einheit (Zeilen im Kopf gehören zur ersten)
-  function zeichneOffen() {
-    var ul = $("offen-liste"), tag = S.einheitTag();
-    var zeilen = ((Z.pruefung && Z.pruefung.offen) || []).filter(function (o) {
+  // MF6: eine Zeile, die direkt unter einer Frage steht (gen/api.offen `frage`), steht an dieser Frage (fragenZeichnen);
+  // der Kasten trägt die übrigen und einen Satz, was zu tun ist
+  function offenZeilen() {
+    var tag = S.einheitTag();
+    return ((Z.pruefung && Z.pruefung.offen) || []).filter(function (o) {
       var k = o.baustein && S.karteNach(o.baustein);
       return o.baustein ? !!k && (k.einheit || "") === tag : !tag;
     });
+  }
+  function offenAnFrage(o) {
+    return !!(o.baustein && o.frage && S.fragenListe.some(function (f) { return f.baustein === o.baustein; }));
+  }
+  function zeichneOffen() {
+    var ul = $("offen-liste");
+    var zeilen = offenZeilen().filter(function (o) { return !offenAnFrage(o); });
     ul.innerHTML = "";
     zeilen.forEach(function (o) {
       ul.appendChild(el("li", {}, [o.text, o.baustein ? el("span", { cls: "leise", text: " · " + (o.titel || "") + " " })
           : null, o.baustein ? el("button", { type: "button", cls: "textlink f-aendern", "data-ziel": o.baustein,
-          "aria-label": "Im Editor ändern: " + (o.titel || ""), text: "Im Editor ändern" }) : null]));
+          "aria-label": PT("aendern") + ": " + (o.titel || ""), text: PT("aendern") }) : null]));
     });
+    $("offen-satz").textContent = PT("offen_satz");
     $("offen-kasten").hidden = !zeilen.length;
   }
   $("offen-liste").onclick = function (ev) { var z = ev.target.closest("[data-ziel]"); if (z) editorAm(z.dataset.ziel, z); };
@@ -377,6 +392,8 @@
     clearTimeout(gegenTimer);
     gegenTimer = setTimeout(gegenpruefen, 400);
   });
+  // MF6: ein Klick nach dem Vergleich von selbst schadet nicht
+  $("gegen-uebernehmen").onclick = function () { clearTimeout(gegenTimer); gegenpruefen(); };
   async function gegenpruefen() {
     var text = $("gegen-antwort").value, pr = Z.pruefung;
     gegenFuer = pr;

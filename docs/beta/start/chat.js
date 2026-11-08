@@ -428,7 +428,9 @@
       if (pf.frage) {
         var TS = function (k, w) { var t = ((S.katalog && S.katalog.oberflaeche.stelle) || {})[k] || "";
           Object.keys(w || {}).forEach(function (x) { t = t.split("{" + x + "}").join(w[x]); }); return t; };
-        var wahl = await S.frage(pf.kacheln === 1 ? TS("plan_frage_eine") : TS("plan_frage", { n: pf.kacheln }), [],
+        // MF6: „Meine Kacheln behalten“ / „Alles ersetzen“, je ein Satz dazu (Verhalten wie MF5)
+        var wahl = await S.frage(pf.kacheln === 1 ? TS("plan_frage_eine") : TS("plan_frage", { n: pf.kacheln }),
+            [pf.leer ? TS("plan_satz_leer") : TS("plan_satz_abbrechen"), TS("plan_satz_ersetzen")],
             pf.leer ? TS("plan_leer") : TS("plan_abbrechen"), TS("plan_ersetzen"), "sicher");
         if (merk) merk.plan = wahl === "riskant" ? "ersetzen" : pf.leer ? "leer" : "abbrechen";
         if (wahl !== "riskant" && !pf.leer) {

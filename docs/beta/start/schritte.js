@@ -113,7 +113,11 @@
   // (i) zum Modell beginnt mit dem Satz des gewählten Chats (katalog.yaml chats.aufwand)
   function hinweisText(schl) {
     var t = S.hinweisTexte[schl] || "";
-    if (schl === "4-modell") { var c = Z.mappe && chatInfo(Z.mappe.chat); if (c && c.aufwand) t = c.aufwand + " " + t; }
+    // MF6: das (i) an der gelben Minutenzeile in Schritt 5 (Text aus katalog.yaml, mit der Dauer der Einheit)
+    if (schl === "5-verlaengern") return S.editorText("zeit_kurz_info", { minuten: S.zeitKurzMinuten ||
+        ((Z.mappe && Z.mappe.einheit) || {}).minuten || "" });
+    if (schl === "4-modell") { var c = Z.mappe && chatInfo(Z.mappe.chat); if (c && c.aufwand) t = c.aufwand + " " + t;
+      t = (S.editorText("modell_satz") + " " + t).trim(); }       // MF6: der Satz stand vorher sichtbar in der Zeile
     // MF3: am Auftrag eines Bildes dazu der Satz des Chats zu seinem Bildgenerator (katalog.yaml chats.bilder_hinweis)
     if (schl === "5.5-auftrag") { var cb = Z.mappe && chatInfo(Z.mappe.chat); if (cb && cb.bilder_hinweis) t += " " + cb.bilder_hinweis; }
     return t;

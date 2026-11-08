@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 1565ae9 vom 08.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 2a469d1 vom 08.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -405,15 +405,15 @@
       </div>
       <!-- Vorschau: ab 1100 px Spalte rechts, die beim Scrollen stehen bleibt (eigener Bildlauf), darunter Leiste am
            unteren Rand; zwei Karten: die Einheit im Design (gen/api.design_vorschau) und die Kursseite im Format
-           (formate.js). Beides ist Anschauung, nichts darin ist klickbar. -->
+           (formate.js). Beides ist Anschauung, nichts darin ist klickbar (inert, MF6: „· Muster“ am Kopf). -->
       <aside id="vorschau-spalte" class="vorschau-spalte" aria-label="Vorschau">
         <button type="button" id="vorschau-leiste" class="vorschau-leiste" aria-expanded="false">
           <span class="vs-name"><span class="leise">Vorschau</span> <span id="vorschau-name"></span></span>
           <span class="vs-auf" aria-hidden="true"></span></button>
         <div class="vs-karten">
-          <div class="vs-karte"><p class="vs-kopf">Einheit</p>
+          <div class="vs-karte"><p class="vs-kopf">Einheit <span class="vs-muster">· Muster</span></p>
             <div id="vorschau-gross" class="vorschau-gross"><div class="vs-innen" aria-hidden="true"></div></div></div>
-          <div id="format-karte" class="vs-karte" hidden><p class="vs-kopf">Kursseite</p>
+          <div id="format-karte" class="vs-karte" hidden><p class="vs-kopf">Kursseite <span class="vs-muster">· Muster</span></p>
             <div id="format-vorschau" class="format-vorschau" aria-hidden="true"></div></div>
         </div>
       </aside>
@@ -460,14 +460,14 @@
         </div>
         <p id="verbinden-stand" class="stand" role="status" aria-live="polite"></p>
       </div>
-      <!-- Zustand b: der gewählte Chat, ein Satz zum Modell (Rest hinter dem (i)), „Text kopieren“; nach dem Kopieren vier
+      <!-- Zustand b: der gewählte Chat mit dem (i) zum Modell, „Text kopieren“; nach dem Kopieren vier
            Sekunden „Kopiert“, dann zwei Zeilen und „Weiter: Antwort einfügen“ (zurueck-4). Ein Text in Teilen zeigt die Teile
            als Liste mit ihrem Stand (chat.js zeichneChat) -->
       <div id="chat-text" hidden>
-        <p class="chat-fuer"><span id="chat-zeile"></span> <button type="button" id="chat-aendern" class="textlink">Anderer Chat</button></p>
-        <p id="chat-modell-zeile" class="chat-modell-zeile"><span>Nimm das stärkste Modell, das dein Chat anbietet.</span><button
-          type="button" class="info-knopf" aria-expanded="false" aria-controls="chat-modell-info" aria-label="Welches Modell?"
-          data-hinweis="4-modell">i</button></p>
+        <!-- MF6: der Satz zum Modell steht nur im (i) „Welches Modell?“ an der Zeile des Chats -->
+        <p class="chat-fuer"><span id="chat-zeile"></span> <button type="button" id="chat-aendern" class="textlink">Anderer Chat</button><span
+          id="chat-modell-zeile" class="chat-modell-zeile"><button type="button" class="info-knopf" aria-expanded="false"
+          aria-controls="chat-modell-info" aria-label="Welches Modell?" data-hinweis="4-modell">i</button></span></p>
         <p id="chat-modell-info" class="info-text" hidden></p>
         <div id="kopier-warnung" class="warnung-box" role="status" hidden>
           <p id="kopier-warnung-text"></p>
@@ -538,12 +538,14 @@
         <div id="korrektur-auswege" class="korrektur-auswege" hidden></div>
         <p id="korrektur-zeile" class="leise"></p>
         <button type="button" id="korrektur-kopieren" class="knopf haupt">Korrekturbitte kopieren</button>
+        <!-- MF6: nur bei „Verlängern lassen“ (neutrale Karte): schließt die Bitte, die gelbe Zeile steht wieder da -->
+        <button type="button" id="korrektur-abbrechen" class="textlink korrektur-abbrechen" hidden>Abbrechen</button>
         <p id="korrektur-stand" class="stand" role="status" aria-live="polite"></p>
         <ol id="korrektur-schritte" class="kopiert-schritte" hidden><li id="korrektur-1"></li><li id="korrektur-2"></li></ol>
         <textarea id="korrektur-feld" class="unsichtbar" readonly aria-hidden="true" tabindex="-1"></textarea>
         <div id="korrektur-antwort" class="korrektur-antwort" hidden>
           <div id="korrektur-einfuegen">
-            <label for="korrektur-eingabe" class="feld">Antwort des Chats auf die Korrektur</label>
+            <label for="korrektur-eingabe" id="korrektur-label" class="feld">Antwort des Chats auf die Korrektur</label>
             <textarea id="korrektur-eingabe" rows="5" spellcheck="false"></textarea>
             <div class="kopieren"><button type="button" id="korrektur-uebernehmen" class="knopf">Antwort einsetzen</button></div>
           </div>
@@ -553,6 +555,7 @@
       </div>
       <!-- AP13.35 §2.3, MF3: die gelbe Zeile der Einheit, nur unter drei Vierteln der Dauer, mit „Verlängern lassen“ -->
       <p id="einheit-warnung" class="karten-warnung einheit-warnung" role="status" hidden></p>
+      <p id="einheit-warnung-info" class="info-text einheit-warnung-info" hidden></p>
       <!-- ein Hauptknopf zum nächsten Schritt, daneben der Editor (AP13.43 §5; einer statt zwei) -->
       <div class="knopf-reihe weiter-reihe">
         <button type="button" id="weiter-5" class="knopf haupt" hidden>Weiter</button>
@@ -633,6 +636,7 @@
       <!-- AP13.12 a10: Zeilen `Offen:` der Kursdatei (gen/api.offen), je Zeile mit „Im Editor ändern“ am Baustein -->
       <div id="offen-kasten" class="offen-kasten" hidden>
         <h3 class="unterkopf">Hier war sich die KI nicht sicher</h3>
+        <p id="offen-satz" class="offen-satz"></p>
         <ul id="offen-liste" class="offen-liste"></ul>
       </div>
       <!-- Zweite Meinung: Zustand a die Zeile mit „Prüfauftrag kopieren“ (verbunden: „Mit meiner KI prüfen“), b nach dem
@@ -662,6 +666,8 @@
           <div id="gegen-einfuegen">
             <label for="gegen-antwort" class="feld eingabe-l">Antwort des Chats hier einfügen</label>
             <textarea id="gegen-antwort" rows="5" spellcheck="false"></textarea>
+            <!-- MF6 (Konzept §3.5): der Knopf steht neben jedem Antwortfeld; das Einfügen vergleicht schon von selbst -->
+            <div class="kopieren"><button type="button" id="gegen-uebernehmen" class="knopf">Antwort einsetzen</button></div>
           </div>
         </div>
         <p id="gegen-ki-stand" class="stand-karte" role="status" aria-live="polite" hidden></p>

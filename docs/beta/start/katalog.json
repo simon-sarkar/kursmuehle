@@ -1034,7 +1034,16 @@
    "weitere_planen": "Einheit planen",
    "einheit_name": "Einheit {n}",
    "zeit_kurz_knopf": "Verlängern lassen",
-   "zeit_kurz_zeile": "Die Einheit ist kürzer als geplant, etwa {ist} von {minuten} Minuten.",
+   "zeit_kurz_zeile": "Die Einheit ist kürzer als geplant, etwa {ist} von {minuten} Minuten. Du kannst so weitermachen oder sie verlängern lassen.",
+   "zeit_kurz_info": "„Verlängern lassen“ bittet den Chat, Inhalte zu ergänzen, bis die Einheit etwa {minuten} Minuten füllt.",
+   "zeit_kurz_info_name": "Was tut „Verlängern lassen“?",
+   "zeit_kurz_titel": "Einheit verlängern lassen",
+   "zeit_kurz_satz": "Die Bitte an den Chat: Inhalte ergänzen, bis die Einheit etwa {minuten} Minuten füllt.",
+   "zeit_kurz_kopieren": "Bitte kopieren",
+   "zeit_kurz_abbrechen": "Abbrechen",
+   "modell_satz": "Nimm das stärkste Modell, das dein Chat anbietet.",
+   "bitte_titel": "Bitte an den Chat",
+   "bitte_antwort": "Antwort des Chats auf die Bitte",
    "eigener_plan": "Eigener Plan",
    "kacheln_zahl": "{n} Kacheln",
    "kachel_eine": "1 Kachel",
@@ -1191,11 +1200,14 @@
    "anders": "So läse die Mühle die Stelle anders als gemeint. Lass Zeichen wie „·“, „→“, „*“ oder „/“ weg.",
    "ansehen": "Einheit ansehen",
    "ohne_ansehen": "Weiter ohne Ansehen",
-   "plan_frage": "Die Antwort ersetzt deine {n} Kacheln. Einsetzen?",
-   "plan_frage_eine": "Die Antwort ersetzt deine Kachel. Einsetzen?",
-   "plan_ersetzen": "Ersetzen",
-   "plan_leer": "Nur die leeren Bausteine füllen",
-   "plan_abbrechen": "Abbrechen"
+   "plan_frage": "Die Antwort passt nicht zu deinen {n} Kacheln.",
+   "plan_frage_eine": "Die Antwort passt nicht zu deiner Kachel.",
+   "plan_ersetzen": "Alles ersetzen",
+   "plan_leer": "Meine Kacheln behalten",
+   "plan_abbrechen": "Abbrechen",
+   "plan_satz_leer": "Meine Kacheln behalten setzt nur ein, was zu deinen Kacheln passt.",
+   "plan_satz_abbrechen": "Abbrechen setzt nichts ein; die Antwort bleibt im Feld.",
+   "plan_satz_ersetzen": "Alles ersetzen löscht deine Kacheln."
   },
   "pruefseite": {
    "fragen_zeile": "{n} Fragen. Lies jede Lösung, bevor der Kurs zur Klasse geht.",
@@ -1229,7 +1241,11 @@
     "Im Kurs: Mehr → Kurs wiederverwenden → Sicherung wiederherstellen, Datei hochladen.",
     "Bei „Ziel“ „Den gesicherten Kurs mit diesem Kurs verschmelzen“ wählen, dann Weiter bis zum Ende."
    ],
-   "schema": "Bei „Schema“ „Kurseinstellungen überschreiben“ auf „Ja“, sonst fehlt das Kursformat."
+   "schema": "Bei „Schema“ „Kurseinstellungen überschreiben“ auf „Ja“, sonst fehlt das Kursformat.",
+   "offen_satz": "Lies jeden Punkt. Passt etwas nicht, ändere es mit „Ändern“; sonst geht es einfach weiter.",
+   "offen_frage": "Hier war sich die KI nicht sicher:",
+   "offen_frage_satz": "Passt etwas nicht, ändere die Frage mit „Ändern“; sonst geht es einfach weiter.",
+   "aendern": "Ändern"
   }
  },
  "chats": [
