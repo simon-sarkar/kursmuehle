@@ -1041,6 +1041,16 @@
    "zeit_kurz_satz": "Die Bitte an den Chat: Inhalte ergänzen, bis die Einheit etwa {minuten} Minuten füllt.",
    "zeit_kurz_kopieren": "Bitte kopieren",
    "zeit_kurz_abbrechen": "Abbrechen",
+   "zeit_dauer_zeile": "Geschätzte Dauer: etwa {ist} von {minuten} Minuten.",
+   "zeit_dauer_pruef": "geschätzt etwa {ist} von {minuten} Minuten",
+   "antwort_eingesetzt": "Antwort eingesetzt",
+   "schon_uebernommen": "Das Einfügen hat sie schon übernommen.",
+   "gegen_eingesetzt": "{n} Lösungen verglichen.",
+   "gegen_eingesetzt_eine": "1 Lösung verglichen.",
+   "chat_weg": "Öffne {chat} in einem neuen Tab und beginne dort ein neues Gespräch.",
+   "chat_oeffnen": "{chat} öffnen",
+   "plan_element_plus_name": "+ Element in {titel}",
+   "plan_kachel_text_name": "Was soll hier rein? Kachel {titel}",
    "modell_satz": "Nimm das stärkste Modell, das dein Chat anbietet.",
    "bitte_titel": "Bitte an den Chat",
    "bitte_antwort": "Antwort des Chats auf die Bitte",
@@ -1209,9 +1219,19 @@
    "plan_satz_abbrechen": "Abbrechen setzt nichts ein; die Antwort bleibt im Feld.",
    "plan_satz_ersetzen": "Alles ersetzen löscht deine Kacheln."
   },
+  "schritt_satz": {
+   "1": "Gib Thema, Schulart und Jahrgangsstufe an; die Minuten kannst du lassen.",
+   "2": "„Mach du“ ist gewählt; wechsle nur, wenn du selbst mitplanen willst.",
+   "3": "Nimm ein Design oder lass alles, wie es ist.",
+   "4": "Wähl deinen Chat, kopier den Text und schick ihn dort ab.",
+   "5": "Füg die ganze Antwort des Chats ein; die Mühle prüft sie sofort.",
+   "5.5": "Lade zu jedem Bild eine Datei hoch oder lass den Platzhalter stehen.",
+   "6": "Lies die Lösungen. Passt etwas nicht, ändere es mit „Ändern“; alles andere ist freiwillig.",
+   "7": "Sieh die Liste durch und lade die Datei herunter."
+  },
   "pruefseite": {
-   "fragen_zeile": "{n} Fragen. Lies jede Lösung, bevor der Kurs zur Klasse geht.",
-   "fragen_zeile_eine": "Eine Frage. Lies die Lösung, bevor der Kurs zur Klasse geht.",
+   "fragen_zeile": "{n} Fragen",
+   "fragen_zeile_eine": "Eine Frage",
    "zweite": "Zweite Meinung: Lass einen neuen Chat die Lösungen nachrechnen.",
    "zweite_ki": "Zweite Meinung: Lass deine KI die Lösungen in einem neuen Gespräch nachrechnen.",
    "zweite_1": "Füg den Prüfauftrag in ein neues Gespräch ein, nicht in das der Einheit, und schick ihn ab.",
@@ -1569,5 +1589,5 @@
    }
   ]
  },
- "version": "2.0.0-b18"
+ "version": "2.0.0-b19"
 }

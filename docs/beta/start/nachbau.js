@@ -80,15 +80,18 @@
       var kopf = f.baustein !== letzter ? el("p", { cls: "f-baustein", text: f.titel }) : null;
       letzter = f.baustein;
       var loes = f.loesung.map(function (l) { return l[0]; });
-      var optionen = f.art === "auswahl" || f.art === "zuordnen" ? el("ul", { cls: "f-optionen" },
+      var optionen = f.art === "auswahl" ? el("ul", { cls: "f-optionen" },
           f.optionen.map(function (o, i) {
         var richtig = loes.indexOf(o) >= 0;
-        return el("li", { cls: richtig ? "richtig" : "" }, [(f.art === "auswahl" ? BUCHST[i] + ") " : "") + o, richtig ?
+        return el("li", { cls: richtig ? "richtig" : "" }, [BUCHST[i] + ") " + o, richtig ?
             el("span", { cls: "f-marke", text: " richtig" }) : null]);
       })) : null;
-      var loesung = f.art === "auswahl" || f.art === "zuordnen" ? null
-        : el("p", { cls: "f-loesung", text: "Lösung: " + f.loesung.map(function (l) { return l.join(" oder "); })
-            .join("; ") });
+      // MF7: Lösungen lesbar statt mit Semikolons: Lücken nummeriert (die Nummer steht auch an der Lücke im Text), Zuordnen
+      // als Paar „Begriff → Gruppe“, mehrere richtige Antworten als „A, B oder C“
+      var loesung = f.art === "auswahl" || f.art === "zuordnen" ? null : f.art === "luecken" && f.loesung.length > 1 ?
+        el("ol", { cls: "f-luecken", "aria-label": "Lösungen der Lücken" }, f.loesung.map(function (l, i) {
+          return el("li", {}, [el("span", { cls: "f-nr", text: String(i + 1) }), oder(l)]); }))
+        : el("p", { cls: "f-loesung" }, ["Lösung: ", el("strong", { text: f.loesung.map(oder).join(", ") })]);
       var r = je[f.nr], extra = null, cls = "frage", key = null;
       if (r && r.art === "gleich") extra = el("p", { cls: "f-chat f-gleich" }, [el("span", { cls: "f-haken",
           "aria-hidden": "true" }), PK("stimmt")]);
@@ -105,13 +108,26 @@
         "aria-label": "Ändern: Frage " + f.nr + " in „" + f.titel + "“", text: "Ändern" });
       // MF6: Zeilen `Offen:` direkt unter dieser Frage stehen an ihr, mit dem Satz, was zu tun ist
       var unsicher = offenZeilen().filter(function (o) { return o.baustein === f.baustein && o.frage === imB; });
+      // MF7: was zu tun ist, sagt der Satz des Schritts; hier nur die Zeile selbst
       var offenTeil = unsicher.length ? el("div", { cls: "f-offen" }, [el("p", {}, [el("span", { cls: "f-offen-wort",
-          text: PT("offen_frage") + " " }), unsicher.map(function (o) { return o.text; }).join(" ")]),
-          el("p", { cls: "leise", text: PT("offen_frage_satz") })]) : null;
-      ol.appendChild(el("li", { cls: cls, "data-nr": f.nr, "data-key": key }, [kopf, el("div", { cls: "f-zeile" }, [
-        el("p", { cls: "f-frage", text: (f.art === "rf" ? "Richtig oder falsch: " : "") + f.frage }), aendern]),
+          text: PT("offen_frage") + " " }), unsicher.map(function (o) { return o.text; }).join(" ")])]) : null;
+      var fText = f.art === "zuordnen" ? [f.frage, el("span", { cls: "f-pfeil", text: " → " }),
+          el("strong", { text: oder(f.loesung[0] || []) })] : f.art === "luecken" && f.loesung.length > 1 ? lueckenNummern(f.frage)
+          : [(f.art === "rf" ? "Richtig oder falsch: " : "") + f.frage];
+      ol.appendChild(el("li", { cls: cls + " art-" + f.art, "data-nr": f.nr, "data-key": key }, [kopf, el("div", { cls: "f-zeile" }, [
+        el("p", { cls: "f-frage" }, fText), aendern]),
         offenTeil, optionen, loesung, extra]));
     });
+  }
+  // MF7: Alternativen einer Lösung als „A, B oder C“; Lücken im Text der Frage mit ihrer Nummer
+  function oder(l) { l = l || []; return l.length < 2 ? (l[0] || "") : l.slice(0, -1).join(", ") + " oder " + l[l.length - 1]; }
+  function lueckenNummern(t) {
+    var n = 0, out = [];
+    String(t).split("___").forEach(function (teil, i) {
+      if (i) { n += 1; out.push(el("span", { cls: "f-luecke" }, ["___", el("sup", { text: String(n) })])); }
+      out.push(teil);
+    });
+    return out;
   }
   // „Chat sieht es anders: …“ mit den Wegen: korrigieren lassen (Bitte in das Gespräch der Einheit), „Meine Lösung gilt“,
   // „Übergehen“, bei Lücken und Kurzantworten „Als weitere Lösung zulassen“ (AP13.5h a9, je Lücke); „Ändern“ steht an der
@@ -301,7 +317,7 @@
           : null, o.baustein ? el("button", { type: "button", cls: "textlink f-aendern", "data-ziel": o.baustein,
           "aria-label": PT("aendern") + ": " + (o.titel || ""), text: PT("aendern") }) : null]));
     });
-    $("offen-satz").textContent = PT("offen_satz");
+    $("offen-satz").hidden = true;            // MF7: was zu tun ist, sagt der Satz des Schritts
     $("offen-kasten").hidden = !zeilen.length;
   }
   $("offen-liste").onclick = function (ev) { var z = ev.target.closest("[data-ziel]"); if (z) editorAm(z.dataset.ziel, z); };
@@ -332,6 +348,13 @@
     $("gegen-1").textContent = PT("zweite_1");
     $("gegen-2").textContent = PT("zweite_2");
     if (!mitFeld || v) { $("gegen-kopiert").textContent = ""; $("gegen-text").hidden = true; }
+    // MF7: nach dem Einfügen an der Stelle des Felds die Stand-Karte (nur in dieser Sitzung, nicht mit eigener KI)
+    var frisch = gegenFrisch && v && !mitFeld && w === "chat" && (v.abweichungen.length || v.gleich.length);
+    if (!frisch) gegenFrisch = "";
+    if (frisch && !$("gegen-eingesetzt").textContent) S.standKarte($("gegen-eingesetzt"), S.eingesetztKopf() + ": " +
+        S.editorText(v.abweichungen.length + v.gleich.length === 1 ? "gegen_eingesetzt_eine" : "gegen_eingesetzt",
+          { n: v.abweichungen.length + v.gleich.length }) + S.schonSatz(gegenFrisch === "auto"), "ok");
+    else if (!frisch) S.standKarte($("gegen-eingesetzt"), "");
     var fehlt = v && v.fehlend.length ? "Ohne Antwort: " + v.fehlend.length + (v.fehlend.length === 1 ? " Frage." :
         " Fragen.") : "";
     $("gegen-stand").textContent = v && !v.abweichungen.length && !v.gleich.length ?
@@ -373,7 +396,7 @@
   $("gegen-nochmal").onclick = function () {
     if (!Z.mappe) return;
     if (weg() === "ki") { $("gegen-senden").onclick(); return; }
-    feldAuf = true; $("gegen-antwort").value = "";
+    feldAuf = true; $("gegen-antwort").value = ""; gegenFrisch = "";
     zeichneGegen();
     $("gegen-antwort").focus({ preventScroll: true });
   };
@@ -390,11 +413,13 @@
   var gegenTimer = null;
   $("gegen-antwort").addEventListener("input", function () {
     clearTimeout(gegenTimer);
-    gegenTimer = setTimeout(gegenpruefen, 400);
+    gegenTimer = setTimeout(function () { gegenpruefen("auto"); }, 400);
   });
   // MF6: ein Klick nach dem Vergleich von selbst schadet nicht
-  $("gegen-uebernehmen").onclick = function () { clearTimeout(gegenTimer); gegenpruefen(); };
-  async function gegenpruefen() {
+  $("gegen-uebernehmen").onclick = function () { clearTimeout(gegenTimer); gegenpruefen("knopf"); };
+  // MF7: `wie` = „auto“ (Einfügen) oder „knopf“: danach steht dort, wo das Feld war, „Antwort eingesetzt: …“
+  var gegenFrisch = "";
+  async function gegenpruefen(wie) {
     var text = $("gegen-antwort").value, pr = Z.pruefung;
     gegenFuer = pr;
     if (Z.mappe && (Z.mappe.durchsicht_antwort || "") !== text.trim()) {
@@ -407,7 +432,10 @@
       if (pr !== Z.pruefung) return;               // inzwischen neu geprüft; zeichneGegen vergleicht noch einmal
       Z.vergleich = v;
       if (v.abweichungen.length || v.gleich.length) feldAuf = false;
+      if (wie && (v.abweichungen.length || v.gleich.length)) gegenFrisch = wie;
       zeichneGegen(); zeichneSchritte();
+      if (gegenFrisch && document.activeElement && (document.activeElement === document.body ||
+          document.activeElement.closest("#gegen-feld"))) $("gegen-eingesetzt").focus({ preventScroll: true });
     } catch (e) { zeigeFehler(e); }
   }
   // AP13.5h a9: Antwort als weitere Lösung in die Kursdatei (gen/mappe.py loesung_zulassen); die neue Prüfung vergleicht
@@ -515,7 +543,8 @@
     var kurz = ((Z.pruefung && Z.pruefung.diagnosen) || []).filter(function (d) { return d.regel === "zeit.kurz" &&
         !d.baustein; }).map(function (d) { return /(\d+) von (\d+)/.exec(d.text || ""); }).filter(Boolean)[0];
     z.push({ name: "Einheit", wert: (voll === 1 ? "1 Baustein" : voll + " Bausteine") + (f ? ", " + f + " Fehler" :
-        ", geprüft") + (kurz ? " · etwa " + kurz[1] + " von " + kurz[2] + " Minuten" : ""), editor: true });
+        ", geprüft") + (kurz ? " · " + (S.zeitGrau(kurz[1], kurz[2]) ? S.editorText("zeit_dauer_pruef", { ist: kurz[1],
+          minuten: kurz[2] }) : "etwa " + kurz[1] + " von " + kurz[2] + " Minuten") : ""), editor: true });
     var w = S.bildwuensche().filter(function (b) { return b.datei; });
     if (sichtbar.indexOf(5.5) >= 0 && w.length) {
       var da = w.filter(function (b) { return Z.assets[b.datei]; }).length;
@@ -535,7 +564,6 @@
   var prueflisteSig = "";
   function zeichnePruefliste() {
     var dl = $("pruef-liste"), ansehen = $("editor-auf-8"), zeilen = pruefZeilen();
-    $("pruef-satz").textContent = PT("satz") || "Das kommt in deinen Kurs.";
     // nur neu zeichnen, wenn sich etwas geändert hat (der Knopf „Ansehen“ behielte sonst den Fokus nicht)
     var sig = JSON.stringify(zeilen);
     if (sig === prueflisteSig && dl.contains(ansehen) === zeilen.some(function (r) { return r.editor; })) return;

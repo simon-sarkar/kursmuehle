@@ -209,10 +209,19 @@
       ew.dataset.sig = sig;
       ew.textContent = "";
       $("einheit-warnung-info").hidden = true;
+      ew.classList.remove("grau");
       einheitGelb.forEach(function (d) {
         var m = /(\d+) von (\d+)/.exec(d.text || "");
-        var satz = m ? S.editorText("zeit_kurz_zeile", { ist: m[1], minuten: m[2] }) || d.text : d.text;
         S.zeitKurzMinuten = m ? m[2] : "";
+        // MF7: ab der Hälfte der Dauer eine graue Zeile ohne Warnton, „Verlängern lassen“ als Textlink
+        if (m && zeitGrau(m[1], m[2])) {
+          ew.classList.add("grau");
+          ew.append(el("span", { cls: "ew-satz" }, [S.editorText("zeit_dauer_zeile", { ist: m[1], minuten: m[2] }), " ",
+            el("button", { type: "button", cls: "textlink k-sprache", "data-regel": d.regel,
+              text: S.editorText("zeit_kurz_knopf") })]));
+          return;
+        }
+        var satz = m ? S.editorText("zeit_kurz_zeile", { ist: m[1], minuten: m[2] }) || d.text : d.text;
         ew.append(el("span", { cls: "punkt", "aria-hidden": "true" }), el("span", { cls: "ew-satz" }, [satz, " ",
           el("button", { type: "button", cls: "info-knopf", "aria-expanded": "false", "aria-controls": "einheit-warnung-info",
             "aria-label": S.editorText("zeit_kurz_info_name"), "data-hinweis": "5-verlaengern", text: "i" })]), " ",
@@ -232,6 +241,9 @@
     if (S.modusSatzZeigen) S.modusSatzZeigen();      // AP13.41 §3.3
     korrekturOrt();
   }
+  // MF7: die gelbe Minutenzeile nur unter der Hälfte der geplanten Dauer; darüber (bis drei Viertel, Regel zeit.kurz) grau
+  function zeitGrau(ist, minuten) { return Number(minuten) > 0 && Number(ist) * 2 >= Number(minuten); }
+  S.zeitGrau = zeitGrau;
   // AP13.36 §3.1: die Bitte zu „Sprache anpassen lassen“ und „Diesen Baustein neu beauftragen“ steht unter der Karte, die
   // den Wunsch ausgelöst hat (S.korrektur.ort); sonst, bei roten Karten, über der Liste unter dem Einfügefeld. Die Liste
   // wird bei jedem Zeichnen neu gebaut, darum geht der Block vorher heraus (zeichneKarten) und kommt hier wieder.
@@ -1160,8 +1172,8 @@
       durchsichtNach(fr);
       var gleich = schleifeMerken(ids, true);
       o.leeren();
-      var rot = fehlerZahl(), satz = "Eingesetzt: " + ids.length + (ids.length === 1 ? " Baustein" : " Bausteine") +
-          "." + (r.fehler.length && (rot || neuBeauftragt().length) ? "" : r.fehler.map(function (f) { return " " + f; }).join(""));
+      var rot = fehlerZahl(), satz = S.eingesetztKopf() + ": " + ids.length + (ids.length === 1 ? " Baustein" : " Bausteine") +
+          "." + (o.sprung ? S.schonSatz(!korrekturGeklickt) : "") + (r.fehler.length && (rot || neuBeauftragt().length) ? "" : r.fehler.map(function (f) { return " " + f; }).join(""));
       if (!rot && !neuBeauftragt().length) {
         S.korrektur = { text: "", offen: false, stand: "", art: "" };
         // AP13.34 §3.3: mit gelben Hinweisen nicht „alles in Ordnung“; MF6: die Minutenzeile steht sichtbar, nicht unter
@@ -1204,7 +1216,12 @@
     clearTimeout(korrekturEingabeTimer);
     korrekturEingabeTimer = setTimeout(function () { korrekturEinsetzen(); }, ev.inputType === "insertFromPaste" ? 30 : 500);
   });
-  $("korrektur-uebernehmen").onclick = function () { clearTimeout(korrekturEingabeTimer); korrekturEinsetzen(); };
+  // MF7: nach einem Klick sagt die Meldung nicht „Das Einfügen hat sie schon übernommen“
+  var korrekturGeklickt = false;
+  $("korrektur-uebernehmen").onclick = function () {
+    clearTimeout(korrekturEingabeTimer); korrekturGeklickt = true;
+    Promise.resolve(korrekturEinsetzen()).then(function () { korrekturGeklickt = false; }, function () { korrekturGeklickt = false; });
+  };
   Object.assign(S, { uebersichtAendern: uebersichtAendern, gliederungAendern: gliederungAendern,
     nachAntwortMarkieren: nachAntwortMarkieren, naechsteNummer: naechsteNummer,
     handFrage: handFrage, handGeaendert: handGeaendert, handIds: handIds, nummer: nummer, durchsichtNeuText: durchsichtNeuText,

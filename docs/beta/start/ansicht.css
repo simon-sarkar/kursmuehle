@@ -548,6 +548,7 @@ select { appearance: auto; }
 /* Statuskarte unter einem Einfügefeld: Rahmen, eine Zeile wird übersehen */
 .stand-karte { margin: 10px 0 0; padding: 10px 14px; border: 1px solid var(--linie); border-left-width: 4px; border-radius: 8px;
   background: var(--flaeche); font-size: 0.95rem; }
+.stand-karte { overflow-wrap: anywhere; min-width: 0; }   /* lange Dateinamen (Freigabe 08.11., Firefox 390 px) */
 .stand-karte.ok { border-left-color: var(--ok); }
 .stand-karte.fehler { border-left-color: var(--fehler); }
 .einfuegen .kopieren { margin-top: 8px; }
@@ -1282,3 +1283,36 @@ body:has(dialog[open]) .editor-schweb { display: none; }
 .knopf-reihe .ohne-ansehen { min-height: 44px; padding: 6px 4px; }
 /* unter 1000 px liegt „Zum Editor“ unten links: der Textlink steht rechts, nie unter ihm (wie MF4 die kommenden Schritte) */
 @media (max-width: 999px) { body.mit-editor-schweb .knopf-reihe .ohne-ansehen { margin-left: auto; } }
+
+/* MF7: ein Satz unter der Überschrift jedes offenen Schritts (was zu tun ist, was man lassen darf) */
+.s-satz { margin: 0 0 16px; max-width: 46rem; }
+.s-satz:empty { display: none; }
+#schritt-5:has(#eingabe-bereich.zu) .s-satz { display: none; }
+/* MF7: Stand-Karte nach einer eingesetzten Antwort: „Antwort eingesetzt“ fett vorn, kurz hervorgehoben */
+.stand-kopf { font-weight: 700; }
+.stand-karte.frisch { animation: km-frisch 1.8s ease-out; }
+@keyframes km-frisch { from { box-shadow: 0 0 0 4px var(--fokus); } to { box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .stand-karte.frisch { animation: none; } }
+/* MF7: Minutenzeile ab der Hälfte der Dauer grau, ohne Punkt und ohne Fläche; „Verlängern lassen“ als Textlink */
+.einheit-warnung.grau { background: none; padding: 4px 0; color: var(--leise); font-size: 0.93rem; }
+.einheit-warnung.grau .textlink { min-height: 24px; padding: 2px 2px; color: var(--text); font-size: inherit; }
+/* MF7: Schritt 4, wie man zum Chat kommt */
+.chat-weg { margin: -6px 0 14px; }
+.chat-weg[hidden] { display: none; }
+.chat-weg .textlink { margin-left: 4px; }
+/* MF7: Fragen und Lösungen ruhiger: Zahl als Kopf der Liste, „Zweite Meinung“ schmaler, Lösungen lesbar */
+.fragen-zeile { margin: 0 0 6px; font-size: 0.9rem; color: var(--leise); }
+.zweite { padding: 4px 6px 4px 12px; }
+.zweite-satz { font-size: 0.9rem; }
+.f-loesung strong { font-weight: 600; }
+.f-luecken { display: flex; flex-wrap: wrap; gap: 4px 16px; list-style: none; margin: 2px 0 0; padding: 0; font-size: 0.95rem;
+  font-weight: 600; }
+.f-luecken li { display: inline-flex; align-items: baseline; gap: 6px; }
+.f-nr, .f-luecke sup { font-size: 0.78rem; font-weight: 600; color: var(--leise); }
+.f-nr { min-width: 1.1em; text-align: right; }
+.f-luecke sup { margin-left: 1px; }
+.frage.art-zuordnen .f-frage { font-weight: 400; }
+.frage.art-zuordnen .f-frage strong { font-weight: 650; }
+.f-pfeil { color: var(--leise); }
+.frage.art-zuordnen + .frage.art-zuordnen { padding-top: 2px; border-top: 0; }
+.frage.art-zuordnen:has(+ .frage.art-zuordnen) { padding-bottom: 2px; }

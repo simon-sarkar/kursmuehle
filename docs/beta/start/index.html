@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 2a469d1 vom 08.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 51b517b vom 08.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -123,6 +123,8 @@
     <div class="s-zeile" data-nr="1"><span class="s-nr" aria-hidden="true">1</span>
       <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="s1-titel">Worum geht es?</span></h2><span class="s-fazit"></span></div>
     <div class="s-inhalt">
+      <!-- MF7: ein Satz, was hier zu tun ist (katalog.yaml oberflaeche.schritt_satz, kern.js) -->
+      <p class="s-satz" id="s-satz-1" data-satz="1"></p>
       <form id="start-form" class="start-form" autocomplete="off" novalidate>
         <!-- MF2: kein Platzhalter im Feld (er wurde als Vorgabe gelesen); ein Beispiel steht grau darunter (Konzept §7, 5) -->
         <div class="feld feld-thema">
@@ -170,6 +172,8 @@
     <div class="s-zeile" data-nr="2"><span class="s-nr" aria-hidden="true">2</span>
       <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="s2-titel">Wer plant den Aufbau?</span></h2><span class="s-fazit"></span></div>
     <div class="s-inhalt">
+      <!-- MF7: ein Satz, was hier zu tun ist (katalog.yaml oberflaeche.schritt_satz, kern.js) -->
+      <p class="s-satz" id="s-satz-2" data-satz="2"></p>
       <!-- MF2: „Mach du“ ist vorgewählt (schritte.js einheitAnlegen); je Kachel ein Satz, der zweite hinter dem (i) an der
            Kachel (Texte in hinweise.json, „2-mach“, „2-richtung“, „2-steuer“) -->
       <div class="zweige" role="radiogroup" aria-label="Wer plant den Aufbau?">
@@ -352,6 +356,8 @@
     <div class="s-zeile" data-nr="3"><span class="s-nr" aria-hidden="true">3</span>
       <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="s3-titel" tabindex="-1">Wie soll der Kurs aussehen?</span></h2><span class="s-fazit"></span></div>
     <div class="s-inhalt">
+      <!-- MF7: ein Satz, was hier zu tun ist (katalog.yaml oberflaeche.schritt_satz, kern.js) -->
+      <p class="s-satz" id="s-satz-3" data-satz="3"></p>
       <div class="aus-raster">
       <!-- MF2 (Konzept §3.3 mit dem Nachtrag des Autors): sichtbar sind Design (vier Kacheln und „Alle Designs“), Farbe und
            Bilder (keine oder mit Bildern); alle übrigen Einstellungen des Designers stehen unter „Erweitert“ in diesem
@@ -431,6 +437,8 @@
     <div class="s-zeile" data-nr="4"><span class="s-nr" aria-hidden="true">4</span>
       <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="s4-titel">Text für den Chat</span></h2><span class="s-fazit"></span></div>
     <div class="s-inhalt">
+      <!-- MF7: ein Satz, was hier zu tun ist (katalog.yaml oberflaeche.schritt_satz, kern.js) -->
+      <p class="s-satz" id="s-satz-4" data-satz="4"></p>
       <!-- AP13.40: Sequenz mit ihren Stunden, Fortschritt und Sicherung (sequenz.js) -->
       <div id="sequenz-box" class="sequenz-box" hidden></div>
       <!-- MF2 (Konzept §3.4), Zustand a: die Chats nach Gruppen; „Privates Konto“ trägt ein (i) (kern.js auswahlFuellen) -->
@@ -469,6 +477,9 @@
           id="chat-modell-zeile" class="chat-modell-zeile"><button type="button" class="info-knopf" aria-expanded="false"
           aria-controls="chat-modell-info" aria-label="Welches Modell?" data-hinweis="4-modell">i</button></span></p>
         <p id="chat-modell-info" class="info-text" hidden></p>
+        <!-- MF7: wie man zum Chat kommt; der Link nur, wenn katalog.yaml für den Chat eine `adresse` kennt -->
+        <p id="chat-weg" class="chat-weg"><span id="chat-weg-satz"></span> <a id="chat-oeffnen" class="textlink" target="_blank"
+          rel="noopener" hidden></a></p>
         <div id="kopier-warnung" class="warnung-box" role="status" hidden>
           <p id="kopier-warnung-text"></p>
           <button type="button" id="auffuellen" class="knopf">Vorlage auffüllen</button>
@@ -512,6 +523,8 @@
     <div class="s-zeile" data-nr="5"><span class="s-nr" aria-hidden="true">5</span>
       <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="s5-titel">Antwort des Chats einfügen</span></h2><span class="s-fazit"></span></div>
     <div class="s-inhalt">
+      <!-- MF7: ein Satz, was hier zu tun ist (katalog.yaml oberflaeche.schritt_satz, kern.js) -->
+      <p class="s-satz" id="s-satz-5" data-satz="5"></p>
       <!-- gestückelter Text: welcher Teil dran ist, bis „Alle 2 Teile eingesetzt“; rote Karten erst nach dem letzten Teil -->
       <div id="teil-stand" class="teil-stand" role="status" hidden>
         <p id="teil-stand-text"></p>
@@ -521,8 +534,7 @@
       <div class="einfuegen">
         <div id="eingabe-bereich">
           <label for="eingabe" id="eingabe-label" class="feld eingabe-l">Antwort des Chats</label>
-          <textarea id="eingabe" rows="6" spellcheck="false" aria-describedby="eingabe-satz"></textarea>
-          <p id="eingabe-satz" class="feld-zeile">Kopier die ganze Antwort mit dem Kopierknopf des Chats.</p>
+          <textarea id="eingabe" rows="6" spellcheck="false" aria-describedby="s-satz-5"></textarea>
           <div id="eingabe-knopf" class="kopieren"><button type="button" id="eingabe-uebernehmen" class="knopf haupt">Antwort einsetzen</button></div>
         </div>
         <p id="eingabe-stand" class="stand-karte" role="status" aria-live="polite" tabindex="-1" hidden></p>
@@ -609,8 +621,8 @@
          Platzhalter), „Ohne Bilder weiter“ nimmt die fehlenden aus der Einheit. Die Hinweise zu Generatoren und Rechten
          stehen hinter dem (i) am Auftrag (bilder.js) -->
     <div class="s-inhalt">
-      <p class="bilder-satz">Lade zu jedem Bild eine Datei hoch, etwa ein eigenes Foto. Fehlende Bilder bleiben Platzhalter,
-        die du später ersetzen kannst.</p>
+      <!-- MF7: ein Satz, was hier zu tun ist (katalog.yaml oberflaeche.schritt_satz, kern.js) -->
+      <p class="s-satz" id="s-satz-5-5" data-satz="5.5"></p>
       <p id="bilder-stufe" class="bilder-stufe" hidden></p>
       <ol id="bilder-liste" class="bilder-liste"></ol>
       <textarea id="bild-feld" class="unsichtbar" readonly aria-hidden="true" tabindex="-1"></textarea>
@@ -631,7 +643,8 @@
     <div class="s-zeile" data-nr="6"><span class="s-nr" aria-hidden="true">6</span>
       <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="s6-titel">Fragen und Lösungen</span></h2><span class="s-fazit"></span></div>
     <div class="s-inhalt">
-      <p id="fragen-zeile" class="fragen-zeile"></p>
+      <!-- MF7: ein Satz, was hier zu tun ist (katalog.yaml oberflaeche.schritt_satz, kern.js) -->
+      <p class="s-satz" id="s-satz-6" data-satz="6"></p>
       <p id="durchsicht-neu" class="durchsicht-neu" role="status" hidden></p>
       <!-- AP13.12 a10: Zeilen `Offen:` der Kursdatei (gen/api.offen), je Zeile mit „Im Editor ändern“ am Baustein -->
       <div id="offen-kasten" class="offen-kasten" hidden>
@@ -670,9 +683,13 @@
             <div class="kopieren"><button type="button" id="gegen-uebernehmen" class="knopf">Antwort einsetzen</button></div>
           </div>
         </div>
+        <!-- MF7: nach dem Einfügen „Antwort eingesetzt: 11 Lösungen verglichen. …“ an der Stelle des Felds -->
+        <p id="gegen-eingesetzt" class="stand-karte" role="status" aria-live="polite" tabindex="-1" hidden></p>
         <p id="gegen-ki-stand" class="stand-karte" role="status" aria-live="polite" hidden></p>
         <p id="gegen-stand" class="stand" role="status" aria-live="polite"></p>
       </div>
+      <!-- MF7: nur die Zahl, als Kopf der Liste -->
+      <p id="fragen-zeile" class="fragen-zeile"></p>
       <ol id="fragen-liste" class="fragen-liste"></ol>
       <div id="fragen-ende" class="fragen-ende" aria-hidden="true"></div>
       <!-- Korrekturen der Abweichungen mit „Korrigieren lassen“: eine Bitte je Baustein in das Gespräch der Einheit -->
@@ -698,7 +715,8 @@
     <div class="s-zeile" data-nr="7"><span class="s-nr" aria-hidden="true">7</span>
       <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="s7-titel">Kursdatei</span></h2><span class="s-fazit"></span></div>
     <div class="s-inhalt">
-      <p id="pruef-satz" class="pruef-satz">Das kommt in deinen Kurs.</p>
+      <!-- MF7: ein Satz, was hier zu tun ist (katalog.yaml oberflaeche.schritt_satz, kern.js) -->
+      <p class="s-satz" id="s-satz-7" data-satz="7"></p>
       <dl id="pruef-liste" class="pruef-liste"></dl>
       <button type="button" id="editor-auf-8" class="textlink pruef-aendern" aria-label="Ansehen: Einheit" hidden>Ansehen</button>
       <p id="nl-hinweis" class="stand warn" role="status" hidden></p>

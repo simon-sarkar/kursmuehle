@@ -60,6 +60,12 @@
       : "Für " + c.text + (von > 1 ? ", in " + von + " Teilen" + (ki() ? ". Die Mühle sendet Teil für Teil und setzt " +
           "jede Antwort ein." : "") : "");
     $("chat-modell-zeile").hidden = ki();
+    // MF7: eine Zeile, wie man zum Chat kommt; mit `adresse` im Katalog ein Link „<Chat> öffnen“ in einem neuen Tab
+    var name = c.wert === "anderer" ? "deinen Chat" : c.text, adr = /^https:\/\//.test(c.adresse || "") ? c.adresse : "";
+    $("chat-weg").hidden = ki();
+    $("chat-weg-satz").textContent = S.editorText("chat_weg", { chat: name });
+    $("chat-oeffnen").hidden = !adr;
+    if (adr) { $("chat-oeffnen").href = adr; $("chat-oeffnen").textContent = S.editorText("chat_oeffnen", { chat: c.text }); }
     // Größe nur unter „Erweitert“ (keine Kennzahl im Blick)
     $("chat-groesse").textContent = t ? (von > 1 ? "Teil " + (texte.teil + 1) + " hat " : "Der Text hat ") + "etwa " +
         kb(new Blob([t]).size) + "." : "";
@@ -75,7 +81,7 @@
         (ki() ? " an meine KI senden" : " kopieren") : ki() ? "An meine KI senden" : "Text kopieren";
     k.classList.toggle("haupt", !(S.aendern === 4 && schritt() > 4));
     k.classList.toggle("ist-kopiert", gesperrt);
-    $("eingabe-satz").hidden = ki();
+    $("s-satz-5").hidden = ki();
     zeichneKopiert(c);
   }
   // MF2: nach dem Kopieren zwei Zeilen, was im Chat zu tun ist (bei Teilen mit dem Teil und dem nächsten)
@@ -503,8 +509,23 @@
     if (art === "laeuft" && text && w) { w.textContent = text; return; }
     e.textContent = "";
     if (art === "laeuft" && text) { e.append(wartezeichen(), el("span", { cls: "laeuft-text", text: text })); return; }
+    // MF7: beginnt die Meldung mit „Antwort eingesetzt“, steht das fett vorn und die Karte leuchtet kurz auf (dort, wo
+    // vorher Feld und Knopf standen); Vorlesegeräte hören sie über role=status
+    var kopf = S.editorText("antwort_eingesetzt");
     e.textContent = text || "";
+    if (kopf && text && text.indexOf(kopf) === 0) {
+      e.textContent = "";
+      e.append(el("strong", { cls: "stand-kopf", text: kopf }), text.slice(kopf.length));
+      e.classList.add("frisch");
+      clearTimeout(e._frisch);
+      e._frisch = setTimeout(function () { e.classList.remove("frisch"); }, 1800);
+    }
   }
+  // MF7: Anfang der Stand-Karte nach einer eingesetzten Antwort; `auto` = das Einfügen hat sie übernommen (kein Klick auf
+  // „Antwort einsetzen“), dann folgt der Satz dazu nach dem ersten Satz
+  function eingesetztKopf() { return S.editorText("antwort_eingesetzt") || "Antwort eingesetzt"; }
+  function schonSatz(auto) { return auto ? " " + S.editorText("schon_uebernommen") : ""; }
+  S.eingesetztKopf = eingesetztKopf; S.schonSatz = schonSatz;
   // Wartezeichen (AP13.5d §5a): Flügel der Mühle aus logo.svg, einfarbig in --leise, eine Umdrehung in 6 s; die Regeln
   // stehen hier, weil nur diese Oberfläche sie braucht
   var MUEHLE = '<svg viewBox="20 -10 216 216" width="20" height="20" focusable="false"><g fill="currentColor">' +
@@ -627,7 +648,7 @@
         }).length, f = S.fehlerZahl(), rot = Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler"; }).length;
     if (!n) return;
     eingabeZu(true);
-    standKarte($("eingabe-stand"), "Eingesetzt: " + n + (n === 1 ? " Baustein" : " Bausteine") + (rot ? ", " + rot +
+    standKarte($("eingabe-stand"), eingesetztKopf() + ": " + n + (n === 1 ? " Baustein" : " Bausteine") + (rot ? ", " + rot +
         (rot === 1 ? " braucht" : " brauchen") + " eine Korrektur." : f ? "; die Antwort braucht eine Korrektur." : "."),
         f ? "fehler" : "ok");
   }
@@ -745,7 +766,7 @@
         S.restSatz = mo.rest;
         var von = ki() && (!S.restZahl || leer.length < S.restZahl);   // von selbst nur, solange jede Antwort Neues bringt
         S.restZahl = leer.length;
-        zeige("Eingesetzt: " + baust + "; die Antwort endet mit „Fortsetzung folgt“. " +
+        zeige(eingesetztKopf() + ": " + baust + "; die Antwort endet mit „Fortsetzung folgt“. " +
             (von ? "Die Mühle bittet deine KI um den Rest." : ki() ? "„Rest an meine KI senden“ bittet um die " +
               "fehlenden Bausteine." : "„Rest anfordern“ kopiert die Bitte um die fehlenden Bausteine für den Chat."),
             "ok");
@@ -758,7 +779,7 @@
       if (teileOffen()) {
         setzeModus("baustein");     // AP13.41 §3.3: die übrigen Teile füllen ihre Karten nach id (gen/mappe.py modus)
         // MF3: was kam (Teil n von m) und was als Nächstes kommt; Fehler zeigt die Mühle erst nach dem letzten Teil
-        zeige("Eingesetzt: " + baust + (teilNr >= 0 ? " aus Teil " + (teilNr + 1) + " von " + st.ids.length : "") +
+        zeige(eingesetztKopf() + ": " + baust + (teilNr >= 0 ? " aus Teil " + (teilNr + 1) + " von " + st.ids.length : "") +
             (kette() ? ". Jetzt geht Teil " + (naechsterTeil() + 1) + " an deine KI" : ki() ? ". „Teil " +
               (naechsterTeil() + 1) + " an meine KI senden“ schickt Teil " + (naechsterTeil() + 1) + " von " + st.ids.length :
               ". Jetzt Teil " + (naechsterTeil() + 1) + " kopieren") + "; Fehler zeigt die Mühle, wenn alle Teile da sind.", "ok");
@@ -781,10 +802,10 @@
           (k.einheit || "") === (einheitTag() || ""); }).length : e.n;
       var mitArt = zweig() === "steuer" || S.mehrereEinheiten() || modus !== "ersetzen";
       var kopf = eingesetzt ? eingesetzt + ": " : alleTeile ? "Alle " + alleTeile + " Teile eingesetzt: " :
-          "Eingesetzt" + (mitArt ? " (" + modusText(modus) + ")" : "") + ": ";
+          eingesetztKopf() + (mitArt ? " (" + modusText(modus) + ")" : "") + ": ";
       zeige(wechsel + kopf + zahl + (zahl === 1 ? " Baustein" : " Bausteine")
         + (rot ? ", " + rot + (rot === 1 ? " braucht" : " brauchen") + " eine Korrektur." : aussen ?
-            "; die Antwort braucht eine Korrektur." : ".") + mehr + e.text,
+            "; die Antwort braucht eine Korrektur." : ".") + schonSatz(feld && !knopfGeklickt && !modusErzwungen && !ki()) + mehr + e.text,
         rot || aussen ? "fehler" : "ok");
       // AP13.33 §2.1: stand der Fokus im Feld, geht er an die nächste Stelle. AP13.36 §1.2: nicht auf „Weiter“ (ein Enter
       // überginge die Durchsicht der Karten), sondern auf die erste rote Karte, sonst auf die Meldung über den Karten
@@ -825,7 +846,12 @@
   // MF4: die Korrekturbitte aus „Fragen und Lösungen“ führt hierher; das Feld steht dann offen
   S.antwortFeldAuf = function () { feldOffenFuer = Z.mappe; eingabeZu(false); };
   // Knopf zusätzlich zur Automatik: nach dem Einfügen fehlt sonst etwas zum Klicken
-  $("eingabe-uebernehmen").onclick = function () { clearTimeout(S.eingabeTimer); eingabeUebernehmen(null); };
+  // MF7: nach einem Klick sagt die Stand-Karte nicht „Das Einfügen hat sie schon übernommen“
+  var knopfGeklickt = false;
+  $("eingabe-uebernehmen").onclick = function () {
+    clearTimeout(S.eingabeTimer); knopfGeklickt = true;
+    Promise.resolve(eingabeUebernehmen(null)).then(function () { knopfGeklickt = false; }, function () { knopfGeklickt = false; });
+  };
   // Anderen Modus gewählt: die letzte Antwort vom Stand davor aus neu einsetzen, statt der ersten Fassung, nie zusätzlich.
   // AP13.41 §1.3: nur, solange seit dieser Antwort nichts anderes die Einheit geändert hat (Korrektur, Editor, Soll an
   // einer Karte); sonst gilt die Wahl für die nächste Antwort und der Satz unter der Wahl sagt das

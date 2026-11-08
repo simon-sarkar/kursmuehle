@@ -625,6 +625,10 @@ window.km = km;
 
   function auswahlFuellen() {
     var o = S.katalog.oberflaeche;
+    // MF7: unter der Überschrift jedes Schritts ein Satz, was hier zu tun ist (oberflaeche.schritt_satz)
+    Array.prototype.forEach.call(document.querySelectorAll(".s-satz[data-satz]"), function (p) {
+      p.textContent = (o.schritt_satz || {})[p.dataset.satz] || "";
+    });
     [["a-format", o.format], ["a-familie", S.familien.familien.map(function (f) { return { wert: f.name, text: f.text };
         })], ["a-farbe", o.farbe.concat([{ wert: "eigen", text: "Eigene Farbe" }])],
      ["a-abschluss", o.abschluss], ["a-portionierung", o.portionierung], ["a-schulart",
