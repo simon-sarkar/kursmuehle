@@ -1122,3 +1122,51 @@ body:has(dialog[open]) .editor-schweb { display: none; }
 .editor-auf-8 { display: block; margin: 0 0 10px; }  /* Nebenweg neben dem einen Ergebnis-Knopf */
 .editor-auf-5[hidden], .editor-auf-8[hidden] { display: none; }
 .k-im-editor { margin-top: 6px; }
+
+/* MF3 (Konzept §3.5, §3.6): Schritt 5 Antwort und Korrektur, Schritt 6 Bilder */
+.eingabe-l { color: var(--text); font-size: 1rem; font-weight: 600; margin: 4px 0 6px; }
+#eingabe-satz { margin: 6px 0 0; }
+#eingabe-bereich + .stand-karte { margin-top: 14px; }
+.einfuegen > #eingabe-stand { margin-top: 4px; }
+.einfuegen > #eingabe-stand.ok, .einfuegen > #eingabe-stand.fehler { font-weight: 600; }
+.knopf-reihe { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin-top: 18px; }
+.knopf-reihe:not(:has(> :not([hidden]))) { display: none; }
+.knopf-reihe .editor-auf-5 { margin: 0; }
+.einheit-warnung { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 16px 0 0; padding: 10px 12px;
+  color: var(--text); }
+.einheit-warnung .punkt { flex: none; background: var(--warn); }
+.einheit-warnung .ew-satz { flex: 1 1 16rem; }
+.einheit-warnung .knopf { min-height: 44px; text-decoration: none; }
+.s-inhalt > .rueckgaengig { margin: 12px 0 0; }
+.korrektur { border-left-width: 4px; }
+.korrektur-auswege { margin: 4px 0 12px; padding: 10px 12px; border-radius: 8px; background: var(--grund); }
+.korrektur-auswege .ausweg-titel { margin: 0 0 6px; font-weight: 650; font-size: 0.95rem; }
+.ausweg-reihe { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 6px 0; }
+.ausweg-reihe + .ausweg-reihe { border-top: 1px solid var(--linie); }
+.ausweg-name { flex: 1 1 12rem; font-size: 0.93rem; overflow-wrap: anywhere; }
+.ausweg-knoepfe { display: flex; flex-wrap: wrap; gap: 8px; }
+.ausweg-knoepfe .knopf { min-height: 44px; }
+#korrektur-schritte { margin: 6px 0 0; }
+.diagnose-details { margin: 0 0 8px; font-size: 0.93rem; }
+.diagnose-details > summary { cursor: pointer; padding: 4px 0; text-decoration: underline; text-underline-offset: 3px; }
+.diagnose-details ul { margin-top: 6px; }
+.modus-ort { margin-bottom: 12px; }
+#erweitert-5-inhalt > .karten-ort:not(:empty) { margin-top: 4px; }
+#erweitert-5-inhalt > .diagnosen { margin-top: 16px; }
+/* Bilder: „Bild hochladen“ an jeder Zeile (44 px, Rahmen), die Ablage mit dem Knopf zuerst */
+.bilder-satz { margin: 0 0 14px; }
+.bild-hoch { min-height: 44px; cursor: pointer; }
+.bild-zeile.zu .bild-hoch-zu { flex: none; }
+.bild-ablage { border-color: var(--feld-rand); }
+.bild-text-kopf .info-knopf { margin-left: 2px; }
+.bild-text .info-text { margin: 6px 0 0; }
+/* AP13.44 §2 am Handy: Fokus und Sprünge enden über dem schwebenden Knopf „Zum Editor“; „Im Editor ansehen“ an der
+ * Karte steht rechts, wo der Knopf (links unten) nie liegt */
+@media (max-width: 999px) {
+  :root:has(body.mit-editor-schweb) { scroll-padding-bottom: calc(16px + 104px + env(safe-area-inset-bottom, 0px)); }
+  .karte .k-im-editor { display: block; width: fit-content; margin-left: auto; }
+}
+@media (max-width: 640px) {
+  .knopf-reihe > .knopf { width: 100%; }
+  .ausweg-knoepfe, .ausweg-knoepfe .knopf { width: 100%; }
+}

@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 8a7ce34 vom 08.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand b022a66 vom 08.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -383,7 +383,7 @@
             <div class="aus-gruppe" data-gruppe="bilder"><h3 class="unterkopf" id="aus-bilder-t">Zahl der Bilder</h3>
               <div id="aus-bilder" class="kacheln-wahl bilder-wahl" role="radiogroup" aria-labelledby="aus-bilder-t"></div>
               <label id="bilder-zahl-l" class="feld feld-klein bilder-zahl" hidden>Zahl der Bilder (1 bis 30)
-                <input id="bilder-zahl" type="number" inputmode="numeric" min="1" max="30" step="1" value="10"></label>
+                <input id="bilder-zahl" type="number" inputmode="numeric" min="1" max="30" step="1"></label>
               <!-- AP13.5h a8: Beschriftung im Bild (Steckbrief kurs.bildbeschriftung), nur mit Bildern -->
               <div id="bildbeschriftung-l" class="bildbeschriftung" hidden>
                 <h4 class="unterkopf" id="aus-bildbeschriftung-t">Beschriftung im Bild</h4>
@@ -504,80 +504,95 @@
     </div>
   </section>
 
-  <!-- 5 Antwort einfügen, Bausteine mit Prüfstatus -->
+  <!-- 5 Antwort einfügen (MF3, Konzept §3.5): Feld mit sichtbarer Beschriftung und „Antwort einsetzen“; danach eine
+       Stand-Karte an seiner Stelle („Eingesetzt: 6 Bausteine.“, „Andere Antwort einfügen“), bei roten Bausteinen die rote
+       Karte mit der Korrekturbitte, die gelbe Zeile nur unter drei Vierteln der Dauer. Karten, Minuten, Einsetzen-Art und
+       Kennzahlen stehen unter „Erweitert“ -->
   <section id="schritt-5" class="schritt" data-nr="5" data-kurz="Antwort einfügen" aria-labelledby="s5-titel" hidden>
     <div class="s-zeile" data-nr="5"><span class="s-nr" aria-hidden="true">5</span>
       <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="s5-titel">Antwort des Chats einfügen</span></h2><span class="s-fazit"></span></div>
     <div class="s-inhalt">
-      <div class="einfuegen">
-        <p id="eingabe-satz" class="leise">Kopiere die ganze Antwort mit dem Kopierknopf des Chats und füge sie hier ein.</p>
-        <div id="modus" class="modus" role="radiogroup" aria-label="Wie die Antwort eingesetzt wird">
-          <label><input type="radio" name="modus" value="ersetzen" checked> <span id="modus-ersetzen-text">Einheit ersetzen</span></label>
-          <label><input type="radio" name="modus" value="baustein"> <span id="modus-baustein-text">Nur Baustein ersetzen</span></label>
-          <label><input type="radio" name="modus" value="anhaengen"> <span id="modus-anhaengen-text">Als weitere Einheit anhängen</span></label>
-        </div>
-        <!-- AP13.41 §3.3: was mit der Antwort geschieht (chat.js modusSatzZeigen) -->
-        <p id="modus-satz" class="leise modus-satz" role="status" hidden></p>
-        <div id="eingabe-bereich">
-          <label for="eingabe" class="unsichtbar">Antwort des Chats</label>
-          <textarea id="eingabe" rows="6" spellcheck="false" placeholder="Hier einfügen (Strg+V oder lange drücken)"></textarea>
-          <div id="eingabe-knopf" class="kopieren"><button type="button" id="eingabe-uebernehmen" class="knopf">Antwort übernehmen</button></div>
-        </div>
-        <p id="eingabe-stand" class="stand-karte" role="status" aria-live="polite" tabindex="-1" hidden></p>
-        <button type="button" id="eingabe-nochmal" class="textlink" hidden>Noch einmal einfügen</button>
-        <!-- AP13.43 §5: der Editor dort, wo man ihn braucht (nach dem Einsetzen ohne rote Karten und vor dem Herunterladen) -->
-        <button type="button" id="editor-auf-5" class="knopf editor-auf-5" hidden>Einheit ansehen und bearbeiten</button>
-        <!-- die Antwort ergab keinen Baustein: die ersten drei Meldungen mit Zeile und Zitat, Satz für den Chat -->
-        <div id="eingabe-diagnose" class="stand-karte fehler diagnose-karte" role="status" hidden></div>
-      </div>
-      <!-- gestückelter Text: Fortschritt, rote Karten erst nach dem letzten Teil -->
+      <!-- gestückelter Text: welcher Teil dran ist, bis „Alle 2 Teile eingesetzt“; rote Karten erst nach dem letzten Teil -->
       <div id="teil-stand" class="teil-stand" role="status" hidden>
         <p id="teil-stand-text"></p>
         <button type="button" id="teil-weiter" class="knopf haupt">Teil 2 kopieren</button>
         <p id="teil-kopiert" class="stand" aria-live="polite"></p>
       </div>
-      <!-- ein Korrekturweg: alle Sätze und neu beauftragten Bausteine, ein Text, eine Antwort, Einsetzen nach id: -->
+      <div class="einfuegen">
+        <div id="eingabe-bereich">
+          <label for="eingabe" id="eingabe-label" class="feld eingabe-l">Antwort des Chats</label>
+          <textarea id="eingabe" rows="6" spellcheck="false" aria-describedby="eingabe-satz"></textarea>
+          <p id="eingabe-satz" class="feld-zeile">Kopier die ganze Antwort mit dem Kopierknopf des Chats.</p>
+          <div id="eingabe-knopf" class="kopieren"><button type="button" id="eingabe-uebernehmen" class="knopf haupt">Antwort einsetzen</button></div>
+        </div>
+        <p id="eingabe-stand" class="stand-karte" role="status" aria-live="polite" tabindex="-1" hidden></p>
+        <button type="button" id="eingabe-nochmal" class="textlink" hidden>Andere Antwort einfügen</button>
+        <!-- die Antwort ergab keinen Baustein: ein Satz und der Satz für den Chat; Zeile und Zitat unter „Was genau?“ -->
+        <div id="eingabe-diagnose" class="stand-karte fehler diagnose-karte" role="status" hidden></div>
+      </div>
+      <!-- die rote Karte: ein Satz je Punkt ohne Zeile und id, „Korrekturbitte kopieren“, zwei Zeilen, Feld für die Antwort;
+           bleibt ein Baustein nach einer Antwort rot, stehen darunter die Auswege (karten.js auswegeKorrektur) -->
       <div id="korrektur" class="korrektur" hidden>
         <h3 id="korrektur-titel" class="unterkopf">Korrektur</h3>
         <ul id="korrektur-liste" class="korrektur-liste"></ul>
+        <div id="korrektur-auswege" class="korrektur-auswege" hidden></div>
         <p id="korrektur-zeile" class="leise"></p>
-        <button type="button" id="korrektur-kopieren" class="knopf haupt">Korrektur anfordern</button>
+        <button type="button" id="korrektur-kopieren" class="knopf haupt">Korrekturbitte kopieren</button>
         <p id="korrektur-stand" class="stand" role="status" aria-live="polite"></p>
+        <ol id="korrektur-schritte" class="kopiert-schritte" hidden><li id="korrektur-1"></li><li id="korrektur-2"></li></ol>
         <textarea id="korrektur-feld" class="unsichtbar" readonly aria-hidden="true" tabindex="-1"></textarea>
         <div id="korrektur-antwort" class="korrektur-antwort" hidden>
           <div id="korrektur-einfuegen">
             <label for="korrektur-eingabe" class="feld">Antwort des Chats auf die Korrektur</label>
-            <textarea id="korrektur-eingabe" rows="5" spellcheck="false" placeholder="Antwort hier einfügen"></textarea>
-            <div class="kopieren"><button type="button" id="korrektur-uebernehmen" class="knopf">Antwort übernehmen</button></div>
+            <textarea id="korrektur-eingabe" rows="5" spellcheck="false"></textarea>
+            <div class="kopieren"><button type="button" id="korrektur-uebernehmen" class="knopf">Antwort einsetzen</button></div>
           </div>
           <p id="korrektur-ergebnis" class="stand-karte" role="status" aria-live="polite" hidden></p>
           <div id="korrektur-diagnose" class="stand-karte fehler diagnose-karte" role="status" hidden></div>
         </div>
       </div>
-      <!-- AP13.43 §4: mit roten Karten zuerst nur die Korrektur; die Bausteine klappt dieser Knopf auf -->
-      <button type="button" id="tafel-auf" class="textlink tafel-auf" aria-controls="tafel-bausteine" hidden></button>
-      <div id="karten-ort-5" class="karten-ort"></div>
-      <button type="button" id="weiter-5" class="knopf haupt" hidden>Weiter</button>
+      <!-- AP13.35 §2.3, MF3: die gelbe Zeile der Einheit, nur unter drei Vierteln der Dauer, mit „Verlängern lassen“ -->
+      <p id="einheit-warnung" class="karten-warnung einheit-warnung" role="status" hidden></p>
+      <!-- ein Hauptknopf zum nächsten Schritt, daneben der Editor (AP13.43 §5; einer statt zwei) -->
+      <div class="knopf-reihe weiter-reihe">
+        <button type="button" id="weiter-5" class="knopf haupt" hidden>Weiter</button>
+        <button type="button" id="editor-auf-5" class="knopf editor-auf-5" hidden>Einheit ansehen und bearbeiten</button>
+      </div>
       <button type="button" id="zurueck-5" class="knopf haupt s-zurueck" data-nr="5" hidden></button>
       <!-- AP13.40: weiter mit der nächsten Stunde der Sequenz (sequenz.js) -->
       <div id="sequenz-weiter" class="sequenz-weiter" role="status" hidden></div>
-      <!-- MF1: der frühere Rand (Kennzahlen und Hinweise der Prüfung) unter „Erweitert“, erst mit einer Antwort -->
+      <!-- AP13.43 §4: früher „Bausteine ansehen“ über den Karten; MF3: bleibt verborgen, die Karten liegen unter „Erweitert“ -->
+      <button type="button" id="tafel-auf" class="textlink tafel-auf" aria-controls="tafel-bausteine" hidden></button>
+      <!-- MF1/MF3: „Erweitert“: in „Ich steuere“ die Art des Einsetzens, dann die Bausteine (Karten mit Phase, Minuten,
+           Auftrag, „Baustein hinzufügen“) und die Kennzahlen mit den Hinweisen der Prüfung -->
       <div id="erweitert-5" class="erw" hidden>
-        <button type="button" id="erweitert-5-knopf" class="erw-knopf" aria-expanded="false" aria-controls="diagnosen"><span
-          class="erw-wort">Erweitert</span><span class="erw-was">Kennzahlen</span></button>
-        <div id="diagnosen" class="erw-inhalt diagnosen" hidden>
-          <h3 class="unterkopf">Kennzahlen</h3>
-          <dl class="zahlen">
-            <div><dt id="kz-minuten-t">Minuten</dt><dd id="kz-minuten">–</dd></div>
-            <div id="kz-zahl-z" hidden><dt>Bausteine</dt><dd id="kz-zahl">–</dd></div>
-            <div><dt>Folge</dt><dd id="kz-folge">–</dd></div>
-            <div><dt>Multiple Choice</dt><dd id="kz-mc">–</dd></div>
-            <div><dt>Übungstypen</dt><dd id="kz-uebung">–</dd></div>
-            <div><dt>Rückmeldung</dt><dd id="kz-rueckmeldung">–</dd></div>
-            <div id="kz-saetze-z" hidden><dt>Sätze</dt><dd id="kz-saetze">–</dd></div>
-          </dl>
-          <ul id="hinweise" class="hinweise"></ul>
-          <button type="button" id="hinweise-mehr" class="textlink" hidden></button>
+        <button type="button" id="erweitert-5-knopf" class="erw-knopf" aria-expanded="false" aria-controls="erweitert-5-inhalt"><span
+          class="erw-wort">Erweitert</span><span id="erweitert-5-was" class="erw-was">Bausteine, Kennzahlen</span></button>
+        <div id="erweitert-5-inhalt" class="erw-inhalt" hidden>
+          <div id="modus-ort" class="modus-ort">
+            <div id="modus" class="modus" role="radiogroup" aria-label="Wie die Antwort eingesetzt wird">
+              <label><input type="radio" name="modus" value="ersetzen" checked> <span id="modus-ersetzen-text">Einheit ersetzen</span></label>
+              <label><input type="radio" name="modus" value="baustein"> <span id="modus-baustein-text">Nur Baustein ersetzen</span></label>
+              <label><input type="radio" name="modus" value="anhaengen"> <span id="modus-anhaengen-text">Als weitere Einheit anhängen</span></label>
+            </div>
+            <!-- AP13.41 §3.3: was mit der Antwort geschieht (chat.js modusSatzZeigen) -->
+            <p id="modus-satz" class="leise modus-satz" role="status" hidden></p>
+          </div>
+          <div id="karten-ort-5" class="karten-ort"></div>
+          <div id="diagnosen" class="diagnosen">
+            <h3 class="unterkopf">Kennzahlen</h3>
+            <dl class="zahlen">
+              <div><dt id="kz-minuten-t">Minuten</dt><dd id="kz-minuten">–</dd></div>
+              <div id="kz-zahl-z" hidden><dt>Bausteine</dt><dd id="kz-zahl">–</dd></div>
+              <div><dt>Folge</dt><dd id="kz-folge">–</dd></div>
+              <div><dt>Multiple Choice</dt><dd id="kz-mc">–</dd></div>
+              <div><dt>Übungstypen</dt><dd id="kz-uebung">–</dd></div>
+              <div><dt>Rückmeldung</dt><dd id="kz-rueckmeldung">–</dd></div>
+              <div id="kz-saetze-z" hidden><dt>Sätze</dt><dd id="kz-saetze">–</dd></div>
+            </dl>
+            <ul id="hinweise" class="hinweise"></ul>
+            <button type="button" id="hinweise-mehr" class="textlink" hidden></button>
+          </div>
         </div>
       </div>
     </div>
@@ -587,17 +602,21 @@
   <section id="schritt-bilder" class="schritt" data-nr="5.5" data-kurz="Bilder" aria-labelledby="sb-titel" hidden>
     <div class="s-zeile" data-nr="5.5"><span class="s-nr" aria-hidden="true">6</span>
       <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="sb-titel">Bilder</span></h2><span class="s-fazit"></span></div>
+    <!-- MF3 (Konzept §3.6): ein Satz, je Bild eine Zeile mit „Bild hochladen“; „Weiter“ geht immer (fehlende Bilder bleiben
+         Platzhalter), „Ohne Bilder weiter“ nimmt die fehlenden aus der Einheit. Die Hinweise zu Generatoren und Rechten
+         stehen hinter dem (i) am Auftrag (bilder.js) -->
     <div class="s-inhalt">
-      <p class="leise">Such zu jedem Bild ein freies Foto, zeichne es oder lass es von einem Bildgenerator erzeugen. Nimm
-        nur Bilder, an denen du die Rechte hast.</p>
-      <p class="leise">Bildgeneratoren schreiben Wörter im Bild oft falsch. Hat ein Bild viele Beschriftungen, lass es mit
-        nummerierten Pfeilen erzeugen und schreib die Beschriftungen in die Bildunterschrift.</p>
-      <p id="bilder-stufe" class="bilder-stufe"></p>
+      <p class="bilder-satz">Lade zu jedem Bild eine Datei hoch, etwa ein eigenes Foto. Fehlende Bilder bleiben Platzhalter,
+        die du später ersetzen kannst.</p>
+      <p id="bilder-stufe" class="bilder-stufe" hidden></p>
       <ol id="bilder-liste" class="bilder-liste"></ol>
       <textarea id="bild-feld" class="unsichtbar" readonly aria-hidden="true" tabindex="-1"></textarea>
-      <button type="button" id="weiter-bilder" class="knopf haupt">Weiter</button>
-      <button type="button" id="zurueck-bilder" class="knopf haupt s-zurueck" data-nr="5.5" hidden></button>
       <p id="bilder-stand" class="stand" role="status" aria-live="polite"></p>
+      <div class="knopf-reihe">
+        <button type="button" id="weiter-bilder" class="knopf haupt">Weiter</button>
+        <button type="button" id="bilder-weg" class="knopf" hidden>Ohne Bilder weiter</button>
+      </div>
+      <button type="button" id="zurueck-bilder" class="knopf haupt s-zurueck" data-nr="5.5" hidden></button>
     </div>
   </section>
 
@@ -759,8 +778,6 @@
   <!-- AP13.41 §3.2: Soll der Karten über der Dauer der Einheit -->
   <p id="soll-summe" class="karten-warnung" role="status" hidden></p>
   <p id="karten-warnung" class="karten-warnung" role="status" hidden></p>
-  <!-- AP13.35 §2.3: gelbe Hinweise der ganzen Einheit (die Bausteine füllen die Dauer nicht) über den Karten -->
-  <p id="einheit-warnung" class="karten-warnung" role="status" hidden></p>
   <p id="rueckgaengig" class="rueckgaengig" hidden><span id="rueckgaengig-text"></span>
     <button type="button" id="rueckgaengig-knopf" class="textlink">Rückgängig</button></p>
   <ol id="karten" class="karten"></ol>

@@ -7,8 +7,9 @@
  "4-modell": "Namen mit mini, fast, flash, lite, nano oder small sind die kleinen Modelle und brauchen öfter eine Korrekturbitte. Steht „Auto“ voreingestellt, stell um; gibt es einen Schalter wie „Denken“ oder „ausführlich“, schalte ihn ein.",
  "4-privat": "Ob du ein privates Konto für den Unterricht nutzen darfst, entscheidet deine Schule.",
  "4-rechte": "Füge eigenes Material nur ein, wenn du die Rechte daran hast. Im Chat gelten seine Nutzungsbedingungen.",
- "5": "Füg die ganze Antwort ein und sieh die Karten durch. Ist eine Karte rot, kopier mit „Korrektur anfordern“ die Bitte für den Chat und füg dessen Antwort darunter ein.",
+ "5": "Füg die ganze Antwort ein. Braucht ein Baustein eine Korrektur, kopier mit „Korrekturbitte kopieren“ die Bitte für den Chat und füg dessen Antwort darunter ein.",
  "5.5": "Lade zu jedem Bild eine Datei hoch oder zieh sie auf seine Zeile. Fehlt ein Bild, steht im Kurs ein grauer Platzhalter.",
+ "5.5-auftrag": "Such ein freies Foto, zeichne selbst oder lass das Bild von einem Bildgenerator erzeugen; nimm nur Bilder, an denen du die Rechte hast. Generatoren schreiben Wörter im Bild oft falsch; bei vielen Beschriftungen lass nummerierte Pfeile erzeugen und schreib die Wörter in die Bildunterschrift.",
  "6": "Wähl, wie du die Lösungen prüfst, in einem neuen Chat oder selbst. Ein frisches Gespräch löst die Aufgaben, ohne die Lösungen zu sehen, und die Seite zeigt dir, wo es abweicht.",
  "7": "Lade die Datei herunter und stell sie in deinem Kurs auf der ByCS-Lernplattform wieder her. Danach kannst du die nächste Einheit anhängen."
 }

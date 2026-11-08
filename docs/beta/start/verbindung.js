@@ -168,7 +168,7 @@
   }
   // Solange die eigene KI schreibt, verschwinden Einfügefeld und „Antwort übernehmen“ des betroffenen Schritts; sie
   // kommen mit der Antwort, der Fehlerzeile oder „Stattdessen kopieren“ zurück
-  var FELDER = { eingabe: ["eingabe", "eingabe-knopf"], korrektur: ["korrektur-einfuegen"], gegen: ["gegen-einfuegen"] };
+  var FELDER = { eingabe: ["eingabe-label", "eingabe", "eingabe-knopf"], korrektur: ["korrektur-einfuegen"], gegen: ["gegen-einfuegen"] };
   function felder() {
     Object.keys(FELDER).forEach(function (k) {
       FELDER[k].forEach(function (id) { if ($(id)) $(id).hidden = S.kiLaeuft === k; });

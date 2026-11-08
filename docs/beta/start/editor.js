@@ -57,6 +57,8 @@
     });
     // AP13.43 §5: in Schritt 5 erst, wenn nichts mehr rot ist (vorher steht dort die Korrektur)
     $("editor-auf-5").hidden = !da || S.fehlerZahl() > 0 || S.teileOffen();
+    // MF3: in Schritt 5 ein Knopf: ohne Rot der neben „Weiter“, mit Rot (dort keiner) der unter den Karten in „Erweitert“
+    if ($("karten-ort-5").contains($("editor-auf-2")) && !$("editor-auf-5").hidden) $("editor-auf-2").hidden = true;
     // AP13.38: der schwebende Knopf; AP13.44 §2: wie in Schritt 5 erst, wenn nichts rot ist. Das Wort darauf ist kürzer,
     // der Name für Vorlesegeräte nicht
     var sw = $("editor-schweb"), gruen = da && !S.fehlerZahl() && !S.teileOffen();

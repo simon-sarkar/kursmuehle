@@ -112,6 +112,8 @@
     var t = S.hinweisTexte[schl] || "";
     if (schl === "6" && t && S.anKiAktiv && S.anKiAktiv()) t = t.replace(", in einem neuen Chat", ", mit deiner KI, in einem neuen Chat");
     if (schl === "4-modell") { var c = Z.mappe && chatInfo(Z.mappe.chat); if (c && c.aufwand) t = c.aufwand + " " + t; }
+    // MF3: am Auftrag eines Bildes dazu der Satz des Chats zu seinem Bildgenerator (katalog.yaml chats.bilder_hinweis)
+    if (schl === "5.5-auftrag") { var cb = Z.mappe && chatInfo(Z.mappe.chat); if (cb && cb.bilder_hinweis) t += " " + cb.bilder_hinweis; }
     return t;
   }
   // „Weiter: Aussehen“, wenn das Ziel der nächste sichtbare Schritt ist, sonst „Zurück zu: Antwort einfügen“
@@ -198,30 +200,20 @@
     $("weiter-2").hidden = s > 2 || !z;
     zeichneGruppen(s);
     // Karten: unter Schritt 5, sobald die erste Antwort da ist (AP13.31: davor plant „Ich steuere“ im Plan)
+    // MF3 (Konzept §3.5): in Schritt 5 liegen die Karten mit Phase, Minuten und Auftrag unter „Erweitert“ (mit den
+    // Kennzahlen und in „Ich steuere“ der Art des Einsetzens); die rote Karte mit der Korrekturbitte steht davor im Blick.
+    // „Bausteine ansehen“ (AP13.43 §4) entfällt. „Rückgängig“ steht dann über dem Hauptknopf, nicht in der Liste
     var ort = inhalt() ? $("karten-ort-5") : $("karten-ort-2");
     if ($("tafel-bausteine").parentNode !== ort) ort.appendChild($("tafel-bausteine"));
-    // AP13.43 §4: nach dem Einfügen mit roten Karten zeigt Schritt 5 zuerst nur die Korrektur; Phasen, Zeit und
-    // Bild-Knöpfe der Bausteine kommen mit „Bausteine ansehen“ oder von selbst, sobald nichts mehr rot ist
-    var rot = ort === $("karten-ort-5") && fehlerZahl() > 0 && !teileOffen();
-    if (!rot) S.tafelOffen = false;
-    // offen bleiben die Bausteine, wenn eine rote Karte nach zwei Runden die Auswege zeigt („So geht es weiter“) oder
-    // die Bitte an einer Karte steht (Sprache anpassen, neu beauftragen)
-    var sl = (Z.mappe && Z.mappe.schleife) || {};
-    var anKarte = !!(S.korrektur && S.korrektur.ort) || !!(Z.pruefung && Z.pruefung.bausteine.some(function (b) {
-      return b.status === "fehler" && sl[b.id] && sl[b.id].rot >= 2; }));
-    var tafelZu = rot && !S.tafelOffen && !anKarte;
-    $("tafel-bausteine").hidden = !inhalt() || tafelZu;
-    $("tafel-auf").hidden = !rot || anKarte;
-    if (rot) {
-      var nB = Z.mappe.bausteine.filter(function (k) { return !k.geplant && !k.aus; }).length,
-          nR = Z.pruefung ? Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler"; }).length : 0;
-      $("tafel-auf").textContent = tafelZu ? "Bausteine ansehen (" + nB + ", davon " + nR + " mit Fehler)" : "Bausteine zuklappen";
-      $("tafel-auf").setAttribute("aria-expanded", String(!tafelZu));
-    }
+    var rg = $("rueckgaengig");
+    if (ort === $("karten-ort-5")) { if (rg.previousElementSibling !== $("einheit-warnung")) $("einheit-warnung").after(rg); }
+    else if (rg.nextElementSibling !== $("karten")) $("karten").before(rg);
+    $("tafel-bausteine").hidden = !inhalt();
+    $("tafel-auf").hidden = true;
     $("karten").classList.toggle("kompakt", z !== "steuer");
     $("hinzufuegen").hidden = z !== "steuer";
     $("text-art").hidden = z !== "steuer";
-    $("modus").hidden = z !== "steuer";
+    $("modus-ort").hidden = z !== "steuer";
     // AP13.33 §1.9: solange die angehängte Einheit leer ist, hängt die Mühle die Antwort an; die Wahl zeigt das vorher,
     // einmal je Einheit beim Erreichen von Schritt 5 (M2: danach gilt, was die Lehrkraft wählt)
     var vorwahl = Z.mappe && Z.mappe.anhaengen ? [Z.mappe.erzeugt, Z.mappe.titel, Z.mappe.anhaengen].join("|") : null;
@@ -230,7 +222,12 @@
       modusVorgewaehlt = vorwahl;
       document.querySelector("input[name=modus][value=anhaengen]").checked = true;
     }
-    $("erweitert-5").hidden = !inhalt();
+    // MF3: in „Ich steuere“ schon vor der ersten Antwort, dann nur mit der Art des Einsetzens
+    $("erweitert-5").hidden = !inhalt() && !(z === "steuer" && Z.mappe && s >= 5);
+    var was5 = !inhalt() ? "Einsetzen" : (z === "steuer" ? "Einsetzen, " : "") + "Bausteine, Kennzahlen";
+    $("diagnosen").hidden = !inhalt();
+    if ($("erweitert-5-was").textContent !== was5) $("erweitert-5-was").textContent = was5;
+    erweitert5Pruefen();
     $("weiter").hidden = !!Z.mappe || !$("weiter").dataset.da;
     $("weiter-5").hidden = !(s === 5 && inhalt() && !fehlerZahl() && !teileOffen());
     // MF1: die Hauptknöpfe nennen den nächsten Schritt
@@ -872,12 +869,6 @@
     $("m-vorlage-text").textContent = "Art der Einheit: " + e.vorlage + " (Vorschlag aus dem Lehrplan)";
     textKacheln($("m-art"), "art", artKacheln(), e.vorlage, false);
   }
-  // AP13.43 §4: Bausteine bei roten Karten auf- und zuklappen
-  $("tafel-auf").addEventListener("click", function () {
-    S.tafelOffen = !S.tafelOffen;
-    zeichneSchritte();
-    if (S.tafelOffen) $("tafel-bausteine").scrollIntoView({ block: "nearest" });
-  });
   $("m-vorlage-aendern").addEventListener("click", function () {
     var auf = $("m-art").hidden;
     $("m-art").hidden = !auf;
@@ -1114,6 +1105,14 @@
     if (inhaltEl) inhaltEl.hidden = !auf;
   }
   function erweitertAuf(id, auf) { var k = $(id + "-knopf"); if (k) erweitert(k, auf); }
+  // MF3: in „Ich steuere“ sind die Karten mit Aufträgen das Werkzeug der Lehrkraft; „Erweitert“ in Schritt 5 steht dort
+  // einmal je Einheit offen, sobald die erste Antwort da ist. Danach gilt, was die Lehrkraft auf- oder zuklappt
+  var erw5Fuer = null;
+  function erweitert5Pruefen() {
+    if (!Z.mappe || erw5Fuer === Z.mappe || !inhalt() || zweig() !== "steuer") return;
+    erw5Fuer = Z.mappe;
+    erweitertAuf("erweitert-5", true);
+  }
   // MF2: ein Feld, das gebraucht wird (Pflicht, Fehler, Sprung), liegt vielleicht unter „Erweitert“ oder in einem
   // zugeklappten Teil; beides geht dann auf
   function aufdecken(feld) {
@@ -1429,8 +1428,11 @@
     if (d) $("designer-fertig").textContent = "Zurück zu: " + kurzName(2);     // MF1: derselbe Rückweg wie nach „Ändern“
   }
   // Bilder (AP13.5g b5): eine Zahl im Steckbrief gehört zur Kachel „Benutzerdefiniert“ (wert zahl)
-  function bilderKachel() { var w = String(bilderWert()); return /^\d+$/.test(w) && w !== "0" ? "zahl" : w; }
-  function bilderZahl() { var n = parseInt($("bilder-zahl").value, 10); return n >= 1 && n <= 30 ? n : 10; }
+  // MF3 (Befund 11): „Benutzerdefiniert“ legt keine Zahl fest, bis die Lehrkraft eine einträgt (`S.bilderEigen`: Kachel
+  // gewählt, Feld offen, noch keine Zahl; der Steckbrief behält den bisherigen Wert)
+  S.bilderEigen = false;
+  function bilderKachel() { var w = String(bilderWert()); return /^\d+$/.test(w) && w !== "0" ? "zahl" : S.bilderEigen ? "zahl" : w; }
+  function bilderZahl() { var n = parseInt($("bilder-zahl").value, 10); return n >= 1 && n <= 30 ? n : null; }
   function bilderText() {
     var w = String(bilderWert());
     return bilderKachel() !== "zahl" ? "Bilder: " + oberText("bilder", w) : w === "1" ? "1 Bild" : w + " Bilder";
@@ -1476,7 +1478,8 @@
     kachelGruppe($("aus-bilder-kurz"), "bilder-kurz", [{ wert: "0", text: "Keine Bilder" }, { wert: "mit", text: "Mit Bildern" }],
         function (w) { return miniBilder(w === "mit" ? "2-3" : "0"); }, String(bilderWert()) === "0" ? "0" : "mit");
     $("bilder-zahl-l").hidden = bilderKachel() !== "zahl";
-    if (bilderKachel() === "zahl" && document.activeElement !== $("bilder-zahl")) $("bilder-zahl").value = bilderWert();
+    var zahlGewaehlt = /^\d+$/.test(String(bilderWert())) && String(bilderWert()) !== "0";
+    if (zahlGewaehlt && document.activeElement !== $("bilder-zahl")) $("bilder-zahl").value = bilderWert();
     $("bildbeschriftung-l").hidden = String(bilderWert()) === "0";
     kachelGruppe($("aus-bildbeschriftung"), "bildbeschriftung", o.bildbeschriftung, miniBeschriftung,
         S.angaben.bildbeschriftung || o.bildbeschriftung.filter(function (w) { return w.standard; })[0].wert);
@@ -1493,7 +1496,8 @@
         'fill="#fff"/>';
     if (wert === "zahl") return s + '<rect x="30" y="12" width="60" height="52" rx="4" fill="#D5DAE3"/><text x="60" ' +
         'y="47" text-anchor="middle" font-size="26" font-weight="700" fill="#0B1220" font-family="system-ui, sans-serif">' +
-        (bilderKachel() === "zahl" ? bilderWert() : bilderZahl()) + "</text></svg>";      // nur Ziffern
+        (/^\d+$/.test(String(bilderWert())) && String(bilderWert()) !== "0" ? bilderWert() : bilderZahl() || "1–30") +
+        "</text></svg>";      // nur Ziffern
     if (!n) s += '<rect x="20" y="20" width="80" height="36" rx="3" fill="none" stroke="#C3C8D2" ' +
         'stroke-dasharray="4 3"/>';
     for (var i = 0; i < n; i++) {
@@ -1543,7 +1547,10 @@
       if (!EIGEN.dataset.gewaehlt) { zeichneAussehen(); return; }
       wert = $("farbe-eigen").value.toUpperCase();
     }
-    if (b.dataset.feld === "bilder" && wert === "zahl") wert = String(bilderZahl());
+    if (b.dataset.feld === "bilder" && wert === "zahl") {
+      if (!bilderZahl()) { S.bilderEigen = true; zeichneAussehen(); $("bilder-zahl").focus(); return; }
+      wert = String(bilderZahl());
+    } else if (b.dataset.feld === "bilder" || b.dataset.feld === "bilder-kurz") S.bilderEigen = false;
     var feld = b.dataset.feld;
     // MF2: „Mit Bildern“ ist 2 bis 3; eine genauere Zahl aus „Erweitert“ bleibt, solange die Kachel gewählt ist
     if (feld === "bilder-kurz") {
@@ -1566,6 +1573,12 @@
     S.angaben.bilder = String(+w);
     clearTimeout(bilderTimer);
     bilderTimer = setTimeout(function () { angabenSchreiben({ bilder: String(+w) }, true); }, 300);
+  });
+  // MF3: ohne Zahl verlassen, gilt wieder die bisherige Wahl (keine stille Vorgabe)
+  $("bilder-zahl").addEventListener("blur", function () {
+    if (!S.bilderEigen || bilderZahl()) return;
+    S.bilderEigen = false;
+    setTimeout(function () { if (document.activeElement !== $("bilder-zahl")) zeichneAussehen(); }, 0);
   });
   // Kursbeginn (Format Wochen): schreibt kurs.start als JJJJ-MM-TT; leer = Tag des Baus
   $("a-start").addEventListener("change", function () {

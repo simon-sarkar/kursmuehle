@@ -73,7 +73,8 @@
   }
   function zeichneKarten() {
     var ol = $("karten");
-    if (ol.contains($("korrektur"))) $("karten-ort-5").before($("korrektur"));     // vor dem Leeren der Liste in Sicherheit
+    // vor dem Leeren der Liste in Sicherheit; sein Platz ist vor der gelben Zeile (MF3: die Karten liegen unter „Erweitert“)
+    if (ol.contains($("korrektur"))) $("einheit-warnung").before($("korrektur"));
     ol.innerHTML = "";
     var liste = Z.mappe.bausteine, letzter = null, steuer = zweig() === "steuer";
     var abschnitte = liste.filter(function (k) { return k.abschnitt; }).map(function (k) { return k.abschnitt; });
@@ -190,19 +191,23 @@
       ol.appendChild(li);
     });
     if (steuer && liste.length && liste[liste.length - 1].geplant) ol.appendChild(plus(liste.length));
-    if (!$("tafel-bausteine").hidden) Array.prototype.forEach.call(ol.querySelectorAll(".k-auftrag"), hoehe);
+    if (!$("tafel-bausteine").hidden && ol.getClientRects().length) Array.prototype.forEach.call(ol.querySelectorAll(".k-auftrag"), hoehe);
     $("karten-leer").hidden = liste.length > 0;
     // AP13.35 §2.3: gelbe Hinweise der ganzen Einheit mit Satz für den Chat (Regel zeit.kurz) stehen über den Karten
     // „Verlängern lassen“ nimmt den Satz für den Chat in die Korrekturbitte (wie „Sprache anpassen lassen“)
+    // MF3 (Konzept §2.4): sichtbar nur die Dauer unter drei Vierteln („Die Einheit ist kürzer als geplant, etwa 30 von
+    // 45 Minuten.“); andere gelbe Punkte der Einheit (zu wenige Bilder) stehen unter „Erweitert · Kennzahlen“
     var einheitGelb = Z.pruefung && inhalt() && !teileOffen() ? Z.pruefung.diagnosen.filter(function (d) {
-      return d.stufe === "warnung" && !d.baustein && d.bitte; }) : [];
+      return d.stufe === "warnung" && !d.baustein && d.bitte && d.regel === "zeit.kurz"; }) : [];
     var ew = $("einheit-warnung");
     ew.hidden = !einheitGelb.length;
     ew.textContent = "";
     einheitGelb.forEach(function (d) {
-      var an = S.spracheGelb.indexOf(d.regel) >= 0;
-      ew.append(d.text + " ", el("button", { type: "button", cls: "k-sprache klein", "data-regel": d.regel,
-          "aria-pressed": an ? "true" : "false", text: S.editorText("zeit_kurz_knopf") }), " ");
+      var an = S.spracheGelb.indexOf(d.regel) >= 0, m = /(\d+) von (\d+)/.exec(d.text || "");
+      var satz = m ? S.editorText("zeit_kurz_zeile", { ist: m[1], minuten: m[2] }) || d.text : d.text;
+      ew.append(el("span", { cls: "punkt", "aria-hidden": "true" }), el("span", { cls: "ew-satz", text: satz }), " ",
+        el("button", { type: "button", cls: "knopf k-sprache klein-knopf", "data-regel": d.regel,
+          "aria-pressed": an ? "true" : "false", text: S.editorText("zeit_kurz_knopf") }));
     });
     $("zeit-selbst").checked = zeitSelbst();
     $("zeit-schalter").hidden = !steuer;
@@ -222,13 +227,15 @@
   var korrekturLi = null;
   function korrekturOrt() {
     var kb = $("korrektur"), karte = S.korrektur.ort ? $("karte-" + S.korrektur.ort) : null;
-    if (karte && karte.parentNode === $("karten") && !kb.hidden) {
+    // MF3: die Karten liegen in Schritt 5 unter „Erweitert“; ist es zu, bleibt die Bitte an ihrem Platz unter dem Feld
+    var zu = $("karten-ort-5").contains($("tafel-bausteine")) && $("erweitert-5-inhalt").hidden;
+    if (karte && karte.parentNode === $("karten") && !kb.hidden && !zu) {
       if (!korrekturLi) korrekturLi = el("li", { cls: "k-korrektur-ort" });
       korrekturLi.appendChild(kb);
       karte.after(korrekturLi);
     } else {
       if (korrekturLi) korrekturLi.remove();
-      if ($("karten").contains(kb) || kb.nextElementSibling !== $("karten-ort-5")) $("karten-ort-5").before(kb);
+      if ($("karten").contains(kb) || kb.nextElementSibling !== $("einheit-warnung")) $("einheit-warnung").before(kb);
     }
   }
 
@@ -295,6 +302,7 @@
       var minuten = (zeitSelbst() ? k.soll || (b && b.minuten) : (b && b.minuten) || z.gerechnet) || k.soll || 0;
       await km.bereit();
       Z.kurs_md = await km.mappeFn("entferne", [Z.kurs_md, k.id]);
+      if (S.ausAntwort) S.ausAntwort(Z.kurs_md);   // MF3: kein Grund, den Text für den Chat neu zu kopieren
       k.geplant = true; k.aus = true; k.weggelassen = { minuten: minuten }; k.neu = false;
       delete schleife()[k.id]; delete selbst[k.id];
       await km.stand(Z.kurs_md);
@@ -585,6 +593,10 @@
         " anzeigen";
   }
   $("hinweise-mehr").onclick = function () { S.hinweiseAlle = !S.hinweiseAlle; zeichneDiagnosen(); };
+  // MF3: „Erweitert“ in Schritt 5 auf: Höhe der Auftragsfelder und Ort der Bitte (unter ihrer Karte) neu
+  $("erweitert-5-knopf").addEventListener("click", function () {
+    setTimeout(function () { if (Z.mappe && S.katalog) zeichneKarten(); }, 0);
+  });
   // AP13.35 §2.3: „Verlängern lassen“ an der gelben Zeile der Einheit, ein Weg mit „Sprache anpassen lassen“ (S.spracheGelb)
   $("einheit-warnung").addEventListener("click", async function (ev) {
     var b = ev.target.closest("[data-regel]"); if (!b) return;
@@ -606,6 +618,9 @@
     var ort = $("tafel-bausteine").closest(".schritt");
     if (ort && !ort.classList.contains("auf")) { S.oeffneSchritt(parseFloat(ort.dataset.nr), true); }
     var karte = $("karte-" + id);
+    if (karte && S.aufdecken && !karte.getClientRects().length) {          // MF3: die Karten liegen unter „Erweitert“
+      S.aufdecken(karte); zeichneKarten(); karte = $("karte-" + id);
+    }
     if (karte) { karte.scrollIntoView({ behavior: "smooth", block: "center" }); karte.querySelector(".k-titel").focus({
         preventScroll: true }); }
   }
@@ -799,6 +814,7 @@
   $("rueckgaengig-knopf").onclick = async function () {
     if (!S.rueckgaengig) return;
     Z.mappe = S.rueckgaengig.mappe; Z.kurs_md = S.rueckgaengig.kurs_md; S.rueckgaengig = null;
+    if (S.ausAntwort) S.ausAntwort(Z.kurs_md);      // MF3: der Stand davor, kein neuer Text für den Chat
     try { if (Z.geladen) { await km.stand(Z.kurs_md); await auswertung(); } zeichne(); geaendert(); } catch (e) {
         zeigeFehler(e); }
     $("rueckgaengig").hidden = true;          // erst nach dem Neuzeichnen, dann ist die Liste wieder bedienbar
@@ -861,9 +877,11 @@
     if (!zeigen) { S.korrektur.offen = false; S.korrektur.ort = null; S.korrektur.kopiert = null; $("korrektur-stand").textContent = ""; }
     korrekturOrt();
     var ul = $("korrektur-liste"); ul.innerHTML = "";
-    // AP13.35 §3.1: die Liste zeigt, was zu ändern ist; die eine Ausgabeanweisung steht nur in der Bitte selbst
-    S.korrekturen.forEach(function (k) { ul.appendChild(el("li", { "data-regel": k.regel || "",
-        text: S.korrekturen.length > 1 && k.kern ? k.kern : k.satz })); });
+    // AP13.35 §3.1: die Liste zeigt, was zu ändern ist; die eine Ausgabeanweisung steht nur in der Bitte selbst.
+    // MF3 (Konzept §3.5): je Punkt ein Satz für die Seite („Baustein 3 „Titel“: …“), ohne Zeile, id und Format; Zeile, id
+    // und Format stehen nur im kopierten Text
+    S.korrekturen.forEach(function (k) { ul.appendChild(el("li", { "data-regel": k.regel || "", "data-baustein": k.baustein || "",
+        text: korrekturSatz(k) })); });
     neu.forEach(function (k) {
       ul.appendChild(el("li", { cls: "k-neu-zeile", text: "„" + k.titel + "“ neu schreiben" + (String(k.auftrag || k.wunsch || "").trim()
           ? ", nach deinem Auftrag." : ".") }));
@@ -876,11 +894,17 @@
       : n > 1 ? n + " Bausteine brauchen eine Korrektur" : n === 1 ? "Ein Baustein braucht eine Korrektur"
       : "Die Einheit braucht eine Korrektur";
     var ki = !!(S.anKiAktiv && S.anKiAktiv());
-    $("korrektur-zeile").textContent = (ki ? "„An meine KI senden“ schickt die Bitte an deine KI" :
-        "„Korrektur anfordern“ kopiert die Bitte für den Chat") + (S.korrekturen.length + neu.length > 1
-      ? " (alle Punkte zusammen)" : "") + (ki ? "; ihre Antwort setzt die Mühle ein." :
-        ". Füge sie in deinen Chat ein und die Antwort des Chats hier unten.");
-    $("korrektur-kopieren").textContent = ki ? "An meine KI senden" : "Korrektur anfordern";
+    // MF3: ein Satz vor dem Kopieren, nach dem Kopieren die zwei Zeilen wie in Schritt 4
+    $("korrektur-zeile").textContent = ki ? "„An meine KI senden“ schickt die Bitte an deine KI; ihre Antwort setzt die " +
+        "Mühle ein." : S.korrektur.offen ? "" : "Die Bitte nennt dem Chat " + (S.korrekturen.length + neu.length > 1 ?
+        "alle Punkte zusammen" : "die Stelle") + " und das Format.";
+    $("korrektur-zeile").hidden = !$("korrektur-zeile").textContent;
+    $("korrektur-kopieren").textContent = ki ? "An meine KI senden" : "Korrekturbitte kopieren";
+    var chatName = (chatInfo(Z.mappe && Z.mappe.chat) || {}).text || "deinem Chat";
+    $("korrektur-schritte").hidden = ki || !S.korrektur.offen;
+    $("korrektur-1").textContent = "Füg die Bitte in dasselbe Gespräch bei " + chatName + " ein und schick sie ab.";
+    $("korrektur-2").textContent = "Kopier die ganze Antwort und füg sie unten ein.";
+    auswegeKorrektur(zeigen);
     modellHinweisZeigen(zeigen);
     $("korrektur-antwort").hidden = !S.korrektur.offen;
     S.standKarte($("korrektur-ergebnis"), S.korrektur.stand, S.korrektur.art);
@@ -889,6 +913,51 @@
     $("korrektur-feld").value = S.korrektur.text;
     $("korrektur-kopieren").disabled = !S.korrektur.text || S.kiBesetzt();
   }
+  // MF3: Satz eines Punkts für die Seite; ein Punkt an einem Baustein nennt dessen Nummer und Titel
+  function korrekturSatz(k) {
+    var satz = k.seite || k.kern || k.satz;
+    if (!k.baustein) return satz;
+    var nr = nummer(k.baustein), b = pruefBaustein(k.baustein) || S.karteNach(k.baustein) || {};
+    var titel = b.titel || k.titel || "";
+    return (nr ? "Baustein " + nr + " " : "Baustein ") + (titel ? "„" + titel + "“" : "") + ": " + satz;
+  }
+  // MF3 (Konzept §3.5, Befund 12): bleibt ein Baustein nach einer Antwort auf die Bitte rot (`schleife`, Runde 1), stehen
+  // in der roten Karte die Wege ohne den Chat: im Editor selbst ändern, den Baustein weglassen
+  function auswegeKorrektur(zeigen) {
+    var box = $("korrektur-auswege"), sl = schleife();
+    var ids = zeigen ? korrekturZiele().filter(function (id) { var b = pruefBaustein(id);
+      return b && b.status === "fehler" && sl[id] && sl[id].rot >= 1; }) : [];
+    box.hidden = !ids.length;
+    var zustand = ids.join("|");
+    if (box.dataset.zustand === zustand && box.childNodes.length) return;
+    box.dataset.zustand = zustand;
+    box.innerHTML = "";
+    if (!ids.length) return;
+    box.appendChild(el("p", { cls: "ausweg-titel", text: "Bleibt der Fehler, geht es auch ohne den Chat weiter:" }));
+    ids.forEach(function (id) {
+      var b = pruefBaustein(id) || {}, nr = nummer(id);
+      box.appendChild(el("div", { cls: "ausweg-reihe", "data-id": id }, [
+        el("span", { cls: "ausweg-name", text: (nr ? "Baustein " + nr + " " : "") + "„" + (b.titel || id) + "“" }),
+        el("span", { cls: "ausweg-knoepfe" }, [
+          el("button", { type: "button", cls: "knopf klein-knopf", "data-ausweg": "editor", "data-id": id,
+              text: "Im Editor selbst ändern" }),
+          el("button", { type: "button", cls: "knopf klein-knopf", "data-ausweg": "weglassen", "data-id": id,
+              text: "Baustein weglassen" })])]));
+    });
+  }
+  $("korrektur-auswege").addEventListener("click", async function (ev) {
+    var b = ev.target.closest("[data-ausweg]"); if (!b) return;
+    var k = S.karteNach(b.dataset.id); if (!k) return;
+    try {
+      if (b.dataset.ausweg === "editor") await S.editorBei(k.id, b);
+      else {
+        await auswegAktion("weglassen", k);
+        S.standKarte($("eingabe-stand"), "„" + k.titel + "“ weggelassen." + (fehlerZahl() ? "" : " Keine Fehler mehr."),
+            fehlerZahl() ? "fehler" : "ok");
+        S.fokus(["rueckgaengig-knopf", "weiter-5", "eingabe-stand"], true);
+      }
+    } catch (e) { zeigeFehler(e); }
+  });
   // AP13.8: nach der zweiten roten Runde (Zähler `schleife`) einmal je Einheit eine Zeile unter der Korrekturbitte zum
   // Modell, nur im Kopierweg (mit verbundener KI, Testphase, Schlüssel oder Agent, ist das Modell gesetzt). Gemerkt in
   // `modellhinweis`.
@@ -927,6 +996,8 @@
     S.modellHinweis = null;                        // der Hinweis stand bei dieser Bitte; danach nicht wieder
     S.korrektur.offen = true; S.korrektur.stand = ""; S.korrektur.art = "";
     $("korrektur-antwort").hidden = false; S.standKarte($("korrektur-ergebnis"), "");
+    // MF3: nach dem Kopieren die zwei Zeilen (im Kopierweg) statt des Satzes davor
+    if (!(S.anKiAktiv && S.anKiAktiv())) { $("korrektur-schritte").hidden = false; $("korrektur-zeile").hidden = true; }
     // eigene KI: dieselbe Bitte ins Gespräch der Einheit, die Antwort durch korrekturEinsetzen wie eingefügt
     if (S.anKiAktiv && S.anKiAktiv()) return S.anKi(S.korrektur.text, { einheit: einheitTag(), neu: false,
       ort: $("korrektur-ergebnis"), feld: "korrektur", vorher: korrekturVermerken,
@@ -935,8 +1006,7 @@
       fertig: function (antwort) { $("korrektur-eingabe").value = antwort; return korrekturEinsetzen(); } });
     korrekturVermerken();
     S.korrektur.kopiert = S.korrektur.text;
-    kopieren(S.korrektur.text, $("korrektur-feld"), $("korrektur-stand"),
-        "Kopiert. Füge sie in deinen Chat ein und die Antwort des Chats hier unten.",
+    kopieren(S.korrektur.text, $("korrektur-feld"), $("korrektur-stand"), "Kopiert.",     // MF3: die zwei Zeilen sagen den Rest
       function () { km.kurzmeldung($("korrektur-kopieren"), "Text kopiert");
         $("korrektur-eingabe").focus({ preventScroll: true }); });
   };
@@ -1008,7 +1078,9 @@
       if (!ids.length && ohne && mo.modus === "ersetzen") {
         // ganze Kursdatei ohne passende ids: ersetzt die Einheit, also fragt die Seite für alle Handfassungen
         hv = await handVorEinsetzen(Z.mappe, Z.kurs_md, text, "ersetzen", null, null);
-        await km.stand(await km.mappeFn("einheit_ersetzen", [Z.mappe, Z.kurs_md, hv.text]));   // AP13.37 §1.2
+        var ganz = await km.mappeFn("einheit_ersetzen", [Z.mappe, Z.kurs_md, hv.text]);   // AP13.37 §1.2
+        if (S.ausAntwort) S.ausAntwort(ganz);       // MF3: Antwort des Chats, kein Grund, Teile neu zu kopieren
+        await km.stand(ganz);
         // AP13.37: gezählt werden die Bausteine der laufenden Einheit, nicht die des ganzen Kurses
         ids = Z.pruefung.bausteine.map(function (b) { return b.id; }).filter(function (id) {
           var k = S.karteNach(id);
@@ -1016,7 +1088,10 @@
       } else if (!ids.length) {
         o.stand(r.fehler.join(" ") || "Kein Baustein der Antwort passte zu einer Karte.", "fehler");
         return false;
-      } else await km.stand(r.kurs_md);
+      } else {
+        if (S.ausAntwort) S.ausAntwort(r.kurs_md);  // MF3 (Befund 3): sonst hieße es in Schritt 4 „Teil 1 hat sich geändert“
+        await km.stand(r.kurs_md);
+      }
       var fr = fragenStand(ids);
       handNachEinsetzen(ids, hv);
       r.ersetzt.forEach(function (id) {             // nicht bei „Einheit ersetzen“ (ganze Kursdatei ohne passende ids)
@@ -1037,13 +1112,17 @@
       if (!rot && !neuBeauftragt().length) {
         S.korrektur = { text: "", offen: false, stand: "", art: "" };
         var gelb = gelbZahl();       // AP13.34 §3.3: mit gelben Hinweisen nicht „alles in Ordnung“
-        if (o.sprung) S.standKarte($("eingabe-stand"), satz + (gelb ? " Keine Fehler. " + gelb + (gelb === 1 ? " Hinweis"
-            : " Hinweise") + "; sieh sie durch und geh dann weiter." : " Alle Bausteine sind in Ordnung; sieh sie durch und geh dann weiter."), "ok");
+        // MF3: die Hinweise stehen an den Karten unter „Erweitert“
+        if (o.sprung) S.standKarte($("eingabe-stand"), satz + (gelb ? " Keine Fehler. " + gelb + (gelb === 1 ? " Hinweis steht"
+            : " Hinweise stehen") + " unter „Erweitert“." : " Keine Fehler mehr."), "ok");
         else o.stand(satz, "ok");
       } else {
         // „neu“ nur, wenn sich die Sätze geändert haben; derselbe Text wie vorher wird beim Namen genannt
         var neuSaetze = S.korrekturen.map(function (k) { return k.satz; }).join("\n") !== saetzeVorher;
-        var weg = ids.some(ausweg) ? " Unter der Karte stehen jetzt drei Wege, wie es weitergeht." : "";
+        // MF3: bleibt ein Baustein rot, stehen in der roten Karte die Wege ohne den Chat (auswegeKorrektur)
+        var weg = ids.some(function (id) { var e = schleife()[id], b = pruefBaustein(id); return !!e && e.rot >= 1 && b &&
+            b.status === "fehler"; }) ? " Oben in der Karte stehen zwei Wege ohne den Chat: im Editor selbst ändern oder " +
+            "den Baustein weglassen." : "";
         var x = gleich.length
           ? "Die Antwort für „" + gleich[0] + "“ ist dieselbe wie vorher (Runde " +
               schleife()[ids.filter(function (id) { return schleife()[id] && schleife()[id].gleich; })[0]].rot + ")."

@@ -232,6 +232,17 @@
     return nr ? "zu Baustein " + nr + " „" + b.titel + "“" : "kein Baustein nennt dieses Bild";
   }
   // Zustand und Bau je Zeile; der Neuaufbau tauscht nur Zeilen, deren Zustand sich geändert hat (AP13.5h a1)
+  // MF3 (Konzept §3.6): „Bild hochladen“ steht an jeder Zeile, auch an der zugeklappten; das Dateifeld liegt im Knopf
+  function hochKnopf(b, da, cls) {
+    var eingabe = el("input", { type: "file", cls: "unsichtbar bild-datei",
+        accept: "image/png,image/jpeg,image/gif,image/webp", "data-datei": b.datei });
+    eingabe.addEventListener("change", dateiGewaehlt);
+    eingabe.addEventListener("cancel", function () { var li = eingabe.closest(".bild-zeile"); if (li) delete li.dataset.waehlt; });
+    eingabe.addEventListener("click", function () {
+      var li = eingabe.closest(".bild-zeile"); if (li) li.dataset.waehlt = String(Date.now()); });
+    return el("label", { cls: "knopf klein-knopf bild-hoch" + (cls ? " " + cls : "") }, [da ? "Bild ersetzen" : "Bild hochladen",
+        eingabe]);
+  }
   function zeileBeschreiben(b, i, key, offen) {
     var da = bildDa(b), geprueft = da && bildGeprueft(b.datei), f = format(b), url = da ? vorschauUrl(b.datei) : "";
     var nr = b.baustein ? Z.mappe.bausteine.findIndex(function (k) { return k.id === b.baustein; }) + 1 : 0;
@@ -250,16 +261,10 @@
           el("span", { cls: "bild-format", text: formatText(f) }),
           el("span", { cls: "bild-baustein", text: bausteinText(b, nr) }),
           el("span", { cls: "bild-status" }, [el("span", { cls: "punkt", "aria-hidden": "true" }),
-            statusText(da, geprueft)])]);
+            statusText(da, geprueft)]),
+          b.datei ? hochKnopf(b, da, "bild-hoch-zu") : null]);
       }
-      var eingabe = b.datei ? el("input", { type: "file", cls: "unsichtbar bild-datei",
-          accept: "image/png,image/jpeg,image/gif,image/webp", "data-datei": b.datei }) : null;
-      if (eingabe) {
-        eingabe.addEventListener("change", dateiGewaehlt);
-        eingabe.addEventListener("cancel", function () { delete eingabe.closest(".bild-zeile").dataset.waehlt; });
-        eingabe.addEventListener("click", function () {
-          var li = eingabe.closest(".bild-zeile"); if (li) li.dataset.waehlt = String(Date.now()); });
-      }
+      var infoId = "bild-info-" + i;
       return el("li", { cls: kl, "data-datei": b.datei || "", "data-key": key, "data-zustand": zustand }, [
         el("p", { cls: "bild-kopf" }, [
           el("span", { cls: "bild-name", text: b.datei || "Bild ohne Dateinamen" }),
@@ -267,11 +272,18 @@
           el("span", { cls: "bild-baustein", text: bausteinText(b, nr) }),
           el("span", { cls: "bild-status" }, [el("span", { cls: "punkt", "aria-hidden": "true" }),
             statusText(da, geprueft)])]),
-        // a6: nur der Auftrag für den Bildgenerator; ältere Antworten ohne Bildprompt zeigen hier den Bildwunsch
+        // MF3: zuerst der Weg für ein eigenes Bild (Knopf und Ablage), dann der Auftrag für einen Generator
+        b.datei ? el("div", { cls: "bild-ablage", "data-datei": b.datei }, [hochKnopf(b, da),
+          el("span", { cls: "bild-ablage-text", text: "oder hierher ziehen" })]) : null,
+        // a6: nur der Auftrag für den Bildgenerator; ältere Antworten ohne Bildprompt zeigen hier den Bildwunsch.
+        // MF3: die Hinweise zu Generatoren, Rechten und dem Bildguthaben des Chats hinter dem (i)
         auftrag ? el("div", { cls: "bild-text" }, [
           el("div", { cls: "bild-text-kopf" }, [el("span", { text: "Auftrag für einen Bildgenerator" }),
             el("button", { type: "button", cls: "klein bild-kopieren", "data-nr": i, "data-art": "prompt",
-                text: "Auftrag kopieren" })]),
+                text: "Auftrag kopieren" }),
+            el("button", { type: "button", cls: "info-knopf", "aria-expanded": "false", "aria-controls": infoId,
+                "aria-label": "Hinweise zu Bildern und Generatoren", "data-hinweis": "5.5-auftrag", text: "i" })]),
+          el("p", { id: infoId, cls: "info-text", hidden: true }),
           el("p", { cls: "von-chat", text: auftrag })]) : null,
         da ? el("div", { cls: "kopieren bild-pruefung" }, [vorschau(b.datei),
           el("button", { type: "button", cls: "knopf klein-knopf bild-passt", "data-datei": b.datei,
@@ -283,9 +295,6 @@
                 text: "Auf " + frage.f.join(":") + " zuschneiden" }),
             el("button", { type: "button", cls: "textlink bild-lassen", "data-datei": b.datei, text: "So lassen" })])])
           : null,
-        b.datei ? el("div", { cls: "bild-ablage", "data-datei": b.datei }, [
-          el("span", { text: "Bild hierher ziehen oder" }),
-          el("label", { cls: "knopf klein-knopf" }, [da ? "Bild ersetzen" : "Bild hochladen", eingabe])]) : null,
         meldung ? el("p", { cls: "bild-fehler", role: "alert", text: meldung }) : null,
         el("p", { cls: "stand bild-stand", role: "status", text: stand })]);
     }
@@ -294,11 +303,8 @@
   function zeichneBilder() {
     stil();
     var ol = $("bilder-liste"), w = bildwuensche(), keys = schluesselListe(w), offen = offenSchluessel(w, keys);
-    // c8: Hinweis des gewählten Chats zu seinem Bildgenerator (katalog.yaml chats.bilder_hinweis)
-    var hw = $("bilder-hinweis"), chat = S.chatInfo(Z.mappe.chat);
-    if (!hw) { hw = el("p", { id: "bilder-hinweis", cls: "leise bilder-hinweis" }); $("bilder-stufe").before(hw); }
-    hw.textContent = (chat && chat.bilder_hinweis) || "";
-    hw.hidden = !hw.textContent;
+    // c8: der Hinweis des gewählten Chats zu seinem Bildgenerator (katalog.yaml chats.bilder_hinweis) steht seit MF3 im (i)
+    // am Auftrag (schritte.js hinweisText „5.5-auftrag“)
     var alt = {};
     Array.prototype.forEach.call(ol.children, function (li) { alt[li.dataset.key] = li; });
     var vorher = null;
@@ -323,14 +329,34 @@
     var bz = Z.kennzahlen && Z.kennzahlen.bilder;
     $("bilder-stufe").textContent = bz ? bz.stufe.charAt(0).toUpperCase() + bz.stufe.slice(1) + " gewählt, " + bz.zahl +
         " im Text" : "";
-    $("weiter-bilder").textContent = fehlen ? "Ohne Bild weiter" : "Weiter: " +            // MF1: der nächste Schritt
-        S.kurzName(S.fragenListe.length && !Z.mappe.durchsicht ? 6 : 7);
+    // MF3 (Konzept §3.6): der Hauptknopf nennt immer den nächsten Schritt und geht immer (fehlende Bilder bleiben
+    // Platzhalter); „Ohne Bilder weiter“ daneben nimmt die fehlenden Bilder aus der Einheit
+    $("weiter-bilder").textContent = "Weiter: " + S.kurzName(S.fragenListe.length && !Z.mappe.durchsicht ? 6 : 7);
+    $("bilder-weg").hidden = !fehlen;
+    $("bilder-weg").textContent = fehlen === mitDatei ? "Ohne Bilder weiter" : "Ohne die fehlenden Bilder weiter";
     $("bilder-stand").textContent = !w.length ? "" : fehlen
       ? (fehlen === 1 ? "Ein Bild fehlt" : fehlen + " Bilder fehlen") +
           "; im Kurs steht dort ein grauer Platzhalter, bis du es nachlieferst."
       : geprueftZahl + " von " + mitDatei + " Bildern geprüft";
     $("bilder-stand").className = "stand " + (fehlen ? "" : "ok");
   }
+  // MF3: „Ohne Bilder weiter“: die fehlenden Bilder (ohne Datei; sind es alle, jede Bildzeile und jeder Bildwunsch der
+  // Einheit) gehen aus der Einheit (gen/mappe.py bilder_entfernen), im Kurs steht dort nichts; danach weiter wie „Weiter“
+  $("bilder-weg").onclick = async function () {
+    if (!Z.mappe) return;
+    var w = bildwuensche(), namen = w.filter(function (b) { return b.datei && !bildDa(b); }).map(function (b) { return b.datei; });
+    if (!namen.length) return;
+    var alle = namen.length === w.length && !S.mehrereEinheiten();
+    try {
+      await km.bereit();
+      var md = await km.mappeFn("bilder_entfernen", [Z.kurs_md, alle ? null : namen]);
+      if (S.ausAntwort) S.ausAntwort(md);       // kein Grund, den Text für den Chat neu zu kopieren
+      await km.stand(md);
+      await auswertung();
+      zeichne(); geaendert();
+      $("weiter-bilder").onclick();
+    } catch (e) { zeigeFehler(e); }
+  };
   // Wechsel der offenen Karte: die Liste bleibt, wo sie im Fenster steht (kein Sprung durch das Zuklappen); steht die
   // neue Karte dann über dem Fensterrand, rückt sie an den oberen Rand. Wird die Liste kürzer, hält eine Mindesthöhe
   // die Seite so lang, dass der Browser nicht nach oben rutscht; sie schwindet, sobald unter dem Fenster Platz ist
@@ -353,9 +379,12 @@
     if (auf && auf.getBoundingClientRect().top < 0) auf.scrollIntoView({ block: "start" });
     return auf;
   }
+  // erst „Auftrag kopieren“, dann „Passt“, dann das Dateifeld (die Ablage steht seit MF3 vor dem Auftrag)
+  function erstesZiel(li) { return li.querySelector(".bild-kopieren") || li.querySelector(".bild-passt") ||
+      li.querySelector(".bild-datei"); }
   function oeffnen(key) {
     var auf = wechseln(function () { offenWahl = key; zeichneBilder(); });
-    var k = auf && auf.querySelector(".bild-kopieren, .bild-passt, .bild-datei");
+    var k = auf && erstesZiel(auf);
     if (k) k.focus({ preventScroll: true });
   }
   $("bilder-liste").addEventListener("click", function (ev) {
@@ -365,12 +394,13 @@
       p[d] = true;
       var auf = wechseln(function () { naechsteOffen(passt.closest(".bild-zeile").dataset.key); zeichneBilder(); });
       geaendert();
-      var k = auf ? auf.querySelector(".bild-kopieren, .bild-passt, .bild-datei") :
+      var k = auf ? erstesZiel(auf) :
           $("bilder-liste").querySelector(".bild-oeffnen[aria-label*='" + CSS.escape(d) + "']");
       if (k) k.focus({ preventScroll: true });
       return;
     }
     var zu = ev.target.closest(".bild-zeile.zu");
+    if (zu && ev.target.closest(".bild-hoch")) return;      // MF3: der Knopf öffnet die Dateiwahl, die Zeile bleibt
     if (zu) { oeffnen(zu.dataset.key); return; }
     var zs = ev.target.closest(".bild-zuschneiden, .bild-lassen");
     if (zs) {
