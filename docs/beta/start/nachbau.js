@@ -755,7 +755,7 @@
     } catch (e) { zeigeFehler(e); }
   };
   $("neue-einheit").onclick = async function () {
-    clearTimeout(S.autosaveTimer);
+    clearTimeout(S.autosaveTimer); S.autosaveTimer = null; delete $("autosave-stand").dataset.offen;
     if (Z.geladen && Z.mappe) { try { await km.autosaveSchreiben(); } catch (e) {
         /* Hinweis steht schon unter der Kursdatei */ } }
     leeren();

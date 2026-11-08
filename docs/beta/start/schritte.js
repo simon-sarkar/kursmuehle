@@ -1755,7 +1755,7 @@
     frage("Einheit „" + titel + "“ schließen? " + (S.gespeichert ?
         "Die Einheit hast du gespeichert; die Sicherung im Browser wird gelöscht."
       : "Was du nicht mit „Zwischenstand speichern“ gesichert hast, geht verloren."), async function () {
-      clearTimeout(S.autosaveTimer);
+      clearTimeout(S.autosaveTimer); S.autosaveTimer = null; delete $("autosave-stand").dataset.offen;
       await km.autosaveLoeschen();
       S.leeren();
       weiterAnzeigen();

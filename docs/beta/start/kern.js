@@ -727,15 +727,23 @@ window.km = km;
 
   function autosave() {
     clearTimeout(S.autosaveTimer);
+    $("autosave-stand").dataset.offen = "1";        // eine Sicherung steht aus (Tests warten darauf; beim Verlassen nachholen)
     S.autosaveTimer = setTimeout(function () {
-      if (!Z.geladen || !Z.mappe) return;
+      S.autosaveTimer = null;
+      if (!Z.geladen || !Z.mappe) { delete $("autosave-stand").dataset.offen; return; }
       // MF1: klein unter „Menü“; ohne Sicherung im Browser ein Satz, der auch auf dem Handy steht (Klasse warn)
       km.autosaveSchreiben().then(function () { $("autosave-stand").textContent = "Gesichert " + zeit(Date.now());
-          $("autosave-stand").classList.remove("warn"); })
+          $("autosave-stand").classList.remove("warn"); if (!S.autosaveTimer) delete $("autosave-stand").dataset.offen; })
         .catch(function () { $("autosave-stand").textContent = "Keine Sicherung im Browser; speichere den Zwischenstand.";
-          $("autosave-stand").classList.add("warn"); });
+          $("autosave-stand").classList.add("warn"); if (!S.autosaveTimer) delete $("autosave-stand").dataset.offen; });
     }, 700);
   }
+  // Seite wird verlassen oder neu geladen, während eine Sicherung aussteht: sofort sichern
+  window.addEventListener("pagehide", function () {
+    if (!S.autosaveTimer || !Z.geladen || !Z.mappe) return;
+    clearTimeout(S.autosaveTimer); S.autosaveTimer = null;
+    try { km.autosaveSchreiben(); } catch (e) { /* nichts */ }
+  });
 
   function geaendert() { S.gespeichert = false; kennzahlenSpaeter(); autosave(); Z.bau = null; S.knoepfe();
       S.textSpaeter(); }
