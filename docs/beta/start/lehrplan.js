@@ -747,7 +747,7 @@
   function zielgruppeLeeren() {
     ["f", "a"].forEach(function (o) { $(o + "-zielgruppe").value = ""; $(o + "-jahrgang").dataset.zuletzt = "";
       S.zielgruppeSperre(o); });
-    $("erweitert").open = false;
+    if (S.erweitertAuf) S.erweitertAuf("erweitert", false);
   }
   var leerenAlt = S.leeren;
   if (leerenAlt) S.leeren = function () { var r = leerenAlt.apply(this, arguments); zielgruppeLeeren(); return r; };

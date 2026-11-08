@@ -227,7 +227,9 @@ select { appearance: auto; }
 .erw { margin-top: 18px; }
 .erw-knopf { display: inline-flex; align-items: center; gap: 10px; min-height: 40px; padding: 6px 2px; border: 0; background: none;
   font: inherit; color: var(--text); cursor: pointer; }
-.erw-wort { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.erw-wort { flex: none; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+.erw-knopf { text-align: left; }
+#erweitert-2-inhalt > :not([hidden]) ~ :not([hidden]) { margin-top: 18px; }   /* MF2: Lehrplan, Auftrag, Material */
 .erw-wort::after { content: ""; display: inline-block; width: 7px; height: 7px; margin: 0 0 3px 9px; border-right: 2px solid currentColor;
   border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform 0.15s ease; }
 .erw-knopf[aria-expanded=true] .erw-wort::after { transform: translateY(3px) rotate(-135deg); }
@@ -241,7 +243,11 @@ select { appearance: auto; }
 .start-form .knopf { grid-column: 1 / -1; justify-self: start; min-width: 9rem; }
 .start-form .knopf.haupt { margin-top: 6px; }
 .start-form .erw { margin-top: 0; }
-.zeit-vorab { grid-column: 1 / -1; margin: -4px 0 0; font-size: 0.85rem; }
+/* MF2: Beispiel unter dem Feld statt Platzhalter im Feld (Konzept §7, 5) */
+.beispiel-zeile { margin: 0; }
+.feld-thema label { color: inherit; }
+#erweitert .seq-zeile { margin-bottom: 14px; }
+.seq-art-t { flex: 1 1 100%; margin: 0; font-size: 0.9rem; color: var(--leise); }
 /* AP13.40: Sequenz (sequenz.js): Umschalter in Schritt 1, Themen je Stunde, Stunden im Plan, Übersicht in Schritt 4 */
 .seq-zeile { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 16px; }
 .seq-zeile[hidden] { display: none; }
@@ -283,6 +289,11 @@ select { appearance: auto; }
 
 /* 2 Zweige, Vorlagen, Mehr */
 .zweige { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+/* MF2: je Kachel ein (i) oben rechts (neben dem Knopf, nicht darin), der Text darunter */
+.zweig-ort { position: relative; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.zweig-ort > .zweig { flex: 1 1 auto; padding-right: 46px; }
+.zweig-info { position: absolute; top: 14px; right: 14px; }
+.zweig-info-text { margin: 0; }
 .zweig { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 16px; border-radius: var(--rund); border: 1px solid var(--kachel-rand);
   background: var(--flaeche); font: inherit; color: var(--text); cursor: pointer; }
 .zweig:hover { border-color: var(--text); }
@@ -315,7 +326,9 @@ select { appearance: auto; }
 .aus-gruppe .unterkopf { margin-top: 6px; }
 .aus-gruppe { margin-top: 14px; }
 .aussehen > .aus-gruppe:first-child { margin-top: 0; }
-.standard-weiter { display: flex; width: max-content; max-width: 100%; margin: 18px 0 4px; }
+.familie-alle { margin-top: 10px; }
+.aussehen .erw { margin-top: 22px; }
+.aussehen .erw-inhalt > .aus-gruppe:first-child, .aussehen .erw-inhalt > .feinheiten:first-child { margin-top: 6px; }
 .ungeprueft { margin-top: 10px; }
 .ungeprueft > summary { font-weight: 400; font-size: 0.93rem; }
 .ungeprueft > .kacheln-wahl { margin-top: 6px; }
@@ -341,7 +354,7 @@ select { appearance: auto; }
 .aus-probe { display: inline-flex; flex: none; width: 15px; height: 15px; cursor: help; }
 .aus-probe svg { width: 15px; height: 15px; display: block; }
 /* Dichte und Kästen füllen die Reihe, zentriert, wenn Platz bleibt */
-.schmal { justify-content: center; }
+.schmal { justify-content: flex-start; }
 .schmal .aus-kachel { flex: 1 1 0; width: auto; min-width: 0; max-width: 180px; }
 .schmal .aus-mini svg { height: 40px; }
 .farben .aus-kachel { width: 72px; padding: 6px 4px; gap: 4px; }
@@ -438,22 +451,42 @@ select { appearance: auto; }
 .chat-wahl > p:first-child { font-weight: 600; margin-bottom: 8px; }
 .chat-knoepfe { display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
 .chat-gruppe { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.chat-gruppe-name { flex: 0 0 8.5rem; font-size: 0.85rem; color: var(--leise); }
+.chat-gruppe-name { flex: 0 0 8.5rem; display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--leise); }
+.chat-gruppe-info { flex: 1 1 100%; margin: 0; }
 .ki-eigene > .chat-gruppe { margin-top: 6px; }
-.modell-rat { margin-bottom: 4px; }
-.modell-rat > summary { font-weight: 400; font-size: 0.93rem; }
+/* MF2: Zustand b. Der gewählte Chat mit „Anderer Chat“, ein Satz zum Modell mit (i), der Kopierknopf mit (i) */
+.chat-fuer { margin: 0 0 4px; font-weight: 600; }
+.chat-fuer .textlink { font-weight: 400; margin-left: 8px; }
+.chat-modell-zeile { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; }
+#chat-modell-info, #rechte-info { margin: 0 0 14px; }
+.kopiert-block #kopiert:empty { display: none; }
+.kopiert-block:has(#kopiert.ok:not(:empty)) { margin-top: 14px; padding: 10px 14px 12px; border: 1px solid var(--linie);
+  border-left: 4px solid var(--ok); border-radius: 8px; background: var(--flaeche); }
+.kopiert-block #kopiert.ok { margin: 0; color: var(--text); font-weight: 650; }
+.kopiert-schritte { margin: 10px 0 0; padding-left: 1.4em; line-height: 1.5; }
+.kopiert-schritte li + li { margin-top: 4px; }
+#text-kopieren:disabled { opacity: 1; }                  /* „Kopiert“ bleibt lesbar, solange er nicht klickbar ist */
+#text-kopieren:disabled:not(.haupt) { color: var(--text); }
+#text-kopieren.ist-kopiert::before { content: ""; width: 11px; height: 6px; margin: -3px 10px 0 0; border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor; transform: rotate(-45deg); }
+.text-ansehen-l { margin-top: 6px; }
+#chat-text-feld { min-height: 12rem; font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace; }
 .text-art, .modus { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 0 0 10px; }
 .text-art label, .modus label { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 6px 12px; border-radius: 8px;
   background: var(--flaeche); border: 1px solid var(--linie); cursor: pointer; font-size: 0.95rem; }
 .text-art label:has(input:checked), .modus label:has(input:checked) { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
 .modus-satz { margin: -4px 0 10px; font-size: 0.92rem; }   /* AP13.41 §3.3 */
 .text-art input, .modus input { accent-color: var(--ocker-tief); margin: 0; }
-.teil-wahl { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 8px; }
-.teil-knopf[aria-pressed=true] { color: var(--text); font-weight: 650; background: var(--creme); }
+/* MF2: die Teile als Liste; je Teil Name und Stand, der gewählte mit Rahmen */
+.teil-wahl { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.teil-knopf { display: flex; align-items: center; width: 100%; min-height: 44px; padding: 8px 14px; border-radius: 8px; text-align: left;
+  border: 1px solid var(--kachel-rand); background: var(--flaeche); color: var(--text); font: inherit; cursor: pointer; }
+.teil-knopf:hover { border-color: var(--text); }
+.teil-knopf[aria-pressed=true] { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); background: var(--gewaehlt); font-weight: 650; }
+.teil-wort { color: var(--leise); font-weight: 400; }
 .kopieren { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
 .infobox { background: var(--creme); border-radius: var(--rund); padding: 14px 16px; margin: 12px 0 0; }
 .infobox p { margin-bottom: 8px; }
-.infobox-nie { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 0.93rem; color: var(--leise); }
 .text-ansehen { margin-top: 8px; }
 .text-ansehen summary { cursor: pointer; color: var(--link); padding: 6px 0; }
 .text-ansehen textarea { min-height: 12rem; font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace; }

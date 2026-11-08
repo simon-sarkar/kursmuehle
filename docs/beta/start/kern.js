@@ -357,7 +357,7 @@ window.km = km;
   S.spracheGelb = [];             // AP13.14: ids mit „Sprache anpassen lassen“ (flüchtig, nicht in der Mappe)
   S.letzteAntwort = null;
   S.modusSpaeter = false;         // AP13.41 §1.3: die Moduswahl gilt erst für die nächste Antwort (chat.js)
-  S.infoboxAus = false;
+  S.alleDesigns = false;          // MF2: Schritt 3 zeigt alle Designs („Alle Designs“), sonst vier und das gewählte
   S.schreibKette = Promise.resolve();
   S.angabenFuer = null;            // Mappe, deren Angaben aus dem Steckbrief gelesen sind (neuPruefen)
   S.schwerpunktFolge = null;       // AP13.24: Reihenfolge der Klicks auf die Schwerpunkt-Kacheln {mappe, liste}
@@ -367,7 +367,7 @@ window.km = km;
   S.bauLaeuft = false;
   var bildGroesse = {};                           // Datei -> „2,4 MB → 160 KB“ nach dem Hochladen
   var SCHRITTE = [1, 2, 3, 4, 5, 5.5, 6, 7];       // 5.5 = Bilder, nur mit Bildwünschen in der Antwort
-  var KOPIERT = "Jetzt in deinen Chat einfügen, die Antwort dann in Schritt 5 einfügen.";
+  var KOPIERT = "Text kopiert.";                 // MF2: was danach kommt, sagen die zwei Zeilen darunter
   var STANDARD_FARBE = "#1D5FD1";                 // Akzent der Familien ohne eigene Farbe (familien.yaml)
   var FARBEN = { blau: "#1D5FD1", "grün": "#15803D", rot: "#BE123C", orange: "#B45309", lila: "#6D28D9" };
   var ZWEIG_TEXT = { mach: "Mach du", richtung: "Ich gebe die Richtung", steuer: "Ich steuere" };
@@ -586,8 +586,6 @@ window.km = km;
       status("Kursmühle ließ sich nicht vollständig laden. Speichere deine Einheit und versuch es später oder in "
         + "einem anderen Netz noch einmal.", "fehler");
     });
-    km.einstellung("infobox_aus").then(function (w) { S.infoboxAus = !!w; }).catch(function () {
-        /* ohne IndexedDB */ });
     hinweiseLaden();
     S.katalogDa = Promise.all([fetch("katalog.json", { cache: "no-cache" }).then(function (r) { return r.json(); }),
         fetch("familien.json", { cache: "no-cache" }).then(function (r) { return r.json(); })])
@@ -645,6 +643,12 @@ window.km = km;
       var liste = S.katalog.chats.filter(function (c) { return c.gruppe === g; });
       var og = el("optgroup", { label: gruppen[g] });
       var reihe = el("div", { cls: "chat-gruppe" }, [el("span", { cls: "chat-gruppe-name", text: gruppen[g] })]);
+      // MF2: „Über private Konten entscheidet deine Schule“ steht hinter dem (i) an der Gruppe, nicht als eigene Zeile
+      if (g === "privat") {
+        reihe.firstChild.appendChild(el("button", { type: "button", cls: "info-knopf", "aria-expanded": "false",
+          "aria-controls": "chat-privat-info", "aria-label": "Hinweis zu privaten Konten", "data-hinweis": "4-privat", text: "i" }));
+        reihe.appendChild(el("p", { id: "chat-privat-info", cls: "info-text chat-gruppe-info", hidden: true }));
+      }
       liste.forEach(function (c) {
         og.appendChild(el("option", { value: c.wert, text: c.text }));
         reihe.appendChild(el("button", { type: "button", cls: "knopf chat-knopf", "data-chat": c.wert, text: c.text }));

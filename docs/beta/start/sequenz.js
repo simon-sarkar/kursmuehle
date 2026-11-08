@@ -119,7 +119,8 @@
     var l = el("div", { id: "f-stunden-l", cls: "feld seq-stunden-l info-ort", hidden: true }, [
       el("label", { "for": "f-stunden", cls: "feld-kopf", text: T("stunden") }), info, zahl,
       el("span", { cls: "info-text feld-zeile", "data-info-text": "sequenz_info", hidden: true })]);
-    box.append(gruppe, l);
+    // MF2: unter „Erweitert“ steht die Frage sichtbar über dem Umschalter
+    box.append(el("p", { cls: "seq-art-t", "aria-hidden": "true", text: T("art") }), gruppe, l);
     gruppe.addEventListener("click", function (ev) {
       var b = ev.target.closest("[role=radio]"); if (!b || b.disabled) return;
       art = b.dataset.wert;
@@ -155,8 +156,12 @@
     zahl.disabled = !frei;
     $("f-minuten-t").textContent = sq ? T("minuten_je") : T("minuten");
     $("start-form").classList.toggle("mit-sequenz", sq);
-    $("zeit-vorab").hidden = sq;      // Punkt 12: die Zeitangabe gilt für eine Stunde
+    // MF2: die Wahl steht unter „Erweitert“ in Schritt 1; eine Sequenz lässt es offen, damit man sieht, was gilt
+    if (sq && S.erweitertAuf && $("erweitert-knopf").getAttribute("aria-expanded") !== "true" && seqOffenFuer !== Z.mappe) {
+      seqOffenFuer = Z.mappe; S.erweitertAuf("erweitert", true);
+    }
   }
+  var seqOffenFuer;
   // Schritt 1 abgeschickt: Zahl der Stunden oder 0 („Stunde“); null, wenn die Zahl nicht stimmt (Meldung am Feld)
   function sequenzWahl() {
     var box = $("f-art-zeile");

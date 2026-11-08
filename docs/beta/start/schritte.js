@@ -106,13 +106,12 @@
     return z;
   }
   function kurzName(n) { var sec = sektion(n); return sec ? sec.dataset.kurz : ""; }
-  function hinweisSchluessel(n) {
-    return n === 2 && zweig() === "richtung" && S.hinweisTexte["2-richtung"] ? "2-richtung" : String(n);
-  }
-  // Text eines (i) aus hinweise.json; AP13.5h a3: mit Verbindung nennt der Text zu Schritt 6 auch die eigene KI
+  // Text eines (i) aus hinweise.json; AP13.5h a3: mit Verbindung nennt der Text zu Schritt 6 auch die eigene KI. MF2: das
+  // (i) zum Modell beginnt mit dem Satz des gewählten Chats (katalog.yaml chats.aufwand)
   function hinweisText(schl) {
     var t = S.hinweisTexte[schl] || "";
     if (schl === "6" && t && S.anKiAktiv && S.anKiAktiv()) t = t.replace(", in einem neuen Chat", ", mit deiner KI, in einem neuen Chat");
+    if (schl === "4-modell") { var c = Z.mappe && chatInfo(Z.mappe.chat); if (c && c.aufwand) t = c.aufwand + " " + t; }
     return t;
   }
   // „Weiter: Aussehen“, wenn das Ziel der nächste sichtbare Schritt ist, sonst „Zurück zu: Antwort einfügen“
@@ -160,8 +159,9 @@
       sec.querySelector(".s-nr").textContent = String(sichtbar.indexOf(n) + 1);
       sec.querySelector(".s-stand").textContent = stand === "erledigt" ? ", erledigt" : stand === "kommend" ?
           ", kommt noch" : "";
-      // (i) am Titel des offenen Schritts (Schritt 1 hat keinen: seine Felder erklären sich)
-      var info = zeile.querySelector(".s-info"), schl = hinweisSchluessel(n), text = n !== 1 && hinweisText(schl);
+      // (i) am Titel des offenen Schritts ab Schritt 5; MF2: Schritt 1 bis 4 haben keins (ihre Felder erklären sich, die
+      // (i) stehen an den Kacheln, an „Bilder“ und am Modell)
+      var info = zeile.querySelector(".s-info"), schl = String(n), text = n >= 5 && hinweisText(schl);
       info.hidden = !auf || !text;
       info.dataset.hinweis = schl;
       info.setAttribute("aria-label", "Erklärung zu " + kurzName(n));
@@ -180,6 +180,13 @@
     $("steuer-teil").hidden = z !== "steuer";
     $("mach-teil").hidden = z !== "mach" && z !== "richtung";
     $("richtung-teil").hidden = z !== "richtung";
+    // MF2: „Erweitert“ in Schritt 2, sobald ein Weg gewählt ist; was darin steht, hängt am Weg
+    $("erweitert-2").hidden = !z;
+    $("m-kontext-l").hidden = z !== "mach" && z !== "richtung";
+    $("mehr").hidden = z !== "steuer";
+    var was2 = z === "steuer" ? "Lehrplan, Mehr einstellen" : "Lehrplan, Worum geht es genau?, Material";
+    if ($("erweitert-2-was").textContent !== was2) $("erweitert-2-was").textContent = was2;
+    erweitert2Pruefen();
     kursZeigen();
     if (z === "richtung" || z === "steuer") zeichneRichtung();
     if (S.katalog) { vorlagenZeigen(); zeichneMachArt(); }
@@ -399,7 +406,7 @@
       var f = $(id), satz = feldSatz(f);
       if (satz) { feldMeldung(f, satz); erstes = erstes || f; } else feldOk(f);
     });
-    if (erstes) erstes.focus({ preventScroll: false });
+    if (erstes) { aufdecken(erstes); erstes.focus({ preventScroll: false }); }
     return !erstes;
   }
   ["f-thema", "f-jahrgang", "f-minuten", "a-thema", "a-jahrgang", "a-minuten"].forEach(function (id) {
@@ -592,6 +599,7 @@
     e.vorlage = v.name;
     Z.mappe = km.neueMappe(e.thema, e, vorlageKarten(v, e.minuten));
     Z.mappe.schritt = 2;
+    Z.mappe.zweig = "mach";                        // MF2 (Konzept §7, 1): „Mach du“ ist vorgewählt
     Z.mappe.zeit_selbst = false;                   // Standard: das Modell verteilt die Minuten
     Z.mappe.zeit_start = new Date().toISOString();  // AP13.12 a11: Minuten bis zum Download für die Rückmeldung
     Z.kurs_md = ""; Z.steckbrief_text = ""; Z.assets = {}; Z.pruefung = null; Z.kennzahlen = null; Z.bau = null;
@@ -654,7 +662,7 @@
     S.chatWahlOffen = false; S.chatZurKorrektur = false; S.aendern = null; S.designer = null;
     $("chat-text-feld").value = ""; $("gegen-text-feld").value = ""; $("gegen-antwort").value = "";
     $("gegen-ergebnis").innerHTML = ""; $("gegen-stand").textContent = ""; $("kopiert").textContent = "";
-    $("eingabe-stand").textContent = ""; $("infobox").hidden = true; $("importiert-stand").hidden = true;
+    $("eingabe-stand").textContent = ""; $("importiert-stand").hidden = true;
     S.diagnoseKarte($("eingabe-diagnose"), null); S.diagnoseKarte($("korrektur-diagnose"), null);
     document.querySelector("input[name=text-art][value=einheit]").checked = true;
   }
@@ -740,7 +748,9 @@
   document.querySelector(".zweige").addEventListener("keydown", function (ev) {
     if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.isComposing || String(ev.key).length !== 1 || ev.key === " ") return;
     var f = zweig() === "steuer" ? $("plan-beschreibung") : zweig() ? $("m-kontext") : null;
-    if (!f || !f.getClientRects().length || f.disabled || f.readOnly) return;
+    if (!f || f.disabled || f.readOnly) return;
+    if (!f.getClientRects().length) aufdecken(f);            // MF2: „Worum geht es genau?“ liegt unter „Erweitert“
+    if (!f.getClientRects().length) return;
     ev.preventDefault();
     f.focus();
     var pos = f.value.length;
@@ -938,9 +948,11 @@
     // nur verschieben, wenn es nicht schon dort steht: ein Verschieben nimmt dem Feld den Fokus
     var nach = function (feld, anker) { if (feld.previousElementSibling !== anker) anker.after(feld); };
     var zuletzt = function (feld, ort) { if (feld.parentNode !== ort || feld.nextElementSibling) ort.appendChild(feld); };
-    if (p && z === "mach") nach(r, $("m-kontext").closest("label"));
+    // MF2: sonst unter „Erweitert“ nach „Worum geht es genau?“ (in „Ich steuere“ steht es unter „Mehr einstellen“)
+    if (p && z === "mach") zuletzt(r, $("mach-teil"));
     else if (p && z === "richtung") nach(r, $("r-art").closest(".aus-gruppe"));
-    else zuletzt(r, $("richtung-teil"));
+    else nach(r, $("m-kontext-l"));
+    r.hidden = z !== "mach" && z !== "richtung";
     if (p) nach(a, $("vorlagen")); else zuletzt(a, document.querySelector(".mehr-felder"));
     $("r-material-zeile").textContent = p ? "für diese Art nötig" : "freiwillig";
     $("a-material-zeile").hidden = !p;
@@ -951,6 +963,7 @@
   function materialZeigen(meldung) {
     if (meldung && schritt() > 2 && S.aendern !== 2) { S.aendern = 2; zeichneSchritte(); }
     var f = materialFeld();
+    aufdecken(f);
     if (meldung) feldMeldung(f, "Füg dein Material ein oder lies eine Datei ein.");
     f.scrollIntoView({ block: "center" });
     f.focus({ preventScroll: true });
@@ -1101,6 +1114,26 @@
     if (inhaltEl) inhaltEl.hidden = !auf;
   }
   function erweitertAuf(id, auf) { var k = $(id + "-knopf"); if (k) erweitert(k, auf); }
+  // MF2: ein Feld, das gebraucht wird (Pflicht, Fehler, Sprung), liegt vielleicht unter „Erweitert“ oder in einem
+  // zugeklappten Teil; beides geht dann auf
+  function aufdecken(feld) {
+    for (var e = feld && feld.parentElement; e; e = e.parentElement) {
+      if (e.classList.contains("erw-inhalt") && e.hidden) {
+        var k = document.querySelector('.erw-knopf[aria-controls="' + e.id + '"]'); if (k) erweitert(k, true);
+      }
+      if (e.tagName === "DETAILS" && !e.open) e.open = true;
+    }
+  }
+  // MF2: ist in Schritt 2 unter „Erweitert“ schon etwas eingetragen (geöffnete Einheit, Lehrplan gemerkt), steht es
+  // offen; einmal je Einheit, sobald ihre Angaben gelesen sind. Danach gilt, was die Lehrkraft auf- oder zuklappt
+  var erw2Fuer = null;
+  function erweitert2Pruefen() {
+    if (!Z.mappe || erw2Fuer === Z.mappe || S.angabenFuer !== Z.mappe || !zweig()) return;
+    erw2Fuer = Z.mappe;
+    var a = S.angaben || {}, lp = a.lehrplan;
+    if (String(S.kontextJetzt() || "").trim() || /\S/.test(Z.mappe.material || "") || String(a.fach || "").trim() ||
+        a.lehrplanbezug === "ja" || (lp && (lp.lernbereiche || []).length)) erweitertAuf("erweitert-2", true);
+  }
   document.addEventListener("click", function (ev) {
     var k = ev.target.closest && ev.target.closest(".erw-knopf"); if (k) erweitert(k);
   });
@@ -1206,9 +1239,20 @@
       b.appendChild(el("span", { cls: "aus-zeile", text: w.zeile }));
       return b;
     }, gewaehlt);
-    kachelnVon(box).forEach(function (b) { b.setAttribute("aria-checked", String(b.dataset.wert === gewaehlt)); });
+    // MF2 (Konzept §3.3): vier Designs sichtbar, dazu das gewählte; „Alle Designs“ und der Designer zeigen alle
+    var alle = !!S.alleDesigns || !!S.designer, zahl = kachelnVon(box).length;
+    kachelnVon(box).forEach(function (b) {
+      b.setAttribute("aria-checked", String(b.dataset.wert === gewaehlt));
+      b.hidden = !alle && VIER_DESIGNS.indexOf(b.dataset.wert) < 0 && b.dataset.wert !== gewaehlt;
+    });
+    var ak = $("familie-alle"), ganz = kachelnVon(box).every(function (b) { return !b.hidden; });
+    ak.hidden = !!S.designer || (ganz && !S.alleDesigns);
+    ak.setAttribute("aria-expanded", String(alle));
+    var at = S.alleDesigns ? "Weniger Designs" : "Alle " + zahl + " Designs";
+    if (ak.textContent !== at) ak.textContent = at;
     vorschauLaden();
   }
+  var VIER_DESIGNS = ["sachlich", "freundlich", "grundschule", "modern"];
   // Vorschau der gewählten Familie (AP13.5d §1, §4): bei jedem Wechsel von Familie oder Feinheit ein Aufruf von
   // gen/api.design_vorschau; gefüllt wird immer aus dem letzten Ergebnis, auch wenn Schritt 3 erst danach erscheint
   var vorschauStand = "", vorschauFertig = "", vorschauHtml = "";
@@ -1374,52 +1418,13 @@
       if (m && m.dataset.svg !== svg) { m.innerHTML = svg; m.dataset.svg = svg; }  // eigenes SVG, keine Eingabe
     });
   }
-  // AP13.19 §2: Gruppen nacheinander (wie AP13.5g b1, statt des Ausklappteils aus AP13.12 a1). Beim ersten Erreichen
-  // Design und Bilder; jede Wahl blendet die Gruppe nach ihr ein. Wie weit, merkt sich die Mappe (`aussehen_bis`,
-  // Stelle in FOLGE; fehlt = noch keine eigene Wahl). Weicht eine verborgene Gruppe vom Standard ab (geöffnete Einheit,
-  // „Mehr einstellen“), sind alle Gruppen sichtbar; „Rest als Standard“ ändert darum nie eine Wahl.
-  var FOLGE = ["familie", "farbe", "dichte", "kasten", "format", "website"];
-  function standardWert(g) {
-    var o = S.katalog.oberflaeche;
-    return { familie: (S.familien && S.familien.standard) || "sachlich", farbe: o.farbe[0].wert, dichte: "normal",
-      kasten: "familie", format: o.format[0].wert, website: o.website[0].wert }[g];
-  }
-  function abweichung(g) { var std = standardWert(g); return (S.angaben[g] || std) !== std; }
-  function aussehenBis() {
-    var bis = Z.mappe && typeof Z.mappe.aussehen_bis === "number" ? Z.mappe.aussehen_bis : 0;
-    if (S.designer || !S.katalog || FOLGE.slice(bis + 1).some(abweichung)) return FOLGE.length - 1;
-    var f = familieInfo(familieJetzt());
-    return bis === 1 && f && f.akzent_fest ? 2 : bis;     // Farbe gesperrt: Dichte gleich mit, sonst ginge es nicht weiter
-  }
-  function aussehenGewaehlt(feld) {
-    if (!Z.mappe) return;
-    var i = feld === "bilder" || feld === "bildbeschriftung" ? 0 : FOLGE.indexOf(feld);
-    if (i < 0) return;
-    var bis = Math.max(aussehenBis(), i + 1), f = familieInfo(familieJetzt());
-    if (bis === 1 && f && f.akzent_fest) bis = 2;          // bleibt, auch wenn danach ein anderes Design gilt
-    Z.mappe.aussehen_bis = Math.min(FOLGE.length - 1, bis);
-  }
-  // AP13.28: Im Designer sind alle Gruppen zu sehen. Wer ihn verlässt („Fertig“, Wechsel des Zweigs, Weiter), hat sie
-  // gesehen: Schritt 3 zeigt danach alle, nie weniger als vorher. Ohne das fiel „Ränder“ nach dem Designer wieder weg
-  // (`aussehen_bis` stand noch auf der Stelle vor dem Designer), auch mit einer eigenen Wahl gleich dem Standard.
-  function designerBeenden() {
-    if (S.designer && Z.mappe) Z.mappe.aussehen_bis = FOLGE.length - 1;
-    S.designer = null;
-  }
-  function gruppe(g) { return document.querySelector('#schritt-3 .aus-gruppe[data-gruppe="' + g + '"]'); }
+  // MF2: keine Gruppen nacheinander mehr (AP13.19 §2, `aussehen_bis` und „Standard nehmen und weiter“ entfallen; ein
+  // alter Eintrag in der Mappe stört nicht). Design, Farbe und Bilder stehen sichtbar, der Rest unter „Erweitert“; der
+  // Standard gilt, solange niemand etwas wählt. Der Designer (AP13.19 §3) öffnet „Erweitert“ und zeigt alle Designs.
+  function designerBeenden() { S.designer = null; }
   function zeichneGruppen(s) {
-    var bis = aussehenBis(), alle = bis >= FOLGE.length - 1, d = !!S.designer;
-    FOLGE.forEach(function (g, i) { gruppe(g).hidden = i > bis; });
-    $("feinheiten").hidden = bis < 1;
-    // der Knopf steht unter der letzten sichtbaren Gruppe (Farbe bis Ränder liegen in #feinheiten)
-    var letzte = gruppe(FOLGE[bis]), k = $("standard-weiter");
-    if (letzte.parentNode === $("feinheiten")) letzte = $("feinheiten");
-    if (bis === 0) letzte = gruppe("bilder");
-    if (letzte.nextElementSibling !== k) letzte.after(k);
-    k.textContent = Z.mappe && typeof Z.mappe.aussehen_bis === "number" ? "Rest als Standard und weiter" :
-        "Standard nehmen und weiter";
-    k.hidden = s > 3 || alle || d;
-    $("weiter-3").hidden = s > 3 || !alle || d;
+    var d = !!S.designer;
+    $("weiter-3").hidden = s > 3 || d;
     $("designer-fertig").hidden = !d;
     if (d) $("designer-fertig").textContent = "Zurück zu: " + kurzName(2);     // MF1: derselbe Rückweg wie nach „Ändern“
   }
@@ -1467,6 +1472,9 @@
     if (S.familien) Array.prototype.forEach.call($("aus-farbe").querySelectorAll(".aus-kachel"), function (b) {
       b.toggleAttribute("disabled", !!fam.akzent_fest); });
     kachelGruppe($("aus-bilder"), "bilder", o.bilder, miniBilder, bilderKachel());
+    // MF2: zwei Kacheln im Blick; „Mit Bildern“ gilt für jede Zahl über null
+    kachelGruppe($("aus-bilder-kurz"), "bilder-kurz", [{ wert: "0", text: "Keine Bilder" }, { wert: "mit", text: "Mit Bildern" }],
+        function (w) { return miniBilder(w === "mit" ? "2-3" : "0"); }, String(bilderWert()) === "0" ? "0" : "mit");
     $("bilder-zahl-l").hidden = bilderKachel() !== "zahl";
     if (bilderKachel() === "zahl" && document.activeElement !== $("bilder-zahl")) $("bilder-zahl").value = bilderWert();
     $("bildbeschriftung-l").hidden = String(bilderWert()) === "0";
@@ -1536,9 +1544,15 @@
       wert = $("farbe-eigen").value.toUpperCase();
     }
     if (b.dataset.feld === "bilder" && wert === "zahl") wert = String(bilderZahl());
-    a[b.dataset.feld] = wert;
-    S.angaben[b.dataset.feld] = wert;
-    aussehenGewaehlt(b.dataset.feld);
+    var feld = b.dataset.feld;
+    // MF2: „Mit Bildern“ ist 2 bis 3; eine genauere Zahl aus „Erweitert“ bleibt, solange die Kachel gewählt ist
+    if (feld === "bilder-kurz") {
+      feld = "bilder";
+      wert = wert === "0" ? "0" : String(bilderWert()) !== "0" ? String(bilderWert()) : "2-3";
+      if (wert === String(bilderWert()) && S.angaben.bilder) { zeichneAussehen(); return; }
+    }
+    a[feld] = wert;
+    S.angaben[feld] = wert;
     zeichneAussehen(); felderFuellen(); zeichneSchritte();
     angabenSchreiben(a, true);
     if (b.dataset.feld === "format" && wert === "wochen" && !S.angaben.start) $("a-start").focus();
@@ -1568,7 +1582,6 @@
     var w = $("farbe-eigen").value.toUpperCase();
     EIGEN.dataset.gewaehlt = "1";
     S.angaben.farbe = w;
-    aussehenGewaehlt("farbe");
     zeichneAussehen(); felderFuellen(); zeichneSchritte();
     angabenSchreiben({ farbe: w }, true);
   }
@@ -1588,15 +1601,20 @@
     farbeEigenWaehlen();
     if (document.activeElement === $("farbe-eigen")) EIGEN.focus({ preventScroll: true });
   });
-  // „Standard nehmen und weiter“: die verborgenen Gruppen tragen den Standard (sonst wären sie sichtbar, aussehenBis)
-  $("weiter-3").onclick = $("standard-weiter").onclick = function () {
-    if (Z.mappe) { Z.mappe.aussehen = true; gehe(4); } };
+  $("weiter-3").onclick = function () { if (Z.mappe) { Z.mappe.aussehen = true; gehe(4); } };
+  // MF2: „Alle Designs“ zeigt die übrigen Kacheln; ein zweiter Klick nimmt sie wieder weg (die gewählte bleibt)
+  $("familie-alle").onclick = function () {
+    S.alleDesigns = !S.alleDesigns;
+    zeichneFamilien();
+    if (!S.alleDesigns) $("familie-alle").focus({ preventScroll: true });
+  };
 
   // AP13.19 §3: Sprunglinks in „Mehr einstellen“. „Zum Designer“ zeigt Schritt 3 mit allen Gruppen und der Vorschau,
   // ohne den Fortschritt zu ändern (S.designer = {y}; kein gehe); „Fertig“ führt an die Stelle zurück.
   $("zum-designer").onclick = function () {
     if (!Z.mappe) return;
     S.designer = { y: window.scrollY };
+    erweitertAuf("erweitert-3", true);              // MF2: im Designer jede Einstellung im Blick
     zeichne();
     $("schritt-3").scrollIntoView({ block: "start" });
     $("s3-titel").focus({ preventScroll: true });
@@ -1607,6 +1625,7 @@
     var y = S.designer.y;
     designerBeenden();
     S.aendern = schritt() > 2 ? 2 : null;
+    erweitertAuf("erweitert-2", true);              // MF2: „Mehr einstellen“ liegt unter „Erweitert“
     $("mehr").open = true;
     zeichne();
     geaendert();
@@ -1615,6 +1634,7 @@
   };
   $("zum-material").onclick = function () {
     var f = $("a-material");
+    aufdecken(f);
     f.scrollIntoView({ block: "center" });
     f.focus({ preventScroll: true });
   };
@@ -1861,5 +1881,5 @@
     vorlageSichtbar: vorlageSichtbar, vorschlagWeg: vorschlagWeg,      // AP13.39: Art der Einheit im Plan
     fachWoerter: fachWoerter, fachJetzt: fachJetzt, weiterAnzeigen: weiterAnzeigen, zeichneAussehen: zeichneAussehen,
     zeichneSchritte: zeichneSchritte, zeigeFehler: zeigeFehler, oeffneSchritt: oeffneSchritt, zurueckZumStand: zurueckZumStand,
-    erweitertAuf: erweitertAuf, kurzName: kurzName });
+    erweitertAuf: erweitertAuf, aufdecken: aufdecken, kurzName: kurzName });
 })();

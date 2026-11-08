@@ -1037,7 +1037,7 @@
    "weitere_eingesetzt": "Eingesetzt. Die neue Einheit steht am Ende der Übersicht.",
    "plan_beschreiben": "Worum geht es in dieser Einheit?",
    "plan_beschreiben_zeile": "Dieser Text steht so im Text für den Chat.",
-   "plan_zeile": "Leg Kacheln an und gib jeder Kachel Elemente. Was du in die Felder schreibst, steht wörtlich im Text für den Chat.",
+   "plan_zeile": "Eine Kachel ist ein Abschnitt deiner Stunde, ein Element ein Baustein darin. Was du in die Felder schreibst, steht wörtlich im Text für den Chat.",
    "plan_leer": "Noch keine Kachel. Wähl die Art der Einheit und beginne mit ihren Phasen oder leer.",
    "plan_art": "Art der Einheit",
    "plan_nach_phasen": "Nach Phasen beginnen",

@@ -41,28 +41,59 @@
       document.querySelector("input[name=text-art][value=einheit]").checked = true;
       if (texte.art !== "einheit") textSpaeter(0);
     }
-    $("chat-aufwand").hidden = !c.aufwand;
-    $("chat-aufwand").textContent = c.aufwand || "";
-    var tw = $("teil-wahl"); tw.innerHTML = "";
-    tw.hidden = texte.teile.length < 2;
+    // MF2 (Konzept §3.4): ein Text in Teilen steht als Liste mit dem Stand je Teil; der gewählte Teil ist der, den
+    // „Teil n kopieren“ kopiert
+    var tw = $("teil-wahl"), st = Z.mappe.stueckelung, von = texte.teile.length;
+    tw.innerHTML = "";
+    tw.hidden = von < 2;
     texte.teile.forEach(function (_, i) {
-      tw.appendChild(el("button", { type: "button", cls: "klein teil-knopf", "data-teil": i,
-          "aria-pressed": i === texte.teil ? "true" : "false",
-        text: "Teil " + (i + 1) + (texte.kopiert[i] ? (ki() ? " (gesendet)" : " (kopiert)") : "") }));
+      var ein = !!(st && (st.eingefuegt || []).indexOf(i) >= 0);
+      var wort = ein ? "eingesetzt" : texte.kopiert[i] ? (ki() ? "gesendet" : "kopiert") : "";
+      tw.appendChild(el("li", {}, [el("button", { type: "button", cls: "teil-knopf", "data-teil": i,
+          "aria-pressed": i === texte.teil ? "true" : "false" }, [el("span", { cls: "teil-name",
+          text: "Teil " + (i + 1) + " von " + von }), wort ? el("span", { cls: "teil-wort", text: " · " + wort }) : null])]));
     });
     var t = texte.teile[texte.teil] || "";
     $("chat-zeile").textContent = !t ? (Z.geladen ?
         "Der Text entsteht …" : "Der Text entsteht, sobald die Seite bereit ist.")
-      : "Für " + c.text + (texte.teile.length > 1 ? ", Teil " + (texte.teil + 1) + " von " + texte.teile.length +
-          (ki() ? ". Die Mühle sendet Teil für Teil und setzt jede Antwort ein." :
-            ". Je Teil: in dasselbe Gespräch einfügen, die Antwort in Schritt " + nrVon(5) +
-          " übernehmen, dann der nächste Teil.") : "") + " · " + kb(new Blob([t]).size);
+      : "Für " + c.text + (von > 1 ? ", in " + von + " Teilen" + (ki() ? ". Die Mühle sendet Teil für Teil und setzt " +
+          "jede Antwort ein." : "") : "");
+    $("chat-modell-zeile").hidden = ki();
+    // Größe nur unter „Erweitert“ (keine Kennzahl im Blick)
+    $("chat-groesse").textContent = t ? (von > 1 ? "Teil " + (texte.teil + 1) + " hat " : "Der Text hat ") + "etwa " +
+        kb(new Blob([t]).size) + "." : "";
     if ($("chat-text-feld").value !== t) $("chat-text-feld").value = t;
-    $("text-kopieren").disabled = !t || besetzt();
-    $("eingabe-satz").hidden = ki();
-    $("text-kopieren").textContent = texte.teile.length > 1 ? "Teil " + (texte.teil + 1) +
+    $("erweitert-4").hidden = $("chat-text").hidden;
+    var was4 = zweig() === "steuer" ? "Welcher Text, Text ansehen" : "Text ansehen";
+    if ($("erweitert-4-was").textContent !== was4) $("erweitert-4-was").textContent = was4;
+    // „Kopiert“ vier Sekunden lang, so lange nicht klickbar (Konzept §4.2); danach ein Nebenknopf, solange
+    // „Weiter: Antwort einfügen“ der Hauptknopf ist
+    var gesperrt = Date.now() < kopiertBis, k = $("text-kopieren");
+    k.disabled = !t || besetzt() || gesperrt;
+    k.textContent = gesperrt ? "Kopiert" : von > 1 ? "Teil " + (texte.teil + 1) +
         (ki() ? " an meine KI senden" : " kopieren") : ki() ? "An meine KI senden" : "Text kopieren";
-    $("infobox-ok").textContent = ki() ? "Verstanden, Text senden" : "Verstanden, Text kopieren";
+    k.classList.toggle("haupt", !(S.aendern === 4 && schritt() > 4));
+    k.classList.toggle("ist-kopiert", gesperrt);
+    $("eingabe-satz").hidden = ki();
+    zeichneKopiert(c);
+  }
+  // MF2: nach dem Kopieren zwei Zeilen, was im Chat zu tun ist (bei Teilen mit dem Teil und dem nächsten)
+  var kopiertBis = 0, kopiertUhr = null, kopiertTeil = -1;
+  function zeichneKopiert(c) {
+    var von = texte.teile.length, i = kopiertTeil;
+    var da = !ki() && i >= 0 && i < von && !!texte.kopiert[i] && !texte.veraltet;
+    $("kopiert-schritte").hidden = !da;
+    if (!da) return;
+    var name = (c || chatInfo(Z.mappe.chat) || {}).text || "deinem Chat", teil = von > 1 ? "Teil " + (i + 1) : "den Text";
+    $("kopiert-1").textContent = "Füg " + teil + " in " + (i > 0 ? "dasselbe Gespräch" : "ein neues Gespräch") + " bei " +
+        name + " ein und schick ihn ab.";
+    $("kopiert-2").textContent = "Kopier die ganze Antwort und komm hierher zurück" +
+        (von > 1 && i + 1 < von ? "; danach kommt Teil " + (i + 2) + "." : ".");
+  }
+  function kopiertSperren() {
+    kopiertBis = Date.now() + 4000;
+    clearTimeout(kopiertUhr);
+    kopiertUhr = setTimeout(function () { kopiertBis = 0; if (Z.mappe) zeichneChat(); }, 4000);
   }
 
   // Plan der Einheit (gen/mappe.py planung): Warnung vor dem Kopieren und an der Kartenliste, keine Sperre
@@ -176,6 +207,7 @@
   $("teil-wahl").addEventListener("click", function (ev) {
     var b = ev.target.closest("[data-teil]"); if (!b) return;
     texte.teil = parseInt(b.dataset.teil, 10); $("kopiert").textContent = ""; zeichneChat();
+    S.fokus([$("teil-wahl").querySelector('[data-teil="' + texte.teil + '"]')], true);   // die Liste ist neu gebaut
   });
 
   // AP13.35 §3.3: beim Kopieren merkt die Mappe den Text (`kopiert` = {text, md}: Prüfsummen von Text und Kursdatei).
@@ -248,8 +280,11 @@
     var m = Z.mappe;
     return !!m && (gesendetAn.has(m) ? gesendetAn.get(m) : m.chat === "eigene");
   }
-  function textKopiert(gesendet) {
+  // `bleiben` (MF2): kopiert mit „Text kopieren“ in Schritt 4; der Schritt bleibt offen mit den zwei Zeilen und „Weiter:
+  // Antwort einfügen“ (die Fortschrittszahl steht schon auf Schritt 5)
+  function textKopiert(gesendet, bleiben) {
     var kopierterTeil = texte.teil + 1;
+    if (!gesendet) kopiertTeil = texte.teil;
     eingabeZu(false);                              // neuer Text: das Einfügefeld gehört wieder dazu
     texte.kopiert[texte.teil] = textStand([texte.teile[texte.teil]]);    // AP13.41 §1.2: Prüfsumme des kopierten Teils
     texte.geaendert = (texte.geaendert || []).filter(function (i) { return i !== texte.teil; });
@@ -263,17 +298,16 @@
           eingefuegt: [] };
     }
     var naechster = texte.teile.length > 1 ? texte.teile.findIndex(function (_, i) { return !texte.kopiert[i]; }) : -1;
-    // MF1: nach dem Kopieren ist Schritt 5 offen, auch wenn „Ändern“ Schritt 4 geöffnet hatte
+    // MF1: nach dem Senden (und dem Kopieren in Schritt 5) ist Schritt 5 offen; MF2: nach „Text kopieren“ bleibt Schritt 4
+    // offen, bis die Lehrkraft „Weiter: Antwort einfügen“ wählt
     if (schritt() < 5) Z.mappe.schritt = 5;
-    S.aendern = null;
+    S.aendern = bleiben ? 4 : null;
+    if (bleiben) kopiertSperren();
     zeichne(); autosave();
     if (naechster >= 0) {
       texte.teil = naechster; zeichneChat();
-      $("kopiert").textContent = gesendet ? "Teil " + kopierterTeil + " gesendet; die Antwort kommt in Schritt " +
-          nrVon(5) + ", danach geht Teil " + (naechster + 1) + " an deine KI."
-        : "Teil " + kopierterTeil + " kopiert. Füge ihn " + (kopierterTeil === 1 ?
-          "in ein neues Gespräch" : "in dasselbe Gespräch") + " ein und die Antwort in Schritt " + nrVon(5)
-        + "; danach kommt Teil " + (naechster + 1) + " dran.";
+      if (gesendet) $("kopiert").textContent = "Teil " + kopierterTeil + " gesendet; die Antwort kommt in Schritt " +
+          nrVon(5) + ", danach geht Teil " + (naechster + 1) + " an deine KI.";
     } else if (gesendet) $("kopiert").textContent = "Gesendet; die Antwort kommt in Schritt " + nrVon(5) + ".";
   }
   // Teil n an die eigene KI: Teil 1 in ein neues Gespräch, jeder weitere in dasselbe; die Antwort läuft durch
@@ -356,30 +390,16 @@
   function textKopieren() {
     // AP13.40: eine lange Sequenz an die eigene KI erst nach einer Bestätigung
     if (ki()) return S.sequenzStart ? S.sequenzStart().then(function (ja) { if (ja) textSenden(); }) : textSenden();
-    kopieren($("chat-text-feld").value, $("chat-text-feld"), $("kopiert"), KOPIERT, function () {
-      textKopiert(); km.kurzmeldung($("text-kopieren"), "Text kopiert");
-      // AP13.33 §2.1: Schritt 4 klappt zu oder die Infobox ist weg; weiter geht es im Antwortfeld
-      S.fokusRetten(["eingabe", "text-kopieren"]);
+    var teil = texte.teile.length > 1 ? "Teil " + (texte.teil + 1) + " von " + texte.teile.length + " kopiert." : KOPIERT;
+    kopieren($("chat-text-feld").value, $("chat-text-feld"), $("kopiert"), teil, function () {
+      textKopiert(false, true);
+      // MF2: Schritt 4 bleibt offen; der Knopf sagt „Kopiert“, der Fokus geht auf „Weiter: Antwort einfügen“
+      S.fokus(["zurueck-4", "s4-titel"], true);
     });
   }
-  // Vor dem ersten Kopieren einmal die Infobox (Rechte am Material, Nutzungsbedingungen des Chats)
-  $("text-kopieren").onclick = function () {
-    if (!S.infoboxAus) { $("infobox").hidden = false; $("infobox-ok").focus(); return; }
-    textKopieren();
-  };
-  $("infobox-ok").onclick = function () {
-    $("infobox").hidden = true;
-    if ($("infobox-nie").checked) { S.infoboxAus = true; km.einstellung("infobox_aus", true).catch(function () {}); }
-    else S.infoboxAus = true;                      // in dieser Sitzung nicht noch einmal
-    textKopieren();
-  };
-  // AP13.33 §2.2: Esc schließt die Infobox ohne zu kopieren, Fokus zurück auf „Text kopieren“
-  $("infobox").addEventListener("keydown", function (ev) {
-    if (ev.key !== "Escape") return;
-    ev.preventDefault();
-    $("infobox").hidden = true;
-    S.fokus(["text-kopieren"]);
-  });
+  // MF2 (Konzept §3.4, Entscheidung 3): kein Dialog vor dem Kopieren; der Satz zu den Rechten steht am Materialfeld und
+  // hinter dem (i) neben dem Knopf
+  $("text-kopieren").onclick = function () { textKopieren(); };
 
   function setzeModus(m) { var r = document.querySelector("input[name=modus][value=" + m + "]");
       if (r) r.checked = true; }
