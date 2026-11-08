@@ -399,7 +399,7 @@
     var n = stundeJetzt();
     while (n < s.stunden.length && fertig(n)) n += 1;
     S.planStunde = n;
-    S.auf[2] = true;
+    if (S.schritt() > 2) S.aendern = 2;
     S.zeichne(); S.geaendert();
     S.sektion(2).scrollIntoView({ block: "start" });
     S.fokus([$("plan").querySelector("[data-fokus='sq:" + S.planStunde + "']"), "plan-beschreibung"], true);
@@ -534,7 +534,7 @@
     if (feld) $("eingabe").value = ""; else if (o && o.leeren) o.leeren();
     delete Z.mappe.kopiert;
     S.texte.kopiert = {}; S.texte.teil = 0;
-    Z.mappe.schritt = 4; S.auf = {}; S.planStunde = null;
+    Z.mappe.schritt = 4; S.aendern = null; S.planStunde = null;
     await S.neuPruefen();
     await S.texteErzeugen();
     S.zeichne();
@@ -548,7 +548,7 @@
   // ---------------------------------------------------------------- Zeichnen (kern.js zeichne)
   S.zeichneSequenz = function () {
     if (!S.katalog) return;
-    if (S.planStunde && Z.mappe && S.schritt() > 2 && !S.auf[2]) S.planStunde = null;
+    if (S.planStunde && Z.mappe && S.schritt() > 2 && S.aendern !== 2) S.planStunde = null;
     // eine Einheit hinter der letzten Stunde („Nächste Einheit anhängen“) ist die nächste Stunde der Sequenz (N2)
     var s = seq();
     if (s && stundeJetzt() > s.stunden.length && Z.mappe.laufend === S.einheitTag()) {   // erst, wenn sie angelegt ist

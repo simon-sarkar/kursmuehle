@@ -5,7 +5,7 @@
   if (!document.getElementById("schritt-5")) return;
   var S = km.seite;
   var $ = S.$, KOPIERT = S.KOPIERT, Z = S.Z, auswertung = S.auswertung, autosave = S.autosave, chatInfo = S.chatInfo,
-      einheitTag = S.einheitTag, el = S.el, erledigtBis = S.erledigtBis, felderFuellen = S.felderFuellen,
+      einheitTag = S.einheitTag, el = S.el, felderFuellen = S.felderFuellen,
       geaendert = S.geaendert, inhalt = S.inhalt, karteNach = S.karteNach, kb = S.kb, kopieren = S.kopieren,
       nrVon = S.nrVon, schleifeMerken = S.schleifeMerken, schritt = S.schritt, sektion = S.sektion,
       teileOffen = S.teileOffen, texte = S.texte, zeichne = S.zeichne, zeichneSchritte = S.zeichneSchritte,
@@ -141,6 +141,18 @@
     var b = ev.target.closest("[data-chat]"); if (!b || !Z.mappe) return;
     Z.mappe.chat = b.dataset.chat;
     S.chatWahlOffen = false;
+    // MF1: kam die Wahl von „Anderer Chat“ an einer roten Karte, steht der Text im Korrekturblock von Schritt 5; bei
+    // einem Text in Teilen, von dem schon einer eingesetzt ist, geht es dort mit dem nächsten Teil weiter
+    var teilWeiter = S.aendern === 4 && teileOffen() && !$("teil-stand").hidden;
+    if (S.chatZurKorrektur || teilWeiter) {
+      S.chatZurKorrektur = false;
+      if (S.aendern === 4) S.aendern = null;
+      zeichneChat(); geaendert(); zeichneSchritte();
+      (teilWeiter ? $("teil-stand") : $("korrektur")).scrollIntoView({ block: "start" });
+      S.fokus(teilWeiter ? ["teil-weiter", "s5-titel"] : ["korrektur-kopieren", "s5-titel"], true);
+      clearTimeout(S.textTimer); texteErzeugen();
+      return;
+    }
     zeichneChat(); geaendert(); zeichneSchritte();
     // AP13.33 §2.1: „Text kopieren“ ist gesperrt, bis der Text da ist; der Fokus geht danach dorthin
     clearTimeout(S.textTimer);
@@ -152,7 +164,7 @@
   });
   $("chat-aendern").onclick = function () {
     S.chatWahlOffen = true;
-    if (schritt() > 4) S.auf[4] = true;
+    if (schritt() > 4) S.aendern = 4;
     zeichneSchritte(); zeichneChat();
     sektion(4).scrollIntoView({ block: "start" });
     var k = $("chat-knoepfe").querySelector("[aria-pressed=true]") || $("chat-knoepfe").querySelector("button");
@@ -251,7 +263,9 @@
           eingefuegt: [] };
     }
     var naechster = texte.teile.length > 1 ? texte.teile.findIndex(function (_, i) { return !texte.kopiert[i]; }) : -1;
-    if (schritt() < 5) { erledigtBis(5); Z.mappe.schritt = 5; S.auf = {}; }
+    // MF1: nach dem Kopieren ist Schritt 5 offen, auch wenn „Ändern“ Schritt 4 geöffnet hatte
+    if (schritt() < 5) Z.mappe.schritt = 5;
+    S.aendern = null;
     zeichne(); autosave();
     if (naechster >= 0) {
       texte.teil = naechster; zeichneChat();
@@ -552,10 +566,18 @@
     return st ? st.ids.findIndex(function (_, i) { return (st.eingefuegt || []).indexOf(i) < 0; }) : -1;
   }
   function zeichneTeile() {
-    var offen = teileOffen() && inhalt();
+    // MF1: Schritt 4 bleibt nach dem Kopieren eines Teils nicht offen; Schritt 5 sagt schon vor dem ersten Einsetzen,
+    // welcher Teil gerade dran ist
+    var offen = teileOffen();
     $("teil-stand").hidden = !offen;
     if (!offen) return;
     var st = Z.mappe.stueckelung, n = naechsterTeil(), da = (st.eingefuegt || []).length;
+    $("teil-weiter").hidden = !da;
+    if (!da) {
+      $("teil-stand-text").textContent = "Teil " + (n + 1) + " von " + st.ids.length + (ki() ? " geht an deine KI; " +
+          "danach kommt Teil " + (n + 2) + "." : " ist kopiert. Füg die Antwort des Chats ein; danach kommt Teil " + (n + 2) + ".");
+      return;
+    }
     $("teil-stand-text").textContent = (da === 1 ? "Teil " + (st.eingefuegt[0] + 1) : da + " Teile") + " von " +
         st.ids.length
       + " eingefügt, jetzt Teil " + (n + 1) + (ki() ? " an deine KI." : " kopieren.");
@@ -633,7 +655,7 @@
       await S.nachAntwortMarkieren(ergaenzt, teileOffen() || (leerRest.length && mo.rest));
       Z.mappe.durchsicht = false; delete Z.mappe.durchsicht_neu;
       // neuer Inhalt: ab Schritt 5 neu durchsehen
-      if (schritt() > 5 || schritt() < 5) { Z.mappe.schritt = 5; S.auf = {}; }
+      if (schritt() > 5 || schritt() < 5) { Z.mappe.schritt = 5; S.aendern = null; }
       await auswertung();
       // Hash je Baustein merken; einzelne Bausteine zählen als Runde, eine ganze Einheit fängt neu an
       var gleichE = schleifeMerken(e.ids || Z.pruefung.bausteine.map(function (b) { return b.id; }), false);

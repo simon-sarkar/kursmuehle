@@ -1,5 +1,5 @@
-/* Kursmühle – Oberfläche: Schrittfolge in einer Spalte, ab Schritt 5 rechts der Rand mit Zahlen und Herkunft; auf dem
- * Handy untereinander. Palette aus docs/make_logo.py; die zwei Herkunftstöne sind Ocker und Anthrazit auf Weiß gemischt
+/* Kursmühle – Oberfläche: Schrittfolge in einer Spalte (MF1: ein Schritt offen, erledigte als Zeile mit „Ändern“,
+ * kommende grau), kein Rand mehr; Kennzahlen stehen unter „Erweitert“ in Schritt 5. Palette aus docs/make_logo.py; die zwei Herkunftstöne sind Ocker und Anthrazit auf Weiß gemischt
  * (keine Wertung, kein Rot oder Grün). Ocker trägt als Knopf nur das Ergebnis (`.knopf.ergebnis`), damit es auffällt.
  * Dunkles Schema unter :root[data-theme="dark"] wie auf der Landingpage; alle Farben sind Token. */
 :root {
@@ -19,7 +19,8 @@
   --ocker-tief: #8a6416;
   --link: #2a2a2a;
   --fokus: #a07416;              /* Fokusring hell: mindestens 3 : 1 auf Weiß, Creme, Lehrkraft-Ocker und der dunklen Kopfleiste (AP13.36) */
-  --feld-rand: var(--linie);     /* Rahmen von Eingabefeldern; im dunklen Schema stärker (AP13.36) */
+  --feld-rand: #857d6f;          /* MF1: Rahmen von Feldern, Nebenknöpfen und (i): 4,1 : 1 auf Weiß, 3,4 : 1 auf der Lehrkraft-Fläche */
+  --kachel-rand: var(--linie);   /* Rahmen von Kacheln; hell tragen Fläche und Text die Kachel */
   --haupt: #2a2a2a;              /* Hauptknopf, aktive Schrittnummer */
   --haupt-text: #f3e9d8;
   --haupt-hover: #3d3d3d;
@@ -55,6 +56,7 @@
   --rand-linie: #4a463e;
   --fokus: #d9a441;
   --feld-rand: #8f8678;          /* 3,3 : 1 auf dem Ocker der Lehrkraft, 4,8 : 1 auf der Fläche */
+  --kachel-rand: #7a7366;        /* MF1: Kachelrahmen 3,7 : 1 statt 1,6 : 1 */
   --platzhalter: #aaa090;        /* 4,6 : 1 auf dem Ocker der Lehrkraft, 6,7 : 1 auf der Fläche */
   --ocker-tief: #d9a441;
   --link: #f3e9d8;
@@ -89,32 +91,47 @@ p { margin: 0 0 10px; }
 :focus-visible { outline: 3px solid var(--fokus); outline-offset: 2px; }
 .geschaetzt { font-style: italic; }
 
-/* Kopfzeile */
-.kopf { padding: 10px 16px; background: var(--kopf); color: var(--kopf-text); }
-.kopf .innen { max-width: 1180px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }   /* Lesebreite wie .seite.mit-rand, Band volle Breite (wie die Startseite) */
+/* Kopfzeile (MF1): Marke links, „Schritt n von m · Name“ in der Mitte, rechts „Menü“ mit der Sicherung darunter; die
+   Statuszeile erscheint nur, solange etwas läuft oder schiefging („Bereit“ steht nur für Vorlesegeräte da) */
+.kopf { padding: 8px 16px; background: var(--kopf); color: var(--kopf-text); }
+.kopf .innen { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center; gap: 0 20px; }
+.kopf-mitte { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .marke { display: inline-flex; align-items: center; gap: 10px; color: var(--kopf-text); text-decoration: none; font-weight: 700; font-size: 1.1rem; }
 .marke img { display: block; border-radius: 7px; box-shadow: 0 0 0 1px var(--kopf-strich); }
-.status { margin: 0; font-size: 0.9rem; color: var(--kopf-leise); flex: 1 1 4rem; }   /* AP13.11: schmale Basis, die Links passen in eine Zeile */
+.kopf-schritt { max-width: 100%; margin: 0; font-size: 0.95rem; color: var(--kopf-text); text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.kopf-schritt:empty { display: none; }
+.ks-name { color: var(--kopf-leise); }
+.status { max-width: 100%; margin: 0; font-size: 0.85rem; color: var(--kopf-leise); text-align: center; min-width: 0; }
 .status::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; background: var(--leer); vertical-align: 1px; }
-.status.ok::before { background: var(--kopf-ok); }
+.status:empty, .status.ok { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .status.lauf::before { background: var(--ocker); }
 .status.fehler { color: var(--kopf-fehler); }
 .status.fehler::before { background: var(--kopf-fehler); }
-.kopf-links { display: flex; align-items: center; gap: 2px 14px; flex-wrap: wrap; }
-.kopf-stand { font-size: 0.85rem; color: var(--kopf-leise); }
+.kopf-rechts { position: relative; display: flex; flex-direction: column; align-items: flex-end; gap: 0; }
+.kopf-menue { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 12px; border: 1px solid var(--kopf-strich);
+  border-radius: 8px; background: none; color: inherit; font: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer; }
+.kopf-menue:hover, .kopf-menue[aria-expanded=true] { background: var(--kopf-hover); }
+.kopf-menue svg { display: block; flex: none; }
+.kopf-stand { font-size: 0.75rem; color: var(--kopf-leise); white-space: nowrap; margin-top: 2px; }
 .kopf-stand:empty { display: none; }
-.kopf-link { background: none; border: 0; padding: 6px 0; font: inherit; font-size: 0.92rem; color: var(--kopf-text); cursor: pointer;
-  text-decoration: underline; text-decoration-color: var(--kopf-strich); text-underline-offset: 3px; }
-.kopf-link:hover { text-decoration-color: var(--ocker); }
-.kopf-link:disabled { opacity: 0.5; cursor: default; }
+.kopf-stand.warn { white-space: normal; max-width: 16rem; text-align: right; }
+/* die Liste des Menüs: eine Karte unter dem Knopf, 44 px je Zeile */
+.kopf-links { position: absolute; top: calc(100% + 6px); right: 0; z-index: 40; min-width: 15rem; display: flex; flex-direction: column;
+  padding: 6px 0; background: var(--flaeche); color: var(--text); border: 1px solid var(--linie); border-radius: var(--rund);
+  box-shadow: 0 10px 28px var(--schatten), 0 2px 6px var(--schatten); }
+.kopf-link { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 44px; padding: 8px 16px; border: 0;
+  background: none; font: inherit; font-size: 0.95rem; color: var(--text); text-align: left; cursor: pointer; white-space: nowrap; }
+.kopf-link:hover { background: var(--grund); }
+.kopf-link:focus-visible { outline-offset: -3px; }
+.kopf-link:disabled { color: var(--leise); cursor: default; }
+.kopf-link .kl-wert { font-size: 0.85rem; color: var(--leise); }
+#schliessen { border-top: 1px solid var(--linie); margin-top: 4px; }
 .kopf-x { background: none; border: 0; border-radius: 6px; width: 36px; height: 36px; font: inherit; font-size: 1.35rem; line-height: 1;
   color: inherit; cursor: pointer; opacity: 0.8; }
 .kopf-x:hover { opacity: 1; background: var(--kopf-hover); }
-.kopf-x:focus-visible { opacity: 1; }   /* Ring sonst nur mit 80 % Deckkraft, unter 3:1 (Sachprüfung AP13.36) */
-.kopf-menue { display: none; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 0;
-  border-radius: 6px; background: none; color: inherit; cursor: pointer; }
-.kopf-menue:hover, .kopf-menue[aria-expanded=true] { background: var(--kopf-hover); }
-.kopf-menue svg { display: block; }
+.kopf-x:focus-visible { opacity: 1; }
 .testfassung { margin: 0; padding: 4px 16px; background: var(--creme); color: var(--leise); font-size: 0.85rem; text-align: center; }
 .testfassung .textlink { padding: 0; font-size: inherit; }
 .verwerfen-frage { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 16px; background: var(--creme);
@@ -131,14 +148,13 @@ p { margin: 0 0 10px; }
 .hinweis-aufbau-nie { flex: 1 0 100%; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: var(--leise); font-size: 0.9rem; }
 
 .seite { max-width: 760px; margin: 0 auto; padding: 24px 16px 40px; }
-.seite.mit-rand { max-width: 1180px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 0 36px; align-items: start; }
 .spalte-haupt { min-width: 0; }
 
 /* Knöpfe und Felder */
 .knopf { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 9px 16px; border-radius: 8px;
-  border: 1px solid var(--linie); background: var(--flaeche); color: var(--text); font: inherit; font-weight: 600; cursor: pointer; text-align: center; }
+  border: 1px solid var(--feld-rand); background: var(--flaeche); color: var(--text); font: inherit; font-weight: 600; cursor: pointer; text-align: center; }
 .knopf:hover { border-color: var(--text); }
-.knopf.haupt { background: var(--haupt); border-color: var(--haupt); color: var(--haupt-text); }
+.knopf.haupt { background: var(--haupt); border-color: var(--haupt); color: var(--haupt-text); min-height: 48px; padding: 10px 20px; }
 .knopf.haupt:hover { background: var(--haupt-hover); }
 .knopf.ergebnis { background: var(--ocker); border-color: var(--ocker); color: var(--ergebnis-text); font-size: 1.05rem; min-height: 48px; padding: 10px 20px; }
 .knopf.ergebnis:hover { background: var(--ocker-hover); }
@@ -167,38 +183,64 @@ select { appearance: auto; }
 .weiter-weg { color: var(--leise); }
 .weiter-weg:hover { background: var(--grund); color: var(--text); }
 
-/* Schritte: aktiver Schritt offen, erledigte als eine Zeile zum Aufklappen */
-.schritt { background: var(--flaeche); border-radius: var(--rund); box-shadow: 0 1px 2px var(--schatten); margin: 0 0 12px; }
-.s-kopf { margin: 0; font-size: inherit; }
-.s-zeile { display: flex; align-items: baseline; gap: 4px 12px; width: 100%; text-align: left; background: none; border: 0; padding: 14px 16px;
-  font: inherit; color: var(--text); cursor: pointer; border-radius: var(--rund); flex-wrap: wrap; }
-.s-zeile:disabled { cursor: default; }
-.s-nr { flex: 0 0 auto; width: 1.7em; height: 1.7em; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
-  background: var(--creme); font-weight: 700; font-size: 0.85rem; align-self: center; }
-.s-titel { font-weight: 650; font-size: 1.05rem; }
-.s-fazit { color: var(--leise); font-size: 0.92rem; margin-left: auto; overflow-wrap: anywhere; }
-.schritt[data-stand=aktiv] .s-titel { font-size: 1.35rem; line-height: 1.25; letter-spacing: -0.01em; }
-.schritt[data-stand=aktiv] .s-nr { background: var(--haupt); color: var(--haupt-text); }
-.schritt[data-stand=aktiv] .s-zeile { padding-top: 18px; }
-.schritt[data-stand=erledigt]:not(.auf) { background: var(--flaeche-halb); box-shadow: none; }
-.schritt[data-stand=erledigt] .s-zeile:hover { background: var(--grund); }
-.schritt[data-stand=erledigt] .s-titel::after { content: "▸"; display: inline-block; margin-left: 8px; color: var(--leise); font-size: 0.8em; }
-.schritt[data-stand=erledigt].auf .s-titel::after { content: "▾"; }
-.s-inhalt { padding: 0 16px 18px; }
+/* Schritte (MF1, Konzept §4.1): der offene Schritt ist eine Karte mit Schatten und dunkler Nummer; erledigte sind eine
+   Zeile auf halber Fläche mit Haken, Zusammenfassung und „Ändern“; kommende sind graue Zeilen ohne Fläche, nicht
+   klickbar. Keine Farbe für „erledigt“, keine Hervorhebung über die Karte hinaus (der Akzent gehört dem Ergebnis) */
+.schritt { position: relative; border-radius: var(--rund); margin: 0 0 6px; }   /* Bezug der Kurzmeldung (kern.js) */
+.schritt.auf { background: var(--flaeche); box-shadow: 0 1px 2px var(--schatten), 0 4px 16px var(--schatten); margin: 14px 0 18px; }
+.schritt[data-stand=erledigt]:not(.auf), .schritt[data-stand=aktiv]:not(.auf) { background: var(--flaeche-halb); }
+.s-zeile { display: flex; align-items: center; gap: 4px 12px; padding: 10px 16px; min-height: 48px; flex-wrap: wrap; border-radius: var(--rund); }
+.s-zeile.klickbar { cursor: pointer; }
+.s-zeile.klickbar:hover { background: var(--grund); }
+.s-kopf { margin: 0; font-size: inherit; min-width: 0; }
+.s-kopf:focus { outline: none; }
+.s-kopf:focus-visible { outline: 3px solid var(--fokus); outline-offset: 2px; border-radius: 4px; }
+.s-nr { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--creme); color: var(--leise); font-weight: 700; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.s-titel { font-weight: 600; font-size: 1rem; }
+.s-fazit { flex: 1 1 12rem; min-width: 0; color: var(--leise); font-size: 0.9rem; overflow-wrap: anywhere; }
+.s-fazit:empty { display: none; }
+.schritt.auf .s-fazit { display: none; }
+.s-aendern { margin-left: auto; padding: 6px 2px; font-size: 0.9rem; min-height: 32px; }
+/* offen */
+.schritt.auf > .s-zeile { padding: 20px 20px 6px; cursor: default; }
+.schritt.auf > .s-zeile:hover { background: none; }
+.schritt.auf .s-nr { width: 30px; height: 30px; background: var(--haupt); color: var(--haupt-text); font-size: 0.9rem; }
+.schritt.auf .s-titel { font-size: 1.35rem; font-weight: 650; line-height: 1.25; letter-spacing: -0.01em; }
+.s-inhalt { padding: 8px 20px 22px; }
 .schritt:not(.auf) .s-inhalt { display: none; }
-.s-inhalt > .knopf.haupt { margin-top: 16px; }
+.s-inhalt > .knopf.haupt { margin-top: 18px; }
+/* erledigt: Haken statt Nummer */
+.schritt[data-stand=erledigt]:not(.auf) .s-nr { background: none; color: var(--text); font-size: 0; }
+.schritt[data-stand=erledigt]:not(.auf) .s-nr::before { content: ""; width: 12px; height: 7px; margin-top: -4px; border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor; transform: rotate(-45deg); }
+/* kommend: grau, ohne Fläche */
+.schritt[data-stand=kommend]:not(.auf) > .s-zeile { min-height: 40px; padding-top: 6px; padding-bottom: 6px; }
+.schritt[data-stand=kommend]:not(.auf) .s-titel { color: var(--leise); font-weight: 400; }
+/* (i) neben dem Titel des offenen Schritts, der Text darunter */
+.s-info { margin-left: 2px; }
+.s-info-text { margin: 4px 20px 0 62px; }
+.schritt:not(.auf) .s-info-text { display: none; }
+.s-zurueck { display: flex; width: max-content; max-width: 100%; }
 
-/* Hinweise beim ersten Durchlauf: unter der Überschrift, nie blockierend */
-.s-hinweis { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; margin: 0 0 14px; padding: 10px 14px;
-  border-left: 3px solid var(--linie); background: var(--grund); border-radius: 0 8px 8px 0; font-size: 0.95rem; }
-.s-hinweis p { margin: 0; flex: 1 1 18rem; }
-.s-hinweis .textlink { padding: 0; font-size: 0.85rem; color: var(--leise); }
-.hinweis-schalter { margin-top: 10px; font-size: 0.9rem; color: var(--leise); }
+/* „Erweitert“ (MF1): ein Knopf mit Pfeil nach unten, daneben leise, was darin liegt */
+.erw { margin-top: 18px; }
+.erw-knopf { display: inline-flex; align-items: center; gap: 10px; min-height: 40px; padding: 6px 2px; border: 0; background: none;
+  font: inherit; color: var(--text); cursor: pointer; }
+.erw-wort { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.erw-wort::after { content: ""; display: inline-block; width: 7px; height: 7px; margin: 0 0 3px 9px; border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform 0.15s ease; }
+.erw-knopf[aria-expanded=true] .erw-wort::after { transform: translateY(3px) rotate(-135deg); }
+.erw-was { color: var(--leise); font-size: 0.9rem; }
+.erw-inhalt { margin-top: 8px; padding: 4px 0 0 16px; border-left: 2px solid var(--linie); }
+@media (prefers-reduced-motion: reduce) { .erw-wort::after { transition: none; } }
 
 /* 1 */
 .vorsatz { font-size: 0.9rem; color: var(--leise); margin: 12px 0 0; }
 .start-form { display: grid; grid-template-columns: 1fr 12rem 9rem 7rem; gap: 12px; align-items: end; }
 .start-form .knopf { grid-column: 1 / -1; justify-self: start; min-width: 9rem; }
+.start-form .knopf.haupt { margin-top: 6px; }
+.start-form .erw { margin-top: 0; }
 .zeit-vorab { grid-column: 1 / -1; margin: -4px 0 0; font-size: 0.85rem; }
 /* AP13.40: Sequenz (sequenz.js): Umschalter in Schritt 1, Themen je Stunde, Stunden im Plan, Übersicht in Schritt 4 */
 .seq-zeile { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 16px; }
@@ -206,7 +248,6 @@ select { appearance: auto; }
 .seq-art .aus-kachel { min-width: 96px; }
 .seq-stunden-l { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 10px; flex: 1 1 16rem; min-width: 0; }
 .seq-stunden-l .feld-kopf { color: var(--leise); }
-button.info-knopf { border: 0; background: transparent; padding: 0; font: inherit; color: inherit; cursor: pointer; }
 .seq-thema-zeile { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 14px; }
 .seq-thema-zeile .seq-thema-l { flex: 1 1 100%; margin: 0; }
 .seq-thema-zeile .seq-thema { flex: 1 1 16rem; min-width: 0; max-width: 32rem; }
@@ -242,7 +283,7 @@ button.info-knopf { border: 0; background: transparent; padding: 0; font: inheri
 
 /* 2 Zweige, Vorlagen, Mehr */
 .zweige { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-.zweig { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 16px; border-radius: var(--rund); border: 1px solid var(--linie);
+.zweig { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 16px; border-radius: var(--rund); border: 1px solid var(--kachel-rand);
   background: var(--flaeche); font: inherit; color: var(--text); cursor: pointer; }
 .zweig:hover { border-color: var(--text); }
 .zweig[aria-checked=true] { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); background: var(--gewaehlt); }
@@ -250,7 +291,7 @@ button.info-knopf { border: 0; background: transparent; padding: 0; font: inheri
 .zweig-zeile { color: var(--leise); font-size: 0.93rem; }
 .steuer-teil { margin-top: 6px; }
 .vorlagen { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0 14px; }
-.vorlage { display: flex; flex-direction: column; gap: 3px; text-align: left; padding: 12px 14px; border: 1px solid var(--linie); border-radius: var(--rund);
+.vorlage { display: flex; flex-direction: column; gap: 3px; text-align: left; padding: 12px 14px; border: 1px solid var(--kachel-rand); border-radius: var(--rund);
   background: var(--flaeche); font: inherit; color: var(--text); cursor: pointer; }
 .vorlage:hover { border-color: var(--text); }
 .vorlage[aria-pressed=true] { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
@@ -279,7 +320,7 @@ button.info-knopf { border: 0; background: transparent; padding: 0; font: inheri
 .ungeprueft > summary { font-weight: 400; font-size: 0.93rem; }
 .ungeprueft > .kacheln-wahl { margin-top: 6px; }
 .kacheln-wahl { display: flex; flex-wrap: wrap; gap: 10px; }
-.aus-kachel { display: flex; flex-direction: column; align-items: stretch; gap: 6px; width: 148px; padding: 8px; border: 1px solid var(--linie);
+.aus-kachel { display: flex; flex-direction: column; align-items: stretch; gap: 6px; width: 148px; padding: 8px; border: 1px solid var(--kachel-rand);
   border-radius: var(--rund); background: var(--grund); font: inherit; font-size: 0.9rem; color: var(--text); cursor: pointer; text-align: center; }
 .aus-kachel:hover { border-color: var(--text); }
 .aus-kachel[aria-checked=true] { border-color: var(--text); box-shadow: inset 0 0 0 2px var(--text); background: var(--flaeche); font-weight: 650; }
@@ -330,14 +371,14 @@ button.info-knopf { border: 0; background: transparent; padding: 0; font: inheri
 .vs-kopf { margin: 0 2px 6px; font-size: 0.8rem; font-weight: 650; color: var(--leise); }
 .vs-innen, .vs-innen *, .format-vorschau, .format-vorschau * { pointer-events: none !important; }
 .vorschau-leiste { display: none; }
-.schritt:not([data-stand=aktiv]) .vorschau-spalte { display: none; }
+.schritt:not(.auf) .vorschau-spalte { display: none; }
 @media (min-width: 1100px) {
-  body[data-schritt="3"] .seite { max-width: 1180px; }
+  body[data-offen="3"] .seite { max-width: 1180px; }
   .aus-raster { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 0 24px; align-items: start; }
   .vorschau-spalte { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto; }
 }
 @media (max-width: 1099px) {
-  body[data-schritt="3"] .seite { padding-bottom: 120px; }
+  body[data-offen="3"] .seite { padding-bottom: 120px; }
   .vorschau-spalte { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; height: 96px; display: flex; flex-direction: column;
     background: var(--flaeche); box-shadow: 0 -2px 12px var(--schatten), 0 -1px 0 var(--linie); }
   .vorschau-spalte.offen { height: 60vh; }
@@ -669,10 +710,9 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .rm-felder textarea { margin-top: 4px; }
 .rueckmeldung a.knopf { text-decoration: none; }
 
-/* Rand ab Schritt 5 */
-.spalte-rand { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 12px; }
-.rand-block { background: var(--creme); border-radius: var(--rund); padding: 14px 16px; }
-.kennzahlen > summary { padding-top: 0; }
+/* Kennzahlen unter „Erweitert“ in Schritt 5 (MF1, früher der Rand) */
+.diagnosen .unterkopf { margin-top: 4px; }
+.diagnosen .zahlen { max-width: 32rem; }
 .zahlen { margin: 0; }
 .zahlen > div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--rand-linie); }
 .zahlen > div:last-of-type { border-bottom: 0; }
@@ -703,19 +743,22 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .fuss-mehr[open] { display: flex; flex-wrap: wrap; gap: 4px 22px; }
 .fuss-mehr[open] > summary { width: auto; }          /* Impressum: klein, Seite liegt unter ../ (kursmuehle.de/impressum.html) */
 
-@media (max-width: 900px) {
-  .seite.mit-rand { display: block; max-width: 760px; }
-  .spalte-rand { position: static; margin-top: 8px; }
-}
 @media (max-width: 640px) {
   .seite { padding-top: 14px; }
   .start-form { grid-template-columns: 1fr 1fr; }
   .feld-thema { grid-column: 1 / -1; }
   .start-form .knopf { justify-self: stretch; }
   .zweige, .vorlagen, .mehr-felder { grid-template-columns: 1fr; }
-  .schritt[data-stand=aktiv] .s-titel { font-size: 1.2rem; }
-  .s-zeile { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; }
-  .s-fazit { margin-left: 0; grid-column: 2; }
+  .schritt.auf .s-titel { font-size: 1.2rem; }
+  .schritt.auf > .s-zeile { padding: 16px 16px 4px; }
+  .s-inhalt { padding: 8px 16px 18px; }
+  .s-info-text { margin: 4px 16px 0; }
+  /* Zeile als Raster: Nummer, Titel, „Ändern“ oder (i); die Zusammenfassung darunter unter dem Titel */
+  .s-zeile { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 2px 12px;
+    padding-left: 12px; padding-right: 12px; }
+  .s-zeile > .s-aendern, .s-zeile > .s-info { grid-column: 3; grid-row: 1; margin-left: 0; }
+  .s-fazit { grid-column: 2 / -1; grid-row: 2; }
+  .s-zurueck, .s-inhalt > .knopf.haupt { width: 100%; }
   .karte { padding: 10px 12px 6px; }
   .hinzufuegen select { flex: 1 1 auto; }
   .k-neu { order: 3; }
@@ -726,37 +769,14 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
   .vierer .aus-kachel, .schmal .aus-kachel { width: auto; }
   .bilder-wahl .aus-kachel { width: calc(50% - 5px); }
   .breit .aus-kachel { width: 100%; }
-  /* Kopfzeile (AP13.5g b7): Logo, Name, Menü, × in der ersten Zeile; Status und Sicherung einzeilig in der zweiten;
-     das Menü klappt die Textlinks als Liste unter der Kopfzeile auf */
-  .kopf { position: relative; padding: 6px 12px 8px; }
-  .kopf .innen { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 0 6px; align-items: center;
-    grid-template-areas: "marke . menue x" "status status stand stand"; }
-  .marke { grid-area: marke; }
-  .kopf-menue { display: inline-flex; grid-area: menue; }
-  .kopf-x { grid-area: x; }
-  .status { grid-area: status; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.85rem; }
-  .kopf-stand { grid-area: stand; justify-self: end; max-width: 46vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    font-size: 0.8rem; }
-  .kopf-links { display: none; position: absolute; top: 100%; right: 8px; z-index: 40; min-width: 13rem; flex-direction: column;
-    align-items: stretch; gap: 0; padding: 4px 0; background: var(--kopf); border-radius: 0 0 10px 10px;
-    box-shadow: 0 8px 18px var(--schatten); }
-  .kopf.menue-auf .kopf-links { display: flex; }
-  .kopf-links .kopf-link { display: flex; align-items: center; min-height: 44px; padding: 8px 16px; text-align: left; }
+  /* Kopfzeile (MF1): Marke, „4 von 7“, Menü; die Sicherung steht nur als Warnung */
+  .kopf { padding: 6px 12px; }
+  .kopf .innen { gap: 0 10px; }
+  .marke span { font-size: 1rem; }
+  .ks-wort, .ks-name { display: none; }
+  .kopf-stand:not(.warn) { display: none; }
+  .kopf-menue { padding: 6px 10px; }
 }
-/* AP13.11: zwischen 641 und 1199 px passen die Textlinks (mit „Einheit ansehen und bearbeiten“) nicht in eine Zeile;
-   dort stehen sie im Menü wie auf dem Handy, Status und Sicherung bleiben in der Zeile */
-@media (min-width: 641px) and (max-width: 1199px) {
-  .kopf { position: relative; }
-  .kopf .innen { flex-wrap: nowrap; }
-  .status, .kopf-stand { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .kopf-menue { display: inline-flex; margin-left: auto; }
-  .kopf-links { display: none; position: absolute; top: 100%; right: 8px; z-index: 40; min-width: 15rem; flex-direction: column;
-    align-items: stretch; gap: 0; padding: 4px 0; background: var(--kopf); border-radius: 0 0 10px 10px;
-    box-shadow: 0 8px 18px var(--schatten); }
-  .kopf.menue-auf .kopf-links { display: flex; }
-  .kopf-links .kopf-link { display: flex; align-items: center; min-height: 44px; padding: 8px 16px; text-align: left; }
-}
-
 /* Schleife: drei Wege unter der Karte; weggelassene Karte gestrichen */
 .ausweg { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--linie); border-left: 4px solid var(--warn); border-radius: 8px; background: var(--warn-flaeche); }
 .ausweg-titel { margin: 0 0 6px; font-weight: 700; }
@@ -774,10 +794,13 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .m-vorlage .feld-zeile { margin: 0; }
 .m-vorlage .textlink { padding: 0; font-size: inherit; }
 .feld-kopf { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.info-knopf { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; border-radius: 50%;
-  color: var(--link); cursor: pointer; font-size: 1rem; line-height: 1; user-select: none; }
-.info-knopf:hover, .info-knopf[aria-expanded=true] { background: var(--creme); }
-.info-text { background: var(--creme); border-radius: var(--rund); padding: 10px 12px; line-height: 1.45; }
+/* (i) (MF1, Konzept §4.2): 24 px Kreis, Rand --feld-rand, offen mit Creme; der Text darunter auf Creme */
+.info-knopf { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 24px; height: 24px; padding: 0;
+  border: 1px solid var(--feld-rand); border-radius: 50%; background: var(--flaeche); color: var(--text); cursor: pointer;
+  font: italic 650 0.8rem/1 Georgia, "Times New Roman", serif; user-select: none; }
+.info-knopf:hover, .info-knopf[aria-expanded=true] { background: var(--creme); border-color: var(--text); }
+.feld .feld-kopf .info-knopf { margin: -4px 0; }      /* das (i) an einer Feldbeschriftung verschiebt das Feld nicht */
+.info-text { background: var(--creme); border-radius: var(--rund); padding: 10px 12px; line-height: 1.45; color: var(--text); font-size: 0.93rem; }
 /* AP13.11: Ansicht „Einheit ansehen und bearbeiten“ (editor.js). Eine Fläche über der Schrittfolge; ab 1100 px links die
  * Vorschau in Lesebreite, rechts die Liste der Bausteine; schmaler die Liste als aufklappbare Leiste oben. Jeder Baustein
  * steht auf weißer Fläche wie auf der Kursseite; Knöpfe sind immer sichtbar. „Von Hand geändert“ in Ocker wie alles, was
@@ -911,16 +934,15 @@ body:has(dialog[open]) .editor-schweb { display: none; }
     border-left: 0; border-radius: 0 20px 20px 0; white-space: normal; text-align: center; }
   body.editor-schweb-weg .editor-schweb { opacity: 1; transform: translateY(-50%); pointer-events: auto; }
   body.mit-editor-schweb .seite { padding-left: max(16px, calc(96px - max(0px, (100vw - 760px) / 2))); }
-  body.mit-editor-schweb .seite.mit-rand { padding-left: max(16px, calc(96px - max(0px, (100vw - 1180px) / 2))); }
 }
 @media (min-width: 1100px) {
   body.mit-editor-schweb[data-schritt="3"] .seite { padding-left: max(16px, calc(96px - max(0px, (100vw - 1180px) / 2))); }
 }
 @media (min-width: 1000px) and (max-width: 1099px) {
   /* aufgeklappte Vorschau (60 vh von unten): mittig in der freien Fläche darüber */
-  body[data-schritt="3"]:has(.vorschau-spalte.offen) .editor-schweb { top: 20vh; }
+  body[data-offen="3"]:has(.vorschau-spalte.offen) .editor-schweb { top: 20vh; }
   /* die Fußzeile endet über der Vorschauleiste (96 px) */
-  body[data-schritt="3"] .fuss { padding-bottom: calc(28px + 96px + env(safe-area-inset-bottom, 0px)); }
+  body[data-offen="3"] .fuss { padding-bottom: calc(28px + 96px + env(safe-area-inset-bottom, 0px)); }
 }
 @media (max-width: 999px) {
   body.mit-editor-schweb .fuss { padding-bottom: calc(28px + 100px + env(safe-area-inset-bottom, 0px)); }
@@ -928,8 +950,8 @@ body:has(dialog[open]) .editor-schweb { display: none; }
   body.mit-editor-schweb .lp-fuss { bottom: calc(114px + env(safe-area-inset-bottom, 0px)); }
 }
 @media (max-width: 999px) {
-  body[data-schritt="3"] .editor-schweb { bottom: calc(96px + 16px + env(safe-area-inset-bottom, 0px)); }
-  body[data-schritt="3"]:has(.vorschau-spalte.offen) .editor-schweb { bottom: calc(60vh + 16px); }
+  body[data-offen="3"] .editor-schweb { bottom: calc(96px + 16px + env(safe-area-inset-bottom, 0px)); }
+  body[data-offen="3"]:has(.vorschau-spalte.offen) .editor-schweb { bottom: calc(60vh + 16px); }
   body.mit-editor-schweb[data-schritt="3"] .fuss { padding-bottom: calc(28px + 100px + 96px + env(safe-area-inset-bottom, 0px)); }
 }
 /* Frage vor dem Einsetzen über Handänderungen (§4) */

@@ -1,5 +1,5 @@
-/* Kursmühle – Schrittfolge der Seite: sieben Schritte untereinander, davor die erledigten als aufklappbare
- * Zeile; Zweig „Mach du“ setzt Vorlage und Bausteine still, „Ich steuere“ zeigt Vorlagen, Karten mit Aufträgen und
+/* Kursmühle – Schrittfolge der Seite: ein Schritt offen, die erledigten als Zeile mit „Ändern“ darüber, die kommenden
+ * grau darunter (MF1); Zweig „Mach du“ setzt Vorlage und Bausteine still, „Ich steuere“ zeigt Vorlagen, Karten mit Aufträgen und
  * „Mehr einstellen“. Dazu Aussehen, Verwerfen, Kursangaben, hell und dunkel. */
 "use strict";
 
@@ -9,9 +9,9 @@
   var $ = S.$, FARBEN = S.FARBEN, SCHRITTE = S.SCHRITTE, STANDARD_FARBE = S.STANDARD_FARBE,
       Z = S.Z, ZWEIG_TEXT = S.ZWEIG_TEXT, auswertung = S.auswertung, autosave = S.autosave,
       bilderStandard = S.bilderStandard, bilderWert = S.bilderWert, bildwuensche = S.bildwuensche,
-      chatInfo = S.chatInfo, datumZeit = S.datumZeit, einheitTag = S.einheitTag, el = S.el, erledigtBis = S.erledigtBis,
+      chatInfo = S.chatInfo, datumZeit = S.datumZeit, einheitTag = S.einheitTag, el = S.el,
       fehlerText = S.fehlerText, fehlerZahl = S.fehlerZahl, felderFuellen = S.felderFuellen, geaendert = S.geaendert,
-      hinweiseSichern = S.hinweiseSichern, hoehe = S.hoehe, inhalt = S.inhalt, neuPruefen = S.neuPruefen,
+      hoehe = S.hoehe, inhalt = S.inhalt, neuPruefen = S.neuPruefen,
       oberText = S.oberText, schritt = S.schritt, sektion = S.sektion, sichtbareSchritte = S.sichtbareSchritte,
       status = S.status, teileOffen = S.teileOffen, texte = S.texte, zeichne = S.zeichne, zweig = S.zweig;
   // AP13.8: erste Zahl 1 bis 13 im Feld Jahrgangsstufe oder Zielgruppe (wie gen/mappe.py jahrgang_zahl)
@@ -92,59 +92,89 @@
   Array.prototype.forEach.call(document.querySelectorAll("details[data-merken]"), function (d) {
     ausklapp(d, d.dataset.merken); });
 
-  // Hinweis unter der Überschrift des aktiven Schritts, höchstens zwei Sätze, nie blockierend
-  function zeichneHinweis(sec, n, aktiv) {
-    var schluessel = n === 2 && zweig() === "richtung" && S.hinweisTexte["2-richtung"] ? "2-richtung" : String(n);
-    var box = sec.querySelector(".s-hinweis"), text = S.hinweisTexte[schluessel];
-    // AP13.5h a3: mit Verbindung nennt der Hinweis zu Schritt 6 auch den Weg über die eigene KI
-    if (n === 6 && text && S.anKiAktiv && S.anKiAktiv()) text = text.replace(", in einem neuen Chat",
-        ", mit deiner KI, in einem neuen Chat");
-    var zeigen = aktiv && S.hinweiseGeladen && S.hinweise.an && !!text && S.hinweise.gesehen.indexOf(String(n)) < 0;
-    if (!zeigen) { if (box) box.remove(); return; }
-    if (!box) {
-      box = el("div", { cls: "s-hinweis", role: "note" }, [el("p"), el("button", { type: "button",
-          cls: "textlink hinweis-aus", text: "Hinweise ausblenden" })]);
-      sec.querySelector(".s-inhalt").insertBefore(box, sec.querySelector(".s-inhalt").firstChild);
-    }
-    box.querySelector("p").textContent = text;
+  // MF1: Kopf jeder Zeile einmal ausstatten: Knopf „Ändern“ (erledigt) bzw. „Öffnen“ (der aktuelle Schritt, solange
+  // ein früherer offen ist), (i) mit dem Text aus hinweise.json und ein Wort zum Stand für Vorlesegeräte
+  function kopfTeile(sec) {
+    var z = sec.querySelector(".s-zeile");
+    if (z.querySelector(".s-aendern")) return z;
+    var id = sec.id + "-info";
+    sec.querySelector(".s-kopf").appendChild(el("span", { cls: "unsichtbar s-stand" }));
+    z.appendChild(el("button", { type: "button", cls: "textlink s-aendern", hidden: true }));
+    z.appendChild(el("button", { type: "button", cls: "info-knopf s-info", "aria-expanded": "false", "aria-controls": id,
+        hidden: true, text: "i" }));
+    z.after(el("p", { id: id, cls: "info-text s-info-text", hidden: true }));
+    return z;
   }
-  document.querySelector(".spalte-haupt").addEventListener("click", function (ev) {
-    if (!ev.target.closest(".hinweis-aus")) return;
-    var kopf = ev.target.closest(".schritt").querySelector(".s-kopf");
-    S.hinweise.an = false; hinweiseSichern(); zeichneSchritte();
-    S.fokus([kopf], true);                  // AP13.36 §1.1: der Knopf verschwindet; der Fokus bleibt in diesem Schritt
-  });
+  function kurzName(n) { var sec = sektion(n); return sec ? sec.dataset.kurz : ""; }
+  function hinweisSchluessel(n) {
+    return n === 2 && zweig() === "richtung" && S.hinweisTexte["2-richtung"] ? "2-richtung" : String(n);
+  }
+  // Text eines (i) aus hinweise.json; AP13.5h a3: mit Verbindung nennt der Text zu Schritt 6 auch die eigene KI
+  function hinweisText(schl) {
+    var t = S.hinweisTexte[schl] || "";
+    if (schl === "6" && t && S.anKiAktiv && S.anKiAktiv()) t = t.replace(", in einem neuen Chat", ", mit deiner KI, in einem neuen Chat");
+    return t;
+  }
+  // „Weiter: Aussehen“, wenn das Ziel der nächste sichtbare Schritt ist, sonst „Zurück zu: Antwort einfügen“
+  function zielText(von, nach) {
+    var folge = sichtbareSchritte();
+    return (folge[folge.indexOf(von) + 1] === nach ? "Weiter: " : "Zurück zu: ") + kurzName(nach);
+  }
+  // MF1: offen ist genau ein Schritt: im Designer Schritt 3, nach „Ändern“ der geänderte, sonst der aktuelle
+  function offenerSchritt() {
+    var s = schritt();
+    if (S.designer) return 3;
+    return S.aendern !== null && S.aendern !== undefined ? S.aendern : s;
+  }
 
   var modusVorgewaehlt = null;      // AP13.33 M2: Einheit, für die „Als weitere Einheit anhängen“ schon vorgewählt ist
+  var kopfStand = "";
   function zeichneSchritte() {
     var s = schritt(), z = zweig(), d = !!S.designer;
     // Bildwünsche inzwischen weg oder Bilder „keine“: weiter mit den Fragen
     if (s === 5.5 && Z.pruefung && sichtbareSchritte().indexOf(5.5) < 0) s = 6;
+    var sichtbar = sichtbareSchritte();
+    // „Ändern“ gilt nur für einen sichtbaren Schritt vor dem aktuellen
+    if (S.aendern !== null && (!Z.mappe || !(S.aendern < s) || sichtbar.indexOf(S.aendern) < 0)) S.aendern = null;
+    var offen = offenerSchritt();
     document.body.dataset.schritt = d ? "3" : String(s);
+    document.body.dataset.offen = String(offen);
     document.body.dataset.zweig = z;
     document.body.dataset.bildschirm = Z.mappe ? "ansicht" : "start";
-    var sichtbar = sichtbareSchritte();
     SCHRITTE.forEach(function (n) {
-      var sec = sektion(n);
-      var stand = sichtbar.indexOf(n) < 0 ? "zu" : n < s ? "erledigt" : n === s ? "aktiv" : "zu";
-      // AP13.19 §3: im Designer ist Schritt 3 offen (mit Vorschau), alle übrigen sind zugeklappt
-      if (d && n === 3) stand = "aktiv";
-      else if (d && stand === "aktiv") stand = "erledigt";
-      // Schritt 4 bleibt offen, solange ein gestückelter Text noch nicht ganz kopiert ist
-      var teileKopieren = n === 4 && s === 5 && texte.teile.length > 1 && Object.keys(texte.kopiert)
-          .length < texte.teile.length;
-      var offen = stand === "aktiv" || (!d && stand === "erledigt" && (!!S.auf[n] || teileKopieren));
+      var sec = sektion(n), zeile = kopfTeile(sec);
+      // data-stand ist der Fortschritt (erledigt, aktiv, kommend); offen ist der Schritt mit der Klasse „auf“
+      var stand = sichtbar.indexOf(n) < 0 ? "zu" : n < s ? "erledigt" : n === s ? "aktiv" : "kommend";
+      var auf = stand !== "zu" && n === offen;
       sec.hidden = stand === "zu";
       sec.dataset.stand = stand;
-      sec.classList.toggle("auf", offen);
-      var b = sec.querySelector(".s-zeile");
-      b.setAttribute("aria-expanded", String(offen));
-      b.disabled = stand !== "erledigt" || d;
+      sec.classList.toggle("auf", auf);
+      var titel = sec.querySelector(".s-titel").textContent.trim();
+      var knopf = zeile.querySelector(".s-aendern"), wort = stand === "erledigt" ? "Ändern" : "Öffnen";
+      var klickbar = !auf && !d && !!Z.mappe && (stand === "erledigt" || stand === "aktiv");
+      knopf.hidden = !klickbar;
+      if (knopf.textContent !== wort) knopf.textContent = wort;
+      knopf.setAttribute("aria-label", wort + ": " + titel);       // WCAG 2.5.3: der Name beginnt mit dem Wort
+      zeile.classList.toggle("klickbar", klickbar);
       sec.querySelector(".s-fazit").textContent = stand === "erledigt" && Z.mappe ? fazit(n) : "";
       sec.querySelector(".s-nr").textContent = String(sichtbar.indexOf(n) + 1);
-      zeichneHinweis(sec, n, stand === "aktiv" && !d);
+      sec.querySelector(".s-stand").textContent = stand === "erledigt" ? ", erledigt" : stand === "kommend" ?
+          ", kommt noch" : "";
+      // (i) am Titel des offenen Schritts (Schritt 1 hat keinen: seine Felder erklären sich)
+      var info = zeile.querySelector(".s-info"), schl = hinweisSchluessel(n), text = n !== 1 && hinweisText(schl);
+      info.hidden = !auf || !text;
+      info.dataset.hinweis = schl;
+      info.setAttribute("aria-label", "Erklärung zu " + kurzName(n));
+      if (info.hidden && info.getAttribute("aria-expanded") === "true") infoUmschalten(info, false);
     });
-    $("hinweise-an").checked = S.hinweise.an;
+    // Kopfzeile: „Schritt 4 von 7 · Text für den Chat“ (auf dem Handy nur „4 von 7“)
+    var pos = sichtbar.indexOf(offen) + 1, ks = [pos, sichtbar.length, kurzName(offen)].join("|");
+    if (ks !== kopfStand) {
+      kopfStand = ks;
+      var kz = $("kopf-schritt"); kz.textContent = "";
+      kz.append(el("span", { cls: "ks-wort", text: "Schritt " }), pos + " von " + sichtbar.length,
+        el("span", { cls: "ks-name", text: " · " + kurzName(offen) }));
+    }
     ["mach", "richtung", "steuer"].forEach(function (w) { $("zweig-" + w).setAttribute("aria-checked", String(z === w));
         });
     $("steuer-teil").hidden = z !== "steuer";
@@ -193,34 +223,67 @@
       modusVorgewaehlt = vorwahl;
       document.querySelector("input[name=modus][value=anhaengen]").checked = true;
     }
-    document.querySelector(".spalte-rand").hidden = s < 5;
-    document.querySelector(".seite").classList.toggle("mit-rand", s >= 5);
+    $("erweitert-5").hidden = !inhalt();
     $("weiter").hidden = !!Z.mappe || !$("weiter").dataset.da;
     $("weiter-5").hidden = !(s === 5 && inhalt() && !fehlerZahl() && !teileOffen());
-    $("weiter-5").textContent = sichtbareSchritte().indexOf(5.5) >= 0 ? "Weiter zu den Bildern" : S.fragenListe.length ?
-        "Weiter zu den Fragen und Lösungen" : "Weiter zur Datei";
+    // MF1: die Hauptknöpfe nennen den nächsten Schritt
+    $("weiter-5").textContent = "Weiter: " + kurzName(sichtbar.indexOf(5.5) >= 0 ? 5.5 : S.fragenListe.length ? 6 : 7);
+    $("weiter-bilder").hidden = S.aendern === 5.5;
+    $("weiter-2").textContent = "Weiter: " + kurzName(nachZwei());
+    $("weiter-3").textContent = "Weiter: " + kurzName(4);
+    $("einheit-anlegen").textContent = !Z.mappe || neueEinheit() || s <= 2 ? "Weiter: " + kurzName(2) : zielText(1, s);
+    // nach „Ändern“: ein Hauptknopf zurück zum aktuellen Schritt (Schritt 1 nimmt dafür seinen eigenen Knopf)
+    Array.prototype.forEach.call(document.querySelectorAll(".s-zurueck"), function (b) {
+      var n = parseFloat(b.dataset.nr);
+      b.hidden = d || S.aendern !== n;
+      if (!b.hidden) b.textContent = zielText(n, s);
+    });
     $("rueckmeldung").hidden = !!$("rueckmeldung").dataset.zu ||
         (!(s >= 7 && Z.bau && Z.bau.mbz) && !$("rueckmeldung").dataset.offen);
     $("speichern").hidden = !Z.mappe;
     $("neue-einheit").hidden = !Z.mappe;
     $("schliessen").hidden = !Z.mappe;
-    if (!Z.mappe) $("autosave-stand").textContent = "";
+    if (!Z.mappe) { $("autosave-stand").textContent = ""; $("autosave-stand").classList.remove("warn"); }
   }
 
+  // MF1: ein Klick auf eine erledigte Zeile (oder ihren Knopf „Ändern“) öffnet diesen Schritt; der bisher offene wird
+  // zur Zeile. Am aktuellen Schritt heißt der Knopf „Öffnen“. Nichts klappt zusätzlich auf
   document.querySelector(".spalte-haupt").addEventListener("click", function (ev) {
-    var b = ev.target.closest(".s-zeile"); if (!b || b.disabled) return;
-    var n = parseFloat(b.dataset.nr);
-    S.auf[n] = !S.auf[n];
+    var z = ev.target.closest(".s-zeile");
+    if (!z || !z.classList.contains("klickbar") || ev.target.closest(".info-knopf")) return;
+    oeffneSchritt(parseFloat(z.dataset.nr));
+  });
+  // `still`: ohne Sprung und Fokus (der Aufrufer setzt beides selbst)
+  function oeffneSchritt(n, still) {
+    if (!Z.mappe) return;
+    S.aendern = n === schritt() ? null : n;
+    designerBeenden();
     zeichneSchritte();
-    if (S.auf[n]) Array.prototype.forEach.call(document.querySelectorAll(".k-auftrag"), hoehe);
+    Array.prototype.forEach.call(document.querySelectorAll(".k-auftrag"), hoehe);
+    if (still) return;
+    var sec = sektion(n);
+    sec.scrollIntoView({ block: "start" });
+    S.fokus([sec.querySelector(".s-kopf")], true);
+  }
+  // „Zurück zu: …“ (und „Weiter: …“ nach „Ändern“): der aktuelle Schritt ist wieder offen, Fokus auf seiner Überschrift
+  function zurueckZumStand() {
+    if (!Z.mappe) return;
+    S.aendern = null; designerBeenden();
+    zeichne(); autosave();
+    var sec = sektion(schritt());
+    if (!sec || sec.hidden) return;
+    sec.scrollIntoView({ block: "start" });
+    S.fokus([sec.querySelector(".s-kopf")], true);
+  }
+  document.querySelector(".spalte-haupt").addEventListener("click", function (ev) {
+    if (ev.target.closest(".s-zurueck")) zurueckZumStand();
   });
 
   function gehe(n, fokus) {
     if (!Z.mappe) return;
     if (n > schritt() && n > 2 && materialFehlt()) { materialZeigen(true); return; }
-    if (n > schritt()) erledigtBis(n);
     Z.mappe.schritt = n;
-    S.auf = {}; designerBeenden();
+    S.aendern = null; designerBeenden();
     zeichne();
     autosave();
     var sec = sektion(n);
@@ -263,14 +326,14 @@
     var min = parseInt(q.get("minuten"), 10);
     $("f-thema").value = thema;
     if (zielgruppeAus(jg)) {                             // Text ohne Zahl: die Zielgruppe (c2)
-      $("f-zielgruppe").value = jg.slice(0, 40); $("erweitert").open = true; zielgruppeSperre("f");
+      $("f-zielgruppe").value = jg.slice(0, 40); erweitertAuf("erweitert", true); zielgruppeSperre("f");
     } else $("f-jahrgang").value = jg.slice(0, 12);
     $("f-minuten").value = min >= 10 && min <= 300 ? min : 45;
     if (!thema) { $("f-thema").focus(); return; }
     S.katalogDa.then(function () { return km.autosaveLesen().catch(function () { return null; }); }).then(function (r) {
       if (!r) { startAbsenden(); return; }
       frage("Einheit „" + (r.titel || r.dateiname) +
-          "“ verwerfen? Was du nicht mit „Einheit speichern“ gesichert hast, geht verloren.",
+          "“ verwerfen? Was du nicht mit „Zwischenstand speichern“ gesichert hast, geht verloren.",
         async function () {
           await km.autosaveLoeschen();
           $("weiter").dataset.da = ""; $("weiter").hidden = true;
@@ -352,7 +415,7 @@
     if (nurAnzeige) {                                   // felderFuellen hat die Werte schon gesetzt
       if (zg && zielgruppeAus(e.jahrgang)) j.dataset.zuletzt = e.jahrgang_zuletzt || "";
       else if (!zg && j.value.trim()) j.dataset.zuletzt = j.value.trim();
-      if (o === "f" && zg) $("erweitert").open = true;
+      if (o === "f" && zg) erweitertAuf("erweitert", true);
     } else if (zg && !j.disabled) {
       if (j.value.trim()) j.dataset.zuletzt = j.value.trim();
       j.value = ""; feldOk(j);
@@ -380,9 +443,7 @@
   S.zielgruppeSperre = zielgruppeSperre;
   document.head.appendChild(el("style", { id: "stil-zielgruppe", text: [
     ".start-form { align-items: start; }",           /* die Zeile unter der Jahrgangsstufe schiebt nichts */
-    ".erweitert { grid-column: 1 / -1; }",
-    ".erweitert summary { cursor: pointer; color: var(--link); font-weight: 600; padding: 2px 0; width: max-content; }",
-    ".erweitert .feld { max-width: 24rem; padding-top: 8px; }",
+    "#erweitert .feld { max-width: 24rem; }",
     ".feld input:disabled { opacity: 0.55; cursor: not-allowed; }"
   ].join("\n") }));
 
@@ -420,8 +481,11 @@
     Object.assign(S.angaben, sa);
     if (S.sequenzSetzen) S.sequenzSetzen(stunden);
     Z.mappe.schritt = Math.max(schritt(), 2);
-    S.auf = {};
+    var vonHier = $("start").contains(document.activeElement);
+    S.aendern = null;
     zeichne();
+    // MF1: Schritt 1 ist jetzt eine Zeile; weiter geht es beim aktuellen Schritt
+    if (vonHier) { sektion(schritt()).scrollIntoView({ block: "start" }); S.fokus([sektion(schritt()).querySelector(".s-kopf")], true); }
     angabenSchreiben(Object.assign(Z.mappe.anhaengen ? { jahrgang: e.jahrgang } : { thema: thema, jahrgang: e.jahrgang,
         minuten: e.minuten }, sa));
   }
@@ -570,7 +634,7 @@
     texte.art = "leer";
     if (ohneSprung) {
       Z.mappe.schritt = zweig() && Z.mappe.aussehen && chatInfo(Z.mappe.chat) ? 4 : 2;
-      S.auf = {}; zeichne(); autosave();
+      S.aendern = null; zeichne(); autosave();
       return Z.geladen ? neuPruefen() : Promise.resolve();
     }
     gehe(2, zweig() ? "weiter-2" : "zweig-mach");
@@ -587,7 +651,7 @@
         S.korrekturen = []; S.korrekturBitte = ""; S.spracheGelb = []; S.letzteAntwort = null;
     S.korrektur = { text: "", offen: false, stand: "", art: "" };
     $("korrektur-eingabe").value = ""; $("eingabe-stand").hidden = true;
-    S.chatWahlOffen = false; S.auf = {}; S.designer = null;
+    S.chatWahlOffen = false; S.chatZurKorrektur = false; S.aendern = null; S.designer = null;
     $("chat-text-feld").value = ""; $("gegen-text-feld").value = ""; $("gegen-antwort").value = "";
     $("gegen-ergebnis").innerHTML = ""; $("gegen-stand").textContent = ""; $("kopiert").textContent = "";
     $("eingabe-stand").textContent = ""; $("infobox").hidden = true; $("importiert-stand").hidden = true;
@@ -668,7 +732,7 @@
     // AP13.36 §1.5: der Fokus bleibt auf dem gewählten Weg (eine Radiogruppe: die Pfeiltasten wählen weiter); ein Sprung
     // in ein Textfeld öffnete am Handy die Tastatur
     if (schritt() <= 2) { zeichne(); geaendert(); }
-    else { S.auf[2] = true; zeichne(); geaendert(); }
+    else { S.aendern = 2; zeichne(); geaendert(); }
   });
   // AP13.37 §3 (e7-11): der Fokus bleibt nach der Wahl auf dem Weg (AP13.36 §1.5); wer gleich tippt, schreibt in das
   // Textfeld dieses Wegs („Worum geht es genau?“ bzw. im Plan „Worum geht es in dieser Einheit?“), nichts geht verloren.
@@ -885,7 +949,7 @@
   }
   // Feld in den Blick, Fokus hinein; mit meldung: Schritt 2 offen und der rote Satz unter dem Feld
   function materialZeigen(meldung) {
-    if (meldung && schritt() > 2 && !S.auf[2]) { S.auf[2] = true; zeichneSchritte(); }
+    if (meldung && schritt() > 2 && S.aendern !== 2) { S.aendern = 2; zeichneSchritte(); }
     var f = materialFeld();
     if (meldung) feldMeldung(f, "Füg dein Material ein oder lies eine Datei ein.");
     f.scrollIntoView({ block: "center" });
@@ -989,22 +1053,56 @@
     });
   }
 
-  // AP13.24 §9: Infoknopf ⓘ am Materialfeld; der Text steht in katalog.yaml (oberflaeche.material_info) und kommt erst beim
-  // Öffnen in die Seite. Das Feld sitzt in einem Label: ein Klick auf ⓘ soll weder das Feld fokussieren noch absenden.
-  function infoUmschalten(k) {
-    var t = (k.closest(".info-ort") || k.closest("label")).querySelector(".info-text"), auf = t.hidden;
-    if (auf && S.katalog) t.textContent = S.katalog.oberflaeche[k.dataset.info] || "";
+  // (i) (AP13.24 §9, MF1): ein runder Knopf öffnet einen kurzen Text unter der Zeile; ein Klick daneben oder Escape
+  // schließt ihn (Fokus zurück auf den Knopf). Der Text steht in katalog.yaml (`data-info`, oberflaeche) oder in
+  // hinweise.json (`data-hinweis`) und kommt erst beim Öffnen in die Seite. Den Ort nennt `aria-controls`, sonst liegt er
+  // im selben label (Materialfeld: ein Klick auf (i) soll weder das Feld fokussieren noch absenden).
+  var infoOffen = null;
+  function infoFeld(k) {
+    var id = k.getAttribute("aria-controls");
+    if (id) return $(id);
+    var ort = k.closest(".info-ort") || k.closest("label");
+    return ort ? ort.querySelector(".info-text") : null;
+  }
+  function infoUmschalten(k, auf) {
+    var t = infoFeld(k); if (!t) return;
+    if (auf === undefined) auf = t.hidden;
+    if (auf) {
+      if (infoOffen && infoOffen !== k) infoUmschalten(infoOffen, false);
+      t.textContent = k.dataset.hinweis ? hinweisText(k.dataset.hinweis) :
+          S.katalog ? S.katalog.oberflaeche[k.dataset.info] || "" : "";
+    }
     t.hidden = !auf;
     k.setAttribute("aria-expanded", String(auf));
+    if (auf) infoOffen = k; else if (infoOffen === k) infoOffen = null;
   }
   document.addEventListener("click", function (ev) {
-    var k = ev.target.closest && ev.target.closest(".info-knopf"); if (!k) return;
-    ev.preventDefault(); infoUmschalten(k);
+    var k = ev.target.closest && ev.target.closest(".info-knopf");
+    if (k) { ev.preventDefault(); infoUmschalten(k); return; }
+    if (infoOffen && !(infoFeld(infoOffen) || document.body).contains(ev.target)) infoUmschalten(infoOffen, false);
   });
   document.addEventListener("keydown", function (ev) {
     // ein echter Knopf (AP13.40) klickt mit Enter und Leertaste selbst
     var k = ev.target.classList && ev.target.classList.contains("info-knopf") && ev.target.tagName !== "BUTTON" ? ev.target : null;
-    if (k && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); infoUmschalten(k); }
+    if (k && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); infoUmschalten(k); return; }
+    if (ev.key !== "Escape" || !infoOffen) return;
+    var offen = infoOffen, drin = document.activeElement === offen || (infoFeld(offen) || offen).contains(document.activeElement);
+    ev.preventDefault(); ev.stopPropagation();
+    infoUmschalten(offen, false);
+    if (drin) offen.focus();
+  }, true);
+
+  // „Erweitert“ (MF1): ein Knopf je Schritt klappt die Feineinstellungen darunter auf und zu (aria-expanded,
+  // aria-controls); was darin steht, sagt das leise Wort daneben
+  function erweitert(knopf, auf) {
+    var inhaltEl = $(knopf.getAttribute("aria-controls"));
+    if (auf === undefined) auf = knopf.getAttribute("aria-expanded") !== "true";
+    knopf.setAttribute("aria-expanded", String(auf));
+    if (inhaltEl) inhaltEl.hidden = !auf;
+  }
+  function erweitertAuf(id, auf) { var k = $(id + "-knopf"); if (k) erweitert(k, auf); }
+  document.addEventListener("click", function (ev) {
+    var k = ev.target.closest && ev.target.closest(".erw-knopf"); if (k) erweitert(k);
   });
 
   function mischen(hex, anteil) {      // Akzent auf Weiß getönt (wie gen/html.py tint)
@@ -1323,6 +1421,7 @@
     k.hidden = s > 3 || alle || d;
     $("weiter-3").hidden = s > 3 || !alle || d;
     $("designer-fertig").hidden = !d;
+    if (d) $("designer-fertig").textContent = "Zurück zu: " + kurzName(2);     // MF1: derselbe Rückweg wie nach „Ändern“
   }
   // Bilder (AP13.5g b5): eine Zahl im Steckbrief gehört zur Kachel „Benutzerdefiniert“ (wert zahl)
   function bilderKachel() { var w = String(bilderWert()); return /^\d+$/.test(w) && w !== "0" ? "zahl" : w; }
@@ -1507,7 +1606,7 @@
     if (!S.designer) return;
     var y = S.designer.y;
     designerBeenden();
-    if (schritt() > 2) S.auf[2] = true;
+    S.aendern = schritt() > 2 ? 2 : null;
     $("mehr").open = true;
     zeichne();
     geaendert();
@@ -1564,7 +1663,7 @@
   function frageZu() {
     $("verwerfen-frage").hidden = true; verwerfenAktion = null;
     var v = frageVon; frageVon = null;
-    S.fokus([v, "schliessen", "weiter-knopf", "f-thema"], true);
+    S.fokus([v, "kopf-menue", "weiter-knopf", "f-thema"], true);
   }
   $("verwerfen-nein").onclick = frageZu;
   // §2.2: Esc wirkt wie „Nein“
@@ -1588,7 +1687,7 @@
     var titel = (Z.mappe && ((Z.mappe.einheit && Z.mappe.einheit.thema) || Z.mappe.titel)) || "";
     frage("Einheit „" + titel + "“ schließen? " + (S.gespeichert ?
         "Die Einheit hast du gespeichert; die Sicherung im Browser wird gelöscht."
-      : "Was du nicht mit „Einheit speichern“ gesichert hast, geht verloren."), async function () {
+      : "Was du nicht mit „Zwischenstand speichern“ gesichert hast, geht verloren."), async function () {
       clearTimeout(S.autosaveTimer);
       await km.autosaveLoeschen();
       S.leeren();
@@ -1701,28 +1800,49 @@
     geaendert();
   });
 
-  // Kopfzeile unter 640 px (AP13.5g b7): der Menüknopf klappt die Textlinks als Liste auf; ein Klick darin, Escape
-  // oder ein Klick außerhalb klappt zu
-  function menue(auf) {
-    $("kopf-menue").setAttribute("aria-expanded", String(auf));
-    document.querySelector(".kopf").classList.toggle("menue-auf", auf);
+  // MF1: Kopfzeile mit einem Knopf „Menü“ (Wort und Symbol). Öffnen setzt den Fokus auf den ersten Punkt; Pfeile, Pos1
+  // und Ende wandern in der Liste, Escape schließt und gibt den Fokus an „Menü“ zurück, Tab aus der Liste heraus oder ein
+  // Klick daneben schließt. Ein Klick auf einen Punkt schließt erst danach (die Dateiwahl braucht den Klick auf das Label)
+  function menueAuf() { return $("kopf-menue").getAttribute("aria-expanded") === "true"; }
+  function menuePunkte() {
+    return Array.prototype.filter.call($("kopf-links").querySelectorAll(".kopf-link"), function (b) {
+      return !b.hidden && !b.disabled; });
   }
-  $("kopf-menue").onclick = function () { menue($("kopf-menue").getAttribute("aria-expanded") !== "true"); };
+  function menue(auf, zurueck) {
+    $("kopf-menue").setAttribute("aria-expanded", String(auf));
+    $("kopf-links").hidden = !auf;
+    document.querySelector(".kopf").classList.toggle("menue-auf", auf);
+    if (auf) { var p = menuePunkte()[0]; if (p) p.focus(); }
+    else if (zurueck) $("kopf-menue").focus();
+  }
+  $("kopf-menue").onclick = function () { menue(!menueAuf()); };
   $("kopf-links").addEventListener("click", function (ev) {
-    if (ev.target.closest(".kopf-link")) setTimeout(function () { menue(false); }, 0);   // erst nach der Dateiwahl
+    if (!ev.target.closest(".kopf-link")) return;
+    // blieb der Fokus im Menü (Schema, Dateiwahl), geht er zurück auf „Menü“; sonst dorthin, wohin die Aktion ihn gab
+    setTimeout(function () { menue(false, $("kopf-links").contains(document.activeElement) ||
+        document.activeElement === document.body); }, 0);
+  });
+  $("kopf-links").addEventListener("keydown", function (ev) {
+    var p = menuePunkte(), i = p.indexOf(document.activeElement);
+    var ziel = { ArrowDown: p[(i + 1) % p.length], ArrowUp: p[(i - 1 + p.length) % p.length], Home: p[0],
+      End: p[p.length - 1] }[ev.key];
+    if (ziel) { ev.preventDefault(); ziel.focus(); return; }
+    if (ev.key === "Tab") setTimeout(function () { if (!$("kopf-links").contains(document.activeElement)) menue(false); }, 0);
   });
   document.addEventListener("click", function (ev) {
-    if (!ev.target.closest(".kopf") && $("kopf-menue").getAttribute("aria-expanded") === "true") menue(false);
+    if (menueAuf() && !ev.target.closest(".kopf-rechts")) menue(false);
   });
   document.addEventListener("keydown", function (ev) {
-    if (ev.key !== "Escape" || $("kopf-menue").getAttribute("aria-expanded") !== "true") return;
-    menue(false); $("kopf-menue").focus();
+    if (ev.key === "Escape" && menueAuf()) { ev.preventDefault(); menue(false, true); }
   });
+  $("kopf-rueckmeldung").onclick = function () { if (S.rueckmeldungOeffnen) S.rueckmeldungOeffnen(); };
 
-  // hell und dunkel wie die Landingpage (Schlüssel kursmuehle-schema)
+  // hell und dunkel wie die Landingpage (Schlüssel kursmuehle-schema); im Menü ein Schalter „Dunkles Schema“ mit an/aus
   function schemaZeigen() {
-    var d = document.documentElement.dataset.theme === "dark";
-    $("schema").textContent = d ? "Hell" : "Dunkel";        // die Beschriftung nennt, wohin der Klick führt
+    var d = document.documentElement.dataset.theme === "dark", b = $("schema");
+    b.setAttribute("aria-pressed", String(d));
+    if (!b.querySelector(".kl-wert")) b.appendChild(el("span", { cls: "kl-wert", "aria-hidden": "true" }));
+    b.querySelector(".kl-wert").textContent = d ? "an" : "aus";
   }
   $("schema").onclick = function () {
     var d = document.documentElement.dataset.theme !== "dark";
@@ -1740,5 +1860,6 @@
     vorlagenZeigen: vorlagenZeigen, vorschlagAnwenden: vorschlagAnwenden, vorschlagLoesen: vorschlagLoesen,
     vorlageSichtbar: vorlageSichtbar, vorschlagWeg: vorschlagWeg,      // AP13.39: Art der Einheit im Plan
     fachWoerter: fachWoerter, fachJetzt: fachJetzt, weiterAnzeigen: weiterAnzeigen, zeichneAussehen: zeichneAussehen,
-    zeichneSchritte: zeichneSchritte, zeigeFehler: zeigeFehler });
+    zeichneSchritte: zeichneSchritte, zeigeFehler: zeigeFehler, oeffneSchritt: oeffneSchritt, zurueckZumStand: zurueckZumStand,
+    erweitertAuf: erweitertAuf, kurzName: kurzName });
 })();

@@ -341,9 +341,10 @@ window.km = km;
   S.katalog = null;
   S.angaben = {};
   S.rueckgaengig = null;
-  S.auf = {};
+  S.aendern = null;               // MF1: Schritt, den „Ändern“ geöffnet hat (sonst ist der aktuelle offen)
   S.designer = null;              // AP13.19 §3: {y} solange „Zum Designer“ offen ist (schritte.js)
   S.chatWahlOffen = false;
+  S.chatZurKorrektur = false;     // MF1: Chat-Wahl kam von „Anderer Chat“ an einer roten Karte (karten.js)
   S.autosaveTimer = null;
   S.kennzahlTimer = null;
   S.eingabeTimer = null;
@@ -362,9 +363,7 @@ window.km = km;
   S.schwerpunktFolge = null;       // AP13.24: Reihenfolge der Klicks auf die Schwerpunkt-Kacheln {mappe, liste}
   S.korrektur = { text: "", offen: false, stand: "", art: "" };
   S.korrekturTimer = null;
-  S.hinweise = { an: true, gesehen: [] };
-  S.hinweisTexte = {};
-  S.hinweiseGeladen = false;
+  S.hinweisTexte = {};             // MF1: Texte der (i) aus hinweise.json
   S.bauLaeuft = false;
   var bildGroesse = {};                           // Datei -> „2,4 MB → 160 KB“ nach dem Hochladen
   var SCHRITTE = [1, 2, 3, 4, 5, 5.5, 6, 7];       // 5.5 = Bilder, nur mit Bildwünschen in der Antwort
@@ -563,7 +562,10 @@ window.km = km;
     m.appendChild(document.createTextNode(text));
     m.style.left = knopf.offsetLeft + "px";
     m.style.top = (knopf.offsetTop + knopf.offsetHeight + 6) + "px";
-    knopf.offsetParent.appendChild(m);
+    var ort = knopf.offsetParent;
+    ort.appendChild(m);
+    // MF1: an der Zeile eines Schritts (der Knopf ist zu) nicht über den rechten Rand hinaus
+    if (knopf.offsetLeft + m.offsetWidth > ort.clientWidth) m.style.left = Math.max(0, ort.clientWidth - m.offsetWidth) + "px";
     var ruhig = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
     setTimeout(function () { m.classList.add("weg"); setTimeout(function () { m.remove(); }, ruhig ? 0 : 300); }, 1500);
     return m;
@@ -600,27 +602,11 @@ window.km = km;
     }).catch(function () { status("katalog.json oder familien.json fehlt; python3 scripts/web_bundle.py ausführen",
         "fehler"); });
   }
-  // Hinweise an, bis die Lehrkraft sie ausschaltet; ein in einer anderen Einheit erledigter Schritt zeigt keinen mehr
+  // MF1: die Hinweiskästen je Schritt sind weg; ihre Sätze stehen hinter (i) (Titel des offenen Schritts, Feld Minuten)
   function hinweiseLaden() {
-    Promise.all([
-      km.einstellung("hinweise").then(function (w) {
-        if (w && typeof w === "object") S.hinweise = { an: w.an !== false, gesehen: w.gesehen || [] };
-      }).catch(function () { /* ohne IndexedDB: Hinweise bei jedem Besuch */ }),
-      fetch("hinweise.json", { cache: "no-cache" }).then(function (r) { return r.json(); }).then(function (h) {
-          S.hinweisTexte = h; })
-        .catch(function () { S.hinweisTexte = {}; })
-    ]).then(function () { S.hinweiseGeladen = true; S.zeichneSchritte(); });
+    fetch("hinweise.json", { cache: "no-cache" }).then(function (r) { return r.json(); }).then(function (h) {
+      S.hinweisTexte = h; }).catch(function () { S.hinweisTexte = {}; }).then(function () { S.zeichneSchritte(); });
   }
-  function hinweiseSichern() { km.einstellung("hinweise", { an: S.hinweise.an, gesehen: S.hinweise.gesehen })
-      .catch(function () {}); }
-  function erledigtBis(n) {            // Schritte vor n gelten als einmal abgeschlossen
-    var neu = false;
-    SCHRITTE.forEach(function (k) { if (k < n && S.hinweise.gesehen.indexOf(String(k)) < 0) {
-        S.hinweise.gesehen.push(String(k)); neu = true; } });
-    if (neu) hinweiseSichern();
-  }
-  $("hinweise-an").addEventListener("change", function () { S.hinweise.an = $("hinweise-an").checked; hinweiseSichern();
-      S.zeichneSchritte(); });
 
   S.katalogDa = null;
 
@@ -733,10 +719,11 @@ window.km = km;
     clearTimeout(S.autosaveTimer);
     S.autosaveTimer = setTimeout(function () {
       if (!Z.geladen || !Z.mappe) return;
-      km.autosaveSchreiben().then(function () { $("autosave-stand").textContent = "Zuletzt gesichert um " +
-          zeit(Date.now()); })
-        .catch(function () { $("autosave-stand")
-            .textContent = "Dieser Browser sichert nicht automatisch. Speichere die Einheit."; });
+      // MF1: klein unter „Menü“; ohne Sicherung im Browser ein Satz, der auch auf dem Handy steht (Klasse warn)
+      km.autosaveSchreiben().then(function () { $("autosave-stand").textContent = "Gesichert " + zeit(Date.now());
+          $("autosave-stand").classList.remove("warn"); })
+        .catch(function () { $("autosave-stand").textContent = "Keine Sicherung im Browser; speichere den Zwischenstand.";
+          $("autosave-stand").classList.add("warn"); });
     }, 700);
   }
 
@@ -885,8 +872,8 @@ window.km = km;
     STANDARD_FARBE: STANDARD_FARBE, Z: Z, ZWEIG_TEXT: ZWEIG_TEXT, auswertung: auswertung, autosave: autosave,
     bildGroesse: bildGroesse, bilderStandard: bilderStandard, bilderWert: bilderWert, bildwuensche: bildwuensche,
     chatInfo: chatInfo, datumZeit: datumZeit, download: download, editorText: editorText, einheitTag: einheitTag, el: el,
-    erledigtBis: erledigtBis, fehlerText: fehlerText, fehlerZahl: fehlerZahl, gelbZahl: gelbZahl, felderFuellen: felderFuellen,
-    formularname: formularname, geaendert: geaendert, heute: heute, hinweiseSichern: hinweiseSichern, hoehe: hoehe,
+    fehlerText: fehlerText, fehlerZahl: fehlerZahl, gelbZahl: gelbZahl, felderFuellen: felderFuellen,
+    formularname: formularname, geaendert: geaendert, heute: heute, hoehe: hoehe,
     inhalt: inhalt, einheitName: einheitName, einheitVon: einheitVon, mehrereEinheiten: mehrereEinheiten, karteNach: karteNach, kb: kb, kontextJetzt: kontextJetzt, kopieren: kopieren, kopierenSpaeter: kopierenSpaeter, ladenStarten: ladenStarten, markiert: markiert,
     mitMinuten: mitMinuten, neuPruefen: neuPruefen, nrVon: nrVon, oberText: oberText, schritt: schritt,
     sektion: sektion, sichtbareSchritte: sichtbareSchritte, status: status, teileOffen: teileOffen, texte: texte,

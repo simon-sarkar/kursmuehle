@@ -579,7 +579,7 @@
     try {
       var m = await km.mappeSchreiben();
       download(m.zip, m.dateiname, "application/zip");
-      $("autosave-stand").textContent = "Einheit gespeichert um " + zeit(Date.now());
+      $("autosave-stand").textContent = "Zwischenstand gespeichert " + zeit(Date.now());
       S.gespeichert = true;
       autosave();
       // Speichern schließt den laufenden Schritt ab, wenn er fertig ist: die Liste klappt zu, der nächste erscheint
@@ -587,7 +587,7 @@
       if (s === 2 && zweig()) gehe(nachZwei());
       else if (s === 3) { Z.mappe.aussehen = true; gehe(4); }
       else if (s === 4 && Z.mappe.kopiert) gehe(5);
-      else { S.auf = {}; zeichneSchritte(); }
+      else { S.aendern = null; zeichneSchritte(); }
     } catch (e) { zeigeFehler(e); }
   };
   $("neue-einheit").onclick = async function () {

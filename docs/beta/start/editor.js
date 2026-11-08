@@ -72,7 +72,7 @@
   function leisteZeigen() {
     if (!S.katalog) return;
     var n = S.naechsterOffen ? S.naechsterOffen() : null, sec = n ? S.sektion(n) : null;
-    var titel = sec ? sec.querySelector(".s-titel").textContent.trim() : "";
+    var titel = sec ? sec.dataset.kurz || sec.querySelector(".s-titel").textContent.trim() : "";   // MF1: Name wie „Weiter: Bilder“
     var w = $("editor-weiter"), z = $("editor-zurueck");
     z.textContent = T("zurueck_schritte");
     w.hidden = !titel;

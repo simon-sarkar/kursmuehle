@@ -13,25 +13,31 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 2b2e658 vom 08.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 4c2845b vom 08.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
-  <p id="kopf-status" class="status" role="status" aria-live="polite"></p>
-  <span id="autosave-stand" class="kopf-stand"></span>
-  <!-- unter 640 px: Logo, Name, Menü und × in der ersten Zeile, Status und Sicherung in der zweiten; das Menü klappt
-       die Textlinks als Liste auf -->
-  <button type="button" id="kopf-menue" class="kopf-menue" aria-expanded="false" aria-controls="kopf-links"
-    aria-label="Menü"><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false"><path
-    d="M3 5.5h14M3 10h14M3 14.5h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-  <div id="kopf-links" class="kopf-links">
-    <label for="datei-oeffnen" class="kopf-link">Einheit öffnen</label>
-    <button type="button" id="editor-auf" class="kopf-link" hidden>Einheit ansehen und bearbeiten</button>
-    <button type="button" id="speichern" class="kopf-link" disabled hidden>Einheit speichern</button>
-    <button type="button" id="neue-einheit" class="kopf-link" hidden>Neue Einheit</button>
-    <button type="button" id="schema" class="kopf-link" title="Farbschema wechseln">Dunkel</button>
+  <!-- MF1: wo die Lehrkraft steht („Schritt 4 von 7 · Text für den Chat“, auf dem Handy „4 von 7“); schritte.js -->
+  <div class="kopf-mitte">
+    <p id="kopf-schritt" class="kopf-schritt"></p>
+    <p id="kopf-status" class="status" role="status" aria-live="polite"></p>
   </div>
-  <button type="button" id="schliessen" class="kopf-x" aria-label="Einheit schließen" title="Einheit schließen" hidden>×</button>
+  <!-- MF1: ein Knopf „Menü“ statt der Linkreihe; die Liste klappt darunter auf (schritte.js menue) -->
+  <div class="kopf-rechts">
+    <button type="button" id="kopf-menue" class="kopf-menue" aria-expanded="false" aria-controls="kopf-links"><svg
+      viewBox="0 0 20 20" width="18" height="18" aria-hidden="true" focusable="false"><path d="M3 5.5h14M3 10h14M3 14.5h14"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Menü</span></button>
+    <span id="autosave-stand" class="kopf-stand"></span>
+    <div id="kopf-links" class="kopf-links" hidden>
+      <button type="button" id="neue-einheit" class="kopf-link" hidden>Neue Einheit</button>
+      <label for="datei-oeffnen" class="kopf-link">Zwischenstand öffnen</label>
+      <button type="button" id="speichern" class="kopf-link" disabled hidden>Zwischenstand speichern</button>
+      <button type="button" id="editor-auf" class="kopf-link" hidden>Einheit ansehen und bearbeiten</button>
+      <button type="button" id="schema" class="kopf-link" aria-pressed="false">Dunkles Schema</button>
+      <button type="button" id="kopf-rueckmeldung" class="kopf-link">Rückmeldung</button>
+      <button type="button" id="schliessen" class="kopf-link" hidden>Einheit schließen</button>
+    </div>
+  </div>
 </div>
 </header>
 <div id="verwerfen-frage" class="verwerfen-frage" role="alertdialog" aria-labelledby="verwerfen-text" hidden>
@@ -99,10 +105,10 @@
   </div>
 </dialog>
 
-<!-- Schrittfolge. Jeder Schritt erscheint erst, wenn der vorige getan ist; erledigte Schritte stehen als eine
-     aufklappbare Zeile darüber. Die Kursdatei ist in beiden Zweigen („Mach du“, „Ich steuere“) dieselbe. Schritt
-     „Bilder“ (data-nr 5.5) nur, wenn die Antwort Bildwünsche hat; die Nummern zählt schritte.js; je Schritt beim ersten
-     Erreichen ein Hinweis aus hinweise.json. -->
+<!-- Schrittfolge (MF1): immer ist genau ein Schritt offen; erledigte stehen als eine Zeile mit Zusammenfassung und
+     „Ändern“ darüber, kommende als graue Zeile darunter. Die Kursdatei ist in allen Zweigen dieselbe. Schritt „Bilder“
+     (data-nr 5.5) nur, wenn die Antwort Bildwünsche hat; die Nummern zählt schritte.js. `data-kurz` ist der Name für
+     Kopfzeile und Knöpfe („Weiter: Aussehen“). Erklärungen stehen hinter (i), Texte in hinweise.json. -->
 <main class="seite">
  <h1 class="unsichtbar">Kursmühle: Einheit für die ByCS-Lernplattform</h1>
  <div class="spalte-haupt">
@@ -113,9 +119,9 @@
   </div>
 
   <!-- 1 Thema, Schulart, Jahrgangsstufe, Minuten -->
-  <section id="start" class="schritt" data-nr="1" aria-labelledby="s1-titel">
-    <h2 class="s-kopf" tabindex="-1"><button type="button" class="s-zeile" data-nr="1"><span class="s-nr">1</span>
-      <span class="s-titel" id="s1-titel">Worum geht es?</span><span class="s-fazit"></span></button></h2>
+  <section id="start" class="schritt" data-nr="1" data-kurz="Thema" aria-labelledby="s1-titel">
+    <div class="s-zeile" data-nr="1"><span class="s-nr" aria-hidden="true">1</span>
+      <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="s1-titel">Worum geht es?</span></h2><span class="s-fazit"></span></div>
     <div class="s-inhalt">
       <form id="start-form" class="start-form" autocomplete="off" novalidate>
         <!-- AP13.40: Umschalter „Stunde“ / „Sequenz“ mit Zahl der Stunden und ⓘ (sequenz.js, Wortlaut aus dem Katalog) -->
@@ -131,28 +137,35 @@
           <input id="f-jahrgang" type="text" inputmode="numeric" maxlength="12" placeholder="7">
           <span id="f-jahrgang-zeile" class="feld-zeile" hidden>Zielgruppe gewählt</span>
         </label>
-        <label class="feld feld-klein"><span id="f-minuten-t">Minuten</span>
+        <!-- MF1: (i) am Feld Minuten; der Text steht in hinweise.json („1-minuten“) -->
+        <label class="feld feld-klein"><span class="feld-kopf"><span id="f-minuten-t">Minuten</span><button type="button"
+            class="info-knopf" aria-expanded="false" aria-controls="f-minuten-info" aria-label="Erklärung zu Minuten"
+            data-hinweis="1-minuten">i</button></span>
           <input id="f-minuten" type="number" min="10" max="300" step="5" value="45" inputmode="numeric">
         </label>
+        <p id="f-minuten-info" class="info-text feld-breit" hidden></p>
         <p id="zeit-vorab" class="leise zeit-vorab">Etwa 20 Minuten bis zur Datei, davon einige im Chat.</p>
-        <!-- c2: Zielgruppe statt Jahrgangsstufe (Lehrerkonferenz, Elternabend), gilt dann ohne Lehrplanbezug -->
-        <details id="erweitert" class="erweitert">
-          <summary>Erweitert</summary>
-          <label class="feld">Zielgruppe statt Jahrgangsstufe <span class="feld-zeile">freiwillig</span>
-            <input id="f-zielgruppe" type="text" maxlength="40" placeholder="Lehrerkonferenz, Elternabend" autocomplete="off">
-          </label>
-        </details>
-        <button type="submit" id="einheit-anlegen" class="knopf haupt">Weiter</button>
+        <button type="submit" id="einheit-anlegen" class="knopf haupt">Weiter: Aufbau</button>
+        <!-- MF1: „Erweitert“ (schritte.js erweitert); c2: Zielgruppe statt Jahrgangsstufe (Lehrerkonferenz, Elternabend),
+             gilt dann ohne Lehrplanbezug -->
+        <div id="erweitert" class="erw feld-breit">
+          <button type="button" id="erweitert-knopf" class="erw-knopf" aria-expanded="false" aria-controls="erweitert-inhalt"><span
+            class="erw-wort">Erweitert</span><span class="erw-was">Zielgruppe</span></button>
+          <div id="erweitert-inhalt" class="erw-inhalt" hidden>
+            <label class="feld">Zielgruppe statt Jahrgangsstufe <span class="feld-zeile">freiwillig</span>
+              <input id="f-zielgruppe" type="text" maxlength="40" placeholder="Lehrerkonferenz, Elternabend" autocomplete="off">
+            </label>
+          </div>
+        </div>
       </form>
       <p class="vorsatz">Alles bleibt in diesem Browser, nichts wird hochgeladen.</p>
-      <label class="schalter hinweis-schalter"><input id="hinweise-an" type="checkbox" checked> Hinweise anzeigen</label>
     </div>
   </section>
 
   <!-- 2 Mach du oder Ich steuere -->
-  <section id="schritt-2" class="schritt" data-nr="2" aria-labelledby="s2-titel" hidden>
-    <h2 class="s-kopf" tabindex="-1"><button type="button" class="s-zeile" data-nr="2"><span class="s-nr">2</span>
-      <span class="s-titel" id="s2-titel">Wie viel willst du selbst entscheiden?</span><span class="s-fazit"></span></button></h2>
+  <section id="schritt-2" class="schritt" data-nr="2" data-kurz="Aufbau" aria-labelledby="s2-titel" hidden>
+    <div class="s-zeile" data-nr="2"><span class="s-nr" aria-hidden="true">2</span>
+      <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="s2-titel">Wie viel willst du selbst entscheiden?</span></h2><span class="s-fazit"></span></div>
     <div class="s-inhalt">
       <div class="zweige" role="radiogroup" aria-label="Weg">
         <button type="button" id="zweig-mach" class="zweig" data-zweig="mach" role="radio" aria-checked="false">
@@ -298,13 +311,15 @@
         </details>
       </div>
       <button type="button" id="weiter-2" class="knopf haupt" hidden>Weiter</button>
+      <!-- MF1: nach „Ändern“ zurück zu dem Schritt, an dem die Lehrkraft war (schritte.js zeichneSchritte) -->
+      <button type="button" id="zurueck-2" class="knopf haupt s-zurueck" data-nr="2" hidden></button>
     </div>
   </section>
 
   <!-- 3 Aussehen -->
-  <section id="schritt-3" class="schritt" data-nr="3" aria-labelledby="s3-titel" hidden>
-    <h2 class="s-kopf" tabindex="-1"><button type="button" class="s-zeile" data-nr="3"><span class="s-nr">3</span>
-      <span class="s-titel" id="s3-titel" tabindex="-1">Wie soll der Kurs aussehen?</span><span class="s-fazit"></span></button></h2>
+  <section id="schritt-3" class="schritt" data-nr="3" data-kurz="Aussehen" aria-labelledby="s3-titel" hidden>
+    <div class="s-zeile" data-nr="3"><span class="s-nr" aria-hidden="true">3</span>
+      <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="s3-titel" tabindex="-1">Wie soll der Kurs aussehen?</span></h2><span class="s-fazit"></span></div>
     <div class="s-inhalt">
       <div class="aus-raster">
       <!-- AP13.19 §2: Gruppen nacheinander. Beim ersten Erreichen Design und Bilder; jede Wahl blendet die nächste
@@ -363,13 +378,14 @@
       <button type="button" id="weiter-3" class="knopf haupt">Weiter</button>
       <!-- AP13.19 §3: im Designer statt „Weiter“; führt zurück zu „Mehr einstellen“ -->
       <button type="button" id="designer-fertig" class="knopf haupt" hidden>Fertig</button>
+      <button type="button" id="zurueck-3" class="knopf haupt s-zurueck" data-nr="3" hidden></button>
     </div>
   </section>
 
   <!-- 4 Chat wählen, Text kopieren -->
-  <section id="schritt-4" class="schritt chat-teil" data-nr="4" aria-labelledby="s4-titel" hidden>
-    <h2 class="s-kopf" tabindex="-1"><button type="button" class="s-zeile" data-nr="4"><span class="s-nr">4</span>
-      <span class="s-titel" id="s4-titel">Text für den Chat</span><span class="s-fazit"></span></button></h2>
+  <section id="schritt-4" class="schritt chat-teil" data-nr="4" data-kurz="Text für den Chat" aria-labelledby="s4-titel" hidden>
+    <div class="s-zeile" data-nr="4"><span class="s-nr" aria-hidden="true">4</span>
+      <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="s4-titel">Text für den Chat</span></h2><span class="s-fazit"></span></div>
     <div class="s-inhalt">
       <!-- AP13.40: Sequenz mit ihren Stunden, Fortschritt und Sicherung (sequenz.js) -->
       <div id="sequenz-box" class="sequenz-box" hidden></div>
@@ -432,13 +448,14 @@
           <textarea id="chat-text-feld" rows="12" readonly spellcheck="false" aria-label="Text für den Chat"></textarea>
         </details>
       </div>
+      <button type="button" id="zurueck-4" class="knopf haupt s-zurueck" data-nr="4" hidden></button>
     </div>
   </section>
 
   <!-- 5 Antwort einfügen, Bausteine mit Prüfstatus -->
-  <section id="schritt-5" class="schritt" data-nr="5" aria-labelledby="s5-titel" hidden>
-    <h2 class="s-kopf" tabindex="-1"><button type="button" class="s-zeile" data-nr="5"><span class="s-nr">5</span>
-      <span class="s-titel" id="s5-titel">Antwort des Chats einfügen</span><span class="s-fazit"></span></button></h2>
+  <section id="schritt-5" class="schritt" data-nr="5" data-kurz="Antwort einfügen" aria-labelledby="s5-titel" hidden>
+    <div class="s-zeile" data-nr="5"><span class="s-nr" aria-hidden="true">5</span>
+      <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="s5-titel">Antwort des Chats einfügen</span></h2><span class="s-fazit"></span></div>
     <div class="s-inhalt">
       <div class="einfuegen">
         <p id="eingabe-satz" class="leise">Kopiere die ganze Antwort mit dem Kopierknopf des Chats und füge sie hier ein.</p>
@@ -489,15 +506,35 @@
       <button type="button" id="tafel-auf" class="textlink tafel-auf" aria-controls="tafel-bausteine" hidden></button>
       <div id="karten-ort-5" class="karten-ort"></div>
       <button type="button" id="weiter-5" class="knopf haupt" hidden>Weiter</button>
+      <button type="button" id="zurueck-5" class="knopf haupt s-zurueck" data-nr="5" hidden></button>
       <!-- AP13.40: weiter mit der nächsten Stunde der Sequenz (sequenz.js) -->
       <div id="sequenz-weiter" class="sequenz-weiter" role="status" hidden></div>
+      <!-- MF1: der frühere Rand (Kennzahlen und Hinweise der Prüfung) unter „Erweitert“, erst mit einer Antwort -->
+      <div id="erweitert-5" class="erw" hidden>
+        <button type="button" id="erweitert-5-knopf" class="erw-knopf" aria-expanded="false" aria-controls="diagnosen"><span
+          class="erw-wort">Erweitert</span><span class="erw-was">Kennzahlen</span></button>
+        <div id="diagnosen" class="erw-inhalt diagnosen" hidden>
+          <h3 class="unterkopf">Kennzahlen</h3>
+          <dl class="zahlen">
+            <div><dt id="kz-minuten-t">Minuten</dt><dd id="kz-minuten">–</dd></div>
+            <div id="kz-zahl-z" hidden><dt>Bausteine</dt><dd id="kz-zahl">–</dd></div>
+            <div><dt>Folge</dt><dd id="kz-folge">–</dd></div>
+            <div><dt>Multiple Choice</dt><dd id="kz-mc">–</dd></div>
+            <div><dt>Übungstypen</dt><dd id="kz-uebung">–</dd></div>
+            <div><dt>Rückmeldung</dt><dd id="kz-rueckmeldung">–</dd></div>
+            <div id="kz-saetze-z" hidden><dt>Sätze</dt><dd id="kz-saetze">–</dd></div>
+          </dl>
+          <ul id="hinweise" class="hinweise"></ul>
+          <button type="button" id="hinweise-mehr" class="textlink" hidden></button>
+        </div>
+      </div>
     </div>
   </section>
 
   <!-- Bilder: nur, wenn die Antwort mindestens eine Zeile „Bildwunsch:“ hat -->
-  <section id="schritt-bilder" class="schritt" data-nr="5.5" aria-labelledby="sb-titel" hidden>
-    <h2 class="s-kopf" tabindex="-1"><button type="button" class="s-zeile" data-nr="5.5"><span class="s-nr">6</span>
-      <span class="s-titel" id="sb-titel">Bilder einfügen</span><span class="s-fazit"></span></button></h2>
+  <section id="schritt-bilder" class="schritt" data-nr="5.5" data-kurz="Bilder" aria-labelledby="sb-titel" hidden>
+    <div class="s-zeile" data-nr="5.5"><span class="s-nr" aria-hidden="true">6</span>
+      <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="sb-titel">Bilder einfügen</span></h2><span class="s-fazit"></span></div>
     <div class="s-inhalt">
       <p class="leise">Such zu jedem Bild ein freies Foto, zeichne es oder lass es von einem Bildgenerator erzeugen. Nimm
         nur Bilder, an denen du die Rechte hast.</p>
@@ -507,14 +544,15 @@
       <ol id="bilder-liste" class="bilder-liste"></ol>
       <textarea id="bild-feld" class="unsichtbar" readonly aria-hidden="true" tabindex="-1"></textarea>
       <button type="button" id="weiter-bilder" class="knopf haupt">Weiter</button>
+      <button type="button" id="zurueck-bilder" class="knopf haupt s-zurueck" data-nr="5.5" hidden></button>
       <p id="bilder-stand" class="stand" role="status" aria-live="polite"></p>
     </div>
   </section>
 
   <!-- 6 Fragen und Lösungen: erst der Weg (Kacheln), dann nur dessen Teil (AP13.5g) -->
-  <section id="schritt-6" class="schritt" data-nr="6" aria-labelledby="s6-titel" hidden>
-    <h2 class="s-kopf" tabindex="-1"><button type="button" class="s-zeile" data-nr="6"><span class="s-nr">6</span>
-      <span class="s-titel" id="s6-titel">Fragen und Lösungen durchsehen</span><span class="s-fazit"></span></button></h2>
+  <section id="schritt-6" class="schritt" data-nr="6" data-kurz="Fragen und Lösungen" aria-labelledby="s6-titel" hidden>
+    <div class="s-zeile" data-nr="6"><span class="s-nr" aria-hidden="true">6</span>
+      <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="s6-titel">Fragen und Lösungen durchsehen</span></h2><span class="s-fazit"></span></div>
     <div class="s-inhalt">
       <!-- AP13.12 a10: Zeilen `Offen:` der Kursdatei (gen/api.offen), je Zeile mit dem Baustein, unter dem sie steht -->
       <div id="offen-kasten" class="offen-kasten" hidden>
@@ -580,9 +618,9 @@
   </section>
 
   <!-- 7 Datei erstellen, wiederherstellen, weiter -->
-  <section id="schritt-7" class="schritt" data-nr="7" aria-labelledby="s7-titel" hidden>
-    <h2 class="s-kopf" tabindex="-1"><button type="button" class="s-zeile" data-nr="7"><span class="s-nr">7</span>
-      <span class="s-titel" id="s7-titel">Datei für die Lernplattform</span><span class="s-fazit"></span></button></h2>
+  <section id="schritt-7" class="schritt" data-nr="7" data-kurz="Datei für die Lernplattform" aria-labelledby="s7-titel" hidden>
+    <div class="s-zeile" data-nr="7"><span class="s-nr" aria-hidden="true">7</span>
+      <h2 class="s-kopf" tabindex="-1"><span class="s-titel" id="s7-titel">Datei für die Lernplattform</span></h2><span class="s-fazit"></span></div>
     <div class="s-inhalt">
       <div class="erstellen">
         <!-- AP13.15: Lizenz und KI-Hinweis als kleine Zeile am Ende jedes Abschnitts (Steckbrief kurs.lizenz,
@@ -661,24 +699,6 @@
   </section>
  </div>
 
- <aside class="spalte-rand" aria-label="Stand der Einheit" hidden>
-  <div id="diagnosen" class="diagnosen rand-block" aria-label="Stand der Einheit">
-    <details id="kennzahlen" class="ausklapp kennzahlen" data-merken="kennzahlen">
-    <summary>Kennzahlen</summary>
-    <dl class="zahlen">
-      <div><dt id="kz-minuten-t">Minuten</dt><dd id="kz-minuten">–</dd></div>
-      <div id="kz-zahl-z" hidden><dt>Bausteine</dt><dd id="kz-zahl">–</dd></div>
-      <div><dt>Folge</dt><dd id="kz-folge">–</dd></div>
-      <div><dt>Multiple Choice</dt><dd id="kz-mc">–</dd></div>
-      <div><dt>Übungstypen</dt><dd id="kz-uebung">–</dd></div>
-      <div><dt>Rückmeldung</dt><dd id="kz-rueckmeldung">–</dd></div>
-      <div id="kz-saetze-z" hidden><dt>Sätze</dt><dd id="kz-saetze">–</dd></div>
-    </dl>
-    </details>
-    <ul id="hinweise" class="hinweise"></ul>
-    <button type="button" id="hinweise-mehr" class="textlink" hidden></button>
-  </div>
- </aside>
 
  <!-- Bausteine: eine Liste, je nach Zweig und Schritt unter Schritt 2 oder Schritt 5 -->
  <div id="tafel-bausteine" class="tafel-bausteine">

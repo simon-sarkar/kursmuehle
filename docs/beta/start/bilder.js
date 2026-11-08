@@ -323,7 +323,8 @@
     var bz = Z.kennzahlen && Z.kennzahlen.bilder;
     $("bilder-stufe").textContent = bz ? bz.stufe.charAt(0).toUpperCase() + bz.stufe.slice(1) + " gewählt, " + bz.zahl +
         " im Text" : "";
-    $("weiter-bilder").textContent = fehlen ? "Ohne Bild weiter" : "Weiter";
+    $("weiter-bilder").textContent = fehlen ? "Ohne Bild weiter" : "Weiter: " +            // MF1: der nächste Schritt
+        S.kurzName(S.fragenListe.length && !Z.mappe.durchsicht ? 6 : 7);
     $("bilder-stand").textContent = !w.length ? "" : fehlen
       ? (fehlen === 1 ? "Ein Bild fehlt" : fehlen + " Bilder fehlen") +
           "; im Kurs steht dort ein grauer Platzhalter, bis du es nachlieferst."

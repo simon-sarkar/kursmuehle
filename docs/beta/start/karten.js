@@ -326,6 +326,7 @@
       S.korrektur.art = "";
       zeichne(); geaendert(); korrekturSpaeter(0);
       $("chat-aendern").click();
+      S.chatZurKorrektur = true;          // MF1: nach der Wahl zurück zum Korrekturblock in Schritt 5
     }
   }
 
@@ -603,8 +604,7 @@
   };
   function zuKarte(id) {
     var ort = $("tafel-bausteine").closest(".schritt");
-    if (ort && ort.dataset.stand === "erledigt" && !ort.classList.contains("auf")) { S.auf[ort.dataset.nr] = true;
-        zeichneSchritte(); }
+    if (ort && !ort.classList.contains("auf")) { S.oeffneSchritt(parseFloat(ort.dataset.nr), true); }
     var karte = $("karte-" + id);
     if (karte) { karte.scrollIntoView({ behavior: "smooth", block: "center" }); karte.querySelector(".k-titel").focus({
         preventScroll: true }); }
@@ -740,8 +740,8 @@
       return;
     }
     var knopf = ev.target.closest("[data-aktion]"); if (!knopf) return;
-    if (knopf.dataset.aktion === "steuern") { Z.mappe.zweig = "steuer"; S.auf[2] = schritt() > 2; zeichne();
-        geaendert(); return; }
+    // MF1: der Typ an der Karte wechselt nach „Ich steuere“; offen bleibt der Schritt mit den Karten
+    if (knopf.dataset.aktion === "steuern") { Z.mappe.zweig = "steuer"; zeichne(); geaendert(); return; }
     var k = karteVon(knopf); if (!k) return;
     var liste = Z.mappe.bausteine, i = liste.indexOf(k), a = knopf.dataset.aktion;
     try {
@@ -1027,7 +1027,7 @@
       Z.mappe.bausteine.forEach(function (k) { if (ids.indexOf(k.id) >= 0) { k.neu = false; delete k.wunsch; } });
       S.spracheGelb = S.spracheGelb.filter(function (id) { return ids.indexOf(id) < 0; });
       await nachAntwortMarkieren(ie.ids, teileOffen());
-      if (o.sprung && schritt() !== 5) { Z.mappe.schritt = 5; S.auf = {}; }
+      if (o.sprung && schritt() !== 5) { Z.mappe.schritt = 5; S.aendern = null; }
       await auswertung();
       durchsichtNach(fr);
       var gleich = schleifeMerken(ids, true);
