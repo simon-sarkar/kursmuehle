@@ -10,7 +10,8 @@
  "5": "Füg die ganze Antwort ein. Braucht ein Baustein eine Korrektur, kopier mit „Korrekturbitte kopieren“ die Bitte für den Chat und füg dessen Antwort darunter ein.",
  "5.5": "Lade zu jedem Bild eine Datei hoch oder zieh sie auf seine Zeile. Fehlt ein Bild, steht im Kurs ein grauer Platzhalter.",
  "5.5-auftrag": "Such ein freies Foto, zeichne selbst oder lass das Bild von einem Bildgenerator erzeugen; nimm nur Bilder, an denen du die Rechte hast. Generatoren schreiben Wörter im Bild oft falsch; bei vielen Beschriftungen lass nummerierte Pfeile erzeugen und schreib die Wörter in die Bildunterschrift.",
- "6": "Lies jede Frage mit ihrer Lösung; „Ändern“ öffnet den Baustein im Editor. Weiter geht es auch so, im letzten Schritt steht dann „Lösungen nicht angesehen“.",
+ "6": "Lies jede Frage mit ihrer Lösung; „Ändern“ öffnet den Baustein im Editor. Weiter geht es auch so; die Lösungen zu prüfen ist freiwillig.",
  "6-zweite": "Ein neues Gespräch löst die Aufgaben, ohne deine Lösungen zu sehen, und die Liste zeigt an jeder Frage, ob es zustimmt. Eine Abweichung heißt nicht, dass deine Lösung falsch ist; sieh sie dir an.",
- "7": "Die Datei ist eine Sicherung für die ByCS-Lernplattform; du stellst sie in einem leeren Kurs wieder her. Lizenz, KI-Hinweis und die nächste Einheit stehen unter „Erweitert“."
+ "7": "Die Datei ist eine Sicherung für die ByCS-Lernplattform; du stellst sie in einem leeren Kurs wieder her. Lizenz, KI-Hinweis und die nächste Einheit stehen unter „Erweitert“.",
+ "fuss-beta": "Noch nicht freigegeben. Die Testversion hat einen eigenen Speicher: Einheiten, die du dort anlegst, stehen hier nicht und umgekehrt."
 }

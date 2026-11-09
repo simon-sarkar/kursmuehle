@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand b5c9106 vom 09.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 2c8682f vom 09.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -114,7 +114,7 @@
  <div class="spalte-haupt">
   <div id="weiter" class="weiter" hidden>
     <button type="button" id="weiter-knopf" class="knopf"></button>
-    <button type="button" id="weiter-weg" class="kopf-x weiter-weg" aria-label="Gesicherte Einheit verwerfen" title="verwerfen">×</button>
+    <button type="button" id="weiter-weg" class="kopf-x weiter-weg" aria-label="Gespeicherte Einheit verwerfen" title="verwerfen">×</button>
     <span id="weiter-zeit" class="leise"></span>
   </div>
 
@@ -203,7 +203,7 @@
         </div>
       </div>
       <!-- in „Mach du“ und „Ich gebe die Richtung“: Beschreibung des Kurses ab Einheit 2 und der Vorschlag des Lehrplans;
-           „Worum geht es genau?“ steht unter „Erweitert“ -->
+           das Lernziel steht unter „Ich gebe die Richtung“ (AP13.45 B10) -->
       <div id="mach-teil" class="mach-teil" hidden>
         <div id="m-kurs"></div>
         <!-- AP13.24: schlägt der Lehrplan eine Art der Einheit vor, übernimmt „Mach du“ sie und sagt es; „ändern“ zeigt die Kacheln -->
@@ -234,6 +234,14 @@
         <div class="aus-gruppe"><h3 class="unterkopf" id="r-differenzierung-t">Hilfen und Zusatzaufgaben</h3>
           <div id="r-differenzierung" class="kacheln-wahl text-wahl" role="radiogroup" aria-labelledby="r-differenzierung-t"></div></div>
       </div>
+      <!-- Kontext in „Mach du“ und „Ich gebe die Richtung“, freiwillig; dieselbe Angabe wie unter „Mehr einstellen“ und im
+           Plan. AP13.45 B10: sichtbar über „Erweitert“ als einzeiliges Feld „Lernziel (freiwillig)“, das mit dem Text wächst
+           (ein Textfeld, Enter bricht keine Zeile; schritte.js lernzielHoehe) -->
+      <label id="m-kontext-l" class="feld feld-breit m-kontext-l" hidden><span id="m-kontext-t">Lernziel (freiwillig)</span>
+        <textarea id="m-kontext" class="von-lehrkraft einzeilig" rows="1" maxlength="600" spellcheck="true"
+          aria-describedby="m-kontext-beispiel"></textarea>
+        <span id="m-kontext-beispiel" class="feld-zeile">Was sollen die Lernenden danach können? Was ist vorausgesetzt, was nicht?</span>
+      </label>
       <div id="steuer-teil" class="steuer-teil" hidden>
         <!-- AP13.31: vor der ersten Antwort der Einheit der Plan (plan.js): beschreiben, Darstellung, Kacheln mit Elementen;
              Aufbau und Kartenliste stehen dann nicht hier -->
@@ -247,11 +255,11 @@
       </div>
       <!-- MF2: „Erweitert“ in Schritt 2: Lehrplan (AP13.12c: ein Ort in allen drei Wegen; zugeklappt „Lehrplanbezug
            (optional)“, mit gewähltem Lehrplan der Vermerk mit „×“; lehrplan.js), in „Mach du“ und „Ich gebe die Richtung“
-           „Worum geht es genau?“ und das Material, in „Ich steuere“ „Mehr einstellen“. Ist dort schon etwas eingetragen,
+           das Material, in „Ich steuere“ „Mehr einstellen“. Ist dort schon etwas eingetragen,
            steht „Erweitert“ offen (schritte.js erweitert2Pruefen) -->
       <div id="erweitert-2" class="erw" hidden>
         <button type="button" id="erweitert-2-knopf" class="erw-knopf" aria-expanded="false" aria-controls="erweitert-2-inhalt"><span
-          class="erw-wort">Erweitert</span><span id="erweitert-2-was" class="erw-was">Lehrplan, Worum geht es genau?, Material</span></button>
+          class="erw-wort">Erweitert</span><span id="erweitert-2-was" class="erw-was">Lehrplan, Material</span></button>
         <div id="erweitert-2-inhalt" class="erw-inhalt" hidden>
           <div id="lehrplan-teil" class="lehrplan-teil" hidden>
             <details id="lehrplan-ausklapp" class="ausklapp lehrplan-ausklapp" data-merken="lehrplan">
@@ -261,12 +269,6 @@
               <div id="lehrplan" class="lehrplan-ort"></div>
             </details>
           </div>
-          <!-- Kontext in „Mach du“ und „Ich gebe die Richtung“, freiwillig; dieselbe Angabe wie unter „Mehr einstellen“ -->
-          <label id="m-kontext-l" class="feld feld-breit m-kontext-l" hidden>Worum geht es genau? <span class="feld-zeile">freiwillig</span>
-            <textarea id="m-kontext" class="von-lehrkraft" rows="3" maxlength="600" spellcheck="true"
-              aria-describedby="m-kontext-beispiel"></textarea>
-            <span id="m-kontext-beispiel" class="feld-zeile">Was sollen die Lernenden danach können? Was ist vorausgesetzt, was nicht?</span>
-          </label>
           <!-- AP13.13: Dateien lesen (web/material.js); Liste der Abschnitte unter dem Feld, nicht gespeichert. AP13.19 §1:
                bei „Einheit aus eigenem Material“ steht das Feld sichtbar im Weg (schritte.js materialOrt) -->
           <div id="r-material-feld" class="r-material-feld material-ort" data-material="r">
@@ -496,8 +498,10 @@
           aria-controls="chat-modell-info" aria-label="Welches Modell?" data-hinweis="4-modell">i</button></span></p>
         <p id="chat-modell-satz" class="chat-modell-satz" hidden></p>
         <p id="chat-modell-info" class="info-text" hidden></p>
-        <!-- MF7: wie man zum Chat kommt; der Link nur, wenn katalog.yaml für den Chat eine `adresse` kennt -->
-        <p id="chat-weg" class="chat-weg"><span id="chat-weg-satz"></span> <a id="chat-oeffnen" class="textlink" target="_blank"
+        <!-- MF7: wie man zum Chat kommt; der Link nur, wenn katalog.yaml für den Chat eine `adresse` kennt. AP13.45 B7: auf dem
+             Handy ein eigener Satz mit App und Rückweg (ansicht.css zeigt je Breite einen) -->
+        <p id="chat-weg" class="chat-weg"><span id="chat-weg-satz" class="chat-weg-breit"></span><span id="chat-weg-handy"
+          class="chat-weg-handy"></span> <a id="chat-oeffnen" class="textlink" target="_blank"
           rel="noopener" hidden></a></p>
         <div id="kopier-warnung" class="warnung-box" role="status" hidden>
           <p id="kopier-warnung-text"></p>
@@ -516,6 +520,9 @@
         </div>
       </div>
       <button type="button" id="zurueck-4" class="knopf haupt s-zurueck" data-nr="4" hidden></button>
+      <!-- AP13.45 B17: vor dem Kopieren ein Textlink zu Schritt 5 für alle, die den Text anders in den Chat gebracht haben
+           (chat.js zeichneChat); nach dem Kopieren steht dort „Weiter: Antwort einfügen“ (zurueck-4) -->
+      <button type="button" id="weiter-4-ohne" class="textlink weiter-4-ohne" hidden>Weiter: Antwort einfügen</button>
       <!-- MF2: „Erweitert“ in Schritt 4: in „Ich steuere“ welcher Text, dazu der Text selbst zum Markieren und seine Größe -->
       <div id="erweitert-4" class="erw" hidden>
         <button type="button" id="erweitert-4-knopf" class="erw-knopf" aria-expanded="false" aria-controls="erweitert-4-inhalt"><span
@@ -574,6 +581,9 @@
         <div id="korrektur-auswege" class="korrektur-auswege" hidden></div>
         <p id="korrektur-zeile" class="leise"></p>
         <button type="button" id="korrektur-kopieren" class="knopf haupt">Korrekturbitte kopieren</button>
+        <!-- AP13.45 B6: schon nach der ersten roten Antwort zwei Wege ohne den Chat als Textlinks (karten.js selbstWege);
+             nicht, solange die Auswege oben stehen, und nicht bei abgeschnittener Antwort -->
+        <p id="korrektur-selbst" class="korrektur-selbst" hidden></p>
         <!-- MF6: nur bei „Verlängern lassen“ (neutrale Karte): schließt die Bitte, die gelbe Zeile steht wieder da -->
         <button type="button" id="korrektur-abbrechen" class="textlink korrektur-abbrechen" hidden>Abbrechen</button>
         <p id="korrektur-stand" class="stand" role="status" aria-live="polite"></p>
@@ -611,7 +621,7 @@
            Auftrag, „Baustein hinzufügen“) und die Kennzahlen mit den Hinweisen der Prüfung -->
       <div id="erweitert-5" class="erw" hidden>
         <button type="button" id="erweitert-5-knopf" class="erw-knopf" aria-expanded="false" aria-controls="erweitert-5-inhalt"><span
-          class="erw-wort">Erweitert</span><span id="erweitert-5-was" class="erw-was">Bausteine, Kennzahlen</span></button>
+          class="erw-wort">Erweitert</span><span id="erweitert-5-was" class="erw-was">Zahlen zur Einheit</span></button>
         <div id="erweitert-5-inhalt" class="erw-inhalt" hidden>
           <div id="modus-ort" class="modus-ort">
             <div id="modus" class="modus" role="radiogroup" aria-label="Wie die Antwort eingesetzt wird">
@@ -624,7 +634,7 @@
           </div>
           <div id="karten-ort-5" class="karten-ort"></div>
           <div id="diagnosen" class="diagnosen">
-            <h3 class="unterkopf">Kennzahlen</h3>
+            <h3 class="unterkopf">Zahlen zur Einheit</h3>
             <dl class="zahlen">
               <div><dt id="kz-minuten-t">Minuten</dt><dd id="kz-minuten">–</dd></div>
               <div id="kz-zahl-z" hidden><dt>Bausteine</dt><dd id="kz-zahl">–</dd></div>

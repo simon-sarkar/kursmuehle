@@ -197,6 +197,14 @@
   var ANGESEHEN_MS = 1000, angesehenUhr = null;
   function angesehen() { return !!(Z.mappe && Z.mappe.durchsicht === true); }
   S.loesungenAngesehen = angesehen;
+  // AP13.45 B16: „12 Fragen · Lösungen angesehen“, sonst „12 Fragen (Lösungen freiwillig prüfen)“ (ein Vermerk, kein
+  // Mangel); `neu` ersetzt den Vermerk („Neu durchzusehen: …“). Zeile in Schritt 6 und in der Prüfliste von Schritt 7
+  function fragenWert(n, neu) {
+    var zahl = n === 1 ? "1 Frage" : n + " Fragen";
+    if (neu) return zahl + " · " + neu;
+    return angesehen() ? zahl + " · " + PT("angesehen") : zahl + " (" + PT(n === 1 ? "nicht_angesehen_eine" : "nicht_angesehen") + ")";
+  }
+  S.fragenWert = fragenWert;
   function endeImBlick(an) {
     clearTimeout(angesehenUhr);
     if (!an || !Z.mappe || angesehen() || !S.fragenListe.length || !$("schritt-6").classList.contains("auf")) return;
@@ -570,8 +578,7 @@
     var n = S.fragenListe.length;
     if (n) {
       var neu = S.durchsichtNeuText ? S.durchsichtNeuText() : "";
-      z.push({ name: "Fragen", wert: [n + (n === 1 ? " Frage" : " Fragen"), neu ? neu.replace(/\.$/, "") :
-          PT(angesehen() ? "angesehen" : "nicht_angesehen"), pruefStand()].filter(Boolean).join(" · "), nr: 6,
+      z.push({ name: "Fragen", wert: [fragenWert(n, neu ? neu.replace(/\.$/, "") : ""), pruefStand()].filter(Boolean).join(" · "), nr: 6,
       });
     }
     return z;

@@ -37,6 +37,7 @@
   // AP13.45 (Heuristik B14): unter 1000 px gibt es keinen schwebenden Knopf; „Einheit ansehen“ an der Karte und das Menü
   // führen in die Ansicht
   var SCHMAL = window.matchMedia ? matchMedia("(max-width: 999px)") : { matches: false };
+  var ZEIGER = window.matchMedia ? matchMedia("(hover: hover)") : { matches: false };    // AP13.45: „Ändern“ beim Überfahren
   var ueAuf = false;            // AP13.45 (Heuristik B12): die Kursübersicht ist eingeklappt, die Bausteine stehen vorn
   // Platzhalter für ein Bild, das noch nicht hochgeladen ist (hellgrau wie in der Sicherung)
   var BILD_FEHLT = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" ' +
@@ -63,11 +64,14 @@
     // Inhalt selbst bleibt Absatz, Liste oder Überschrift
     ".km-ed-inhalt .km-aendern { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; " +
         "overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }",
-    ".km-ed-inhalt .km-aendern:focus { z-index: 1; width: auto; height: auto; margin: 4px 0 0; padding: 5px 14px; " +
+    // AP13.45 (09.11.): mit der Maus erscheint er auch beim Überfahren der Stelle (Klasse km-zeigen, nur bei hover: hover)
+    ".km-ed-inhalt .km-aendern:focus, .km-ed-inhalt .km-aendern.km-zeigen { z-index: 1; width: auto; height: auto; margin: 4px 0 0; padding: 5px 14px; " +
         "overflow: visible; clip: auto; border: 1px solid #8a6416; border-radius: 6px; background: #ffffff; color: #1d2125; " +
         "font: 600 14px/1.3 system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif; cursor: pointer; pointer-events: auto; " +
         "outline: 3px solid #8a6416; outline-offset: 2px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); }",
-    ".km-ed-inhalt .km-stelle:has(+ .km-aendern:focus) { outline: 2px dashed #8a6416; outline-offset: 3px; }",
+    ".km-ed-inhalt .km-aendern.km-zeigen:not(:focus) { outline: none; }",
+    ".km-ed-inhalt .km-stelle:has(+ .km-aendern:focus), .km-ed-inhalt .km-stelle:has(+ .km-aendern.km-zeigen) { " +
+        "outline: 2px dashed #8a6416; outline-offset: 3px; }",
     "slot[name=km-stelle] { display: block; }"
   ].join("\n");
 
@@ -1220,9 +1224,30 @@
         x.after(el("button", { type: "button", cls: "km-aendern", "data-km-nr": String(s.nr), "aria-label": stelleLabel(b.id, s),
             text: TS("aendern") }));
       });
+      // AP13.45 (09.11.): mit der Maus steht „Ändern“ auch, solange der Zeiger auf der Stelle oder dem Knopf ist; ein kurzer
+      // Nachlauf trägt ihn über den Abstand zwischen beiden. Auf Touch-Geräten (hover: none) bleibt es beim Fokus
+      var hoverAus = null;
+      var hoverWeg = function () { Array.prototype.forEach.call(root.querySelectorAll(".km-zeigen"), function (y) {
+        y.classList.remove("km-zeigen"); }); };
+      var stelleVon = function (t) { return t && t.closest ? t.closest(".km-stelle, .km-aendern") : null; };
+      root.addEventListener("mouseover", function (ev) {
+        var x = stelleVon(ev.target); if (!x || !ZEIGER.matches) return;
+        clearTimeout(hoverAus);
+        var nr = x.getAttribute("data-km-nr"), k = root.querySelector(".km-aendern[data-km-nr='" + nr + "']");
+        Array.prototype.forEach.call(root.querySelectorAll(".km-zeigen"), function (y) { if (y !== k) y.classList.remove("km-zeigen"); });
+        if (k) k.classList.add("km-zeigen");
+      });
+      root.addEventListener("mouseout", function (ev) {
+        var x = stelleVon(ev.target); if (!x) return;
+        var nach = stelleVon(ev.relatedTarget);
+        if (nach && nach.getAttribute("data-km-nr") === x.getAttribute("data-km-nr")) return;
+        clearTimeout(hoverAus);
+        hoverAus = setTimeout(hoverWeg, 600);
+      });
       root.addEventListener("click", function (ev) {
         var x = ev.target.closest && ev.target.closest(".km-stelle, .km-aendern"); if (!x) return;
         ev.preventDefault();
+        clearTimeout(hoverAus); hoverWeg();
         var nr = parseInt(x.getAttribute("data-km-nr"), 10);
         stelleAuf(b.id, nr, x.classList.contains("km-aendern") ? root.querySelector(".km-stelle[data-km-nr='" + nr + "']") : x);
       });

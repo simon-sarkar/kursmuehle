@@ -58,11 +58,11 @@
       return !w.length ? "" : da === w.length ? (da === 1 ? "Bild da" : "alle " + da + " Bilder da") : da + " von " +
           w.length + " Bildern da, sonst Platzhalter";
     }
-    // MF4: „11 Fragen · Lösungen angesehen · Im Chat geprüft: 2 Abweichungen“ (angesehen: S.loesungenAngesehen, nachbau.js)
+    // MF4: „11 Fragen · Lösungen angesehen · Im Chat geprüft: 2 Abweichungen“; AP13.45 B16: ohne Durchsicht „11 Fragen
+    // (Lösungen freiwillig prüfen)“ (S.fragenWert, nachbau.js)
     if (n === 6) {
       var nf = S.fragenListe.length;
-      return !nf ? "keine Fragen" : [nf === 1 ? "1 Frage" : nf + " Fragen", S.pruefText(S.loesungenAngesehen() ? "angesehen" :
-          "nicht_angesehen"), S.pruefStand()].filter(Boolean).join(" · ");
+      return !nf ? "keine Fragen" : [S.fragenWert(nf, ""), S.pruefStand()].filter(Boolean).join(" · ");
     }
     return "";
   }
@@ -227,8 +227,12 @@
     // MF2: „Erweitert“ in Schritt 2, sobald ein Weg gewählt ist; was darin steht, hängt am Weg
     $("erweitert-2").hidden = !z;
     $("m-kontext-l").hidden = z !== "mach" && z !== "richtung";
+    if (S.lernzielHoehe) S.lernzielHoehe();
     $("mehr").hidden = z !== "steuer";
-    var was2 = z === "steuer" ? "Lehrplan, Mehr einstellen" : "Lehrplan, Worum geht es genau?, Material";
+    // AP13.45 B10: das Lernziel steht sichtbar über „Erweitert“
+    var was2 = z === "steuer" ? "Lehrplan, Mehr einstellen" : "Lehrplan, Material";
+    var lz = S.editorText("lernziel");
+    if (lz && $("m-kontext-t").textContent !== lz) $("m-kontext-t").textContent = lz;
     if ($("erweitert-2-was").textContent !== was2) $("erweitert-2-was").textContent = was2;
     erweitert2Pruefen();
     kursZeigen();
@@ -266,7 +270,8 @@
     }
     // MF3: in „Ich steuere“ schon vor der ersten Antwort, dann nur mit der Art des Einsetzens
     $("erweitert-5").hidden = !inhalt() && !(z === "steuer" && Z.mappe && s >= 5);
-    var was5 = !inhalt() ? "Einsetzen" : (z === "steuer" ? "Einsetzen, " : "") + "Bausteine, Kennzahlen";
+    // AP13.45 B15: „Zahlen zur Einheit“ statt „Bausteine, Kennzahlen“
+    var was5 = !inhalt() ? "Einsetzen" : (z === "steuer" ? "Einsetzen, " : "") + "Zahlen zur Einheit";
     $("diagnosen").hidden = !inhalt();
     if ($("erweitert-5-was").textContent !== was5) $("erweitert-5-was").textContent = was5;
     erweitert5Pruefen();
@@ -288,6 +293,7 @@
       b.hidden = d || S.aendern !== n;
       if (!b.hidden) b.textContent = zielText(n, s);
     });
+    if (S.weiterOhne) S.weiterOhne();                // AP13.45 B17
     // MF4 (Konzept §3.8): die Rückmeldung öffnet „Nein, es hakt“ oder „Rückmeldung geben“, nicht der Download selbst
     $("rueckmeldung").hidden = !!$("rueckmeldung").dataset.zu || !$("rueckmeldung").dataset.offen;
     $("speichern").hidden = !Z.mappe;
@@ -352,7 +358,7 @@
       $("weiter").hidden = !r || !!Z.mappe;
       if (!r) return;
       $("weiter-knopf").textContent = "Weiter mit „" + (r.titel || r.dateiname) + "“";
-      $("weiter-zeit").textContent = "Zuletzt gesichert " + datumZeit(r.zeit);
+      $("weiter-zeit").textContent = "Zuletzt gespeichert " + datumZeit(r.zeit);
       $("weiter-knopf").onclick = function () {
         oeffne(async function () { await km.mappeAusBytes(r.zip, null); }, "Wird geöffnet …");
       };
@@ -383,7 +389,7 @@
     S.katalogDa.then(function () { return km.autosaveLesen().catch(function () { return null; }); }).then(function (r) {
       if (!r) { startAbsenden(); return; }
       frage("Einheit „" + (r.titel || r.dateiname) +
-          "“ verwerfen? Was du nicht mit „Zwischenstand speichern“ gesichert hast, geht verloren.",
+          "“ verwerfen? Was du nicht mit „Zwischenstand speichern“ gespeichert hast, geht verloren.",
         async function () {
           await km.autosaveLoeschen();
           $("weiter").dataset.da = ""; $("weiter").hidden = true;
@@ -992,10 +998,11 @@
     // nur verschieben, wenn es nicht schon dort steht: ein Verschieben nimmt dem Feld den Fokus
     var nach = function (feld, anker) { if (feld.previousElementSibling !== anker) anker.after(feld); };
     var zuletzt = function (feld, ort) { if (feld.parentNode !== ort || feld.nextElementSibling) ort.appendChild(feld); };
-    // MF2: sonst unter „Erweitert“ nach „Worum geht es genau?“ (in „Ich steuere“ steht es unter „Mehr einstellen“)
+    // MF2: sonst unter „Erweitert“ nach dem Lehrplan (in „Ich steuere“ steht es unter „Mehr einstellen“); AP13.45 B10: das
+    // Lernziel steht nicht mehr dort
     if (p && z === "mach") zuletzt(r, $("mach-teil"));
     else if (p && z === "richtung") nach(r, $("r-art").closest(".aus-gruppe"));
-    else nach(r, $("m-kontext-l"));
+    else nach(r, $("lehrplan-teil"));
     r.hidden = z !== "mach" && z !== "richtung";
     if (p) nach(a, $("vorlagen")); else zuletzt(a, document.querySelector(".mehr-felder"));
     $("r-material-zeile").textContent = p ? "für diese Art nötig" : "freiwillig";
@@ -1183,7 +1190,8 @@
     if (!Z.mappe || erw2Fuer === Z.mappe || S.angabenFuer !== Z.mappe || !zweig()) return;
     erw2Fuer = Z.mappe;
     var a = S.angaben || {}, lp = a.lehrplan;
-    if (String(S.kontextJetzt() || "").trim() || /\S/.test(Z.mappe.material || "") || String(a.fach || "").trim() ||
+    // AP13.45 B10: das Lernziel steht außerhalb; in „Ich steuere“ öffnet es „Erweitert“ wie bisher („Mehr einstellen“)
+    if ((zweig() === "steuer" && String(S.kontextJetzt() || "").trim()) || /\S/.test(Z.mappe.material || "") || String(a.fach || "").trim() ||
         a.lehrplanbezug === "ja" || (lp && (lp.lernbereiche || []).length)) erweitertAuf("erweitert-2", true);
   }
   document.addEventListener("click", function (ev) {
@@ -1824,7 +1832,7 @@
   };
   $("weiter-weg").onclick = function () {
     var titel = $("weiter-knopf").textContent.replace(/^Weiter mit /, "");
-    frage("Einheit " + titel + " verwerfen? Sie ist nur in diesem Browser gesichert.", async function () {
+    frage("Einheit " + titel + " verwerfen? Sie ist nur in diesem Browser gespeichert.", async function () {
       await km.autosaveLoeschen();
       $("weiter").dataset.da = ""; $("weiter").hidden = true;
       $("f-thema").focus();
@@ -1834,7 +1842,7 @@
     var titel = (Z.mappe && ((Z.mappe.einheit && Z.mappe.einheit.thema) || Z.mappe.titel)) || "";
     frage("Einheit „" + titel + "“ schließen? " + (S.gespeichert ?
         "Die Einheit hast du gespeichert; die Sicherung im Browser wird gelöscht."
-      : "Was du nicht mit „Zwischenstand speichern“ gesichert hast, geht verloren."), async function () {
+      : "Was du nicht mit „Zwischenstand speichern“ gespeichert hast, geht verloren."), async function () {
       clearTimeout(S.autosaveTimer); S.autosaveTimer = null; delete $("autosave-stand").dataset.offen;
       await km.autosaveLoeschen();
       S.leeren();
@@ -1897,7 +1905,20 @@
     kontextTimer = setTimeout(function () { var a = kontextOffen; kontextOffen = {}; angabenSchreiben(a);
         S.textSpaeter(); }, 400);
   }
-  $("m-kontext").addEventListener("input", function () { kontextSchreiben("kontext", $("m-kontext").value); });
+  $("m-kontext").addEventListener("input", function () { kontextSchreiben("kontext", $("m-kontext").value); lernzielHoehe(); });
+  // AP13.45 B10: das Lernziel ist ein einzeiliges Feld, das mit dem Text wächst; Enter bricht keine Zeile (wie ein Eingabefeld)
+  var lernzielSig = "";
+  function lernzielHoehe() {
+    var f = $("m-kontext"), sig = f.value + "|" + innerWidth + "|" + f.getClientRects().length;
+    if (sig === lernzielSig) return;
+    lernzielSig = sig;
+    if (!f.getClientRects().length) return;
+    f.style.height = "";
+    if (f.scrollHeight > f.clientHeight + 1) f.style.height = (f.scrollHeight + f.offsetHeight - f.clientHeight) + "px";
+  }
+  S.lernzielHoehe = lernzielHoehe;
+  $("m-kontext").addEventListener("keydown", function (ev) { if (ev.key === "Enter" && !ev.isComposing) ev.preventDefault(); });
+  window.addEventListener("resize", function () { lernzielHoehe(); });
   // AP13.35 M1: ab Einheit 2 steht die Beschreibung des Kurses (Text der ersten Einheit, `kurs.kontext`) über dem Feld der
   // Einheit, im Plan und in „Mach du“/„Ich gebe die Richtung“, mit „ändern“; das Feld dazu schreibt den Steckbrief. Leer:
   // keine Zeile „Kurs:“ im Text für den Chat. Ein Zustand für beide Stellen
@@ -2009,4 +2030,15 @@
     fachWoerter: fachWoerter, fachJetzt: fachJetzt, weiterAnzeigen: weiterAnzeigen, zeichneAussehen: zeichneAussehen,
     zeichneSchritte: zeichneSchritte, zeigeFehler: zeigeFehler, oeffneSchritt: oeffneSchritt, zurueckZumStand: zurueckZumStand,
     erweitertAuf: erweitertAuf, aufdecken: aufdecken, kurzName: kurzName });
+  // AP13.45 B8: ab 1000 px steht die Kopfzeile fest oben; ihre Höhe (`--kopf-h` am Wurzelelement) hält Sprünge und Fokus
+  // darunter (scroll-padding-top) und rückt die haftenden Leisten darunter (ansicht.css). Ein Wert, kein :has
+  (function () {
+    var k = document.querySelector(".kopf"); if (!k) return;
+    var setzen = function () {
+      var h = Math.ceil(k.getBoundingClientRect().height) + "px";
+      if (document.documentElement.style.getPropertyValue("--kopf-h") !== h) document.documentElement.style.setProperty("--kopf-h", h);
+    };
+    setzen();
+    if (window.ResizeObserver) new ResizeObserver(setzen).observe(k); else window.addEventListener("resize", setzen);
+  })();
 })();

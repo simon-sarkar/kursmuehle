@@ -19,6 +19,14 @@
     return (document.querySelector("input[name=text-art]:checked") || {}).value || "einheit";
   }
 
+  // AP13.45 B17: vor dem Kopieren der Weg zu Schritt 5 ohne Kopieren (Text auf anderem Weg in den Chat gebracht); auch aus
+  // zeichneSchritte, damit er nach „Ändern“ nicht stehen bleibt
+  function weiterOhne() {
+    var b = $("weiter-4-ohne"); if (!b) return;
+    var t = texte.teile[texte.teil] || "";
+    b.hidden = !Z.mappe || !Z.mappe.chat || !t || ki() || schritt() !== 4 || (S.aendern !== null && S.aendern !== undefined);
+  }
+  S.weiterOhne = weiterOhne;
   function zeichneChat() {
     var gewaehlt = !!(Z.mappe && Z.mappe.chat && chatInfo(Z.mappe.chat));
     $("chat-wahl").hidden = gewaehlt && !S.chatWahlOffen;
@@ -68,6 +76,8 @@
     var name = c.wert === "anderer" ? "deinen Chat" : c.text, adr = /^https:\/\//.test(c.adresse || "") ? c.adresse : "";
     $("chat-weg").hidden = ki();
     $("chat-weg-satz").textContent = S.editorText("chat_weg", { chat: name });
+    // AP13.45 B7: auf dem Handy „Wechsle zu …“ (Dativ), mit Rückweg; welcher Satz steht, entscheidet ansicht.css
+    $("chat-weg-handy").textContent = S.editorText("chat_weg_handy", { chat: c.wert === "anderer" ? "deinem Chat" : c.text });
     $("chat-oeffnen").hidden = !adr;
     if (adr) { $("chat-oeffnen").href = adr; $("chat-oeffnen").textContent = S.editorText("chat_oeffnen", { chat: c.text }); }
     // Größe nur unter „Erweitert“ (keine Kennzahl im Blick)
@@ -86,6 +96,7 @@
     k.classList.toggle("haupt", !(S.aendern === 4 && schritt() > 4));
     k.classList.toggle("ist-kopiert", gesperrt);
     $("s-satz-5").hidden = ki();
+    weiterOhne();
     zeichneKopiert(c);
   }
   // MF2: nach dem Kopieren zwei Zeilen, was im Chat zu tun ist (bei Teilen mit dem Teil und dem nächsten)
@@ -413,6 +424,7 @@
   // MF2 (Konzept §3.4, Entscheidung 3): kein Dialog vor dem Kopieren; der Satz zu den Rechten steht am Materialfeld und
   // hinter dem (i) neben dem Knopf
   $("text-kopieren").onclick = function () { textKopieren(); };
+  $("weiter-4-ohne").onclick = function () { if (S.gehe) S.gehe(5); };
 
   function setzeModus(m) { var r = document.querySelector("input[name=modus][value=" + m + "]");
       if (r) r.checked = true; }

@@ -1333,3 +1333,31 @@ body:has(dialog[open]) .editor-schweb { display: none; }
   :root[data-offen="3"] { scroll-padding-bottom: calc(16px + 96px + env(safe-area-inset-bottom, 0px)); }
   :root[data-offen="3"].vorschau-auf { scroll-padding-bottom: calc(16px + 60vh); }
 }
+/* AP13.45 B8 (Heuristik): ab 1000 px bleibt die Kopfzeile oben stehen, deckend über dem Inhalt (unter Dialogen, die im
+ * Top Layer liegen). Sprünge (scrollIntoView) und Fokus enden darunter (WCAG 2.4.11): scroll-padding-top am Wurzelelement
+ * mit ihrer Höhe `--kopf-h` (schritte.js); die haftenden Leisten darunter rücken um dieselbe Höhe */
+@media (min-width: 1000px) {
+  .kopf { position: sticky; top: 0; z-index: 30; }
+  html { scroll-padding-top: calc(var(--kopf-h, 64px) + 12px); }
+  .sprung { top: var(--kopf-h, 64px); }
+}
+@media (min-width: 1100px) {
+  .vorschau-spalte { top: calc(var(--kopf-h, 64px) + 12px); max-height: calc(100vh - var(--kopf-h, 64px) - 24px); }
+}
+/* AP13.45 B6: die zwei Wege ohne den Chat als Textlinks unter „Korrekturbitte kopieren“ */
+.korrektur-selbst { margin: 6px 0 0; color: var(--leise); font-size: 0.93rem; }
+.korrektur-selbst .textlink { font-size: inherit; padding: 6px 0; min-height: 24px; }
+/* AP13.45 B10: das Lernziel ist ein einzeiliges Feld, das mit dem Text wächst (schritte.js lernzielHoehe) */
+.m-kontext-l { margin-top: 14px; }
+textarea.einzeilig { resize: none; overflow-y: hidden; }
+/* AP13.45 B7: der Satz zum Weg in den Chat; auf dem Handy (bis 640 px wie die Kopfzeile) einer mit App und Rückweg */
+.chat-weg-handy { display: none; }
+@media (max-width: 640px) {
+  .chat-weg-breit { display: none; }
+  .chat-weg-handy { display: inline; }
+}
+/* AP13.45 B17: vor dem Kopieren unauffällig der Weg zu Schritt 5 */
+.weiter-4-ohne { display: block; margin-top: 8px; font-size: 0.93rem; }
+/* AP13.45 B15: „Testversion“ mit (i) in der Fußzeile */
+.fuss-beta { margin: 0; display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 6px; }
+.fuss-beta .info-text { flex-basis: 100%; max-width: 24rem; margin: 4px auto 0; text-align: left; }

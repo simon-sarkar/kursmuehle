@@ -971,6 +971,7 @@
     $("korrektur-1").textContent = "Füg die Bitte in dasselbe Gespräch bei " + chatName + " ein und schick sie ab.";
     $("korrektur-2").textContent = "Kopier die ganze Antwort und füg sie unten ein.";
     auswegeKorrektur(zeigen);
+    selbstWege(zeigen && !abg && !nurBitte);
     modellHinweisZeigen(zeigen);
     $("korrektur-antwort").hidden = !S.korrektur.offen;
     S.standKarte($("korrektur-ergebnis"), S.korrektur.stand, S.korrektur.art);
@@ -1021,7 +1022,28 @@
               text: "Baustein weglassen" })])]));
     });
   }
-  $("korrektur-auswege").addEventListener("click", async function (ev) {
+  // AP13.45 B6: schon nach der ersten roten Antwort unter „Korrekturbitte kopieren“ „oder: im Editor selbst ändern ·
+  // Baustein weglassen“ für den ersten roten Baustein (der Editor öffnet an seinem ersten Fehler, wie die Auswege);
+  // stehen die Auswege je Baustein schon oben in der Karte, entfällt die Zeile
+  function selbstWege(zeigen) {
+    var p = $("korrektur-selbst"), T = S.editorText;
+    var rot = zeigen && $("korrektur-auswege").hidden ? korrekturZiele().filter(function (id) {
+      var b = pruefBaustein(id); return b && b.status === "fehler"; }) : [];
+    rot.sort(function (x, y) { return (nummer(x) || 999) - (nummer(y) || 999); });      // der erste in der Einheit
+    p.hidden = !rot.length;
+    var zustand = rot.length ? rot[0] + "|" + (rot.length > 1 ? nummer(rot[0]) : "") : "";
+    if (p.dataset.zustand === zustand && (p.childNodes.length || !rot.length)) return;
+    p.dataset.zustand = zustand;
+    p.textContent = "";
+    if (!rot.length) return;
+    var nr = rot.length > 1 ? nummer(rot[0]) : "";
+    p.append(T("selbst_oder") + " ",
+      el("button", { type: "button", cls: "textlink", "data-ausweg": "editor", "data-id": rot[0], text: T("selbst_editor") }),
+      el("span", { cls: "selbst-punkt", "aria-hidden": "true", text: " · " }),
+      el("button", { type: "button", cls: "textlink", "data-ausweg": "weglassen", "data-id": rot[0],
+          text: nr ? T("selbst_weglassen_nr", { n: nr }) : T("selbst_weglassen") }));
+  }
+  async function auswegKlick(ev) {
     var b = ev.target.closest("[data-ausweg]"); if (!b) return;
     var k = S.karteNach(b.dataset.id); if (!k) return;
     try {
@@ -1033,7 +1055,9 @@
         S.fokus(["rueckgaengig-knopf", "weiter-5", "eingabe-stand"], true);
       }
     } catch (e) { zeigeFehler(e); }
-  });
+  }
+  $("korrektur-auswege").addEventListener("click", auswegKlick);
+  $("korrektur-selbst").addEventListener("click", auswegKlick);
   // AP13.8: nach der zweiten roten Runde (Zähler `schleife`) einmal je Einheit eine Zeile unter der Korrekturbitte zum
   // Modell, nur im Kopierweg (mit verbundener KI, Testphase, Schlüssel oder Agent, ist das Modell gesetzt). Gemerkt in
   // `modellhinweis`.

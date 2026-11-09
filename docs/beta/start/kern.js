@@ -733,7 +733,8 @@ window.km = km;
       S.autosaveTimer = null;
       if (!Z.geladen || !Z.mappe) { delete $("autosave-stand").dataset.offen; return; }
       // MF1: klein unter „Menü“; ohne Sicherung im Browser ein Satz, der auch auf dem Handy steht (Klasse warn)
-      km.autosaveSchreiben().then(function () { $("autosave-stand").textContent = "Gesichert " + zeit(Date.now());
+      // AP13.45 B11: „Gespeichert“; „Sicherung“ heißt auf der Plattform die Kursdatei
+      km.autosaveSchreiben().then(function () { $("autosave-stand").textContent = "Gespeichert " + zeit(Date.now());
           $("autosave-stand").classList.remove("warn"); if (!S.autosaveTimer) delete $("autosave-stand").dataset.offen; })
         .catch(function () { $("autosave-stand").textContent = "Keine Sicherung im Browser; speichere den Zwischenstand.";
           $("autosave-stand").classList.add("warn"); if (!S.autosaveTimer) delete $("autosave-stand").dataset.offen; });
@@ -808,6 +809,7 @@ window.km = km;
       if (f.tagName === "SELECT" && f.selectedIndex < 0) f.selectedIndex = 0;
     });
     if (S.zielgruppeSperre) { S.zielgruppeSperre("f", true); S.zielgruppeSperre("a", true); }
+    if (S.lernzielHoehe) S.lernzielHoehe();             // AP13.45 B10: das einzeilige Lernziel wächst mit dem Text
     // Grenzzeile an beiden Materialfeldern (AP13.13): ohne Chat oder ohne Messwert nur die Größe des Materials, rot
     // mit Satz, sobald Teil 1 den Messwert des Chats übersteigt
     var c = chatInfo(Z.mappe.chat), mat = Z.mappe.material || "", zuViel = false, zeile = "";
