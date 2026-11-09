@@ -215,6 +215,12 @@
     }
     ["mach", "richtung", "steuer"].forEach(function (w) { $("zweig-" + w).setAttribute("aria-checked", String(z === w));
         });
+    // AP13.45 B4: der Satz unter der Überschrift nennt den gewählten Weg (oberflaeche.schritt_satz „2“, „2-richtung“,
+    // „2-steuer“); ohne Wahl steht keiner
+    if (S.katalog) {
+      var ss = S.katalog.oberflaeche.schritt_satz || {}, s2 = !z ? "" : ss[z === "mach" ? "2" : "2-" + z] || "";
+      if ($("s-satz-2").textContent !== s2) $("s-satz-2").textContent = s2;
+    }
     $("steuer-teil").hidden = z !== "steuer";
     $("mach-teil").hidden = z !== "mach" && z !== "richtung";
     $("richtung-teil").hidden = z !== "richtung";

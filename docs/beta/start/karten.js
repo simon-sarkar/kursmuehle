@@ -932,15 +932,28 @@
     var nurZeit = nurBitte && S.korrekturen.every(function (k) { return k.regel === "zeit.kurz"; });
     $("korrektur").classList.toggle("neutral", nurBitte);
     ul.hidden = nurZeit;
+    // AP13.45 B2: geplante Bausteine, die in der Antwort fehlen, zählen eigens (wie die Stand-Karte darüber)
+    var fehlt = {};
+    S.korrekturen.forEach(function (k) { if (k.regel === "leer.antwort" && k.baustein) fehlt[k.baustein] = 1; });
+    var nf = Object.keys(fehlt).length, nk = n - nf;
+    var fehltText = nf === 1 ? S.editorText("fehlt_einer") : S.editorText("fehlen", { n: nf });
     $("korrektur-titel").textContent = nurZeit ? S.editorText("zeit_kurz_titel") : nurGelb ? (n === 1 ?
         "Ein Lesetext bekommt kürzere Sätze" : n + " Lesetexte bekommen kürzere Sätze")
       : nurBitte ? S.editorText("bitte_titel")
-      : n > 1 ? n + " Bausteine brauchen eine Korrektur" : n === 1 ? "Ein Baustein braucht eine Korrektur"
+      : nf && !nk ? (nf === 1 ? S.editorText("titel_fehlt_eins") : S.editorText("titel_fehlen", { n: nf }))
+      : nk > 1 ? nk + " Bausteine brauchen eine Korrektur" + (nf ? ", " + fehltText : "")
+      : nk === 1 ? "Ein Baustein braucht eine Korrektur" + (nf ? ", " + fehltText : "")
       : "Die Einheit braucht eine Korrektur";
     var ki = !!(S.anKiAktiv && S.anKiAktiv());
     // MF3: ein Satz vor dem Kopieren, nach dem Kopieren die zwei Zeilen wie in Schritt 4
+    // AP13.45 B2: ist die Antwort vermutlich abgeschnitten, ist die Bitte der zweite Weg (erster: „Andere Antwort einfügen“)
+    var abg = zeigen && !!(S.abgeschnittenGilt && S.abgeschnittenGilt());
+    $("korrektur-kopieren").classList.toggle("haupt", !abg);
+    $("eingabe-nochmal").classList.toggle("textlink", !abg);
+    $("eingabe-nochmal").classList.toggle("knopf", abg);
+    $("eingabe-nochmal").classList.toggle("haupt", abg);
     $("korrektur-zeile").textContent = ki ? "„An meine KI senden“ schickt die Bitte an deine KI; ihre Antwort setzt die " +
-        "Mühle ein." : S.korrektur.offen ? "" : nurZeit ? S.editorText("zeit_kurz_satz", { minuten: S.zeitKurzMinuten ||
+        "Mühle ein." : S.korrektur.offen ? "" : abg ? S.editorText("abgeschnitten_bitte") : nurZeit ? S.editorText("zeit_kurz_satz", { minuten: S.zeitKurzMinuten ||
         ((Z.mappe && Z.mappe.einheit) || {}).minuten || "" }) : "Die Bitte nennt dem Chat " +
         (S.korrekturen.length + neu.length > 1 ? "alle Punkte zusammen" : "die Stelle") + " und das Format.";
     $("korrektur-zeile").hidden = !$("korrektur-zeile").textContent;

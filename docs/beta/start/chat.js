@@ -648,9 +648,9 @@
         }).length, f = S.fehlerZahl(), rot = Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler"; }).length;
     if (!n) return;
     eingabeZu(true);
-    standKarte($("eingabe-stand"), eingesetztKopf() + ": " + n + (n === 1 ? " Baustein" : " Bausteine") + (rot ? ", " + rot +
-        (rot === 1 ? " braucht" : " brauchen") + " eine Korrektur." : f ? "; die Antwort braucht eine Korrektur." : "."),
-        f ? "fehler" : "ok");
+    var fehlend = fehlendZahl();
+    standKarte($("eingabe-stand"), eingesetztKopf() + ": " + n + (n === 1 ? " Baustein" : " Bausteine") +
+        standZahlen(rot, fehlend, f), f || fehlend ? "fehler" : "ok");
   }
   function zeichneTeile() {
     standOhneAntwort();
@@ -757,6 +757,14 @@
       // neuer Inhalt: ab Schritt 5 neu durchsehen
       if (schritt() > 5 || schritt() < 5) { Z.mappe.schritt = 5; S.aendern = null; }
       await auswertung();
+      // AP13.45 B2: vermutlich abgeschnitten (gen/mappe.py abgeschnitten): die Stand-Karte nennt zuerst „Andere Antwort
+      // einfügen“, die rote Karte bleibt als zweiter Weg (karten.js zeichneKorrektur, S.abgeschnittenGilt); nicht mit eigener
+      // KI: deren Antwort kopiert niemand
+      S.abgeschnitten = null;
+      if (feld && !ki()) {
+        var ab = await km.mappeFn("abgeschnitten", [Z.mappe, Z.pruefung, text]);
+        if (ab && ab.abgeschnitten) S.abgeschnitten = { mappe: Z.mappe, fehlen: ab.fehlen };
+      }
       // Hash je Baustein merken; einzelne Bausteine zählen als Runde, eine ganze Einheit fängt neu an
       var gleichE = schleifeMerken(e.ids || Z.pruefung.bausteine.map(function (b) { return b.id; }), false);
       S.letzteAntwort.nach = antwortStand(); S.modusSpaeter = false;   // AP13.41 §1.3
@@ -793,6 +801,7 @@
       var rot = Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler" && (!e.ids ||
           e.ids.indexOf(b.id) >= 0); }).length;
       var aussen = Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler" && !d.baustein; }).length;
+      var fehlend = fehlendZahl(), abg = S.abgeschnittenGilt();
       if (gleichE.length) mehr = " Die Antwort für „" + gleichE[0] + "“ ist dieselbe wie vorher." + mehr;
       if (umbenannt.length) mehr = " " + S.editorText("ids_zugeordnet", { titel: umbenannt.slice(0, 3).map(function (t) {
           return "„" + t + "“"; }).join(", ") + (umbenannt.length > 3 ? " und " + (umbenannt.length - 3) + " weitere" : "") }) + mehr;
@@ -812,22 +821,41 @@
       zeige(kachelSatz ? eingesetztKopf() + ": " + kachelSatz + (aussen && !rot ? " Die Antwort braucht eine Korrektur." : "")
           + schonSatz(!knopfGeklickt && !modusErzwungen && !ki()) + mehr + e.text
         : wechsel + kopf + zahl + (zahl === 1 ? " Baustein" : " Bausteine")
-        + (rot ? ", " + rot + (rot === 1 ? " braucht" : " brauchen") + " eine Korrektur." : aussen ?
-            "; die Antwort braucht eine Korrektur." : ".") + schonSatz(feld && !knopfGeklickt && !modusErzwungen && !ki()) + mehr + e.text,
-        rot || aussen ? "fehler" : "ok");
+        + (abg ? ". " + editorText("abgeschnitten") : standZahlen(rot, fehlend, aussen))
+        + schonSatz(feld && !abg && !knopfGeklickt && !modusErzwungen && !ki()) + mehr + e.text,
+        rot || aussen || fehlend ? "fehler" : "ok");
       // AP13.33 §2.1: stand der Fokus im Feld, geht er an die nächste Stelle. AP13.36 §1.2: nicht auf „Weiter“ (ein Enter
       // überginge die Durchsicht der Karten), sondern auf die erste rote Karte, sonst auf die Meldung über den Karten
       if (feld) {
         var rotId = (Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler" && (!e.ids ||
             e.ids.indexOf(b.id) >= 0); })[0] || {}).id;
-        var neuOrt = S.fokusRetten([rotId ? $("karte-" + rotId) : null, "eingabe-stand", "korrektur-kopieren", "weiter-5",
-            "eingabe-nochmal"], $("eingabe-bereich"));
+        var neuOrt = S.fokusRetten(abg ? ["eingabe-stand", "eingabe-nochmal"] : [rotId ? $("karte-" + rotId) : null,
+            "eingabe-stand", "korrektur-kopieren", "weiter-5", "eingabe-nochmal"], $("eingabe-bereich"));
         if (neuOrt) neuOrt.scrollIntoView({ block: "nearest" });
         if (S.nachStunde) S.nachStunde(!!(rot || aussen));   // AP13.40: Sequenz, mit eigener KI weiter zur nächsten Stunde
       }
       return true;
     } catch (err) { zeigeFehler(err); return false; }
   }
+  // AP13.45 B2: geplante Bausteine, die nach der Antwort leer blieben (`leer_antwort`, wie die Punkte „fehlt“ der roten
+  // Karte); die Stand-Karte zählt rote und fehlende getrennt, mit denselben Zahlen wie der Titel der roten Karte
+  function fehlendZahl() {
+    return Z.mappe ? Z.mappe.bausteine.filter(function (k) { return k.geplant && k.leer_antwort && !k.aus; }).length : 0;
+  }
+  function standZahlen(rot, fehlend, aussen) {
+    var t = [];
+    if (rot) t.push(rot + (rot === 1 ? " braucht" : " brauchen") + " eine Korrektur");
+    if (fehlend) t.push(fehlend === 1 ? editorText("fehlt_eins") : editorText("fehlen", { n: fehlend }));
+    return t.length ? ", " + t.join(", ") + "." : aussen ? "; die Antwort braucht eine Korrektur." : ".";
+  }
+  S.fehlendZahl = fehlendZahl;
+  // gilt „abgeschnitten“ noch? Nur, solange die fehlenden Karten dieser Mappe leer sind
+  S.abgeschnitten = null;
+  S.abgeschnittenGilt = function () {
+    var a = S.abgeschnitten;
+    return !!a && a.mappe === Z.mappe && a.fehlen.length > 0 && a.fehlen.every(function (id) { var k = karteNach(id);
+      return k && k.geplant && k.leer_antwort && !k.aus; });
+  };
   // MF8: Elemente der laufenden Einheit (ohne Struktur, ohne weggelassene): wie viele gefüllt, welche noch leer
   function kachelnBehalten(rot) {
     var tag = einheitTag() || "", ohneZeit = {};
