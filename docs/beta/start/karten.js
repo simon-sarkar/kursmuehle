@@ -936,7 +936,7 @@
     var fehlt = {};
     S.korrekturen.forEach(function (k) { if (k.regel === "leer.antwort" && k.baustein) fehlt[k.baustein] = 1; });
     var nf = Object.keys(fehlt).length, nk = n - nf;
-    var fehltText = nf === 1 ? S.editorText("fehlt_einer") : S.editorText("fehlen", { n: nf });
+    var fehltText = nf === 1 ? S.editorText("fehlt_eins") : S.editorText("fehlen", { n: nf });
     $("korrektur-titel").textContent = nurZeit ? S.editorText("zeit_kurz_titel") : nurGelb ? (n === 1 ?
         "Ein Lesetext bekommt kürzere Sätze" : n + " Lesetexte bekommen kürzere Sätze")
       : nurBitte ? S.editorText("bitte_titel")
