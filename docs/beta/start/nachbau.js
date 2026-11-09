@@ -528,7 +528,7 @@
     b.textContent = o.nachlieferung_ganz;
   };
   $("herunterladen-ganz").onclick = async function () {
-    S.bauLaeuft = true; knoepfe(); status("Datei wird erstellt …", "lauf");
+    S.bauLaeuft = true; knoepfe(); status("", "");         // AP13.45 B11: angesagt wird nur in Schritt 7 (#erstellen-stand)
     try {
       await km.baue(Object.assign({}, km.bauOptionen || {}));
       S.bauLaeuft = false;
@@ -537,8 +537,8 @@
         // die ganze Datei kommt als neuer Kurs: „Importiert?“ fragt wieder, und das Ja merkt den Stand aller Einheiten neu
         Z.mappe.importiert = []; Z.mappe.importiert_stand = {}; autosave();
         Z.bau.downloadName = (await km.mappeFn("dateiname", [Z.mappe, heute()])).replace(/\.kursmappe\.zip$/, ".mbz");
-        herunterladen(); status("Bereit", "ok");
-      } else status("Die Datei ließ sich nicht erstellen.", "fehler");
+        herunterladen();
+      } else if (!Z.bau) status("Die Datei ließ sich nicht erstellen.", "fehler");
       zeichneWiederherstellen(); knoepfe(); zeichneSchritte();
       S.fokusRetten(["herunterladen-ganz"]);
     } catch (e) { S.bauLaeuft = false; zeigeFehler(e); knoepfe(); }
@@ -687,7 +687,9 @@
     if (Z.bau && Z.bau.mbz) { herunterladen(); return; }
     S.bauLaeuft = true;
     knoepfe();
-    status("Datei wird erstellt …", "lauf");
+    // AP13.45 B11 (WCAG 4.1.3): den Zustand sagt nur die Zeile in Schritt 7 an (#erstellen-stand: „Datei wird erstellt …“,
+    // dann „Heruntergeladen: …“ oder der Fehler); die Statuszeile im Kopf schweigt dazu
+    status("", "");
     try {
       var neu = nachlieferung(), opt = Object.assign({}, km.bauOptionen || {});
       if (neu.length) opt.optionen = Object.assign({}, opt.optionen || {}, { delta: neu.join(",") });
@@ -698,12 +700,12 @@
           .replace(/\.kursmappe\.zip$/, neu.length ? "_nachlieferung.mbz" : ".mbz");
       S.bauLaeuft = false;
       if (Z.bau && Z.bau.mbz) {
-        herunterladen(); status("Bereit", "ok");
+        herunterladen();
         rueckmeldungBitteSpaeter();
         // AP13.12 a11: erster Download der Einheit, für die Minuten in der Rückmeldung
         if (Z.mappe && !Z.mappe.zeit_download) { Z.mappe.zeit_download = new Date().toISOString(); autosave(); }
       }
-      else status("Die Datei ließ sich nicht erstellen.", "fehler");
+      else if (!Z.bau) status("Die Datei ließ sich nicht erstellen.", "fehler");
       zeichneWiederherstellen(); knoepfe(); zeichneSchritte(); rueckmeldungFuellen();
       // AP13.33 §2.1: der Knopf war beim Bauen gesperrt (Fokus auf body); der Fokus kehrt zu ihm zurück
       S.fokusRetten(["herunterladen", "importiert-ja"]);

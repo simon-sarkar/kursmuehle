@@ -99,8 +99,9 @@ p { margin: 0 0 10px; }
 .kopf-mitte { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .marke { display: inline-flex; align-items: center; gap: 10px; color: var(--kopf-text); text-decoration: none; font-weight: 700; font-size: 1.1rem; }
 .marke img { display: block; border-radius: 7px; box-shadow: 0 0 0 1px var(--kopf-strich); }
+/* AP13.45 B10 (WCAG 1.4.12): die Zeile bricht um statt zu kürzen */
 .kopf-schritt { max-width: 100%; margin: 0; font-size: 0.95rem; color: var(--kopf-text); text-align: center;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  overflow-wrap: break-word; font-variant-numeric: tabular-nums; }
 .kopf-schritt:empty { display: none; }
 .ks-name { color: var(--kopf-leise); }
 .status { max-width: 100%; margin: 0; font-size: 0.85rem; color: var(--kopf-leise); text-align: center; min-width: 0; }
@@ -118,11 +119,13 @@ p { margin: 0 0 10px; }
 .kopf-stand:empty { display: none; }
 .kopf-stand.warn { white-space: normal; max-width: 16rem; text-align: right; }
 /* die Liste des Menüs: eine Karte unter dem Knopf, 44 px je Zeile */
-.kopf-links { position: absolute; top: calc(100% + 6px); right: 0; z-index: 40; min-width: 15rem; display: flex; flex-direction: column;
+/* AP13.45 B10: nie breiter als das Fenster (rechtsbündig unter dem Knopf), lange Zeilen brechen um */
+.kopf-links { position: absolute; top: calc(100% + 6px); right: 0; z-index: 40; min-width: min(15rem, calc(100vw - 24px));
+  max-width: calc(100vw - 24px); display: flex; flex-direction: column;
   padding: 6px 0; background: var(--flaeche); color: var(--text); border: 1px solid var(--linie); border-radius: var(--rund);
   box-shadow: 0 10px 28px var(--schatten), 0 2px 6px var(--schatten); }
 .kopf-link { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 44px; padding: 8px 16px; border: 0;
-  background: none; font: inherit; font-size: 0.95rem; color: var(--text); text-align: left; cursor: pointer; white-space: nowrap; }
+  background: none; font: inherit; font-size: 0.95rem; color: var(--text); text-align: left; cursor: pointer; }
 .kopf-link:hover { background: var(--grund); }
 .kopf-link:focus-visible { outline-offset: -3px; }
 .kopf-link:disabled { color: var(--leise); cursor: default; }
@@ -209,7 +212,7 @@ select { appearance: auto; }
 .schritt.auf .s-titel { font-size: 1.35rem; font-weight: 650; line-height: 1.25; letter-spacing: -0.01em; }
 .s-inhalt { padding: 8px 20px 22px; }
 .schritt:not(.auf) .s-inhalt { display: none; }
-.s-inhalt > .knopf.haupt { margin-top: 18px; }
+.s-inhalt > .knopf.haupt, .aussehen > .knopf.haupt { margin-top: 18px; }
 /* erledigt: Haken statt Nummer */
 .schritt[data-stand=erledigt]:not(.auf) .s-nr { background: none; color: var(--text); font-size: 0; }
 .schritt[data-stand=erledigt]:not(.auf) .s-nr::before { content: ""; width: 12px; height: 7px; margin-top: -4px; border-left: 2px solid currentColor;
@@ -324,6 +327,9 @@ select { appearance: auto; }
 /* 3 Aussehen: Gruppen nacheinander, der Knopf unter der letzten sichtbaren (AP13.19 §2), Kacheln, Familien ohne
    Miniatur */
 .aus-gruppe .unterkopf { margin-top: 6px; }
+/* AP13.45 B7: Überschrift und (i) nebeneinander; das (i) steht nicht in der Überschrift (sonst gehört sein Name dazu) */
+.aus-gruppe .aus-kopf { display: flex; align-items: center; gap: 6px; margin: 6px 0 8px; }
+.aus-gruppe .aus-kopf .unterkopf { margin: 0; }
 .aus-gruppe { margin-top: 14px; }
 .aussehen > .aus-gruppe:first-child { margin-top: 0; }
 .familie-alle { margin-top: 10px; }
@@ -858,7 +864,7 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
     padding-left: 12px; padding-right: 12px; }
   .s-zeile > .s-aendern, .s-zeile > .s-info { grid-column: 3; grid-row: 1; margin-left: 0; }
   .s-fazit { grid-column: 2 / -1; grid-row: 2; }
-  .s-zurueck, .s-inhalt > .knopf.haupt { width: 100%; }
+  .s-zurueck, .s-inhalt > .knopf.haupt, .aussehen > .knopf.haupt { width: 100%; }
   .karte { padding: 10px 12px 6px; }
   .hinzufuegen select { flex: 1 1 auto; }
   .k-neu { order: 3; }
@@ -926,6 +932,13 @@ body.editor-offen { overflow: hidden; }
 @media (max-width: 640px) {
   .ed-fuss { padding-top: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
   .ed-fuss .knopf { flex: 1 1 auto; }
+}
+/* AP13.45 B5 (WCAG 1.4.10): bei geringer Höhe (400 % Zoom) scrollt die ganze Ansicht; Kopf und Leiste unten laufen mit,
+ * statt drei Viertel der Höhe zu belegen */
+@media (max-height: 400px) {
+  .editor[open] { display: block; overflow: auto; }
+  .ed-rumpf { overflow: visible; min-height: 0; }
+  .ed-fuss { box-shadow: none; }
 }
 .ed-vorschau { width: 100%; max-width: 900px; margin: 0 auto; padding: 8px 16px 48px; }
 .ed-liste { position: sticky; top: 0; z-index: 2; background: var(--flaeche); border-bottom: 1px solid var(--linie); }
@@ -1006,9 +1019,8 @@ body.editor-offen { overflow: hidden; }
 .editor-auf-2 { margin-top: 12px; }
 /* AP13.38: schwebender Knopf, fest am Fensterrand; öffnet dieselbe Ansicht wie der Link in der Kopfzeile. Fläche und
  * Rand aus den Tokens (Rand --leise, Schrift --text); das Symbol sitzt auf dem festen Anthrazit des Logos in beiden Schemata.
- * Am Handy in Schritt 3 liegt er über der Vorschauleiste (96 px, aufgeklappt 60 vh); ohne ihn stünde er auf ihr. Die Fußzeile
- * bekommt unten Platz, damit am Seitenende nichts unter ihm liegt. Sichtbar nur ohne offenen Dialog (die Ansicht selbst ist
- * einer). */
+ * Sichtbar nur ab 1000 px (AP13.45, Heuristik B14: schmaler fehlt ihm der freie Rand, „Einheit ansehen“ an der Karte und das
+ * Menü tun dasselbe; editor.js setzt ihn dann nicht) und ohne offenen Dialog (die Ansicht selbst ist einer). */
 .editor-schweb { position: fixed; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 15; display: flex;
   flex-direction: column; align-items: center; gap: 2px; min-width: 72px; padding: 6px 8px 5px; border: 2px solid var(--leise);
   border-radius: 20px; background: var(--flaeche); color: var(--text); font: inherit; font-size: 0.8rem; font-weight: 650;
@@ -1017,10 +1029,6 @@ body.editor-offen { overflow: hidden; }
 .sw-symbol { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%;
   background: #2a2a2a; }
 .sw-symbol img { display: block; width: 44px; height: 44px; }
-/* AP13.42: beim Herunterscrollen am schmalen Fenster weg (editor.js), mit Fokus wieder da */
-.editor-schweb { transition: opacity 0.2s ease, transform 0.2s ease; }
-body.editor-schweb-weg .editor-schweb { opacity: 0; transform: translateY(24px); pointer-events: none; }
-@media (prefers-reduced-motion: reduce) { .editor-schweb { transition: none; } }
 body.editor-offen .editor-schweb { display: none; }
 body:has(dialog[open]) .editor-schweb { display: none; }
 /* AP13.44 §2: ab 1000 px als Lasche am linken Rand, senkrecht mittig (Rand zur Fensterkante offen, Wort in zwei Zeilen);
@@ -1029,7 +1037,6 @@ body:has(dialog[open]) .editor-schweb { display: none; }
 @media (min-width: 1000px) {
   .editor-schweb { left: 0; top: 50%; bottom: auto; transform: translateY(-50%); width: 76px; min-width: 0; padding: 8px 6px 7px 4px;
     border-left: 0; border-radius: 0 20px 20px 0; white-space: normal; text-align: center; }
-  body.editor-schweb-weg .editor-schweb { opacity: 1; transform: translateY(-50%); pointer-events: auto; }
   body.mit-editor-schweb .seite { padding-left: max(16px, calc(96px - max(0px, (100vw - 760px) / 2))); }
 }
 @media (min-width: 1100px) {
@@ -1038,18 +1045,10 @@ body:has(dialog[open]) .editor-schweb { display: none; }
 @media (min-width: 1000px) and (max-width: 1099px) {
   /* aufgeklappte Vorschau (60 vh von unten): mittig in der freien Fläche darüber */
   body[data-offen="3"]:has(.vorschau-spalte.offen) .editor-schweb { top: 20vh; }
-  /* die Fußzeile endet über der Vorschauleiste (96 px) */
+}
+@media (max-width: 1099px) {
+  /* unter 1100 px endet die Fußzeile in Schritt 3 über der Vorschauleiste (96 px) */
   body[data-offen="3"] .fuss { padding-bottom: calc(28px + 96px + env(safe-area-inset-bottom, 0px)); }
-}
-@media (max-width: 999px) {
-  body.mit-editor-schweb .fuss { padding-bottom: calc(28px + 100px + env(safe-area-inset-bottom, 0px)); }
-  /* die haftende Zeile „Übernehmen“ der Lehrplanwahl bleibt über dem Knopf statt hinter ihm */
-  body.mit-editor-schweb .lp-fuss { bottom: calc(114px + env(safe-area-inset-bottom, 0px)); }
-}
-@media (max-width: 999px) {
-  body[data-offen="3"] .editor-schweb { bottom: calc(96px + 16px + env(safe-area-inset-bottom, 0px)); }
-  body[data-offen="3"]:has(.vorschau-spalte.offen) .editor-schweb { bottom: calc(60vh + 16px); }
-  body.mit-editor-schweb[data-schritt="3"] .fuss { padding-bottom: calc(28px + 100px + 96px + env(safe-area-inset-bottom, 0px)); }
 }
 /* Frage vor dem Einsetzen über Handänderungen (§4) */
 .hand-frage { width: min(32rem, calc(100vw - 32px)); padding: 20px 22px; border: 1px solid var(--linie); border-radius: var(--rund);
@@ -1062,6 +1061,9 @@ body:has(dialog[open]) .editor-schweb { display: none; }
   font-size: 0.78rem; white-space: nowrap; }
 /* §9: Kursübersicht als erster Eintrag; „Darstellung“ mit denselben Bildchen wie im Schritt Aussehen */
 .ed-ue { border-width: 2px; }
+/* AP13.45 (Heuristik B12): eingeklappt nur die Kopfzeile mit „Kursübersicht anzeigen“ */
+.ed-ue.ed-ue-zu .ed-b-kopf { margin-bottom: 0; }
+.ed-ue-auf { min-height: 36px; padding: 4px 2px; font-size: 0.88rem; }
 .ed-darstellung-l { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; width: 100%; }
 .ed-darstellung-t { font-size: 0.85rem; font-weight: 600; color: var(--leise); }
 .ed-darstellung { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -1223,13 +1225,8 @@ body:has(dialog[open]) .editor-schweb { display: none; }
 .bild-ablage { border-color: var(--feld-rand); }
 .bild-text-kopf .info-knopf { margin-left: 2px; }
 .bild-text .info-text { margin: 6px 0 0; }
-/* AP13.44 §2 am Handy: Fokus und Sprünge enden über dem schwebenden Knopf „Zum Editor“; „Im Editor ansehen“ an der
- * Karte steht rechts, wo der Knopf (links unten) nie liegt */
+/* AP13.44 §2 am Handy: „Im Editor ansehen“ steht rechts an der Karte */
 @media (max-width: 999px) {
-  :root.mit-editor-schweb { scroll-padding-bottom: calc(16px + 104px + env(safe-area-inset-bottom, 0px)); }
-  /* MF4: die grauen Zeilen der kommenden Schritte stehen unter dem offenen Schritt oft genau auf Höhe des Knopfs (links
-     unten, 16 px + 88 px); sie beginnen rechts davon */
-  body.mit-editor-schweb .schritt[data-stand=kommend]:not(.auf) > .s-zeile { padding-left: 104px; }
   .karte .k-im-editor { display: block; width: fit-content; margin-left: auto; }
 }
 @media (max-width: 640px) {
@@ -1284,8 +1281,6 @@ body:has(dialog[open]) .editor-schweb { display: none; }
 .ed-erweitert { min-height: 36px; padding: 4px 2px; font-size: 0.88rem; }
 .ed-b-erweitert { flex-basis: 100%; display: flex; justify-content: flex-end; }
 .knopf-reihe .ohne-ansehen { min-height: 44px; padding: 6px 4px; }
-/* unter 1000 px liegt „Zum Editor“ unten links: der Textlink steht rechts, nie unter ihm (wie MF4 die kommenden Schritte) */
-@media (max-width: 999px) { body.mit-editor-schweb .knopf-reihe .ohne-ansehen { margin-left: auto; } }
 
 /* MF7: ein Satz unter der Überschrift jedes offenen Schritts (was zu tun ist, was man lassen darf) */
 .s-satz { margin: 0 0 16px; max-width: 46rem; }
@@ -1331,20 +1326,10 @@ body:has(dialog[open]) .editor-schweb { display: none; }
 /* MF8: Lösungen eines Lückentexts in den Lücken: Satz normal, Lösung fett mit Unterstrich in --ok (nicht nur Farbe) */
 .frage.art-luecken .f-frage:has(.f-luecke-l) { font-weight: 400; }
 .f-luecke-l { font-weight: 700; color: var(--ok); border-bottom: 2px solid var(--ok); padding: 0 2px; }
-/* MF8: am schmalen Fenster gibt es keinen freien Rand für „Zum Editor“; in „Fragen und Lösungen“ und „Kursdatei“ führen
- * „Ändern“ und „Ansehen“ direkt in den Editor, dort ist der schwebende Knopf weg und verdeckt keine Lösung. Ab 1000 px
- * steht er im freien linken Rand (AP13.44 §2) */
-@media (max-width: 999px) {
-  body[data-offen="6"] .editor-schweb, body[data-offen="7"] .editor-schweb { display: none; }
-}
 /* AP13.45 (WCAG 2.4.11): unter 1100 px steht die Vorschau in Schritt 3 fest unten (96 px, aufgeklappt 60 vh); Fokus und
- * Sprünge enden darüber, unter 1000 px auch über dem Knopf „Zum Editor“, der dann über der Leiste schwebt. Die Klassen am
- * Wurzelelement setzt schritte.js/editor.js (WebKit wertet :has am Wurzelelement nicht neu aus) */
+ * Sprünge enden darüber (der schwebende Knopf „Zum Editor“ liegt dort nicht, Heuristik B14). Die Klassen am Wurzelelement
+ * setzt schritte.js (WebKit wertet :has am Wurzelelement nicht neu aus) */
 @media (max-width: 1099px) {
   :root[data-offen="3"] { scroll-padding-bottom: calc(16px + 96px + env(safe-area-inset-bottom, 0px)); }
   :root[data-offen="3"].vorschau-auf { scroll-padding-bottom: calc(16px + 60vh); }
-}
-@media (max-width: 999px) {
-  :root[data-offen="3"].mit-editor-schweb { scroll-padding-bottom: calc(16px + 96px + 16px + 104px + env(safe-area-inset-bottom, 0px)); }
-  :root[data-offen="3"].mit-editor-schweb.vorschau-auf { scroll-padding-bottom: calc(16px + 60vh + 104px); }
 }

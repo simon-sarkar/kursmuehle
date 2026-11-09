@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand b1cf612 vom 09.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand b5c9106 vom 09.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -378,9 +378,9 @@
             class="aus-name"><span class="aus-name-text">Eigene</span></span></div>
           <p id="farbe-fest" class="leise" hidden></p></div>
         <!-- MF2: zwei Kacheln (keine Bilder, mit Bildern = 2 bis 3); die genaue Zahl unter „Erweitert“ -->
-        <div class="aus-gruppe" data-gruppe="bilder-kurz"><h3 class="unterkopf feld-kopf" id="aus-bilder-kurz-t"><span>Bilder</span><button
+        <div class="aus-gruppe" data-gruppe="bilder-kurz"><div class="aus-kopf"><h3 class="unterkopf" id="aus-bilder-kurz-t">Bilder</h3><button
             type="button" class="info-knopf" aria-expanded="false" aria-controls="aus-bilder-kurz-info"
-            aria-label="Erklärung zu Mit Bildern" data-hinweis="3-bilder">i</button></h3>
+            aria-label="Erklärung zu Mit Bildern" data-hinweis="3-bilder">i</button></div>
           <p id="aus-bilder-kurz-info" class="info-text" hidden></p>
           <div id="aus-bilder-kurz" class="kacheln-wahl bilder-wahl" role="radiogroup" aria-labelledby="aus-bilder-kurz-t"></div></div>
         <div id="erweitert-3" class="erw">
@@ -410,10 +410,10 @@
               <div id="aus-website" class="kacheln-wahl breit" role="radiogroup" aria-labelledby="aus-website-t"></div></div>
             <!-- AP13.47: Übungen einzeln (Standard) oder als ein Arbeitsheft je Einheit (Steckbrief kurs.arbeitsheft,
                  kurs.arbeitsheft_bestehen; Wörter aus katalog.yaml oberflaeche.arbeitsheft) -->
-            <div class="aus-gruppe" data-gruppe="arbeitsheft"><h3 class="unterkopf feld-kopf" id="aus-arbeitsheft-t"><span
-                id="aus-arbeitsheft-titel">Übungen einzeln oder als Heft</span><button type="button" class="info-knopf"
+            <div class="aus-gruppe" data-gruppe="arbeitsheft"><div class="aus-kopf"><h3 class="unterkopf" id="aus-arbeitsheft-t"><span
+                id="aus-arbeitsheft-titel">Übungen einzeln oder als Heft</span></h3><button type="button" class="info-knopf"
                 aria-expanded="false" aria-controls="aus-arbeitsheft-info" aria-label="Erklärung zum Arbeitsheft"
-                data-info="arbeitsheft_info">i</button></h3>
+                data-info="arbeitsheft_info">i</button></div>
               <p id="aus-arbeitsheft-info" class="info-text" hidden></p>
               <div id="aus-arbeitsheft" class="kacheln-wahl breit" role="radiogroup" aria-labelledby="aus-arbeitsheft-t"></div>
               <label id="heft-bestehen-l" class="feld feld-klein heft-bestehen" hidden><span id="heft-bestehen-text">Abschluss ab
@@ -423,6 +423,13 @@
               <p id="heft-bestehen-zeile" class="feld-zeile" hidden></p></div>
           </div>
         </div>
+        <!-- AP13.45 (Heuristik B5): die Knöpfe stehen in der linken Spalte direkt unter „Erweitert“, nicht unter der höheren
+             Vorschau rechts -->
+        <button type="button" id="weiter-3" class="knopf haupt">Weiter</button>
+        <!-- AP13.19 §3: im Designer statt „Weiter“; führt zurück zu „Mehr einstellen“ (MF2: der Designer öffnet „Erweitert“
+             und zeigt alle Designs) -->
+        <button type="button" id="designer-fertig" class="knopf haupt" hidden>Fertig</button>
+        <button type="button" id="zurueck-3" class="knopf haupt s-zurueck" data-nr="3" hidden></button>
       </div>
       <!-- Vorschau: ab 1100 px Spalte rechts, die beim Scrollen stehen bleibt (eigener Bildlauf), darunter Leiste am
            unteren Rand; zwei Karten: die Einheit im Design (gen/api.design_vorschau) und die Kursseite im Format
@@ -439,11 +446,6 @@
         </div>
       </aside>
       </div>
-      <button type="button" id="weiter-3" class="knopf haupt">Weiter</button>
-      <!-- AP13.19 §3: im Designer statt „Weiter“; führt zurück zu „Mehr einstellen“ (MF2: der Designer öffnet „Erweitert“
-           und zeigt alle Designs) -->
-      <button type="button" id="designer-fertig" class="knopf haupt" hidden>Fertig</button>
-      <button type="button" id="zurueck-3" class="knopf haupt s-zurueck" data-nr="3" hidden></button>
     </div>
   </section>
 
