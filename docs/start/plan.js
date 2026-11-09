@@ -307,10 +307,12 @@
 
   function kachel(ka, i, n, els, quer, format, zaehle) {
     var titel = el("input", { type: "text", cls: "plan-k-titel", maxlength: "120", "data-nr": String(i), "data-fokus": "kt:" + i,
-        "aria-label": T("plan_kachel_titel"), placeholder: T("plan_kachel_titel"), autocomplete: "off" });
+        "aria-label": T("plan_kachel_titel") + (n > 1 ? " " + (i + 1) : ""), placeholder: T("plan_kachel_titel"),   // MF6: je Kachel eindeutig
+        autocomplete: "off" });
     titel.value = ka.titel;
+    // MF7: Name je Kachel eindeutig („Was soll hier rein? Kachel „Einstieg““), beginnt mit dem sichtbaren Wort
     var text = el("textarea", { cls: "plan-k-text von-lehrkraft", rows: "2", maxlength: "600", "data-fokus": "kx:" + i,
-        placeholder: T("plan_kachel_text_platzhalter") });
+        "aria-label": T("plan_kachel_text_name", { titel: "„" + ka.titel + "“" }), placeholder: T("plan_kachel_text_platzhalter") });
     text.value = ka.text || "";
     var ol = el("ol", { cls: "plan-elemente" });
     els.forEach(function (k, j) { ol.appendChild(element(k, j, els.length, zaehle)); });
@@ -332,8 +334,9 @@
             "aria-label": T("plan_loeschen") + ": " + ka.titel, text: T("plan_loeschen") })])];
     if (rueck && rueck.art === "element" && rueck.kachel === ka.titel) kinder.push(rueckZeile());
     kinder.push(el("div", { cls: "plan-k-fuss" }, [el("button", { type: "button", cls: "knopf klein-knopf plan-el-plus",
-        "data-aktion": "el-plus", "data-fokus": "ep:" + i, "aria-label": T("plan_element_plus").replace(/^\+\s*/, "") + ": " +
-        ka.titel, text: T("plan_element_plus") }), pfeile]));
+        "data-aktion": "el-plus", "data-fokus": "ep:" + i, text: T("plan_element_plus"),
+        // MF7: der Name beginnt mit dem sichtbaren Text und nennt die Kachel (gleich benannte Knöpfe führten in die falsche)
+        "aria-label": T("plan_element_plus_name", { titel: "„" + ka.titel + "“" }) }), pfeile]));
     return el("section", { cls: "plan-kachel", "data-nr": String(i), role: "group", "aria-label": T("plan_kachel") + ": " + ka.titel },
         kinder);
   }
@@ -478,7 +481,10 @@
     Array.prototype.forEach.call(box.querySelectorAll(".plan-kachel"), function (sec) {
       var ka = alle[parseInt(sec.dataset.nr, 10)]; if (!ka) return;
       sec.setAttribute("aria-label", T("plan_kachel") + ": " + ka.titel);
-      [["[data-aktion=el-plus]", T("plan_element_plus").replace(/^\+\s*/, "")], ["[data-aktion=k-loeschen]", T("plan_loeschen")],
+      var q = "„" + ka.titel + "“", tx = sec.querySelector(".plan-k-text"), pl = sec.querySelector(".plan-el-plus");
+      if (tx) tx.setAttribute("aria-label", T("plan_kachel_text_name", { titel: q }));
+      if (pl) pl.setAttribute("aria-label", T("plan_element_plus_name", { titel: q }));
+      [["[data-aktion=k-loeschen]", T("plan_loeschen")],
        ["[data-aktion=k-hoch]", null], ["[data-aktion=k-runter]", null]].forEach(function (x) {
         var b = sec.querySelector(x[0]); if (!b) return;
         b.setAttribute("aria-label", (x[1] || b.getAttribute("title")) + ": " + ka.titel);

@@ -1,11 +1,16 @@
 {
- "1": "Gib ein Thema ein, wie du es in den Stundenplan schreiben würdest. Jahrgangsstufe und Minuten bestimmen, wie lang die Texte werden.",
- "2": "Wähl „Mach du“ für einen schnellen Entwurf, „Ich gebe die Richtung“ für Vorgaben ohne Bausteinliste. Mit „Ich steuere“ baust du den Kurs aus Kacheln und Elementen selbst.",
+ "1-minuten": "Die Minuten bestimmen, wie viel Text und wie viele Übungen entstehen.",
+ "2-mach": "Du kannst danach jeden Baustein im Editor ändern.",
  "2-richtung": "Alle Felder sind freiwillig; was du leer lässt, entscheidet der Chat. Deine Angaben stehen als Zeilen im Text für den Chat.",
- "3": "Wähl ein Design und die Zahl der Bilder; nach jeder Wahl erscheint die nächste Gruppe, der Knopf darunter nimmt für den Rest den Standard. Das Aussehen kannst du später ändern, ohne den Chat noch einmal zu fragen; die Zahl der Bilder steht im Text für den Chat.",
- "4": "Wähl den Chat, den du nutzt, und kopier den Text. Füg ihn dort in ein neues Gespräch ein und schick ihn ab.",
- "5": "Füg die ganze Antwort ein und sieh die Karten durch; ocker hinterlegt ist, was von dir kommt, schräg gesetzte Zahlen sind geschätzt. Ist eine Karte rot, kopier mit „Korrektur anfordern“ unter dem Einfügefeld die Bitte für den Chat und füg dessen Antwort darunter ein.",
+ "2-steuer": "Du teilst die Stunde in Kacheln und gibst jeder Kachel ihre Elemente. Den Text dazu schreibt der Chat.",
+ "3-bilder": "Der Chat beschreibt die Bilder; du lädst sie im Schritt „Bilder“ hoch oder lässt Platzhalter.",
+ "4-modell": "Namen mit mini, fast, flash, lite, nano oder small sind die kleinen Modelle und brauchen öfter eine Korrekturbitte. Steht „Auto“ voreingestellt, stell um; gibt es einen Schalter wie „Denken“ oder „ausführlich“, schalte ihn ein.",
+ "4-privat": "Ob du ein privates Konto für den Unterricht nutzen darfst, entscheidet deine Schule.",
+ "4-rechte": "Füge eigenes Material nur ein, wenn du die Rechte daran hast. Im Chat gelten seine Nutzungsbedingungen.",
+ "5": "Füg die ganze Antwort ein. Braucht ein Baustein eine Korrektur, kopier mit „Korrekturbitte kopieren“ die Bitte für den Chat und füg dessen Antwort darunter ein.",
  "5.5": "Lade zu jedem Bild eine Datei hoch oder zieh sie auf seine Zeile. Fehlt ein Bild, steht im Kurs ein grauer Platzhalter.",
- "6": "Wähl, wie du die Lösungen prüfst, in einem neuen Chat oder selbst. Ein frisches Gespräch löst die Aufgaben, ohne die Lösungen zu sehen, und die Seite zeigt dir, wo es abweicht.",
- "7": "Lade die Datei herunter und stell sie in deinem Kurs auf der ByCS-Lernplattform wieder her. Danach kannst du die nächste Einheit anhängen."
+ "5.5-auftrag": "Such ein freies Foto, zeichne selbst oder lass das Bild von einem Bildgenerator erzeugen; nimm nur Bilder, an denen du die Rechte hast. Generatoren schreiben Wörter im Bild oft falsch; bei vielen Beschriftungen lass nummerierte Pfeile erzeugen und schreib die Wörter in die Bildunterschrift.",
+ "6": "Lies jede Frage mit ihrer Lösung; „Ändern“ öffnet den Baustein im Editor. Weiter geht es auch so, im letzten Schritt steht dann „Lösungen nicht angesehen“.",
+ "6-zweite": "Ein neues Gespräch löst die Aufgaben, ohne deine Lösungen zu sehen, und die Liste zeigt an jeder Frage, ob es zustimmt. Eine Abweichung heißt nicht, dass deine Lösung falsch ist; sieh sie dir an.",
+ "7": "Die Datei ist eine Sicherung für die ByCS-Lernplattform; du stellst sie in einem leeren Kurs wieder her. Lizenz, KI-Hinweis und die nächste Einheit stehen unter „Erweitert“."
 }

@@ -13,10 +13,36 @@
       zeichneSchritte = S.zeichneSchritte, zeigeFehler = S.zeigeFehler, zeit = S.zeit, zuKarte = S.zuKarte,
       zweig = S.zweig;
   var BUCHST = "ABCDEFGHIJ";
+  // MF4: Wortlaut aus katalog.yaml oberflaeche.pruefseite; PK nimmt mit eigener KI die Fassung `_ki`
+  function PT(k, w) {
+    var t = ((S.katalog && S.katalog.oberflaeche.pruefseite) || {})[k];
+    t = typeof t === "string" ? t : "";
+    Object.keys(w || {}).forEach(function (x) { t = t.split("{" + x + "}").join(w[x]); });
+    return t;
+  }
+  function PK(k, w) { return weg() === "ki" && PT(k + "_ki") ? PT(k + "_ki", w) : PT(k, w); }
+  S.pruefText = PT;
+
+  // MF4 (Konzept §3.7): die Liste der Fragen steht direkt da; je Frage „Ändern“ (Editor am Baustein) und, nach der
+  // Prüfung im Chat, das Ergebnis an der Frage. AP13.35 §4.2: mit mehreren Einheiten die laufende offen, die früheren je
+  // Einheit zugeklappt darunter
   function zeichneFragen() {
-    var ol = $("fragen-liste"); ol.innerHTML = "";
-    // AP13.35 §4.2: mit mehreren Einheiten die Fragen der laufenden offen, die früheren je Einheit zugeklappt darunter
+    if (!Z.mappe) return;
+    stil();
+    zeichneOffen();
+    bereinigen();
+    zeichneGegen();
+  }
+  var listeSig = "";
+  function listeZeichnen() {
+    var ol = $("fragen-liste");
     var mehr = S.mehrereEinheiten(), jetzt = S.einheitTag() || "e1", frueher = {}, reihe = [];
+    // nur neu zeichnen, wenn sich Fragen oder Ergebnis geändert haben (Fokus auf „Ändern“ bleibt nach dem Editor)
+    var sig = JSON.stringify([S.fragenListe, ergebnisJe(), entschieden(), korrigieren, weg(), mehr, jetzt,
+        S.katalog ? 1 : 0, offenZeilen()]);
+    if (sig === listeSig) return;
+    listeSig = sig;
+    ol.innerHTML = "";
     var eigene = S.fragenListe.filter(function (f) {
       var e = S.einheitVon(S.karteNach(f.baustein));
       if (!mehr || e === jetzt) return true;
@@ -24,98 +50,206 @@
       frueher[e].push(f);
       return false;
     });
-    $("fragen-zeile").textContent = eigene.length
-      ? eigene.length + " Fragen mit ihren Lösungen, ohne Rückmeldungen. Prüfe, ob jede Lösung stimmt." : "";
-    if (mehr && eigene.length) ol.appendChild(el("li", { cls: "f-einheit" }, [el("h3", { cls: "f-einheit-t",
+    var n = eigene.length;
+    $("fragen-zeile").textContent = !S.fragenListe.length ? "In dieser Einheit stehen noch keine Fragen." : !n ? "" :
+        n === 1 ? PT("fragen_zeile_eine") : PT("fragen_zeile", { n: n });
+    ol.hidden = !S.fragenListe.length;
+    if (mehr && n) ol.appendChild(el("li", { cls: "f-einheit" }, [el("h3", { cls: "f-einheit-t",
         text: S.einheitName(jetzt) })]));
-    fragenZeichnen(ol, eigene);
+    var je = ergebnisJe();
+    fragenZeichnen(ol, eigene, je);
     reihe.forEach(function (e) {
       var unter = el("ol", { cls: "fragen-liste" });
-      fragenZeichnen(unter, frueher[e]);
+      fragenZeichnen(unter, frueher[e], je);
       ol.appendChild(el("li", { cls: "f-einheit f-frueher" }, [el("details", {}, [el("summary", { cls: "f-einheit-t",
           text: S.editorText("fragen_frueher", { name: S.einheitName(e), zahl: frueher[e].length }) }), unter])]));
     });
-    zeichneGegen();
   }
-  function fragenZeichnen(ol, liste) {
+  // Ergebnis der Prüfung je Nummer: {art: "gleich"|"abw"|"fehlt", a: Abweichung}
+  function ergebnisJe() {
+    var v = vergleichJetzt(), je = {};
+    if (!v) return je;
+    v.gleich.forEach(function (g) { je[g.nr] = { art: "gleich" }; });
+    v.abweichungen.forEach(function (a) { je[a.nr] = { art: "abw", a: a }; });
+    v.fehlend.forEach(function (nr) { je[nr] = { art: "fehlt" }; });
+    return je;
+  }
+  function fragenZeichnen(ol, liste, je) {
     var letzter = null;
     liste.forEach(function (f) {
-      var kopf = f.baustein !== letzter ? el("p", { cls: "f-baustein" }, [el("button", { type: "button",
-          cls: "hinweis-link", "data-ziel": f.baustein, text: f.titel })]) : null;
+      var kopf = f.baustein !== letzter ? el("p", { cls: "f-baustein", text: f.titel }) : null;
       letzter = f.baustein;
       var loes = f.loesung.map(function (l) { return l[0]; });
-      var optionen = f.art === "auswahl" || f.art === "zuordnen" ? el("ul", { cls: "f-optionen" },
+      var optionen = f.art === "auswahl" ? el("ul", { cls: "f-optionen" },
           f.optionen.map(function (o, i) {
         var richtig = loes.indexOf(o) >= 0;
-        return el("li", { cls: richtig ? "richtig" : "" }, [(f.art === "auswahl" ? BUCHST[i] + ") " : "") + o, richtig ?
+        return el("li", { cls: richtig ? "richtig" : "" }, [BUCHST[i] + ") " + o, richtig ?
             el("span", { cls: "f-marke", text: " richtig" }) : null]);
       })) : null;
-      var loesung = f.art === "auswahl" || f.art === "zuordnen" ? null
-        : el("p", { cls: "f-loesung", text: "Lösung: " + f.loesung.map(function (l) { return l.join(" oder "); })
-            .join("; ") });
-      ol.appendChild(el("li", { cls: "frage" }, [kopf, el("p", { cls: "f-frage", text: (f.art === "rf" ?
-          "Richtig oder falsch: " : "") + f.frage }), optionen, loesung]));
+      // MF7: Lösungen lesbar statt mit Semikolons: Lücken nummeriert (die Nummer steht auch an der Lücke im Text), Zuordnen
+      // als Paar „Begriff → Gruppe“, mehrere richtige Antworten als „A, B oder C“
+      var loesung = f.art === "auswahl" || f.art === "zuordnen" ? null : f.art === "luecken" && f.loesung.length > 1 ?
+        el("ol", { cls: "f-luecken", "aria-label": "Lösungen der Lücken" }, f.loesung.map(function (l, i) {
+          return el("li", {}, [el("span", { cls: "f-nr", text: String(i + 1) }), oder(l)]); }))
+        : el("p", { cls: "f-loesung" }, ["Lösung: ", el("strong", { text: f.loesung.map(oder).join(", ") })]);
+      var r = je[f.nr], extra = null, cls = "frage", key = null;
+      if (r && r.art === "gleich") extra = el("p", { cls: "f-chat f-gleich" }, [el("span", { cls: "f-haken",
+          "aria-hidden": "true" }), PK("stimmt")]);
+      else if (r && r.art === "fehlt") extra = el("p", { cls: "f-chat leise", text: PK("ohne_antwort") });
+      else if (r && r.art === "abw") {
+        key = schluessel(r.a);
+        var ent = (entschieden()[key] || {}).wert;
+        cls += " abw" + (ent ? " " + ent : korrigieren[key] && !ent ? " korrigieren" : "");
+        extra = abwTeil(r.a, key, ent);
+      }
+      // MF5: die Nummer der Frage im Baustein; der Editor öffnet das Feld dieser Frage
+      var imB = S.fragenListe.filter(function (x) { return x.baustein === f.baustein && x.nr <= f.nr; }).length;
+      var aendern = el("button", { type: "button", cls: "textlink f-aendern", "data-ziel": f.baustein, "data-frage": String(imB),
+        "aria-label": "Ändern: Frage " + f.nr + " in „" + f.titel + "“", text: "Ändern" });
+      // MF6: Zeilen `Offen:` direkt unter dieser Frage stehen an ihr, mit dem Satz, was zu tun ist
+      var unsicher = offenZeilen().filter(function (o) { return o.baustein === f.baustein && o.frage === imB; });
+      // MF7: was zu tun ist, sagt der Satz des Schritts; hier nur die Zeile selbst
+      var offenTeil = unsicher.length ? el("div", { cls: "f-offen" }, [el("p", {}, [el("span", { cls: "f-offen-wort",
+          text: PT("offen_frage") + " " }), unsicher.map(function (o) { return o.text; }).join(" ")])]) : null;
+      var fText = f.art === "zuordnen" ? [f.frage, el("span", { cls: "f-pfeil", text: " → " }),
+          el("strong", { text: oder(f.loesung[0] || []) })] : f.art === "luecken" && f.loesung.length > 1 ? lueckenNummern(f.frage)
+          : [(f.art === "rf" ? "Richtig oder falsch: " : "") + f.frage];
+      ol.appendChild(el("li", { cls: cls + " art-" + f.art, "data-nr": f.nr, "data-key": key }, [kopf, el("div", { cls: "f-zeile" }, [
+        el("p", { cls: "f-frage" }, fText), aendern]),
+        offenTeil, optionen, loesung, extra]));
     });
   }
-  $("fragen-liste").onclick = function (ev) { var z = ev.target.closest("[data-ziel]"); if (z) zuKarte(z.dataset.ziel);
-      };
-  // Nachtrag AP13.41: „Ohne Durchsicht weiter“ merkt `durchsicht: "ohne"` (zählt wie durchgesehen, die Zusammenfassung
-  // sagt aber, was geschah)
-  function durchgesehen(ohne) {
-    if (!Z.mappe) return;
-    Z.mappe.durchsicht = ohne === true ? "ohne" : true; delete Z.mappe.durchsicht_neu;
-    geaendert(); gehe(7, "herunterladen");
+  // MF7: Alternativen einer Lösung als „A, B oder C“; Lücken im Text der Frage mit ihrer Nummer
+  function oder(l) { l = l || []; return l.length < 2 ? (l[0] || "") : l.slice(0, -1).join(", ") + " oder " + l[l.length - 1]; }
+  function lueckenNummern(t) {
+    var n = 0, out = [];
+    String(t).split("___").forEach(function (teil, i) {
+      if (i) { n += 1; out.push(el("span", { cls: "f-luecke" }, ["___", el("sup", { text: String(n) })])); }
+      out.push(teil);
+    });
+    return out;
   }
-  // AP13.33 §1.4: aus dem Schritt Datei zurück zu den Fragen, die sich geändert haben
-  $("zu-durchsicht").onclick = function () { if (Z.mappe) gehe(6, ersteWahl()); };
-  // §2.3: der Schritt beginnt bei der Wahl des Wegs (der gewählten, sonst der ersten Kachel), nicht beim Hauptknopf
-  function ersteWahl() {
-    var w = $("durchsicht-wahl").querySelector("[aria-checked=true]:not([hidden])") ||
-        $("durchsicht-wahl").querySelector("[data-weg]:not([hidden])");
-    return w && S.fragenListe.length ? w.id : "durchsicht-ok";
+  // „Chat sieht es anders: …“ mit den Wegen: korrigieren lassen (Bitte in das Gespräch der Einheit), „Meine Lösung gilt“,
+  // „Übergehen“, bei Lücken und Kurzantworten „Als weitere Lösung zulassen“ (AP13.5h a9, je Lücke); „Ändern“ steht an der
+  // Frage
+  function abwTeil(a, k, ent) {
+    var korr = !ent && !!korrigieren[k];
+    var knopf = function (aktion, text, an) {
+      return el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": aktion, "data-key": k,
+        "aria-pressed": String(an), text: text });
+    };
+    var zulassen = function (nr) {
+      return el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": "zulassen", "data-key": k,
+        "data-luecke": nr, text: "Als weitere Lösung zulassen" });
+    };
+    var mehrere = !!(a.luecken && a.luecken.length > 1);
+    var marke = ent === "gilt" ? "Deine Lösung gilt" : ent === "uebergangen" ? "Übergangen" : korr ? "Wird korrigiert" : "";
+    var was = a.luecken && a.luecken.length ? a.luecken.map(function (l) {
+      return el("p", { cls: "abw-luecke" }, ["Lücke " + l.nr + ": „" + l.chat + "“ statt „" + l.kursdatei.join(" oder ") +
+        "“", a.zulassen && mehrere ? zulassen(l.nr) : null]);
+    }) : [el("p", { cls: "abw-chat", text: a.chat_anzeige || a.chat })];
+    return el("div", { cls: "f-abw" }, [el("p", { cls: "abw-kopf" }, [el("span", { cls: "abw-wort", text: PK("anders") }),
+        marke ? el("span", { cls: "abw-marke", text: " · " + marke }) : null])].concat(was, [
+      el("div", { cls: "abw-wege" }, [knopf("korrigieren", "Korrigieren lassen", korr),
+        knopf("gilt", "Meine Lösung gilt", ent === "gilt"), knopf("uebergehen", "Übergehen", ent === "uebergangen"),
+        a.zulassen && !mehrere ? zulassen(a.luecken && a.luecken.length ? a.luecken[0].nr : 1) : null])]));
   }
-  $("durchsicht-ok").onclick = function () { if (!$("durchsicht-ok").disabled) durchgesehen(); };
-  $("ohne-durchsicht").onclick = function () { durchgesehen(true); };
+  $("fragen-liste").addEventListener("click", function (ev) {
+    var z = ev.target.closest(".f-aendern"); if (z) { editorAm(z.dataset.ziel, z, parseInt(z.dataset.frage, 10)); return; }
+    var b = ev.target.closest("[data-aktion]");
+    if (!b || !Z.mappe) return;
+    if (b.dataset.aktion === "zulassen") { zulassen(b.dataset.key, parseInt(b.dataset.luecke, 10)); return; }
+    var k = b.dataset.key, e = entschieden(), wert = { gilt: "gilt", uebergehen: "uebergangen" }[b.dataset.aktion];
+    if (!wert) { if (korrigieren[k]) delete korrigieren[k]; else { korrigieren[k] = true; delete e[k]; } }
+    else {
+      delete korrigieren[k];
+      if (e[k] && e[k].wert === wert) delete e[k];
+      else e[k] = { wert: wert, hash: hashVon(k.slice(0, k.lastIndexOf("|"))) };
+    }
+    autosave();
+    zeichneGegen();
+    zeichneSchritte();
+    var neu = $("fragen-liste").querySelector("[data-key='" + CSS.escape(k) + "'][data-aktion='" + b.dataset.aktion + "']");
+    if (neu) neu.focus({ preventScroll: true });
+  });
+  // „Ändern“ an einer Frage und „Im Editor ändern“ an einer Zeile `Offen:`: der Editor am Baustein (AP13.44 macht Quiz dort
+  // bedienbar); ohne Editor (Seite noch ohne Prüfung) die Karte in Schritt 5
+  function editorAm(id, von, frage) {
+    if (!(S.editorBei && Z.pruefung && Z.pruefung.bausteine.length)) { zuKarte(id); return; }
+    if (frage && S.editorStelle) S.editorStelle(id, { frage: frage }, von); else S.editorBei(id, von);
+  }
+
+  // MF4, offene Entscheidung 7: „Lösungen angesehen“, wenn das Ende der Liste eine Sekunde im Blick war, während der
+  // Schritt offen ist (eine Näherung); eine Änderung an Fragen setzt es zurück (karten.js durchsichtNach)
+  var ANGESEHEN_MS = 1000, angesehenUhr = null;
+  function angesehen() { return !!(Z.mappe && Z.mappe.durchsicht === true); }
+  S.loesungenAngesehen = angesehen;
+  function endeImBlick(an) {
+    clearTimeout(angesehenUhr);
+    if (!an || !Z.mappe || angesehen() || !S.fragenListe.length || !$("schritt-6").classList.contains("auf")) return;
+    angesehenUhr = setTimeout(function () {
+      if (!Z.mappe || angesehen() || !$("schritt-6").classList.contains("auf")) return;
+      Z.mappe.durchsicht = true; delete Z.mappe.durchsicht_neu;
+      geaendert();
+      $("durchsicht-neu").hidden = true;
+      zeichneSchritte();
+    }, ANGESEHEN_MS);
+  }
+  if (window.IntersectionObserver) {
+    new IntersectionObserver(function (e) { endeImBlick(e[e.length - 1].isIntersecting); })
+        .observe($("fragen-ende"));
+  }
+  function durchsichtOffen() { return !!(S.fragenListe.length && !angesehen()); }
+  // Schritt Fragen: Fokus auf die Überschrift (nicht auf einen Knopf, der ohne Lesen weiterführt, AP13.33 §2.3)
+  function zuFragen() { gehe(6, document.querySelector("#schritt-6 .s-kopf")); }
   function nachBildern() {
-    if (S.fragenListe.length && !Z.mappe.durchsicht) gehe(6, ersteWahl()); else gehe(7, "herunterladen");
+    if (durchsichtOffen()) zuFragen(); else gehe(7, "herunterladen");
   }
+  // AP13.44 §3: nächster offener Schritt für die Leiste im Editor, erst wenn die Antwort ohne Rot eingesetzt ist: nach
+  // Schritt 5 die Bilder (nur mit Bildwünschen), dann die Fragen (nicht angesehen, noch nicht weiter), dann die Datei. null vor
+  // Schritt 5, mit Rot und wenn der offene Schritt der aktuelle ist
+  S.naechsterOffen = function () {
+    if (!Z.mappe || !S.inhalt() || S.fehlerZahl() || S.teileOffen()) return null;
+    var s = S.schritt(), n = s === 5 && S.sichtbareSchritte().indexOf(5.5) >= 0 ? 5.5 : durchsichtOffen() && s < 7 ? 6 : 7;
+    return s < 5 || n === s ? null : n;
+  };
+  S.weiterZu = function (n) {
+    if (!Z.mappe) return;
+    if (n === 6) zuFragen(); else if (n === 7) gehe(7, "herunterladen"); else gehe(n);
+  };
   $("weiter-5").onclick = function () {
     if (!Z.mappe) return;
     // Schritt Bilder nur, wenn er sichtbar ist: Bildwünsche trotz „keine“ (Standard seit AP13.12 a2) führen weiter
     if (S.sichtbareSchritte().indexOf(5.5) >= 0) gehe(5.5); else nachBildern();
   };
   $("weiter-bilder").onclick = function () { if (Z.mappe) nachBildern(); };
+  // MF4: neutral weiter; die Prüfseite nennt, ob die Lösungen angesehen sind (keine Bestätigung ohne Lesen, Befund 16)
+  $("weiter-6").onclick = function () { if (Z.mappe) gehe(7, "herunterladen"); };
 
-  // Schritt 6 (AP13.5g): erst der Weg (meine KI, ein neuer Chat, ich selbst), dann nur dessen Teil. Beim Gegenprüfen
-  // löst ein neues Gespräch die Aufgaben ohne Lösungen; je Abweichung drei Wege: korrigieren lassen (Bitte je Baustein in
-  // das Gespräch der Einheit, Antwort in Schritt 5), „Meine Lösung gilt“, „Übergehen“. Die Entscheidungen stehen in der
-  // Mappe (`durchsicht_entschieden`, Schlüssel „id|Nummer im Baustein“) mit dem Hash des Bausteins und fallen weg, sobald
-  // sich der Baustein ändert.
+  // Prüfung im Chat (AP13.5g): ein neues Gespräch löst die Aufgaben ohne Lösungen; je Abweichung drei Wege. Die
+  // Entscheidungen stehen in der Mappe (`durchsicht_entschieden`, Schlüssel „id|Nummer im Baustein“) mit dem Hash des
+  // Bausteins und fallen weg, sobald sich der Baustein ändert. MF4: `durchsicht_weg` = „chat“ nach dem Kopieren, „ki“ nach
+  // dem Senden; `durchsicht_antwort` = die eingefügte Antwort (nach dem Neuladen wird sie wieder verglichen)
   var korrigieren = {};             // Schlüssel -> true: Abweichungen, für die eine Bitte gesammelt wird (nicht in der Mappe)
   var gegenFuer = null;             // Prüfung, zu der Z.vergleich gehört
+  var feldAuf = false;              // „Andere Antwort einfügen“: das Feld steht trotz Ergebnis offen
   function stil() {
     if ($("stil-durchsicht")) return;
     document.head.appendChild(el("style", { id: "stil-durchsicht", text: [
-      ".durchsicht-wahl { margin: 6px 0 14px; }",
-      ".durchsicht-wahl .aus-kachel { width: 220px; justify-content: flex-start; text-align: left; padding: 10px 12px; }",
-      ".durchsicht-wahl .aus-kachel .aus-name { justify-content: flex-start; }",
-      ".durchsicht-wahl .aus-zeile { font-size: 0.82rem; font-weight: 400; color: var(--leise); }",
-      "@media (max-width: 520px) { .durchsicht-wahl .aus-kachel { width: 100%; } }",
-      ".gegen-ergebnis li.abw { margin: 0 0 8px; padding: 10px 12px; border: 1px solid var(--linie); border-left-width: 4px;",
-      "  border-left-color: var(--fehler); border-radius: 8px; background: var(--flaeche); }",
-      ".gegen-ergebnis li.abw.gilt { border-left-color: var(--ok); }",
-      ".gegen-ergebnis li.abw.uebergangen { border-left-color: var(--leer); background: var(--grund); }",
-      ".gegen-ergebnis li.abw.korrigieren { border-left-color: var(--ocker); }",
-      ".abw p { margin: 0 0 4px; }",
+      // eine Abweichung ist ein Hinweis zum Nachsehen, kein Fehler: gelb wie die Hinweise, nicht rot (Konzept §4.3)
+      ".frage.abw .f-abw { margin: 8px 0 0; padding: 8px 12px; border-left: 4px solid var(--warn); border-radius: 6px;",
+      "  background: var(--warn-flaeche); }",
+      ".frage.abw.gilt .f-abw { border-left-color: var(--ok); background: var(--grund); }",
+      ".frage.abw.uebergangen .f-abw { border-left-color: var(--leer); background: var(--grund); }",
+      ".frage.abw.korrigieren .f-abw { border-left-color: var(--text); }",
+      ".f-abw p { margin: 0 0 4px; }",
+      ".abw-wort { font-weight: 650; }",
       ".abw-marke { font-weight: 600; }",
       ".abw.gilt .abw-marke { color: var(--ok); }",
-      ".abw.uebergangen .abw-marke, .abw.uebergangen .abw-frage { color: var(--leise); }",
+      ".abw.uebergangen .abw-marke { color: var(--leise); }",
       ".abw-wege { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }",
       ".abw-wege [aria-pressed=true] { box-shadow: inset 0 0 0 2px var(--text); }",
-      ".abw-luecke .klein-knopf { margin-left: 8px; }",
-      ".gegen-gleich { margin-top: 10px; font-size: 0.93rem; }",
-      ".gegen-gleich summary { cursor: pointer; color: var(--link); padding: 4px 0; }",
-      ".gegen-gleich ul { margin: 4px 0 0; padding-left: 20px; }"
+      ".abw-luecke .klein-knopf { margin-left: 8px; }"
     ].join("\n") }));
   }
   // Hash wie `schleife` (karten.js): ohne Leerraum, djb2 und Länge
@@ -127,7 +261,7 @@
   function kiAktiv() { return !!(S.anKiAktiv && S.anKiAktiv()); }
   function weg() {
     var w = Z.mappe && Z.mappe.durchsicht_weg;
-    return w === "ki" && !kiAktiv() ? "" : w || "";
+    return w === "ki" && !kiAktiv() ? "" : w === "ki" || w === "chat" ? w : "";
   }
   function entschieden() { return Z.mappe ? (Z.mappe.durchsicht_entschieden = Z.mappe.durchsicht_entschieden || {}) : {}; }
   function schluessel(a) { return a.baustein + "|" + a.aufgabe; }
@@ -149,106 +283,89 @@
     var v = vergleichJetzt(), e = entschieden();
     return v ? v.abweichungen.filter(function (a) { return !e[schluessel(a)]; }) : null;
   }
-  // „Lösungen stimmen, weiter“: bei KI und Chat erst mit Ergebnis und ohne offene Abweichung, sonst sofort
-  function frei() {
-    var w = weg(), o = offen();
-    return !S.fragenListe.length || (w !== "ki" && w !== "chat") || (!!o && !o.length);
+  // Stand der Prüfung für Zeile, Zusammenfassung und Prüfseite: „Im Chat geprüft: 2 Abweichungen“ (`offen` = noch nicht
+  // entschieden), „… keine Abweichung“; "" ohne Ergebnis
+  function pruefStand() {
+    var v = vergleichJetzt();
+    if (!v) return "";
+    var n = v.abweichungen.length, o = offen().length;
+    var zahl = n ? n + (n === 1 ? " Abweichung" : " Abweichungen") + (o && o < n ? ", " + o + " offen" : "") :
+        "keine Abweichung";
+    return PK("geprueft", { zahl: zahl });
   }
+  S.pruefStand = pruefStand;
   // AP13.12 a10: Zeilen `Offen:` der Kursdatei (gen/api.offen) oben in Schritt 6, je Zeile mit ihrem Baustein; wie bei
   // den Bildwünschen nur die laufende Einheit (Zeilen im Kopf gehören zur ersten)
-  function zeichneOffen() {
-    var ul = $("offen-liste"), tag = S.einheitTag();
-    var zeilen = ((Z.pruefung && Z.pruefung.offen) || []).filter(function (o) {
+  // MF6: eine Zeile, die direkt unter einer Frage steht (gen/api.offen `frage`), steht an dieser Frage (fragenZeichnen);
+  // der Kasten trägt die übrigen und einen Satz, was zu tun ist
+  function offenZeilen() {
+    var tag = S.einheitTag();
+    return ((Z.pruefung && Z.pruefung.offen) || []).filter(function (o) {
       var k = o.baustein && S.karteNach(o.baustein);
       return o.baustein ? !!k && (k.einheit || "") === tag : !tag;
     });
+  }
+  function offenAnFrage(o) {
+    return !!(o.baustein && o.frage && S.fragenListe.some(function (f) { return f.baustein === o.baustein; }));
+  }
+  function zeichneOffen() {
+    var ul = $("offen-liste");
+    var zeilen = offenZeilen().filter(function (o) { return !offenAnFrage(o); });
     ul.innerHTML = "";
     zeilen.forEach(function (o) {
-      ul.appendChild(el("li", {}, [o.text, o.baustein ? el("span", { cls: "leise", text: " · " }) : null,
-        o.baustein ? el("button", { type: "button", cls: "hinweis-link", "data-ziel": o.baustein, text: o.titel ||
-            o.baustein }) : null]));
+      ul.appendChild(el("li", {}, [o.text, o.baustein ? el("span", { cls: "leise", text: " · " + (o.titel || "") + " " })
+          : null, o.baustein ? el("button", { type: "button", cls: "textlink f-aendern", "data-ziel": o.baustein,
+          "aria-label": PT("aendern") + ": " + (o.titel || ""), text: PT("aendern") }) : null]));
     });
+    $("offen-satz").hidden = true;            // MF7: was zu tun ist, sagt der Satz des Schritts
     $("offen-kasten").hidden = !zeilen.length;
   }
-  $("offen-liste").onclick = function (ev) { var z = ev.target.closest("[data-ziel]"); if (z) zuKarte(z.dataset.ziel); };
+  $("offen-liste").onclick = function (ev) { var z = ev.target.closest("[data-ziel]"); if (z) editorAm(z.dataset.ziel, z); };
+  // Zeile „Zweite Meinung“: a ohne Kopieren, b nach dem Kopieren mit dem Feld, c mit Ergebnis (das Feld nur nach „Andere
+  // Antwort einfügen“)
   function zeichneGegen() {
     if (!Z.mappe) return;
-    stil();
-    zeichneOffen();
-    bereinigen();
-    var n = S.fragenListe.length, w = weg(), ki = kiAktiv();
-    $("durchsicht-satz").textContent = n ? (n === 1 ? "Eine Frage" : n + " Fragen") + " mit Lösungen. Wie prüfst du, " +
-        "ob die Lösungen stimmen?" : "In dieser Einheit stehen noch keine Fragen.";
-    $("durchsicht-wahl").hidden = !n;
+    var n = S.fragenListe.length, w = weg(), ki = kiAktiv(), v = vergleichJetzt();
+    // nach dem Neuladen: die gemerkte Antwort ins Feld und gegen die Lösungen vergleichen
+    var gemerkt = Z.mappe.durchsicht_antwort || "";
+    if (gemerkt && !$("gegen-antwort").value.trim() && !feldAuf) $("gegen-antwort").value = gemerkt;
+    // neue Prüfung (Korrektur eingesetzt, Mappe neu geladen): die Antwort im Feld gegen die neuen Lösungen
+    if (Z.pruefung && gegenFuer !== Z.pruefung && $("gegen-antwort").value.trim()) { gegenpruefen(); }
     var neuSatz = S.durchsichtNeuText ? S.durchsichtNeuText() : "";
     $("durchsicht-neu").textContent = neuSatz; $("durchsicht-neu").hidden = !neuSatz;
-    $("weg-ki").hidden = !ki;
-    Array.prototype.forEach.call($("durchsicht-wahl").querySelectorAll("[data-weg]"), function (b) {
-      b.setAttribute("aria-checked", String(b.dataset.weg === w));
-    });
-    $("weg-selbst-teil").hidden = !n || w !== "selbst";
-    $("gegenpruefen").hidden = !n || (w !== "ki" && w !== "chat");
-    $("gegen-ki").hidden = w !== "ki";
-    $("gegen-chat").hidden = w !== "chat";
+    $("zweite").hidden = !n;
+    // das Feld: nach dem Kopieren bis zum Ergebnis, danach nur nach „Andere Antwort einfügen“; nie, solange die eigene KI prüft
+    var stand = pruefStand(), mitFeld = w !== "ki" && (w === "chat" || feldAuf) && (!v || feldAuf);
+    $("zweite-satz").textContent = stand || PT(ki ? "zweite_ki" : "zweite");
+    $("zweite").classList.toggle("geprueft", !!stand);
+    $("gegen-kopieren").hidden = ki || !!stand;
+    $("gegen-senden").hidden = !ki || !!stand;
     $("gegen-senden").disabled = !$("gegen-text-feld").value || S.kiBesetzt();
-    // neue Prüfung (Korrektur eingesetzt, Mappe neu geladen): die Antwort im Feld gegen die neuen Lösungen
-    if (Z.pruefung && gegenFuer !== Z.pruefung && $("gegen-antwort").value.trim()) gegenpruefen();
-    zeichneErgebnis();
-    $("durchsicht-ok").disabled = !frei();
-  }
-  function zeichneErgebnis() {
-    var ul = $("gegen-ergebnis"), v = vergleichJetzt(), e = entschieden(), ki = weg() === "ki";
-    ul.innerHTML = "";
-    $("gegen-gleich").hidden = !v || !v.gleich.length;
-    if (!v) { $("gegen-korrektur-teil").hidden = true; if (!$("gegen-antwort").value.trim()) $("gegen-stand")
-        .textContent = ""; return; }
-    var n = v.abweichungen.length, o = offen().length;
-    $("gegen-stand").textContent = (n ? n + (n === 1 ? " Abweichung" : " Abweichungen") + " bei " + v.geprueft +
-        " Aufgaben" + (o ? "; entscheide je Abweichung, wie es weitergeht." : ", alle entschieden.")
-      : "Keine Abweichung bei " + (v.geprueft - v.fehlend.length) + " Aufgaben.")
-      + (v.fehlend.length ? " Ohne Antwort: " + v.fehlend.join(", ") + "." : "");
-    $("gegen-stand").className = "stand " + (o ? "fehler" : "ok");
-    v.abweichungen.forEach(function (a) {
-      var k = schluessel(a), ent = (e[k] || {}).wert, korr = !ent && !!korrigieren[k];
-      var knopf = function (aktion, text, an) {
-        return el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": aktion, "data-key": k,
-          "aria-pressed": String(an), text: text });
-      };
-      var marke = ent === "gilt" ? "Deine Lösung gilt" : ent === "uebergangen" ? "Übergangen" : korr ?
-          "Wird korrigiert" : "";
-      // AP13.5h a9: bei Lücken nur die abweichenden, mit allen erlaubten Lösungen; „Als weitere Lösung zulassen“
-      // schreibt die Antwort in die Kursdatei, bei mehreren Lücken je Lücke
-      var zulassen = function (nr) {
-        return el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": "zulassen", "data-key": k,
-          "data-luecke": nr, text: "Als weitere Lösung zulassen" });
-      };
-      var mehrere = !!(a.luecken && a.luecken.length > 1);
-      var loesungen = a.luecken && a.luecken.length ? a.luecken.map(function (l) {
-        return el("p", { cls: "abw-luecke" }, ["Lücke " + l.nr + ": ",
-          el("span", { cls: "leise", text: "laut Kursdatei " }), l.kursdatei.join(" oder "), ", ",
-          el("span", { cls: "leise", text: ki ? "deine KI " : "der Chat " }), l.chat,
-          a.zulassen && mehrere ? zulassen(l.nr) : null]);
-      }) : [el("p", {}, [el("span", { cls: "leise", text: "Lösung laut Kursdatei: " }), a.kursdatei]),
-        el("p", {}, [el("span", { cls: "leise", text: (ki ? "Antwort deiner KI: " : "Antwort des Chats: ") }),
-          a.chat_anzeige || a.chat])];
-      ul.appendChild(el("li", { cls: "abw" + (ent ? " " + ent : korr ? " korrigieren" : ""), "data-key": k }, [
-        el("p", {}, [el("button", { type: "button", cls: "hinweis-link", "data-ziel": a.baustein,
-            text: "Aufgabe " + a.nr + " in „" + a.titel + "“" }), marke ? el("span", { cls: "abw-marke",
-            text: " · " + marke }) : null]),
-        el("p", { cls: "abw-frage", text: a.frage })].concat(loesungen, [
-        el("div", { cls: "abw-wege" }, [knopf("korrigieren", "Aufgabe korrigieren lassen", korr),
-          knopf("gilt", "Meine Lösung gilt", ent === "gilt"), knopf("uebergehen", "Übergehen", ent === "uebergangen"),
-          a.zulassen && !mehrere ? zulassen(a.luecken && a.luecken.length ? a.luecken[0].nr : 1) : null])
-      ])));
-    });
-    var gl = $("gegen-gleich-liste"); gl.innerHTML = "";
-    $("gegen-gleich-titel").textContent = v.gleich.length === 1 ? "1 Aufgabe stimmt" : v.gleich.length +
-        " Aufgaben stimmen";
-    v.gleich.forEach(function (g) { gl.appendChild(el("li", { text: "Aufgabe " + g.nr + " in „" + g.titel + "“: " +
-        g.kursdatei })); });
+    $("gegen-nochmal").hidden = !stand || mitFeld;
+    $("gegen-nochmal").textContent = w === "ki" ? "Noch einmal prüfen" : "Andere Antwort einfügen";
+    $("gegen-feld").hidden = !mitFeld;
+    $("gegen-schritte").hidden = !mitFeld || !!v;
+    $("gegen-1").textContent = PT("zweite_1");
+    $("gegen-2").textContent = PT("zweite_2");
+    if (!mitFeld || v) { $("gegen-kopiert").textContent = ""; $("gegen-text").hidden = true; }
+    // MF7: nach dem Einfügen an der Stelle des Felds die Stand-Karte (nur in dieser Sitzung, nicht mit eigener KI)
+    var frisch = gegenFrisch && v && !mitFeld && w === "chat" && (v.abweichungen.length || v.gleich.length);
+    if (!frisch) gegenFrisch = "";
+    if (frisch && !$("gegen-eingesetzt").textContent) S.standKarte($("gegen-eingesetzt"), S.eingesetztKopf() + ": " +
+        S.editorText(v.abweichungen.length + v.gleich.length === 1 ? "gegen_eingesetzt_eine" : "gegen_eingesetzt",
+          { n: v.abweichungen.length + v.gleich.length }) + S.schonSatz(gegenFrisch === "auto"), "ok");
+    else if (!frisch) S.standKarte($("gegen-eingesetzt"), "");
+    var fehlt = v && v.fehlend.length ? "Ohne Antwort: " + v.fehlend.length + (v.fehlend.length === 1 ? " Frage." :
+        " Fragen.") : "";
+    $("gegen-stand").textContent = v && !v.abweichungen.length && !v.gleich.length ?
+        "In der Antwort steht zu keiner Frage eine Lösung. Füg die ganze Antwort des Chats ein." : fehlt;
+    $("gegen-stand").className = "stand" + (v && !v.abweichungen.length && !v.gleich.length ? " fehler" : "");
+    listeZeichnen();
     var bitte = bitteText();
     $("gegen-korrektur-teil").hidden = !bitte;
-    $("gegen-korrektur").textContent = kiAktiv() ? "Korrekturen an meine KI senden" : "Korrekturen kopieren";
+    var fr = Object.keys(korrigieren).filter(function (k) { return !entschieden()[k]; }).length;
+    $("gegen-korrektur-satz").textContent = bitte ? PT("korrektur_satz", { fragen: fr === 1 ? "1 Frage" : fr + " Fragen" }) : "";
+    $("gegen-korrektur").textContent = ki ? "Korrekturen an meine KI senden" : "Korrekturbitte kopieren";
     $("gegen-korrektur").disabled = S.kiBesetzt();
   }
   // Eine Bitte je Baustein: „Baustein „Titel“ (`id: b4`), Aufgabe 3: …; Aufgabe 5: …. Prüfe …“ (Sätze aus gen/prompt.py)
@@ -262,26 +379,32 @@
     });
     return reihe.map(function (id) { return v.bitte[id].anfang + je[id].join("; ") + v.bitte[id].ende; }).join("\n\n");
   }
-  $("durchsicht-wahl").onclick = function (ev) {
-    var b = ev.target.closest("[data-weg]");
-    if (!b || !Z.mappe) return;
-    Z.mappe.durchsicht_weg = b.dataset.weg;
-    autosave();
-    zeichneGegen();
-    // AP13.33 §2.3: bei „Ich prüfe selbst“ auf die erste Frage (im Bild), sonst auf den Knopf des Wegs
-    var erste = b.dataset.weg === "selbst" && $("fragen-liste").querySelector("li.frage");
-    if (erste) { erste.tabIndex = -1; erste.scrollIntoView({ block: "nearest" }); erste.focus({ preventScroll: true }); return; }
-    var f = { ki: "gegen-senden", chat: "gegen-kopieren", selbst: "durchsicht-ok" }[b.dataset.weg];
-    if ($(f) && !$(f).disabled) $(f).focus({ preventScroll: true });
-  };
   $("gegen-kopieren").onclick = function () {
-    kopieren($("gegen-text-feld").value, $("gegen-text-feld"), $("gegen-kopiert"),
-        "Jetzt in einen neuen Chat einfügen, die Antwort hier unten einfügen.");
+    if (!Z.mappe) return;
+    var danach = function () {
+      Z.mappe.durchsicht_weg = "chat"; feldAuf = !!vergleichJetzt();
+      autosave(); zeichneGegen();
+    };
+    $("gegen-text").hidden = true;
+    kopieren($("gegen-text-feld").value, $("gegen-text-feld"), $("gegen-kopiert"), "Prüfauftrag kopiert.", function () {
+      danach(); $("gegen-antwort").focus({ preventScroll: true });
+    }, function () {
+      $("gegen-text-zeigen").value = $("gegen-text-feld").value;
+      $("gegen-text").hidden = false; $("gegen-text").open = true; danach();
+    });
+  };
+  $("gegen-nochmal").onclick = function () {
+    if (!Z.mappe) return;
+    if (weg() === "ki") { $("gegen-senden").onclick(); return; }
+    feldAuf = true; $("gegen-antwort").value = ""; gegenFrisch = "";
+    zeichneGegen();
+    $("gegen-antwort").focus({ preventScroll: true });
   };
   // Eigene KI verbunden: ein neues Gespräch löst die Aufgaben blind; die Antwort landet im Feld wie eingefügt
   $("gegen-senden").onclick = function () {
     var text = $("gegen-text-feld").value;
-    if (!text) return;
+    if (!text || !Z.mappe) return;
+    Z.mappe.durchsicht_weg = "ki"; autosave();
     S.anKi(text, { einheit: "gegen:" + S.einheitTag(), neu: true, ort: $("gegen-ki-stand"), feld: "gegen",
       stand: function (x, art) { S.standKarte($("gegen-ki-stand"), x, art); },
       fertig: function (antwort) { $("gegen-antwort").value = antwort; clearTimeout(gegenTimer); return gegenpruefen(); }
@@ -290,38 +413,31 @@
   var gegenTimer = null;
   $("gegen-antwort").addEventListener("input", function () {
     clearTimeout(gegenTimer);
-    gegenTimer = setTimeout(gegenpruefen, 400);
+    gegenTimer = setTimeout(function () { gegenpruefen("auto"); }, 400);
   });
-  async function gegenpruefen() {
+  // MF6: ein Klick nach dem Vergleich von selbst schadet nicht
+  $("gegen-uebernehmen").onclick = function () { clearTimeout(gegenTimer); gegenpruefen("knopf"); };
+  // MF7: `wie` = „auto“ (Einfügen) oder „knopf“: danach steht dort, wo das Feld war, „Antwort eingesetzt: …“
+  var gegenFrisch = "";
+  async function gegenpruefen(wie) {
     var text = $("gegen-antwort").value, pr = Z.pruefung;
     gegenFuer = pr;
-    if (!text.trim() || !pr) { Z.vergleich = null; $("gegen-stand").textContent = ""; zeichneGegen(); return; }
+    if (Z.mappe && (Z.mappe.durchsicht_antwort || "") !== text.trim()) {
+      if (text.trim()) Z.mappe.durchsicht_antwort = text.trim(); else delete Z.mappe.durchsicht_antwort;
+      autosave();
+    }
+    if (!text.trim() || !pr) { Z.vergleich = null; zeichneGegen(); zeichneSchritte(); return; }
     try {
       var v = await km.prompt("vergleich", [pr, text]);
       if (pr !== Z.pruefung) return;               // inzwischen neu geprüft; zeichneGegen vergleicht noch einmal
       Z.vergleich = v;
-      zeichneGegen();
+      if (v.abweichungen.length || v.gleich.length) feldAuf = false;
+      if (wie && (v.abweichungen.length || v.gleich.length)) gegenFrisch = wie;
+      zeichneGegen(); zeichneSchritte();
+      if (gegenFrisch && document.activeElement && (document.activeElement === document.body ||
+          document.activeElement.closest("#gegen-feld"))) $("gegen-eingesetzt").focus({ preventScroll: true });
     } catch (e) { zeigeFehler(e); }
   }
-  $("gegen-ergebnis").onclick = function (ev) {
-    var z = ev.target.closest("[data-ziel]");
-    if (z) { zuKarte(z.dataset.ziel); return; }
-    var b = ev.target.closest("[data-aktion]");
-    if (!b || !Z.mappe) return;
-    if (b.dataset.aktion === "zulassen") { zulassen(b.dataset.key, parseInt(b.dataset.luecke, 10)); return; }
-    var k = b.dataset.key, e = entschieden(), wert = { gilt: "gilt", uebergehen: "uebergangen" }[b.dataset.aktion];
-    if (!wert) { if (korrigieren[k]) delete korrigieren[k]; else { korrigieren[k] = true; delete e[k]; } }
-    else {
-      delete korrigieren[k];
-      if (e[k] && e[k].wert === wert) delete e[k];
-      else e[k] = { wert: wert, hash: hashVon(k.slice(0, k.lastIndexOf("|"))) };
-    }
-    autosave();
-    zeichneGegen();
-    var neu = $("gegen-ergebnis").querySelector("[data-key='" + CSS.escape(k) + "'][data-aktion='" +
-        b.dataset.aktion + "']");
-    if (neu) neu.focus({ preventScroll: true });
-  };
   // AP13.5h a9: Antwort als weitere Lösung in die Kursdatei (gen/mappe.py loesung_zulassen); die neue Prüfung vergleicht
   // die Antwort im Feld noch einmal, die Abweichung ist dann weg
   async function zulassen(k, nr) {
@@ -353,10 +469,11 @@
         await S.eingabeUebernehmen(null);
       } });
     kopieren(text, $("gegen-korrektur-feld"), $("gegen-korrektur-stand"),
-        "Kopiert. Füge die Bitte in das Gespräch dieser Einheit ein und die Antwort in Schritt 5.", function () {
+        "Kopiert. Füge die Bitte in das Gespräch dieser Einheit ein und die Antwort im Schritt „Antwort einfügen“.", function () {
       korrigieren = {};
+      S.antwortFeldAuf();
       gehe(5, "eingabe");
-      S.standKarte($("eingabe-stand"), "Füge hier die Antwort des Chats auf die Korrekturen aus Schritt 6 ein.", "ok");
+      S.standKarte($("eingabe-stand"), "Füge hier die Antwort des Chats auf die Korrekturen aus „Fragen und Lösungen“ ein.", "ok");
     });
   };
 
@@ -413,9 +530,67 @@
     } catch (e) { S.bauLaeuft = false; zeigeFehler(e); knoepfe(); }
   };
 
+  // MF4 (Konzept §2.5): Prüfseite, eine Zeile je Schritt mit Wert und „Ändern“ (Einheit: „Ansehen“ öffnet den Editor);
+  // die Werte kommen aus den Zusammenfassungen der Schritte (schritte.js fazit)
+  function pruefZeilen() {
+    if (!Z.mappe) return [];
+    var sichtbar = S.sichtbareSchritte(), z = [];
+    z.push({ name: "Thema", wert: S.fazit(1), nr: 1 });
+    z.push({ name: "Aufbau", wert: S.fazit(2), nr: 2 });
+    z.push({ name: "Aussehen", wert: S.fazit(3), nr: 3 });
+    var voll = Z.mappe.bausteine.filter(function (k) { return !k.geplant && !k.aus && (k.einheit || "") ===
+        (S.einheitTag() || ""); }).length, f = S.fehlerZahl();
+    var kurz = ((Z.pruefung && Z.pruefung.diagnosen) || []).filter(function (d) { return d.regel === "zeit.kurz" &&
+        !d.baustein; }).map(function (d) { return /(\d+) von (\d+)/.exec(d.text || ""); }).filter(Boolean)[0];
+    z.push({ name: "Einheit", wert: (voll === 1 ? "1 Baustein" : voll + " Bausteine") + (f ? ", " + f + " Fehler" :
+        ", geprüft") + (kurz ? " · " + (S.zeitGrau(kurz[1], kurz[2]) ? S.editorText("zeit_dauer_pruef", { ist: kurz[1],
+          minuten: kurz[2] }) : "etwa " + kurz[1] + " von " + kurz[2] + " Minuten") : ""), editor: true });
+    var w = S.bildwuensche().filter(function (b) { return b.datei; });
+    if (sichtbar.indexOf(5.5) >= 0 && w.length) {
+      var da = w.filter(function (b) { return Z.assets[b.datei]; }).length;
+      z.push({ name: "Bilder", wert: da === w.length ? (da === 1 ? "1 Bild hochgeladen" : "alle " + da + " hochgeladen") :
+          da + " von " + w.length + " hochgeladen, sonst steht dort ein Platzhalter", nr: 5.5 });
+    }
+    var n = S.fragenListe.length;
+    if (n) {
+      var neu = S.durchsichtNeuText ? S.durchsichtNeuText() : "";
+      z.push({ name: "Fragen", wert: [n + (n === 1 ? " Frage" : " Fragen"), neu ? neu.replace(/\.$/, "") :
+          PT(angesehen() ? "angesehen" : "nicht_angesehen"), pruefStand()].filter(Boolean).join(" · "), nr: 6,
+      });
+    }
+    return z;
+  }
+  S.pruefZeilen = pruefZeilen;
+  var prueflisteSig = "";
+  function zeichnePruefliste() {
+    var dl = $("pruef-liste"), ansehen = $("editor-auf-8"), zeilen = pruefZeilen();
+    // nur neu zeichnen, wenn sich etwas geändert hat (der Knopf „Ansehen“ behielte sonst den Fokus nicht)
+    var sig = JSON.stringify(zeilen);
+    if (sig === prueflisteSig && dl.contains(ansehen) === zeilen.some(function (r) { return r.editor; })) return;
+    prueflisteSig = sig;
+    if (ansehen.parentNode !== document.querySelector("#schritt-7 .s-inhalt")) dl.after(ansehen);   // vor dem Neuzeichnen retten
+    dl.innerHTML = "";
+    zeilen.forEach(function (r) {
+      var knopf = r.editor ? ansehen : el("button", { type: "button", cls: "textlink pruef-aendern", "data-schritt": r.nr,
+        "aria-label": "Ändern: " + r.name, text: "Ändern" });
+      dl.appendChild(el("div", { cls: "pruef-zeile" }, [el("dt", { text: r.name }),
+        el("dd", { cls: "pruef-wert", text: r.wert || "–" }), el("dd", { cls: "pruef-knopf" }, [knopf])]));
+    });
+  }
+  $("pruef-liste").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-schritt]");
+    if (b && Z.mappe) S.oeffneSchritt(parseFloat(b.dataset.schritt));
+  });
   function zeichneWiederherstellen() {
+    zeichnePruefliste();
     var ol = $("wh-schritte"); ol.innerHTML = "";
     var delta = Z.bau && Z.bau.nachlieferung;
+    // drei Zeilen in Alltagssprache (katalog.yaml oberflaeche.pruefseite); die genaue Anleitung klappt darunter auf
+    var kurz = ((((S.katalog && S.katalog.oberflaeche.pruefseite) || {})[delta ? "wiederherstellen_nachlieferung" :
+        "wiederherstellen"]) || []).slice();
+    if (kurz.length && !delta && S.angaben.format && S.angaben.format !== "themen") kurz[kurz.length - 1] += " " + PT("schema");
+    $("wh-kurz").innerHTML = "";
+    kurz.forEach(function (t) { $("wh-kurz").appendChild(el("li", { text: t })); });
     var glossar = Z.pruefung && Z.pruefung.bausteine.some(function (b) { return b.typ === "Glossar"; });
     var badge = S.angaben.abschluss === "test und abzeichen" || (Z.pruefung && Z.pruefung.bausteine.some(function (b) {
         return b.typ === "Badge"; }));
@@ -444,9 +619,10 @@
     var alle = einheitenImKurs().every(function (e) { return imp.indexOf(e) >= 0; });
     $("importiert-frage").hidden = !!(Z.mappe && alle);
     $("importiert-stand").hidden = !(Z.mappe && alle);
-    $("importiert-stand")
-        .textContent = "Vermerkt. Die nächste Einheit wird als Nachlieferung erstellt und mit „Den gesicherten Kurs " +
-        "mit diesem Kurs verschmelzen“ eingespielt.";
+    $("importiert-stand").textContent = PT("importiert");
+    var fertig = !!(Z.bau && Z.bau.mbz);
+    $("naechste-teil").hidden = !fertig;
+    $("erweitert-7-mehr").hidden = !fertig || $("naechste-einheit").hidden;
     zeichneErgebnisWahl();
   }
   // Bildschirmfotos je Schritt aus katalog.yaml (oberflaeche.wiederherstellen_bilder, Dateien unter web/hilfe/); ohne
@@ -530,8 +706,10 @@
     // nur neu importierte Einheiten bekommen ihren Stand; eine nach dem Import geänderte bleibt als geändert erkannt
     einheitenImKurs().forEach(function (e) { if (imp.indexOf(e) < 0) { imp.push(e); st[e] = einheitStand(e); } });
     Z.mappe.importiert = imp;
-    zeichneWiederherstellen(); autosave();
-    $("naechste-einheit").focus();
+    // MF4: „Hat es geklappt? Ja“ zählt in der Rückmeldung als „Lief“
+    rmErgebnis = "lief"; rmBearbeitet = false;
+    zeichneWiederherstellen(); autosave(); rueckmeldungFuellen();
+    S.fokus(["importiert-stand"], true);
   };
   // Nächste Einheit vorbereiten: Nummer, Teil „e<n>“, Bau ungültig, KI-Hinweis und Material gehören zur vorigen
   function naechsteEinheit() {
@@ -565,7 +743,7 @@
     try {
       var m = await km.mappeSchreiben();
       download(m.zip, m.dateiname, "application/zip");
-      $("autosave-stand").textContent = "Einheit gespeichert um " + zeit(Date.now());
+      $("autosave-stand").textContent = "Zwischenstand gespeichert " + zeit(Date.now());
       S.gespeichert = true;
       autosave();
       // Speichern schließt den laufenden Schritt ab, wenn er fertig ist: die Liste klappt zu, der nächste erscheint
@@ -573,11 +751,11 @@
       if (s === 2 && zweig()) gehe(nachZwei());
       else if (s === 3) { Z.mappe.aussehen = true; gehe(4); }
       else if (s === 4 && Z.mappe.kopiert) gehe(5);
-      else { S.auf = {}; zeichneSchritte(); }
+      else { S.aendern = null; zeichneSchritte(); }
     } catch (e) { zeigeFehler(e); }
   };
   $("neue-einheit").onclick = async function () {
-    clearTimeout(S.autosaveTimer);
+    clearTimeout(S.autosaveTimer); S.autosaveTimer = null; delete $("autosave-stand").dataset.offen;
     if (Z.geladen && Z.mappe) { try { await km.autosaveSchreiben(); } catch (e) {
         /* Hinweis steht schon unter der Kursdatei */ } }
     leeren();
@@ -588,7 +766,7 @@
   function leeren() {
     delete $("rueckmeldung").dataset.offen; delete $("rueckmeldung").dataset.zu;
     Z.mappe = null; Z.kurs_md = ""; Z.steckbrief_text = ""; Z.assets = {}; Z.pruefung = null; Z.kennzahlen = null;
-        Z.bau = null; Z.vergleich = null; korrigieren = {}; gegenFuer = null;
+        Z.bau = null; Z.vergleich = null; korrigieren = {}; gegenFuer = null; feldAuf = false;
     S.rueckgaengig = null; $("rueckgaengig").hidden = true; S.angaben = {};
     neuStart();
     $("f-thema").value = ""; $("f-jahrgang").value = ""; $("f-minuten").value = 45;
@@ -669,13 +847,13 @@
   }
   // Rückmeldung mit einem Klick (AP13.12 a11): drei Knöpfe nach „Importiert?“; „Hat gehakt“ und „Abgebrochen“ zeigen
   // die zwei Felder
+  // MF4 (Konzept §3.8): „Hat es geklappt?“ mit „Ja“ (importiert-ja) und „Nein, es hakt“; „Nein“ öffnet die Rückmeldung
+  // mit den Feldern für das, was passiert ist, und die Fehlermeldung der Plattform
   function zeichneErgebnisWahl() {
-    Array.prototype.forEach.call($("ergebnis-wahl").querySelectorAll("[data-ergebnis]"), function (b) {
-      b.setAttribute("aria-pressed", String(b.dataset.ergebnis === rmErgebnis));
-    });
+    $("geklappt-nein").setAttribute("aria-pressed", String(rmErgebnis === "gehakt"));
     $("rm-felder").hidden = !rmErgebnis || rmErgebnis === "lief";
   }
-  $("ergebnis-wahl").onclick = function (ev) {
+  $("geklappt-nein").onclick = function (ev) {
     var b = ev.target.closest("[data-ergebnis]");
     if (!b) return;
     rmErgebnis = b.dataset.ergebnis;

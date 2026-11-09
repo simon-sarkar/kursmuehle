@@ -1,5 +1,5 @@
-/* Kursmühle – Schrittfolge der Seite: sieben Schritte untereinander, davor die erledigten als aufklappbare
- * Zeile; Zweig „Mach du“ setzt Vorlage und Bausteine still, „Ich steuere“ zeigt Vorlagen, Karten mit Aufträgen und
+/* Kursmühle – Schrittfolge der Seite: ein Schritt offen, die erledigten als Zeile mit „Ändern“ darüber, die kommenden
+ * grau darunter (MF1); Zweig „Mach du“ setzt Vorlage und Bausteine still, „Ich steuere“ zeigt Vorlagen, Karten mit Aufträgen und
  * „Mehr einstellen“. Dazu Aussehen, Verwerfen, Kursangaben, hell und dunkel. */
 "use strict";
 
@@ -9,9 +9,9 @@
   var $ = S.$, FARBEN = S.FARBEN, SCHRITTE = S.SCHRITTE, STANDARD_FARBE = S.STANDARD_FARBE,
       Z = S.Z, ZWEIG_TEXT = S.ZWEIG_TEXT, auswertung = S.auswertung, autosave = S.autosave,
       bilderStandard = S.bilderStandard, bilderWert = S.bilderWert, bildwuensche = S.bildwuensche,
-      chatInfo = S.chatInfo, datumZeit = S.datumZeit, einheitTag = S.einheitTag, el = S.el, erledigtBis = S.erledigtBis,
+      chatInfo = S.chatInfo, datumZeit = S.datumZeit, einheitTag = S.einheitTag, el = S.el,
       fehlerText = S.fehlerText, fehlerZahl = S.fehlerZahl, felderFuellen = S.felderFuellen, geaendert = S.geaendert,
-      hinweiseSichern = S.hinweiseSichern, hoehe = S.hoehe, inhalt = S.inhalt, neuPruefen = S.neuPruefen,
+      hoehe = S.hoehe, inhalt = S.inhalt, neuPruefen = S.neuPruefen,
       oberText = S.oberText, schritt = S.schritt, sektion = S.sektion, sichtbareSchritte = S.sichtbareSchritte,
       status = S.status, teileOffen = S.teileOffen, texte = S.texte, zeichne = S.zeichne, zweig = S.zweig;
   // AP13.8: erste Zahl 1 bis 13 im Feld Jahrgangsstufe oder Zielgruppe (wie gen/mappe.py jahrgang_zahl)
@@ -58,9 +58,12 @@
       return !w.length ? "" : da === w.length ? (da === 1 ? "Bild da" : "alle " + da + " Bilder da") : da + " von " +
           w.length + " Bildern da, sonst Platzhalter";
     }
-    if (n === 6) return !S.fragenListe.length ? "keine Fragen" : Z.mappe.durchsicht === "ohne" ?
-        S.editorText("durchsicht_ohne", { n: S.fragenListe.length }) : S.fragenListe.length + " Fragen" +
-        (Z.mappe.durchsicht ? " durchgesehen" : "");
+    // MF4: „11 Fragen · Lösungen angesehen · Im Chat geprüft: 2 Abweichungen“ (angesehen: S.loesungenAngesehen, nachbau.js)
+    if (n === 6) {
+      var nf = S.fragenListe.length;
+      return !nf ? "keine Fragen" : [nf === 1 ? "1 Frage" : nf + " Fragen", S.pruefText(S.loesungenAngesehen() ? "angesehen" :
+          "nicht_angesehen"), S.pruefStand()].filter(Boolean).join(" · ");
+    }
     return "";
   }
 
@@ -92,64 +95,129 @@
   Array.prototype.forEach.call(document.querySelectorAll("details[data-merken]"), function (d) {
     ausklapp(d, d.dataset.merken); });
 
-  // Hinweis unter der Überschrift des aktiven Schritts, höchstens zwei Sätze, nie blockierend
-  function zeichneHinweis(sec, n, aktiv) {
-    var schluessel = n === 2 && zweig() === "richtung" && S.hinweisTexte["2-richtung"] ? "2-richtung" : String(n);
-    var box = sec.querySelector(".s-hinweis"), text = S.hinweisTexte[schluessel];
-    // AP13.5h a3: mit Verbindung nennt der Hinweis zu Schritt 6 auch den Weg über die eigene KI
-    if (n === 6 && text && S.anKiAktiv && S.anKiAktiv()) text = text.replace(", in einem neuen Chat",
-        ", mit deiner KI, in einem neuen Chat");
-    var zeigen = aktiv && S.hinweiseGeladen && S.hinweise.an && !!text && S.hinweise.gesehen.indexOf(String(n)) < 0;
-    if (!zeigen) { if (box) box.remove(); return; }
-    if (!box) {
-      box = el("div", { cls: "s-hinweis", role: "note" }, [el("p"), el("button", { type: "button",
-          cls: "textlink hinweis-aus", text: "Hinweise ausblenden" })]);
-      sec.querySelector(".s-inhalt").insertBefore(box, sec.querySelector(".s-inhalt").firstChild);
-    }
-    box.querySelector("p").textContent = text;
+  // MF1: Kopf jeder Zeile einmal ausstatten: Knopf „Ändern“ (erledigt) bzw. „Öffnen“ (der aktuelle Schritt, solange
+  // ein früherer offen ist), (i) mit dem Text aus hinweise.json und ein Wort zum Stand für Vorlesegeräte
+  function kopfTeile(sec) {
+    var z = sec.querySelector(".s-zeile");
+    if (z.querySelector(".s-aendern")) return z;
+    var id = sec.id + "-info";
+    sec.querySelector(".s-kopf").appendChild(el("span", { cls: "unsichtbar s-stand" }));
+    z.appendChild(el("button", { type: "button", cls: "textlink s-aendern", hidden: true }));
+    z.appendChild(el("button", { type: "button", cls: "info-knopf s-info", "aria-expanded": "false", "aria-controls": id,
+        hidden: true, text: "i" }));
+    z.after(el("p", { id: id, cls: "info-text s-info-text", hidden: true }));
+    return z;
   }
-  document.querySelector(".spalte-haupt").addEventListener("click", function (ev) {
-    if (!ev.target.closest(".hinweis-aus")) return;
-    var kopf = ev.target.closest(".schritt").querySelector(".s-kopf");
-    S.hinweise.an = false; hinweiseSichern(); zeichneSchritte();
-    S.fokus([kopf], true);                  // AP13.36 §1.1: der Knopf verschwindet; der Fokus bleibt in diesem Schritt
-  });
+  function kurzName(n) { var sec = sektion(n); return sec ? sec.dataset.kurz : ""; }
+  // Text eines (i) aus hinweise.json. MF2: das
+  // (i) zum Modell beginnt mit dem Satz des gewählten Chats (katalog.yaml chats.aufwand)
+  function hinweisText(schl) {
+    var t = S.hinweisTexte[schl] || "";
+    // MF6: das (i) an der gelben Minutenzeile in Schritt 5 (Text aus katalog.yaml, mit der Dauer der Einheit)
+    if (schl === "5-verlaengern") return S.editorText("zeit_kurz_info", { minuten: S.zeitKurzMinuten ||
+        ((Z.mappe && Z.mappe.einheit) || {}).minuten || "" });
+    if (schl === "4-modell") { var c = Z.mappe && chatInfo(Z.mappe.chat); if (c && c.aufwand) t = c.aufwand + " " + t;
+      t = (S.editorText("modell_satz") + " " + t).trim(); }       // MF6: der Satz stand vorher sichtbar in der Zeile
+    // MF3: am Auftrag eines Bildes dazu der Satz des Chats zu seinem Bildgenerator (katalog.yaml chats.bilder_hinweis)
+    if (schl === "5.5-auftrag") { var cb = Z.mappe && chatInfo(Z.mappe.chat); if (cb && cb.bilder_hinweis) t += " " + cb.bilder_hinweis; }
+    return t;
+  }
+  // „Weiter: Aussehen“, wenn das Ziel der nächste sichtbare Schritt ist, sonst „Zurück zu: Antwort einfügen“
+  function zielText(von, nach) {
+    var folge = sichtbareSchritte();
+    return (folge[folge.indexOf(von) + 1] === nach ? "Weiter: " : "Zurück zu: ") + kurzName(nach);
+  }
+  // MF1: offen ist genau ein Schritt: im Designer Schritt 3, nach „Ändern“ der geänderte, sonst der aktuelle
+  function offenerSchritt() {
+    var s = schritt();
+    if (S.designer) return 3;
+    return S.aendern !== null && S.aendern !== undefined ? S.aendern : s;
+  }
 
   var modusVorgewaehlt = null;      // AP13.33 M2: Einheit, für die „Als weitere Einheit anhängen“ schon vorgewählt ist
+  var kopfStand = "";
+  // MF5 (Konzept §3.5, Entscheidung 2): nach dem Einsetzen ohne rote Karten ist „Einheit ansehen“ der Hauptknopf, daneben
+  // der Textlink „Weiter ohne Ansehen“ (auch nach „Alle 2 Teile eingesetzt“). Nach dem Ansehen (S.einheitGesehen, bis zur
+  // nächsten Antwort) wieder „Weiter: …“ als Hauptknopf mit „Einheit ansehen“ daneben; ist die nächste Stunde einer Sequenz
+  // der Hauptknopf (S.sequenzHaupt, sequenz.js), bleiben beide Nebenknöpfe
+  function weiterFuenf() {
+    var w = $("weiter-5"), e = $("editor-auf-5"); if (!w || !e) return;
+    var st = (S.katalog && S.katalog.oberflaeche.stelle) || {};
+    var zuerst = !w.hidden && !e.hidden && !S.einheitGesehen && !S.sequenzHaupt;
+    var text = zuerst ? st.ohne_ansehen || "Weiter ohne Ansehen" : w.dataset.ziel || "Weiter";
+    if (w.textContent !== text) w.textContent = text;
+    w.className = zuerst ? "textlink ohne-ansehen" : "knopf" + (S.sequenzHaupt ? "" : " haupt");
+    e.className = "knopf editor-auf-5" + (zuerst ? " haupt" : "");
+    if (st.ansehen && e.textContent !== st.ansehen) e.textContent = st.ansehen;
+    // der Hauptknopf steht vorn (Lese- und Tab-Folge)
+    if (zuerst ? e.nextElementSibling !== w : w.nextElementSibling !== e) {
+      var f = document.activeElement;
+      if (zuerst) w.before(e); else e.before(w);
+      if (f && (f === e || f === w)) f.focus({ preventScroll: true });
+    }
+  }
+  S.weiterFuenf = weiterFuenf;
+  S.einheitGesehen = false;
+  S.sequenzHaupt = false;
   function zeichneSchritte() {
     var s = schritt(), z = zweig(), d = !!S.designer;
     // Bildwünsche inzwischen weg oder Bilder „keine“: weiter mit den Fragen
     if (s === 5.5 && Z.pruefung && sichtbareSchritte().indexOf(5.5) < 0) s = 6;
+    var sichtbar = sichtbareSchritte();
+    // „Ändern“ gilt nur für einen sichtbaren Schritt vor dem aktuellen
+    if (S.aendern !== null && (!Z.mappe || !(S.aendern < s) || sichtbar.indexOf(S.aendern) < 0)) S.aendern = null;
+    var offen = offenerSchritt();
     document.body.dataset.schritt = d ? "3" : String(s);
+    document.body.dataset.offen = String(offen);
     document.body.dataset.zweig = z;
     document.body.dataset.bildschirm = Z.mappe ? "ansicht" : "start";
-    var sichtbar = sichtbareSchritte();
     SCHRITTE.forEach(function (n) {
-      var sec = sektion(n);
-      var stand = sichtbar.indexOf(n) < 0 ? "zu" : n < s ? "erledigt" : n === s ? "aktiv" : "zu";
-      // AP13.19 §3: im Designer ist Schritt 3 offen (mit Vorschau), alle übrigen sind zugeklappt
-      if (d && n === 3) stand = "aktiv";
-      else if (d && stand === "aktiv") stand = "erledigt";
-      // Schritt 4 bleibt offen, solange ein gestückelter Text noch nicht ganz kopiert ist
-      var teileKopieren = n === 4 && s === 5 && texte.teile.length > 1 && Object.keys(texte.kopiert)
-          .length < texte.teile.length;
-      var offen = stand === "aktiv" || (!d && stand === "erledigt" && (!!S.auf[n] || teileKopieren));
+      var sec = sektion(n), zeile = kopfTeile(sec);
+      // data-stand ist der Fortschritt (erledigt, aktiv, kommend); offen ist der Schritt mit der Klasse „auf“
+      var stand = sichtbar.indexOf(n) < 0 ? "zu" : n < s ? "erledigt" : n === s ? "aktiv" : "kommend";
+      var auf = stand !== "zu" && n === offen;
       sec.hidden = stand === "zu";
       sec.dataset.stand = stand;
-      sec.classList.toggle("auf", offen);
-      var b = sec.querySelector(".s-zeile");
-      b.setAttribute("aria-expanded", String(offen));
-      b.disabled = stand !== "erledigt" || d;
+      sec.classList.toggle("auf", auf);
+      var titel = sec.querySelector(".s-titel").textContent.trim();
+      var knopf = zeile.querySelector(".s-aendern"), wort = stand === "erledigt" ? "Ändern" : "Öffnen";
+      var klickbar = !auf && !d && !!Z.mappe && (stand === "erledigt" || stand === "aktiv");
+      knopf.hidden = !klickbar;
+      if (knopf.textContent !== wort) knopf.textContent = wort;
+      knopf.setAttribute("aria-label", wort + ": " + titel);       // WCAG 2.5.3: der Name beginnt mit dem Wort
+      zeile.classList.toggle("klickbar", klickbar);
       sec.querySelector(".s-fazit").textContent = stand === "erledigt" && Z.mappe ? fazit(n) : "";
       sec.querySelector(".s-nr").textContent = String(sichtbar.indexOf(n) + 1);
-      zeichneHinweis(sec, n, stand === "aktiv" && !d);
+      sec.querySelector(".s-stand").textContent = stand === "erledigt" ? ", erledigt" : stand === "kommend" ?
+          ", kommt noch" : "";
+      // (i) am Titel des offenen Schritts ab Schritt 5; MF2: Schritt 1 bis 4 haben keins (ihre Felder erklären sich, die
+      // (i) stehen an den Kacheln, an „Bilder“ und am Modell)
+      var info = zeile.querySelector(".s-info"), schl = String(n), text = n >= 5 && hinweisText(schl);
+      info.hidden = !auf || !text;
+      info.dataset.hinweis = schl;
+      info.setAttribute("aria-label", "Erklärung zu " + kurzName(n));
+      if (info.hidden && info.getAttribute("aria-expanded") === "true") infoUmschalten(info, false);
     });
-    $("hinweise-an").checked = S.hinweise.an;
+    // Kopfzeile: „Schritt 4 von 7 · Text für den Chat“ (auf dem Handy nur „4 von 7“)
+    var pos = sichtbar.indexOf(offen) + 1, ks = [pos, sichtbar.length, kurzName(offen)].join("|");
+    if (ks !== kopfStand) {
+      kopfStand = ks;
+      var kz = $("kopf-schritt"); kz.textContent = "";
+      kz.append(el("span", { cls: "ks-wort", text: "Schritt " }), pos + " von " + sichtbar.length,
+        el("span", { cls: "ks-name", text: " · " + kurzName(offen) }));
+    }
     ["mach", "richtung", "steuer"].forEach(function (w) { $("zweig-" + w).setAttribute("aria-checked", String(z === w));
         });
     $("steuer-teil").hidden = z !== "steuer";
     $("mach-teil").hidden = z !== "mach" && z !== "richtung";
     $("richtung-teil").hidden = z !== "richtung";
+    // MF2: „Erweitert“ in Schritt 2, sobald ein Weg gewählt ist; was darin steht, hängt am Weg
+    $("erweitert-2").hidden = !z;
+    $("m-kontext-l").hidden = z !== "mach" && z !== "richtung";
+    $("mehr").hidden = z !== "steuer";
+    var was2 = z === "steuer" ? "Lehrplan, Mehr einstellen" : "Lehrplan, Worum geht es genau?, Material";
+    if ($("erweitert-2-was").textContent !== was2) $("erweitert-2-was").textContent = was2;
+    erweitert2Pruefen();
     kursZeigen();
     if (z === "richtung" || z === "steuer") zeichneRichtung();
     if (S.katalog) { vorlagenZeigen(); zeichneMachArt(); }
@@ -161,13 +229,20 @@
     $("weiter-2").hidden = s > 2 || !z;
     zeichneGruppen(s);
     // Karten: unter Schritt 5, sobald die erste Antwort da ist (AP13.31: davor plant „Ich steuere“ im Plan)
+    // MF3 (Konzept §3.5): in Schritt 5 liegen die Karten mit Phase, Minuten und Auftrag unter „Erweitert“ (mit den
+    // Kennzahlen und in „Ich steuere“ der Art des Einsetzens); die rote Karte mit der Korrekturbitte steht davor im Blick.
+    // „Bausteine ansehen“ (AP13.43 §4) entfällt. „Rückgängig“ steht dann über dem Hauptknopf, nicht in der Liste
     var ort = inhalt() ? $("karten-ort-5") : $("karten-ort-2");
     if ($("tafel-bausteine").parentNode !== ort) ort.appendChild($("tafel-bausteine"));
+    var rg = $("rueckgaengig");
+    if (ort === $("karten-ort-5")) { if (rg.previousElementSibling !== $("einheit-warnung")) $("einheit-warnung").after(rg); }
+    else if (rg.nextElementSibling !== $("karten")) $("karten").before(rg);
     $("tafel-bausteine").hidden = !inhalt();
+    $("tafel-auf").hidden = true;
     $("karten").classList.toggle("kompakt", z !== "steuer");
     $("hinzufuegen").hidden = z !== "steuer";
     $("text-art").hidden = z !== "steuer";
-    $("modus").hidden = z !== "steuer";
+    $("modus-ort").hidden = z !== "steuer";
     // AP13.33 §1.9: solange die angehängte Einheit leer ist, hängt die Mühle die Antwort an; die Wahl zeigt das vorher,
     // einmal je Einheit beim Erreichen von Schritt 5 (M2: danach gilt, was die Lehrkraft wählt)
     var vorwahl = Z.mappe && Z.mappe.anhaengen ? [Z.mappe.erzeugt, Z.mappe.titel, Z.mappe.anhaengen].join("|") : null;
@@ -176,41 +251,83 @@
       modusVorgewaehlt = vorwahl;
       document.querySelector("input[name=modus][value=anhaengen]").checked = true;
     }
-    document.querySelector(".spalte-rand").hidden = s < 5;
-    document.querySelector(".seite").classList.toggle("mit-rand", s >= 5);
+    // MF3: in „Ich steuere“ schon vor der ersten Antwort, dann nur mit der Art des Einsetzens
+    $("erweitert-5").hidden = !inhalt() && !(z === "steuer" && Z.mappe && s >= 5);
+    var was5 = !inhalt() ? "Einsetzen" : (z === "steuer" ? "Einsetzen, " : "") + "Bausteine, Kennzahlen";
+    $("diagnosen").hidden = !inhalt();
+    if ($("erweitert-5-was").textContent !== was5) $("erweitert-5-was").textContent = was5;
+    erweitert5Pruefen();
     $("weiter").hidden = !!Z.mappe || !$("weiter").dataset.da;
     $("weiter-5").hidden = !(s === 5 && inhalt() && !fehlerZahl() && !teileOffen());
-    $("weiter-5").textContent = sichtbareSchritte().indexOf(5.5) >= 0 ? "Weiter zu den Bildern" : S.fragenListe.length ?
-        "Weiter zu den Fragen und Lösungen" : "Weiter zur Datei";
-    $("rueckmeldung").hidden = !!$("rueckmeldung").dataset.zu ||
-        (!(s >= 7 && Z.bau && Z.bau.mbz) && !$("rueckmeldung").dataset.offen);
+    // MF1: die Hauptknöpfe nennen den nächsten Schritt
+    $("weiter-5").dataset.ziel = "Weiter: " + kurzName(sichtbar.indexOf(5.5) >= 0 ? 5.5 : S.fragenListe.length ? 6 : 7);
+    weiterFuenf();
+    $("weiter-bilder").hidden = S.aendern === 5.5;
+    // MF4: „Weiter: Kursdatei“ neutral, ohne Bestätigung; nach „Ändern“ steht dort „Zurück zu“ (zurueck-6)
+    $("weiter-6").hidden = S.aendern === 6;
+    $("weiter-6").textContent = "Weiter: " + kurzName(7);
+    $("weiter-2").textContent = "Weiter: " + kurzName(nachZwei());
+    $("weiter-3").textContent = "Weiter: " + kurzName(4);
+    $("einheit-anlegen").textContent = !Z.mappe || neueEinheit() || s <= 2 ? "Weiter: " + kurzName(2) : zielText(1, s);
+    // nach „Ändern“: ein Hauptknopf zurück zum aktuellen Schritt (Schritt 1 nimmt dafür seinen eigenen Knopf)
+    Array.prototype.forEach.call(document.querySelectorAll(".s-zurueck"), function (b) {
+      var n = parseFloat(b.dataset.nr);
+      b.hidden = d || S.aendern !== n;
+      if (!b.hidden) b.textContent = zielText(n, s);
+    });
+    // MF4 (Konzept §3.8): die Rückmeldung öffnet „Nein, es hakt“ oder „Rückmeldung geben“, nicht der Download selbst
+    $("rueckmeldung").hidden = !!$("rueckmeldung").dataset.zu || !$("rueckmeldung").dataset.offen;
     $("speichern").hidden = !Z.mappe;
     $("neue-einheit").hidden = !Z.mappe;
     $("schliessen").hidden = !Z.mappe;
-    if (!Z.mappe) $("autosave-stand").textContent = "";
+    if (!Z.mappe) { $("autosave-stand").textContent = ""; $("autosave-stand").classList.remove("warn"); }
   }
 
+  // MF1: ein Klick auf eine erledigte Zeile (oder ihren Knopf „Ändern“) öffnet diesen Schritt; der bisher offene wird
+  // zur Zeile. Am aktuellen Schritt heißt der Knopf „Öffnen“. Nichts klappt zusätzlich auf
   document.querySelector(".spalte-haupt").addEventListener("click", function (ev) {
-    var b = ev.target.closest(".s-zeile"); if (!b || b.disabled) return;
-    var n = parseFloat(b.dataset.nr);
-    S.auf[n] = !S.auf[n];
+    var z = ev.target.closest(".s-zeile");
+    if (!z || !z.classList.contains("klickbar") || ev.target.closest(".info-knopf")) return;
+    oeffneSchritt(parseFloat(z.dataset.nr));
+  });
+  // `still`: ohne Sprung und Fokus (der Aufrufer setzt beides selbst)
+  function oeffneSchritt(n, still) {
+    if (!Z.mappe) return;
+    S.aendern = n === schritt() ? null : n;
+    designerBeenden();
     zeichneSchritte();
-    if (S.auf[n]) Array.prototype.forEach.call(document.querySelectorAll(".k-auftrag"), hoehe);
+    Array.prototype.forEach.call(document.querySelectorAll(".k-auftrag"), hoehe);
+    if (still) return;
+    var sec = sektion(n);
+    sec.scrollIntoView({ block: "start" });
+    S.fokus([sec.querySelector(".s-kopf")], true);
+  }
+  // „Zurück zu: …“ (und „Weiter: …“ nach „Ändern“): der aktuelle Schritt ist wieder offen, Fokus auf seiner Überschrift
+  function zurueckZumStand() {
+    if (!Z.mappe) return;
+    S.aendern = null; designerBeenden();
+    zeichne(); autosave();
+    var sec = sektion(schritt());
+    if (!sec || sec.hidden) return;
+    sec.scrollIntoView({ block: "start" });
+    S.fokus([sec.querySelector(".s-kopf")], true);
+  }
+  document.querySelector(".spalte-haupt").addEventListener("click", function (ev) {
+    if (ev.target.closest(".s-zurueck")) zurueckZumStand();
   });
 
   function gehe(n, fokus) {
     if (!Z.mappe) return;
     if (n > schritt() && n > 2 && materialFehlt()) { materialZeigen(true); return; }
-    if (n > schritt()) erledigtBis(n);
     Z.mappe.schritt = n;
-    S.auf = {}; designerBeenden();
+    S.aendern = null; designerBeenden();
     zeichne();
     autosave();
     var sec = sektion(n);
     if (sec && !sec.hidden) {
       sec.scrollIntoView({ block: "start" });
       var f = fokus ?
-          $(fokus) : sec.querySelector(".s-inhalt button:not([hidden]):not(:disabled), .s-inhalt input, .s-inhalt " +
+          (typeof fokus === "string" ? $(fokus) : fokus) : sec.querySelector(".s-inhalt button:not([hidden]):not(:disabled), .s-inhalt input, .s-inhalt " +
           "textarea");
       if (f) f.focus({ preventScroll: true });
     }
@@ -246,14 +363,14 @@
     var min = parseInt(q.get("minuten"), 10);
     $("f-thema").value = thema;
     if (zielgruppeAus(jg)) {                             // Text ohne Zahl: die Zielgruppe (c2)
-      $("f-zielgruppe").value = jg.slice(0, 40); $("erweitert").open = true; zielgruppeSperre("f");
+      $("f-zielgruppe").value = jg.slice(0, 40); erweitertAuf("erweitert", true); zielgruppeSperre("f");
     } else $("f-jahrgang").value = jg.slice(0, 12);
     $("f-minuten").value = min >= 10 && min <= 300 ? min : 45;
     if (!thema) { $("f-thema").focus(); return; }
     S.katalogDa.then(function () { return km.autosaveLesen().catch(function () { return null; }); }).then(function (r) {
       if (!r) { startAbsenden(); return; }
       frage("Einheit „" + (r.titel || r.dateiname) +
-          "“ verwerfen? Was du nicht mit „Einheit speichern“ gesichert hast, geht verloren.",
+          "“ verwerfen? Was du nicht mit „Zwischenstand speichern“ gesichert hast, geht verloren.",
         async function () {
           await km.autosaveLoeschen();
           $("weiter").dataset.da = ""; $("weiter").hidden = true;
@@ -319,7 +436,7 @@
       var f = $(id), satz = feldSatz(f);
       if (satz) { feldMeldung(f, satz); erstes = erstes || f; } else feldOk(f);
     });
-    if (erstes) erstes.focus({ preventScroll: false });
+    if (erstes) { aufdecken(erstes); erstes.focus({ preventScroll: false }); }
     return !erstes;
   }
   ["f-thema", "f-jahrgang", "f-minuten", "a-thema", "a-jahrgang", "a-minuten"].forEach(function (id) {
@@ -335,7 +452,7 @@
     if (nurAnzeige) {                                   // felderFuellen hat die Werte schon gesetzt
       if (zg && zielgruppeAus(e.jahrgang)) j.dataset.zuletzt = e.jahrgang_zuletzt || "";
       else if (!zg && j.value.trim()) j.dataset.zuletzt = j.value.trim();
-      if (o === "f" && zg) $("erweitert").open = true;
+      if (o === "f" && zg) erweitertAuf("erweitert", true);
     } else if (zg && !j.disabled) {
       if (j.value.trim()) j.dataset.zuletzt = j.value.trim();
       j.value = ""; feldOk(j);
@@ -363,9 +480,7 @@
   S.zielgruppeSperre = zielgruppeSperre;
   document.head.appendChild(el("style", { id: "stil-zielgruppe", text: [
     ".start-form { align-items: start; }",           /* die Zeile unter der Jahrgangsstufe schiebt nichts */
-    ".erweitert { grid-column: 1 / -1; }",
-    ".erweitert summary { cursor: pointer; color: var(--link); font-weight: 600; padding: 2px 0; width: max-content; }",
-    ".erweitert .feld { max-width: 24rem; padding-top: 8px; }",
+    "#erweitert .feld { max-width: 24rem; }",
     ".feld input:disabled { opacity: 0.55; cursor: not-allowed; }"
   ].join("\n") }));
 
@@ -403,8 +518,11 @@
     Object.assign(S.angaben, sa);
     if (S.sequenzSetzen) S.sequenzSetzen(stunden);
     Z.mappe.schritt = Math.max(schritt(), 2);
-    S.auf = {};
+    var vonHier = $("start").contains(document.activeElement);
+    S.aendern = null;
     zeichne();
+    // MF1: Schritt 1 ist jetzt eine Zeile; weiter geht es beim aktuellen Schritt
+    if (vonHier) { sektion(schritt()).scrollIntoView({ block: "start" }); S.fokus([sektion(schritt()).querySelector(".s-kopf")], true); }
     angabenSchreiben(Object.assign(Z.mappe.anhaengen ? { jahrgang: e.jahrgang } : { thema: thema, jahrgang: e.jahrgang,
         minuten: e.minuten }, sa));
   }
@@ -511,6 +629,7 @@
     e.vorlage = v.name;
     Z.mappe = km.neueMappe(e.thema, e, vorlageKarten(v, e.minuten));
     Z.mappe.schritt = 2;
+    Z.mappe.zweig = "mach";                        // MF2 (Konzept §7, 1): „Mach du“ ist vorgewählt
     Z.mappe.zeit_selbst = false;                   // Standard: das Modell verteilt die Minuten
     Z.mappe.zeit_start = new Date().toISOString();  // AP13.12 a11: Minuten bis zum Download für die Rückmeldung
     Z.kurs_md = ""; Z.steckbrief_text = ""; Z.assets = {}; Z.pruefung = null; Z.kennzahlen = null; Z.bau = null;
@@ -546,6 +665,7 @@
     Z.mappe.laufend = Z.mappe.anhaengen;           // Text, Bilder und Rand gehören jetzt zu dieser Einheit
     delete Z.mappe.stueckelung;
     Z.mappe.durchsicht = false; delete Z.mappe.kopiert; delete Z.mappe.durchsicht_neu;
+    delete Z.mappe.durchsicht_antwort; delete Z.mappe.durchsicht_weg;      // MF4: die Prüfung im Chat zählt die Fragen neu
     Z.mappe.zeit_start = new Date().toISOString(); delete Z.mappe.zeit_download;
     Z.bau = null;
     neuStart();
@@ -553,7 +673,7 @@
     texte.art = "leer";
     if (ohneSprung) {
       Z.mappe.schritt = zweig() && Z.mappe.aussehen && chatInfo(Z.mappe.chat) ? 4 : 2;
-      S.auf = {}; zeichne(); autosave();
+      S.aendern = null; zeichne(); autosave();
       return Z.geladen ? neuPruefen() : Promise.resolve();
     }
     gehe(2, zweig() ? "weiter-2" : "zweig-mach");
@@ -570,10 +690,10 @@
         S.korrekturen = []; S.korrekturBitte = ""; S.spracheGelb = []; S.letzteAntwort = null;
     S.korrektur = { text: "", offen: false, stand: "", art: "" };
     $("korrektur-eingabe").value = ""; $("eingabe-stand").hidden = true;
-    S.chatWahlOffen = false; S.auf = {}; S.designer = null;
+    S.chatWahlOffen = false; S.chatZurKorrektur = false; S.aendern = null; S.designer = null;
     $("chat-text-feld").value = ""; $("gegen-text-feld").value = ""; $("gegen-antwort").value = "";
-    $("gegen-ergebnis").innerHTML = ""; $("gegen-stand").textContent = ""; $("kopiert").textContent = "";
-    $("eingabe-stand").textContent = ""; $("infobox").hidden = true; $("importiert-stand").hidden = true;
+    $("gegen-stand").textContent = ""; $("gegen-kopiert").textContent = ""; $("kopiert").textContent = "";
+    $("eingabe-stand").textContent = ""; $("importiert-stand").hidden = true;
     S.diagnoseKarte($("eingabe-diagnose"), null); S.diagnoseKarte($("korrektur-diagnose"), null);
     document.querySelector("input[name=text-art][value=einheit]").checked = true;
   }
@@ -651,7 +771,7 @@
     // AP13.36 §1.5: der Fokus bleibt auf dem gewählten Weg (eine Radiogruppe: die Pfeiltasten wählen weiter); ein Sprung
     // in ein Textfeld öffnete am Handy die Tastatur
     if (schritt() <= 2) { zeichne(); geaendert(); }
-    else { S.auf[2] = true; zeichne(); geaendert(); }
+    else { S.aendern = 2; zeichne(); geaendert(); }
   });
   // AP13.37 §3 (e7-11): der Fokus bleibt nach der Wahl auf dem Weg (AP13.36 §1.5); wer gleich tippt, schreibt in das
   // Textfeld dieses Wegs („Worum geht es genau?“ bzw. im Plan „Worum geht es in dieser Einheit?“), nichts geht verloren.
@@ -659,7 +779,9 @@
   document.querySelector(".zweige").addEventListener("keydown", function (ev) {
     if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.isComposing || String(ev.key).length !== 1 || ev.key === " ") return;
     var f = zweig() === "steuer" ? $("plan-beschreibung") : zweig() ? $("m-kontext") : null;
-    if (!f || !f.getClientRects().length || f.disabled || f.readOnly) return;
+    if (!f || f.disabled || f.readOnly) return;
+    if (!f.getClientRects().length) aufdecken(f);            // MF2: „Worum geht es genau?“ liegt unter „Erweitert“
+    if (!f.getClientRects().length) return;
     ev.preventDefault();
     f.focus();
     var pos = f.value.length;
@@ -851,9 +973,11 @@
     // nur verschieben, wenn es nicht schon dort steht: ein Verschieben nimmt dem Feld den Fokus
     var nach = function (feld, anker) { if (feld.previousElementSibling !== anker) anker.after(feld); };
     var zuletzt = function (feld, ort) { if (feld.parentNode !== ort || feld.nextElementSibling) ort.appendChild(feld); };
-    if (p && z === "mach") nach(r, $("m-kontext").closest("label"));
+    // MF2: sonst unter „Erweitert“ nach „Worum geht es genau?“ (in „Ich steuere“ steht es unter „Mehr einstellen“)
+    if (p && z === "mach") zuletzt(r, $("mach-teil"));
     else if (p && z === "richtung") nach(r, $("r-art").closest(".aus-gruppe"));
-    else zuletzt(r, $("richtung-teil"));
+    else nach(r, $("m-kontext-l"));
+    r.hidden = z !== "mach" && z !== "richtung";
     if (p) nach(a, $("vorlagen")); else zuletzt(a, document.querySelector(".mehr-felder"));
     $("r-material-zeile").textContent = p ? "für diese Art nötig" : "freiwillig";
     $("a-material-zeile").hidden = !p;
@@ -862,8 +986,9 @@
   }
   // Feld in den Blick, Fokus hinein; mit meldung: Schritt 2 offen und der rote Satz unter dem Feld
   function materialZeigen(meldung) {
-    if (meldung && schritt() > 2 && !S.auf[2]) { S.auf[2] = true; zeichneSchritte(); }
+    if (meldung && schritt() > 2 && S.aendern !== 2) { S.aendern = 2; zeichneSchritte(); }
     var f = materialFeld();
+    aufdecken(f);
     if (meldung) feldMeldung(f, "Füg dein Material ein oder lies eine Datei ein.");
     f.scrollIntoView({ block: "center" });
     f.focus({ preventScroll: true });
@@ -966,22 +1091,84 @@
     });
   }
 
-  // AP13.24 §9: Infoknopf ⓘ am Materialfeld; der Text steht in katalog.yaml (oberflaeche.material_info) und kommt erst beim
-  // Öffnen in die Seite. Das Feld sitzt in einem Label: ein Klick auf ⓘ soll weder das Feld fokussieren noch absenden.
-  function infoUmschalten(k) {
-    var t = (k.closest(".info-ort") || k.closest("label")).querySelector(".info-text"), auf = t.hidden;
-    if (auf && S.katalog) t.textContent = S.katalog.oberflaeche[k.dataset.info] || "";
+  // (i) (AP13.24 §9, MF1): ein runder Knopf öffnet einen kurzen Text unter der Zeile; ein Klick daneben oder Escape
+  // schließt ihn (Fokus zurück auf den Knopf). Der Text steht in katalog.yaml (`data-info`, oberflaeche) oder in
+  // hinweise.json (`data-hinweis`) und kommt erst beim Öffnen in die Seite. Den Ort nennt `aria-controls`, sonst liegt er
+  // im selben label (Materialfeld: ein Klick auf (i) soll weder das Feld fokussieren noch absenden).
+  var infoOffen = null;
+  function infoFeld(k) {
+    var id = k.getAttribute("aria-controls");
+    if (id) return $(id);
+    var ort = k.closest(".info-ort") || k.closest("label");
+    return ort ? ort.querySelector(".info-text") : null;
+  }
+  function infoUmschalten(k, auf) {
+    var t = infoFeld(k); if (!t) return;
+    if (auf === undefined) auf = t.hidden;
+    if (auf) {
+      if (infoOffen && infoOffen !== k) infoUmschalten(infoOffen, false);
+      t.textContent = k.dataset.hinweis ? hinweisText(k.dataset.hinweis) :
+          S.katalog ? S.katalog.oberflaeche[k.dataset.info] || "" : "";
+    }
     t.hidden = !auf;
     k.setAttribute("aria-expanded", String(auf));
+    if (auf) infoOffen = k; else if (infoOffen === k) infoOffen = null;
   }
   document.addEventListener("click", function (ev) {
-    var k = ev.target.closest && ev.target.closest(".info-knopf"); if (!k) return;
-    ev.preventDefault(); infoUmschalten(k);
+    var k = ev.target.closest && ev.target.closest(".info-knopf");
+    if (k) { ev.preventDefault(); infoUmschalten(k); return; }
+    if (infoOffen && !(infoFeld(infoOffen) || document.body).contains(ev.target)) infoUmschalten(infoOffen, false);
   });
   document.addEventListener("keydown", function (ev) {
     // ein echter Knopf (AP13.40) klickt mit Enter und Leertaste selbst
     var k = ev.target.classList && ev.target.classList.contains("info-knopf") && ev.target.tagName !== "BUTTON" ? ev.target : null;
-    if (k && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); infoUmschalten(k); }
+    if (k && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); infoUmschalten(k); return; }
+    if (ev.key !== "Escape" || !infoOffen) return;
+    var offen = infoOffen, drin = document.activeElement === offen || (infoFeld(offen) || offen).contains(document.activeElement);
+    ev.preventDefault(); ev.stopPropagation();
+    infoUmschalten(offen, false);
+    if (drin) offen.focus();
+  }, true);
+
+  // „Erweitert“ (MF1): ein Knopf je Schritt klappt die Feineinstellungen darunter auf und zu (aria-expanded,
+  // aria-controls); was darin steht, sagt das leise Wort daneben
+  function erweitert(knopf, auf) {
+    var inhaltEl = $(knopf.getAttribute("aria-controls"));
+    if (auf === undefined) auf = knopf.getAttribute("aria-expanded") !== "true";
+    knopf.setAttribute("aria-expanded", String(auf));
+    if (inhaltEl) inhaltEl.hidden = !auf;
+  }
+  function erweitertAuf(id, auf) { var k = $(id + "-knopf"); if (k) erweitert(k, auf); }
+  // MF3: in „Ich steuere“ sind die Karten mit Aufträgen das Werkzeug der Lehrkraft; „Erweitert“ in Schritt 5 steht dort
+  // einmal je Einheit offen, sobald die erste Antwort da ist. Danach gilt, was die Lehrkraft auf- oder zuklappt
+  var erw5Fuer = null;
+  function erweitert5Pruefen() {
+    if (!Z.mappe || erw5Fuer === Z.mappe || !inhalt() || zweig() !== "steuer") return;
+    erw5Fuer = Z.mappe;
+    erweitertAuf("erweitert-5", true);
+  }
+  // MF2: ein Feld, das gebraucht wird (Pflicht, Fehler, Sprung), liegt vielleicht unter „Erweitert“ oder in einem
+  // zugeklappten Teil; beides geht dann auf
+  function aufdecken(feld) {
+    for (var e = feld && feld.parentElement; e; e = e.parentElement) {
+      if (e.classList.contains("erw-inhalt") && e.hidden) {
+        var k = document.querySelector('.erw-knopf[aria-controls="' + e.id + '"]'); if (k) erweitert(k, true);
+      }
+      if (e.tagName === "DETAILS" && !e.open) e.open = true;
+    }
+  }
+  // MF2: ist in Schritt 2 unter „Erweitert“ schon etwas eingetragen (geöffnete Einheit, Lehrplan gemerkt), steht es
+  // offen; einmal je Einheit, sobald ihre Angaben gelesen sind. Danach gilt, was die Lehrkraft auf- oder zuklappt
+  var erw2Fuer = null;
+  function erweitert2Pruefen() {
+    if (!Z.mappe || erw2Fuer === Z.mappe || S.angabenFuer !== Z.mappe || !zweig()) return;
+    erw2Fuer = Z.mappe;
+    var a = S.angaben || {}, lp = a.lehrplan;
+    if (String(S.kontextJetzt() || "").trim() || /\S/.test(Z.mappe.material || "") || String(a.fach || "").trim() ||
+        a.lehrplanbezug === "ja" || (lp && (lp.lernbereiche || []).length)) erweitertAuf("erweitert-2", true);
+  }
+  document.addEventListener("click", function (ev) {
+    var k = ev.target.closest && ev.target.closest(".erw-knopf"); if (k) erweitert(k);
   });
 
   function mischen(hex, anteil) {      // Akzent auf Weiß getönt (wie gen/html.py tint)
@@ -1085,9 +1272,20 @@
       b.appendChild(el("span", { cls: "aus-zeile", text: w.zeile }));
       return b;
     }, gewaehlt);
-    kachelnVon(box).forEach(function (b) { b.setAttribute("aria-checked", String(b.dataset.wert === gewaehlt)); });
+    // MF2 (Konzept §3.3): vier Designs sichtbar, dazu das gewählte; „Alle Designs“ und der Designer zeigen alle
+    var alle = !!S.alleDesigns || !!S.designer, zahl = kachelnVon(box).length;
+    kachelnVon(box).forEach(function (b) {
+      b.setAttribute("aria-checked", String(b.dataset.wert === gewaehlt));
+      b.hidden = !alle && VIER_DESIGNS.indexOf(b.dataset.wert) < 0 && b.dataset.wert !== gewaehlt;
+    });
+    var ak = $("familie-alle"), ganz = kachelnVon(box).every(function (b) { return !b.hidden; });
+    ak.hidden = !!S.designer || (ganz && !S.alleDesigns);
+    ak.setAttribute("aria-expanded", String(alle));
+    var at = S.alleDesigns ? "Weniger Designs" : "Alle " + zahl + " Designs";
+    if (ak.textContent !== at) ak.textContent = at;
     vorschauLaden();
   }
+  var VIER_DESIGNS = ["sachlich", "freundlich", "grundschule", "modern"];
   // Vorschau der gewählten Familie (AP13.5d §1, §4): bei jedem Wechsel von Familie oder Feinheit ein Aufruf von
   // gen/api.design_vorschau; gefüllt wird immer aus dem letzten Ergebnis, auch wenn Schritt 3 erst danach erscheint
   var vorschauStand = "", vorschauFertig = "", vorschauHtml = "";
@@ -1253,57 +1451,22 @@
       if (m && m.dataset.svg !== svg) { m.innerHTML = svg; m.dataset.svg = svg; }  // eigenes SVG, keine Eingabe
     });
   }
-  // AP13.19 §2: Gruppen nacheinander (wie AP13.5g b1, statt des Ausklappteils aus AP13.12 a1). Beim ersten Erreichen
-  // Design und Bilder; jede Wahl blendet die Gruppe nach ihr ein. Wie weit, merkt sich die Mappe (`aussehen_bis`,
-  // Stelle in FOLGE; fehlt = noch keine eigene Wahl). Weicht eine verborgene Gruppe vom Standard ab (geöffnete Einheit,
-  // „Mehr einstellen“), sind alle Gruppen sichtbar; „Rest als Standard“ ändert darum nie eine Wahl.
-  var FOLGE = ["familie", "farbe", "dichte", "kasten", "format", "website"];
-  function standardWert(g) {
-    var o = S.katalog.oberflaeche;
-    return { familie: (S.familien && S.familien.standard) || "sachlich", farbe: o.farbe[0].wert, dichte: "normal",
-      kasten: "familie", format: o.format[0].wert, website: o.website[0].wert }[g];
-  }
-  function abweichung(g) { var std = standardWert(g); return (S.angaben[g] || std) !== std; }
-  function aussehenBis() {
-    var bis = Z.mappe && typeof Z.mappe.aussehen_bis === "number" ? Z.mappe.aussehen_bis : 0;
-    if (S.designer || !S.katalog || FOLGE.slice(bis + 1).some(abweichung)) return FOLGE.length - 1;
-    var f = familieInfo(familieJetzt());
-    return bis === 1 && f && f.akzent_fest ? 2 : bis;     // Farbe gesperrt: Dichte gleich mit, sonst ginge es nicht weiter
-  }
-  function aussehenGewaehlt(feld) {
-    if (!Z.mappe) return;
-    var i = feld === "bilder" || feld === "bildbeschriftung" ? 0 : FOLGE.indexOf(feld);
-    if (i < 0) return;
-    var bis = Math.max(aussehenBis(), i + 1), f = familieInfo(familieJetzt());
-    if (bis === 1 && f && f.akzent_fest) bis = 2;          // bleibt, auch wenn danach ein anderes Design gilt
-    Z.mappe.aussehen_bis = Math.min(FOLGE.length - 1, bis);
-  }
-  // AP13.28: Im Designer sind alle Gruppen zu sehen. Wer ihn verlässt („Fertig“, Wechsel des Zweigs, Weiter), hat sie
-  // gesehen: Schritt 3 zeigt danach alle, nie weniger als vorher. Ohne das fiel „Ränder“ nach dem Designer wieder weg
-  // (`aussehen_bis` stand noch auf der Stelle vor dem Designer), auch mit einer eigenen Wahl gleich dem Standard.
-  function designerBeenden() {
-    if (S.designer && Z.mappe) Z.mappe.aussehen_bis = FOLGE.length - 1;
-    S.designer = null;
-  }
-  function gruppe(g) { return document.querySelector('#schritt-3 .aus-gruppe[data-gruppe="' + g + '"]'); }
+  // MF2: keine Gruppen nacheinander mehr (AP13.19 §2, `aussehen_bis` und „Standard nehmen und weiter“ entfallen; ein
+  // alter Eintrag in der Mappe stört nicht). Design, Farbe und Bilder stehen sichtbar, der Rest unter „Erweitert“; der
+  // Standard gilt, solange niemand etwas wählt. Der Designer (AP13.19 §3) öffnet „Erweitert“ und zeigt alle Designs.
+  function designerBeenden() { S.designer = null; }
   function zeichneGruppen(s) {
-    var bis = aussehenBis(), alle = bis >= FOLGE.length - 1, d = !!S.designer;
-    FOLGE.forEach(function (g, i) { gruppe(g).hidden = i > bis; });
-    $("feinheiten").hidden = bis < 1;
-    // der Knopf steht unter der letzten sichtbaren Gruppe (Farbe bis Ränder liegen in #feinheiten)
-    var letzte = gruppe(FOLGE[bis]), k = $("standard-weiter");
-    if (letzte.parentNode === $("feinheiten")) letzte = $("feinheiten");
-    if (bis === 0) letzte = gruppe("bilder");
-    if (letzte.nextElementSibling !== k) letzte.after(k);
-    k.textContent = Z.mappe && typeof Z.mappe.aussehen_bis === "number" ? "Rest als Standard und weiter" :
-        "Standard nehmen und weiter";
-    k.hidden = s > 3 || alle || d;
-    $("weiter-3").hidden = s > 3 || !alle || d;
+    var d = !!S.designer;
+    $("weiter-3").hidden = s > 3 || d;
     $("designer-fertig").hidden = !d;
+    if (d) $("designer-fertig").textContent = "Zurück zu: " + kurzName(2);     // MF1: derselbe Rückweg wie nach „Ändern“
   }
   // Bilder (AP13.5g b5): eine Zahl im Steckbrief gehört zur Kachel „Benutzerdefiniert“ (wert zahl)
-  function bilderKachel() { var w = String(bilderWert()); return /^\d+$/.test(w) && w !== "0" ? "zahl" : w; }
-  function bilderZahl() { var n = parseInt($("bilder-zahl").value, 10); return n >= 1 && n <= 30 ? n : 10; }
+  // MF3 (Befund 11): „Benutzerdefiniert“ legt keine Zahl fest, bis die Lehrkraft eine einträgt (`S.bilderEigen`: Kachel
+  // gewählt, Feld offen, noch keine Zahl; der Steckbrief behält den bisherigen Wert)
+  S.bilderEigen = false;
+  function bilderKachel() { var w = String(bilderWert()); return /^\d+$/.test(w) && w !== "0" ? "zahl" : S.bilderEigen ? "zahl" : w; }
+  function bilderZahl() { var n = parseInt($("bilder-zahl").value, 10); return n >= 1 && n <= 30 ? n : null; }
   function bilderText() {
     var w = String(bilderWert());
     return bilderKachel() !== "zahl" ? "Bilder: " + oberText("bilder", w) : w === "1" ? "1 Bild" : w + " Bilder";
@@ -1345,8 +1508,12 @@
     if (S.familien) Array.prototype.forEach.call($("aus-farbe").querySelectorAll(".aus-kachel"), function (b) {
       b.toggleAttribute("disabled", !!fam.akzent_fest); });
     kachelGruppe($("aus-bilder"), "bilder", o.bilder, miniBilder, bilderKachel());
+    // MF2: zwei Kacheln im Blick; „Mit Bildern“ gilt für jede Zahl über null
+    kachelGruppe($("aus-bilder-kurz"), "bilder-kurz", [{ wert: "0", text: "Keine Bilder" }, { wert: "mit", text: "Mit Bildern" }],
+        function (w) { return miniBilder(w === "mit" ? "2-3" : "0"); }, String(bilderWert()) === "0" ? "0" : "mit");
     $("bilder-zahl-l").hidden = bilderKachel() !== "zahl";
-    if (bilderKachel() === "zahl" && document.activeElement !== $("bilder-zahl")) $("bilder-zahl").value = bilderWert();
+    var zahlGewaehlt = /^\d+$/.test(String(bilderWert())) && String(bilderWert()) !== "0";
+    if (zahlGewaehlt && document.activeElement !== $("bilder-zahl")) $("bilder-zahl").value = bilderWert();
     $("bildbeschriftung-l").hidden = String(bilderWert()) === "0";
     kachelGruppe($("aus-bildbeschriftung"), "bildbeschriftung", o.bildbeschriftung, miniBeschriftung,
         S.angaben.bildbeschriftung || o.bildbeschriftung.filter(function (w) { return w.standard; })[0].wert);
@@ -1363,7 +1530,8 @@
         'fill="#fff"/>';
     if (wert === "zahl") return s + '<rect x="30" y="12" width="60" height="52" rx="4" fill="#D5DAE3"/><text x="60" ' +
         'y="47" text-anchor="middle" font-size="26" font-weight="700" fill="#0B1220" font-family="system-ui, sans-serif">' +
-        (bilderKachel() === "zahl" ? bilderWert() : bilderZahl()) + "</text></svg>";      // nur Ziffern
+        (/^\d+$/.test(String(bilderWert())) && String(bilderWert()) !== "0" ? bilderWert() : bilderZahl() || "1–30") +
+        "</text></svg>";      // nur Ziffern
     if (!n) s += '<rect x="20" y="20" width="80" height="36" rx="3" fill="none" stroke="#C3C8D2" ' +
         'stroke-dasharray="4 3"/>';
     for (var i = 0; i < n; i++) {
@@ -1413,10 +1581,19 @@
       if (!EIGEN.dataset.gewaehlt) { zeichneAussehen(); return; }
       wert = $("farbe-eigen").value.toUpperCase();
     }
-    if (b.dataset.feld === "bilder" && wert === "zahl") wert = String(bilderZahl());
-    a[b.dataset.feld] = wert;
-    S.angaben[b.dataset.feld] = wert;
-    aussehenGewaehlt(b.dataset.feld);
+    if (b.dataset.feld === "bilder" && wert === "zahl") {
+      if (!bilderZahl()) { S.bilderEigen = true; zeichneAussehen(); $("bilder-zahl").focus(); return; }
+      wert = String(bilderZahl());
+    } else if (b.dataset.feld === "bilder" || b.dataset.feld === "bilder-kurz") S.bilderEigen = false;
+    var feld = b.dataset.feld;
+    // MF2: „Mit Bildern“ ist 2 bis 3; eine genauere Zahl aus „Erweitert“ bleibt, solange die Kachel gewählt ist
+    if (feld === "bilder-kurz") {
+      feld = "bilder";
+      wert = wert === "0" ? "0" : String(bilderWert()) !== "0" ? String(bilderWert()) : "2-3";
+      if (wert === String(bilderWert()) && S.angaben.bilder) { zeichneAussehen(); return; }
+    }
+    a[feld] = wert;
+    S.angaben[feld] = wert;
     zeichneAussehen(); felderFuellen(); zeichneSchritte();
     angabenSchreiben(a, true);
     if (b.dataset.feld === "format" && wert === "wochen" && !S.angaben.start) $("a-start").focus();
@@ -1430,6 +1607,12 @@
     S.angaben.bilder = String(+w);
     clearTimeout(bilderTimer);
     bilderTimer = setTimeout(function () { angabenSchreiben({ bilder: String(+w) }, true); }, 300);
+  });
+  // MF3: ohne Zahl verlassen, gilt wieder die bisherige Wahl (keine stille Vorgabe)
+  $("bilder-zahl").addEventListener("blur", function () {
+    if (!S.bilderEigen || bilderZahl()) return;
+    S.bilderEigen = false;
+    setTimeout(function () { if (document.activeElement !== $("bilder-zahl")) zeichneAussehen(); }, 0);
   });
   // Kursbeginn (Format Wochen): schreibt kurs.start als JJJJ-MM-TT; leer = Tag des Baus
   $("a-start").addEventListener("change", function () {
@@ -1446,7 +1629,6 @@
     var w = $("farbe-eigen").value.toUpperCase();
     EIGEN.dataset.gewaehlt = "1";
     S.angaben.farbe = w;
-    aussehenGewaehlt("farbe");
     zeichneAussehen(); felderFuellen(); zeichneSchritte();
     angabenSchreiben({ farbe: w }, true);
   }
@@ -1466,15 +1648,20 @@
     farbeEigenWaehlen();
     if (document.activeElement === $("farbe-eigen")) EIGEN.focus({ preventScroll: true });
   });
-  // „Standard nehmen und weiter“: die verborgenen Gruppen tragen den Standard (sonst wären sie sichtbar, aussehenBis)
-  $("weiter-3").onclick = $("standard-weiter").onclick = function () {
-    if (Z.mappe) { Z.mappe.aussehen = true; gehe(4); } };
+  $("weiter-3").onclick = function () { if (Z.mappe) { Z.mappe.aussehen = true; gehe(4); } };
+  // MF2: „Alle Designs“ zeigt die übrigen Kacheln; ein zweiter Klick nimmt sie wieder weg (die gewählte bleibt)
+  $("familie-alle").onclick = function () {
+    S.alleDesigns = !S.alleDesigns;
+    zeichneFamilien();
+    if (!S.alleDesigns) $("familie-alle").focus({ preventScroll: true });
+  };
 
   // AP13.19 §3: Sprunglinks in „Mehr einstellen“. „Zum Designer“ zeigt Schritt 3 mit allen Gruppen und der Vorschau,
   // ohne den Fortschritt zu ändern (S.designer = {y}; kein gehe); „Fertig“ führt an die Stelle zurück.
   $("zum-designer").onclick = function () {
     if (!Z.mappe) return;
     S.designer = { y: window.scrollY };
+    erweitertAuf("erweitert-3", true);              // MF2: im Designer jede Einstellung im Blick
     zeichne();
     $("schritt-3").scrollIntoView({ block: "start" });
     $("s3-titel").focus({ preventScroll: true });
@@ -1484,7 +1671,8 @@
     if (!S.designer) return;
     var y = S.designer.y;
     designerBeenden();
-    if (schritt() > 2) S.auf[2] = true;
+    S.aendern = schritt() > 2 ? 2 : null;
+    erweitertAuf("erweitert-2", true);              // MF2: „Mehr einstellen“ liegt unter „Erweitert“
     $("mehr").open = true;
     zeichne();
     geaendert();
@@ -1493,6 +1681,7 @@
   };
   $("zum-material").onclick = function () {
     var f = $("a-material");
+    aufdecken(f);
     f.scrollIntoView({ block: "center" });
     f.focus({ preventScroll: true });
   };
@@ -1541,7 +1730,7 @@
   function frageZu() {
     $("verwerfen-frage").hidden = true; verwerfenAktion = null;
     var v = frageVon; frageVon = null;
-    S.fokus([v, "schliessen", "weiter-knopf", "f-thema"], true);
+    S.fokus([v, "kopf-menue", "weiter-knopf", "f-thema"], true);
   }
   $("verwerfen-nein").onclick = frageZu;
   // §2.2: Esc wirkt wie „Nein“
@@ -1565,8 +1754,8 @@
     var titel = (Z.mappe && ((Z.mappe.einheit && Z.mappe.einheit.thema) || Z.mappe.titel)) || "";
     frage("Einheit „" + titel + "“ schließen? " + (S.gespeichert ?
         "Die Einheit hast du gespeichert; die Sicherung im Browser wird gelöscht."
-      : "Was du nicht mit „Einheit speichern“ gesichert hast, geht verloren."), async function () {
-      clearTimeout(S.autosaveTimer);
+      : "Was du nicht mit „Zwischenstand speichern“ gesichert hast, geht verloren."), async function () {
+      clearTimeout(S.autosaveTimer); S.autosaveTimer = null; delete $("autosave-stand").dataset.offen;
       await km.autosaveLoeschen();
       S.leeren();
       weiterAnzeigen();
@@ -1678,28 +1867,49 @@
     geaendert();
   });
 
-  // Kopfzeile unter 640 px (AP13.5g b7): der Menüknopf klappt die Textlinks als Liste auf; ein Klick darin, Escape
-  // oder ein Klick außerhalb klappt zu
-  function menue(auf) {
-    $("kopf-menue").setAttribute("aria-expanded", String(auf));
-    document.querySelector(".kopf").classList.toggle("menue-auf", auf);
+  // MF1: Kopfzeile mit einem Knopf „Menü“ (Wort und Symbol). Öffnen setzt den Fokus auf den ersten Punkt; Pfeile, Pos1
+  // und Ende wandern in der Liste, Escape schließt und gibt den Fokus an „Menü“ zurück, Tab aus der Liste heraus oder ein
+  // Klick daneben schließt. Ein Klick auf einen Punkt schließt erst danach (die Dateiwahl braucht den Klick auf das Label)
+  function menueAuf() { return $("kopf-menue").getAttribute("aria-expanded") === "true"; }
+  function menuePunkte() {
+    return Array.prototype.filter.call($("kopf-links").querySelectorAll(".kopf-link"), function (b) {
+      return !b.hidden && !b.disabled; });
   }
-  $("kopf-menue").onclick = function () { menue($("kopf-menue").getAttribute("aria-expanded") !== "true"); };
+  function menue(auf, zurueck) {
+    $("kopf-menue").setAttribute("aria-expanded", String(auf));
+    $("kopf-links").hidden = !auf;
+    document.querySelector(".kopf").classList.toggle("menue-auf", auf);
+    if (auf) { var p = menuePunkte()[0]; if (p) p.focus(); }
+    else if (zurueck) $("kopf-menue").focus();
+  }
+  $("kopf-menue").onclick = function () { menue(!menueAuf()); };
   $("kopf-links").addEventListener("click", function (ev) {
-    if (ev.target.closest(".kopf-link")) setTimeout(function () { menue(false); }, 0);   // erst nach der Dateiwahl
+    if (!ev.target.closest(".kopf-link")) return;
+    // blieb der Fokus im Menü (Schema, Dateiwahl), geht er zurück auf „Menü“; sonst dorthin, wohin die Aktion ihn gab
+    setTimeout(function () { menue(false, $("kopf-links").contains(document.activeElement) ||
+        document.activeElement === document.body); }, 0);
+  });
+  $("kopf-links").addEventListener("keydown", function (ev) {
+    var p = menuePunkte(), i = p.indexOf(document.activeElement);
+    var ziel = { ArrowDown: p[(i + 1) % p.length], ArrowUp: p[(i - 1 + p.length) % p.length], Home: p[0],
+      End: p[p.length - 1] }[ev.key];
+    if (ziel) { ev.preventDefault(); ziel.focus(); return; }
+    if (ev.key === "Tab") setTimeout(function () { if (!$("kopf-links").contains(document.activeElement)) menue(false); }, 0);
   });
   document.addEventListener("click", function (ev) {
-    if (!ev.target.closest(".kopf") && $("kopf-menue").getAttribute("aria-expanded") === "true") menue(false);
+    if (menueAuf() && !ev.target.closest(".kopf-rechts")) menue(false);
   });
   document.addEventListener("keydown", function (ev) {
-    if (ev.key !== "Escape" || $("kopf-menue").getAttribute("aria-expanded") !== "true") return;
-    menue(false); $("kopf-menue").focus();
+    if (ev.key === "Escape" && menueAuf()) { ev.preventDefault(); menue(false, true); }
   });
+  $("kopf-rueckmeldung").onclick = function () { if (S.rueckmeldungOeffnen) S.rueckmeldungOeffnen(); };
 
-  // hell und dunkel wie die Landingpage (Schlüssel kursmuehle-schema)
+  // hell und dunkel wie die Landingpage (Schlüssel kursmuehle-schema); im Menü ein Schalter „Dunkles Schema“ mit an/aus
   function schemaZeigen() {
-    var d = document.documentElement.dataset.theme === "dark";
-    $("schema").textContent = d ? "Hell" : "Dunkel";        // die Beschriftung nennt, wohin der Klick führt
+    var d = document.documentElement.dataset.theme === "dark", b = $("schema");
+    b.setAttribute("aria-pressed", String(d));
+    if (!b.querySelector(".kl-wert")) b.appendChild(el("span", { cls: "kl-wert", "aria-hidden": "true" }));
+    b.querySelector(".kl-wert").textContent = d ? "an" : "aus";
   }
   $("schema").onclick = function () {
     var d = document.documentElement.dataset.theme !== "dark";
@@ -1717,5 +1927,6 @@
     vorlagenZeigen: vorlagenZeigen, vorschlagAnwenden: vorschlagAnwenden, vorschlagLoesen: vorschlagLoesen,
     vorlageSichtbar: vorlageSichtbar, vorschlagWeg: vorschlagWeg,      // AP13.39: Art der Einheit im Plan
     fachWoerter: fachWoerter, fachJetzt: fachJetzt, weiterAnzeigen: weiterAnzeigen, zeichneAussehen: zeichneAussehen,
-    zeichneSchritte: zeichneSchritte, zeigeFehler: zeigeFehler });
+    zeichneSchritte: zeichneSchritte, zeigeFehler: zeigeFehler, oeffneSchritt: oeffneSchritt, zurueckZumStand: zurueckZumStand,
+    erweitertAuf: erweitertAuf, aufdecken: aufdecken, kurzName: kurzName });
 })();

@@ -27,11 +27,11 @@ und einzelne Chats antworten noch in einer Form, die die Seite nicht lesen kann.
 | Übungen als Website in einem Abschnitt oder als Block im Textfeld: Quiz, Zuordnen, Lückentext, Markieren, Lernkarten, Geschichte, mit Rückmeldung zur ganzen Übung; bis zu zwei Hilfen je Aufgabe und Zusatzaufgaben für Schnelle, ohne JavaScript mit Lösung zum Aufklappen | Bewertung und Abschluss je Übung in der Website, Hilfen im Test, eigene Spiele und Simulationen |
 | Feedback-Umfragen, Links und Videos, Badges, Kursbild, Abschlussverfolgung, Sichtbarkeit ab Datum | Gruppen, Termine, andere Zugriffsbedingungen |
 | Kursbanner und Kachelbilder (ohne Bild als Fläche im Design), Zahl der Bilder je Einheit (Stufe oder genaue Zahl), Bilder in jedem Baustein, je Bild ein Auftrag für einen Bildgenerator, Beschriftung im Bild als Wörter oder als Ziffern mit Legende, eigene Bilder hochladen (verkleinert, mit Prüffragen) | Abschnitts- und Kachelbilder automatisch aus dem Material |
-| Einheit speichern und später weiterbauen (auch Einheiten aus älteren Versionen), nächste Einheit anhängen, Nachlieferung zu einem bestehenden Kurs; eine zu lange Antwort endet mit „Fortsetzung folgt“, die Mühle bittet um den Rest | Abbruch einer Antwort erkennen, wenn der Chat die Schlusszeile nicht schreibt |
+| Zwischenstand speichern und später weiterbauen (auch Einheiten aus älteren Versionen), nächste Einheit anhängen, Nachlieferung zu einem bestehenden Kurs; eine zu lange Antwort endet mit „Fortsetzung folgt“, die Mühle bittet um den Rest | Abbruch einer Antwort erkennen, wenn der Chat die Schlusszeile nicht schreibt |
 | Lizenz für Texte und Aufgaben (CC BY 4.0, CC BY-SA 4.0, alle Rechte vorbehalten) und der Satz „Mit KI erstellt, von der Lehrkraft geprüft.“ als kleine Zeile am Ende jedes Abschnitts | Lizenz je Baustein, Lizenz in den Datei- und H5P-Angaben der Plattform |
 | Eigene KI direkt anbinden: ein Programm wie Claude Code oder Codex (mit seinem Namen in der Mühle), ein eigener Zugangsschlüssel (OpenAI, Anthropic, Mistral) oder Ollama; Teile gehen von selbst nacheinander, Korrekturen ohne Kopieren | Bilder über die Verbindung, Verbindung vom iPad oder aus dem Schulnetz |
-| Prüfung der Antwort vor dem Bau mit Sätzen, was im Chat zu korrigieren ist, und Auswegen, wenn der Chat dieselbe Antwort wiederholt | Fachliche Prüfung des Inhalts; die bleibt bei der Lehrkraft |
-| Einheit ansehen, wie sie im Kurs aussieht, mit Kursübersicht im gewählten Format (Kacheln, Abschnitte, Kurstitel zum Anklicken und Ändern); Bausteine von Hand ändern oder einzeln neu schreiben lassen; von Hand Geändertes bleibt auf Wunsch bei einer neuen Antwort; eine Stunde auf zwei Kacheln teilen, Bausteine in eine andere Kachel setzen, eine weitere Einheit anhängen; in „Ich steuere“ den Kurs vorher in Kacheln, Elementen und Phasen planen | Direkt in der Vorschau tippen, Übungen als eigene Aktivität in der Vorschau bedienen |
+| Prüfung der Antwort vor dem Bau mit Sätzen, was im Chat zu korrigieren ist, und Auswegen, wenn der Chat dieselbe Antwort wiederholt; Lösungen in einem zweiten Chat nachrechnen lassen, das Ergebnis steht an jeder Frage | Fachliche Prüfung des Inhalts; die bleibt bei der Lehrkraft |
+| Einheit ansehen, wie sie im Kurs aussieht, mit Kursübersicht im gewählten Format (Kacheln, Abschnitte, Kurstitel zum Anklicken und Ändern); Absätze, Quizfragen, Aussagen und Lücken in einem eigenen Feld ändern, ganze Bausteine als Text ändern oder einzeln neu schreiben lassen; von Hand Geändertes bleibt auf Wunsch bei einer neuen Antwort; eine Stunde auf zwei Kacheln teilen, Bausteine in eine andere Kachel setzen, eine weitere Einheit anhängen; in „Ich steuere“ den Kurs vorher in Kacheln, Elementen und Phasen planen | Zuordnen, Lernkarten, Tabellen und Kastentitel im eigenen Feld ändern, Übungen als eigene Aktivität in der Vorschau bedienen |
 | Sequenz mit 2 bis 20 Stunden: Sequenzplan vom Chat oder selbst geplant, danach Stunde für Stunde über dieselben Wege; mit eigener KI nacheinander ohne Klick | Mehrere Sequenzen in einem Kurs, Stunden umsortieren |
 | Satzlänge und Lesbarkeitswert (LIX) je Lesetext gegen einen Richtwert der Jahrgangsstufe, auf Wunsch mit Satz für den Chat | Lesbarkeitsformeln mit Silben, Texte selbst vereinfachen |
 | Material aus Word, LibreOffice, PowerPoint, PDF und Textdateien einlesen; die Dateien bleiben auf dem Rechner | Scans und Fotos von Arbeitsblättern |
@@ -91,13 +91,15 @@ Seit 2.0 läuft alles im Browser. Die Einzelheiten jeder Version stehen im [CHAN
       und Phasen; Sequenz mit mehreren Stunden; mehrere Einheiten ohne Verlust beim Einsetzen
 - [x] 2.0.0-b18 Testrunde mit sechs Agenten: Tipps, Brüche und doppelte Antworten in Chat-Antworten werden
       gemeldet; Bildnamen mit Leerzeichen; verständlichere Meldungen
+- [x] 2.0.0-b19 Neue Menüführung nach einer Messung mit zehn Lehrkraft-Rollen: ein Schritt nach dem anderen,
+      Prüfseite vor dem Download, Sätze und Quizfragen direkt im Editor ändern
 - [ ] Erste Testerinnen und Tester (Testphase mit Code seit 26.10.2026), Rückmeldungen einarbeiten
 - [ ] Prüfwoche: Sicherheit, Import aller Formate, Barrierefreiheit
 - [ ] 2.0 ohne Beta-Marke
 
 **Auf dem Weg zu 3.0 (vollständige Veröffentlichung)**
 
-- [ ] Kurs ansehen und Texte direkt darin ändern, ohne neue Runde im Chat
+- [x] Kurs ansehen und Texte direkt darin ändern, ohne neue Runde im Chat
 - [ ] Regelmäßige Importprobe auf der Plattform
 - [x] LehrplanPLUS für Realschule, Gymnasium und Förderschule
 - [ ] Material für Fortbildungen, damit andere die Mühle vorstellen können

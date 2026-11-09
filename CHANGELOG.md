@@ -1,5 +1,29 @@
 # Changelog
 
+## Unveröffentlicht
+
+## 2.0.0-b19 – 2026-11-08 (AP13.43, AP13.44, MF1–MF7: neue Menüführung)
+
+* Ein Schritt nach dem anderen, erledigte mit „Ändern“
+* Sätze und Quizfragen direkt im Editor ändern
+* Prüfseite vor dem Download mit einem Ergebnis-Knopf
+
+- Immer ist nur ein Schritt offen; erledigte stehen als Zeile mit Zusammenfassung und „Ändern“, die Kopfzeile zeigt „Schritt 4 von 7“ und ein „Menü“.
+- Unter jeder Schrittüberschrift steht ein Satz, was dort zu tun ist; Hauptknöpfe nennen den nächsten Schritt; Feineinstellungen stehen unter „Erweitert“, Erklärungen hinter dem runden (i).
+- „Einheit speichern“ heißt „Zwischenstand speichern“; das Ergebnis ist allein „Kursdatei herunterladen“ auf der letzten Seite.
+- „Mach du“ ist vorgewählt; Schritt 3 zeigt vier Designs, Farbe und Bilder, alles Weitere unter „Erweitert“.
+- Vor dem Kopieren kommt kein Dialog mehr; nach dem Kopieren zeigt der Knopf „Kopiert“ und zwei Zeilen, was im Chat zu tun ist.
+- Nach dem Einfügen steht „Antwort eingesetzt: 6 Bausteine.“; bei Teilen „Teil 1 von 2 eingesetzt“ bis „Alle 2 Teile eingesetzt“.
+- Fehler stehen als Satz ohne Zeilennummer; bleibt ein Baustein rot, gibt es „Im Editor selbst ändern“ und „Baustein weglassen“.
+- „Verlängern lassen“ ist eine Bitte ohne Rot; ist die Einheit nur etwas kürzer als geplant, steht dort nur die geschätzte Dauer.
+- Fehlende Bilder sind kein Fehler mehr; jede Bildzeile hat „Bild hochladen“, „Ohne Bilder weiter“ geht immer.
+- Nach dem Einsetzen ist „Einheit ansehen“ der Hauptknopf; im Editor öffnet ein Klick auf Absatz, Frage oder Lücke ein Feld nur dafür.
+- „Fragen und Lösungen“ zeigt die Liste direkt mit „Ändern“ und nummerierten Lücken; die Prüfung im Chat steht als Zeile darüber, ihr Ergebnis an jeder Frage.
+- Unsicherheiten der KI stehen an ihrer Frage, mit einem Satz, was zu tun ist; „Lösungen stimmen, weiter“ entfällt.
+- Nach dem Download stehen Dateiname, Ordner, drei Zeilen zum Wiederherstellen und „Hat es geklappt?“.
+- „Ich steuere“ fragt, bevor eine Antwort die eigenen Kacheln ersetzt („Meine Kacheln behalten“, „Alles ersetzen“); Felder heißen je Kachel.
+- Der Text für den Chat verlangt neue Zahlen, genau eine richtige Lösung und einen durchgezogenen Fall; Übungen im Editor lassen sich ausprobieren.
+
 ## 2.0.0-b18 – 2026-11-07 (AP13.42: Testrunde vor der Freigabe)
 
 * Fehler aus Chat-Antworten werden gemeldet statt still übernommen

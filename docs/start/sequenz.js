@@ -119,7 +119,8 @@
     var l = el("div", { id: "f-stunden-l", cls: "feld seq-stunden-l info-ort", hidden: true }, [
       el("label", { "for": "f-stunden", cls: "feld-kopf", text: T("stunden") }), info, zahl,
       el("span", { cls: "info-text feld-zeile", "data-info-text": "sequenz_info", hidden: true })]);
-    box.append(gruppe, l);
+    // MF2: unter „Erweitert“ steht die Frage sichtbar über dem Umschalter
+    box.append(el("p", { cls: "seq-art-t", "aria-hidden": "true", text: T("art") }), gruppe, l);
     gruppe.addEventListener("click", function (ev) {
       var b = ev.target.closest("[role=radio]"); if (!b || b.disabled) return;
       art = b.dataset.wert;
@@ -155,8 +156,12 @@
     zahl.disabled = !frei;
     $("f-minuten-t").textContent = sq ? T("minuten_je") : T("minuten");
     $("start-form").classList.toggle("mit-sequenz", sq);
-    $("zeit-vorab").hidden = sq;      // Punkt 12: die Zeitangabe gilt für eine Stunde
+    // MF2: die Wahl steht unter „Erweitert“ in Schritt 1; eine Sequenz lässt es offen, damit man sieht, was gilt
+    if (sq && S.erweitertAuf && $("erweitert-knopf").getAttribute("aria-expanded") !== "true" && seqOffenFuer !== Z.mappe) {
+      seqOffenFuer = Z.mappe; S.erweitertAuf("erweitert", true);
+    }
   }
+  var seqOffenFuer;
   // Schritt 1 abgeschickt: Zahl der Stunden oder 0 („Stunde“); null, wenn die Zahl nicht stimmt (Meldung am Feld)
   function sequenzWahl() {
     var box = $("f-art-zeile");
@@ -399,7 +404,7 @@
     var n = stundeJetzt();
     while (n < s.stunden.length && fertig(n)) n += 1;
     S.planStunde = n;
-    S.auf[2] = true;
+    if (S.schritt() > 2) S.aendern = 2;
     S.zeichne(); S.geaendert();
     S.sektion(2).scrollIntoView({ block: "start" });
     S.fokus([$("plan").querySelector("[data-fokus='sq:" + S.planStunde + "']"), "plan-beschreibung"], true);
@@ -417,7 +422,8 @@
     }
     $("naechste-einheit").hidden = !!s && n < s.stunden.length;
     var von = s ? s.stunden.length : 0;
-    $("weiter-5").classList.toggle("haupt", !(an && n < von));
+    S.sequenzHaupt = !!(an && n < von);             // MF5: Schritt 5 setzt danach seine Knöpfe (schritte.js weiterFuenf)
+    if (S.weiterFuenf) S.weiterFuenf();
     box.hidden = !s || S.schritt() < 5 || (!an && !(S.inhalt() && !offen()));
     if (box.hidden) return;
     var rot = S.fehlerZahl() > 0 || S.teileOffen();
@@ -534,7 +540,7 @@
     if (feld) $("eingabe").value = ""; else if (o && o.leeren) o.leeren();
     delete Z.mappe.kopiert;
     S.texte.kopiert = {}; S.texte.teil = 0;
-    Z.mappe.schritt = 4; S.auf = {}; S.planStunde = null;
+    Z.mappe.schritt = 4; S.aendern = null; S.planStunde = null;
     await S.neuPruefen();
     await S.texteErzeugen();
     S.zeichne();
@@ -548,7 +554,7 @@
   // ---------------------------------------------------------------- Zeichnen (kern.js zeichne)
   S.zeichneSequenz = function () {
     if (!S.katalog) return;
-    if (S.planStunde && Z.mappe && S.schritt() > 2 && !S.auf[2]) S.planStunde = null;
+    if (S.planStunde && Z.mappe && S.schritt() > 2 && S.aendern !== 2) S.planStunde = null;
     // eine Einheit hinter der letzten Stunde („Nächste Einheit anhängen“) ist die nächste Stunde der Sequenz (N2)
     var s = seq();
     if (s && stundeJetzt() > s.stunden.length && Z.mappe.laufend === S.einheitTag()) {   // erst, wenn sie angelegt ist
