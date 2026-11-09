@@ -1841,7 +1841,7 @@
   $("schliessen").onclick = function () {
     var titel = (Z.mappe && ((Z.mappe.einheit && Z.mappe.einheit.thema) || Z.mappe.titel)) || "";
     frage("Einheit „" + titel + "“ schließen? " + (S.gespeichert ?
-        "Die Einheit hast du gespeichert; die Sicherung im Browser wird gelöscht."
+        "Die Einheit hast du gespeichert; die Kopie in diesem Browser wird gelöscht."
       : "Was du nicht mit „Zwischenstand speichern“ gespeichert hast, geht verloren."), async function () {
       clearTimeout(S.autosaveTimer); S.autosaveTimer = null; delete $("autosave-stand").dataset.offen;
       await km.autosaveLoeschen();

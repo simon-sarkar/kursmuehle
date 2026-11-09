@@ -736,7 +736,7 @@ window.km = km;
       // AP13.45 B11: „Gespeichert“; „Sicherung“ heißt auf der Plattform die Kursdatei
       km.autosaveSchreiben().then(function () { $("autosave-stand").textContent = "Gespeichert " + zeit(Date.now());
           $("autosave-stand").classList.remove("warn"); if (!S.autosaveTimer) delete $("autosave-stand").dataset.offen; })
-        .catch(function () { $("autosave-stand").textContent = "Keine Sicherung im Browser; speichere den Zwischenstand.";
+        .catch(function () { $("autosave-stand").textContent = "Im Browser nicht gespeichert; speichere den Zwischenstand.";
           $("autosave-stand").classList.add("warn"); if (!S.autosaveTimer) delete $("autosave-stand").dataset.offen; });
     }, 700);
   }
