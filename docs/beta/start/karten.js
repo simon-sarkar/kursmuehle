@@ -229,6 +229,10 @@
             text: S.editorText("zeit_kurz_knopf") }));
       });
     }
+    // AP13.47: mit Arbeitsheft eine graue Zeile unter der Antwort (wie viele Übungen im Heft, wie viele außerhalb)
+    var hz = $("heft-zeile"), ht = Z.pruefung && inhalt() && !teileOffen() && S.heftZeile ? S.heftZeile() : "";
+    hz.hidden = !ht;
+    if (hz.textContent !== ht) hz.textContent = ht;
     $("zeit-selbst").checked = zeitSelbst();
     $("zeit-schalter").hidden = !steuer;
     sollSummeZeigen();
@@ -949,6 +953,7 @@
     // MF6: nach einer eingesetzten Antwort ist das Feld zu, bis die Bitte wieder kopiert wird (kein leeres Feld)
     $("korrektur-schritte").hidden = ki || !S.korrektur.offen || !!S.korrektur.eingesetzt;
     $("korrektur-einfuegen").classList.toggle("zu", !!S.korrektur.eingesetzt);
+    if (S.erledigt) S.erledigt($("korrektur-erledigt"), !!S.korrektur.eingesetzt);   // MF8: an der Stelle des Knopfs
     $("korrektur-1").textContent = "Füg die Bitte in dasselbe Gespräch bei " + chatName + " ein und schick sie ab.";
     $("korrektur-2").textContent = "Kopier die ganze Antwort und füg sie unten ein.";
     auswegeKorrektur(zeigen);
@@ -1054,7 +1059,7 @@
     S.modellHinweis = null;                        // der Hinweis stand bei dieser Bitte; danach nicht wieder
     S.korrektur.offen = true; S.korrektur.stand = ""; S.korrektur.art = ""; S.korrektur.eingesetzt = false;
     $("korrektur-antwort").hidden = false; S.standKarte($("korrektur-ergebnis"), "");
-    $("korrektur-einfuegen").classList.remove("zu");
+    $("korrektur-einfuegen").classList.remove("zu"); if (S.erledigt) S.erledigt($("korrektur-erledigt"), false);
     // MF3: nach dem Kopieren die zwei Zeilen (im Kopierweg) statt des Satzes davor
     if (!(S.anKiAktiv && S.anKiAktiv())) { $("korrektur-schritte").hidden = false; $("korrektur-zeile").hidden = true; }
     // eigene KI: dieselbe Bitte ins Gespräch der Einheit, die Antwort durch korrekturEinsetzen wie eingefügt

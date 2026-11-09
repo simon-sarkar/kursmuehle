@@ -803,7 +803,12 @@
       var mitArt = zweig() === "steuer" || S.mehrereEinheiten() || modus !== "ersetzen";
       var kopf = eingesetzt ? eingesetzt + ": " : alleTeile ? "Alle " + alleTeile + " Teile eingesetzt: " :
           eingesetztKopf() + (mitArt ? " (" + modusText(modus) + ")" : "") + ": ";
-      zeige(wechsel + kopf + zahl + (zahl === 1 ? " Baustein" : " Bausteine")
+      // MF8: „Ich steuere“, „Meine Kacheln behalten“: ein Satz, was mit den Kacheln geschah und welche Elemente leer sind
+      var kachelSatz = feld && S.letzteAntwort.plan === "leer" && modus === "baustein" && !eingesetzt && !alleTeile ?
+          kachelnBehalten(rot) : "";
+      zeige(kachelSatz ? eingesetztKopf() + ": " + kachelSatz + (aussen && !rot ? " Die Antwort braucht eine Korrektur." : "")
+          + schonSatz(!knopfGeklickt && !modusErzwungen && !ki()) + mehr + e.text
+        : wechsel + kopf + zahl + (zahl === 1 ? " Baustein" : " Bausteine")
         + (rot ? ", " + rot + (rot === 1 ? " braucht" : " brauchen") + " eine Korrektur." : aussen ?
             "; die Antwort braucht eine Korrektur." : ".") + schonSatz(feld && !knopfGeklickt && !modusErzwungen && !ki()) + mehr + e.text,
         rot || aussen ? "fehler" : "ok");
@@ -820,6 +825,23 @@
       return true;
     } catch (err) { zeigeFehler(err); return false; }
   }
+  // MF8: Elemente der laufenden Einheit (ohne Struktur, ohne weggelassene): wie viele gefüllt, welche noch leer
+  function kachelnBehalten(rot) {
+    var tag = einheitTag() || "", ohneZeit = {};
+    ((S.katalog && S.katalog.typen) || []).forEach(function (t) { if (t.minuten === false) ohneZeit[t.typ] = 1; });
+    var el_ = Z.mappe.bausteine.filter(function (k) { return (k.einheit || "") === tag && !k.aus && !ohneZeit[k.typ]; });
+    var leer = el_.filter(function (k) { return k.geplant; }).map(function (k) { return "„" + (k.titel || k.typ) + "“"; });
+    var n = (Z.mappe.kacheln || []).filter(function (k) { return (k.einheit || "") === tag; }).length;
+    var namen = leer.length > 4 ? leer.slice(0, 3).join(", ") + " und " + (leer.length - 3) + " weitere" :
+        leer.length > 1 ? leer.slice(0, -1).join(", ") + " und " + leer[leer.length - 1] : leer[0] || "";
+    var t = editorText(n === 1 ? "kacheln_bleiben_eine" : "kacheln_bleiben", { n: n, gefuellt: el_.length - leer.length,
+        alle: el_.length });
+    if (leer.length) t += " " + editorText(leer.length === 1 ? "kacheln_leer_eins" : "kacheln_leer", { titel: namen }) +
+        (!$("korrektur").hidden ? " " + editorText(leer.length === 1 ? "kacheln_bitte_eins" : "kacheln_bitte") : "");
+    if (rot) t += " " + editorText(rot === 1 ? "kacheln_rot_eins" : "kacheln_rot", { n: rot });
+    return t;
+  }
+  function editorText(k, w) { return S.editorText(k, w); }
   $("eingabe").addEventListener("input", function () {
     clearTimeout(S.eingabeTimer);
     S.eingabeTimer = setTimeout(function () { eingabeUebernehmen(null); }, 500);
@@ -833,13 +855,33 @@
   function eingabeZu(zu) {
     if (!document.getElementById("stil-eingabe-zu")) {
       document.head.appendChild(el("style", { id: "stil-eingabe-zu", text: [
-        "#eingabe-bereich.zu { display: none; }",
-        "#eingabe-nochmal { display: block; margin-top: 6px; }"
+        "#eingabe-bereich.zu { display: none; }"
       ].join("\n") }));
     }
     $("eingabe-bereich").classList.toggle("zu", zu);
     $("eingabe-nochmal").hidden = !zu;
+    erledigt($("eingabe-erledigt"), zu);
   }
+  // MF8: „Antwort einsetzen“ bleibt nach dem Einsetzen an seiner Stelle stehen, als erledigt: „Antwort eingesetzt“ mit Haken,
+  // aria-disabled (mit Tab erreichbar, Vorlesegeräte hören „nicht verfügbar“ und über aria-describedby die Stand-Karte).
+  // Ein Klick ändert nichts; er setzt den Fokus auf die Stand-Karte und lässt sie noch einmal aufleuchten
+  function erledigt(b, an) {
+    if (!b) return;
+    b.hidden = !an;
+    if (an) b.querySelector(".erledigt-wort").textContent = eingesetztKopf();
+  }
+  Array.prototype.forEach.call(document.querySelectorAll(".knopf-erledigt"), function (b) {
+    b.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      var k = $(b.dataset.stand);
+      if (!k || k.hidden) return;
+      k.classList.remove("frisch"); void k.offsetWidth; k.classList.add("frisch");
+      clearTimeout(k._frisch);
+      k._frisch = setTimeout(function () { k.classList.remove("frisch"); }, 1800);
+      k.focus({ preventScroll: true });
+    });
+  });
+  S.erledigt = erledigt;
   // AP13.33 §1.5: die Meldung zur vorigen Antwort gilt für das leere Feld nicht mehr
   $("eingabe-nochmal").onclick = function () { feldOffenFuer = Z.mappe; eingabeZu(false); standKarte($("eingabe-stand"), "");
       $("eingabe").focus(); };

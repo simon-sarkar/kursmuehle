@@ -265,7 +265,8 @@
     if (!leer) {                // AP13.39: im leeren Plan steht „Leer beginnen“ statt „+ Kachel“ (dieselbe Aktion)
       raster.appendChild(el("button", { type: "button", cls: "plan-k-plus", "data-aktion": "k-plus", "data-fokus": "k-plus" }, [
         el("span", { cls: "plan-plus", "aria-hidden": "true", text: "+" }), el("span", { text: T("plan_kachel_plus").replace(/^\+\s*/, "") })]));
-      raster.lastChild.setAttribute("aria-label", T("plan_kachel_plus").replace(/^\+\s*/, ""));
+      // MF8: der Name ist der sichtbare Text „+ Kachel“ (vorher nur „Kachel“; „+ Kachel“ war darunter nicht zu finden)
+      raster.lastChild.setAttribute("aria-label", T("plan_kachel_plus"));
     }
     var zeit = el("input", { type: "checkbox", id: "plan-zeit", "data-fokus": "zeit", checked: S.zeitSelbst() });
     var teile = [el("h3", { cls: "unterkopf", text: T("uebersicht") }),

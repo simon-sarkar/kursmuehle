@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 59d33ea vom 08.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 02e58d8 vom 09.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -406,6 +406,19 @@
               <label id="start-l" class="feld feld-klein start-feld" hidden>Kursbeginn <input id="a-start" type="date"></label></div>
             <div class="aus-gruppe" data-gruppe="website"><h3 class="unterkopf" id="aus-website-t">Wie erscheinen Übungen?</h3>
               <div id="aus-website" class="kacheln-wahl breit" role="radiogroup" aria-labelledby="aus-website-t"></div></div>
+            <!-- AP13.47: Übungen einzeln (Standard) oder als ein Arbeitsheft je Einheit (Steckbrief kurs.arbeitsheft,
+                 kurs.arbeitsheft_bestehen; Wörter aus katalog.yaml oberflaeche.arbeitsheft) -->
+            <div class="aus-gruppe" data-gruppe="arbeitsheft"><h3 class="unterkopf feld-kopf" id="aus-arbeitsheft-t"><span
+                id="aus-arbeitsheft-titel">Übungen einzeln oder als Heft</span><button type="button" class="info-knopf"
+                aria-expanded="false" aria-controls="aus-arbeitsheft-info" aria-label="Erklärung zum Arbeitsheft"
+                data-info="arbeitsheft_info">i</button></h3>
+              <p id="aus-arbeitsheft-info" class="info-text" hidden></p>
+              <div id="aus-arbeitsheft" class="kacheln-wahl breit" role="radiogroup" aria-labelledby="aus-arbeitsheft-t"></div>
+              <label id="heft-bestehen-l" class="feld feld-klein heft-bestehen" hidden><span id="heft-bestehen-text">Abschluss ab
+                Prozent der Punkte (1 bis 100)</span>
+                <input id="heft-bestehen" type="number" inputmode="numeric" min="1" max="100" step="1"
+                  aria-describedby="heft-bestehen-zeile"></label>
+              <p id="heft-bestehen-zeile" class="feld-zeile" hidden></p></div>
           </div>
         </div>
       </div>
@@ -538,7 +551,12 @@
           <div id="eingabe-knopf" class="kopieren"><button type="button" id="eingabe-uebernehmen" class="knopf haupt">Antwort einsetzen</button></div>
         </div>
         <p id="eingabe-stand" class="stand-karte" role="status" aria-live="polite" tabindex="-1" hidden></p>
-        <button type="button" id="eingabe-nochmal" class="textlink" hidden>Andere Antwort einfügen</button>
+        <!-- MF8: an der Stelle von „Antwort einsetzen“ steht nach dem Einsetzen derselbe Knopf als erledigt (aria-disabled,
+             erreichbar mit Tab; ein Klick zeigt nur die Stand-Karte) -->
+        <div class="erledigt-reihe"><button type="button" id="eingabe-erledigt" class="knopf knopf-erledigt" aria-disabled="true"
+          aria-describedby="eingabe-stand" data-stand="eingabe-stand" hidden><span class="erledigt-wort">Antwort eingesetzt</span><span
+          class="erledigt-haken" aria-hidden="true"></span></button>
+        <button type="button" id="eingabe-nochmal" class="textlink" hidden>Andere Antwort einfügen</button></div>
         <!-- die Antwort ergab keinen Baustein: ein Satz und der Satz für den Chat; Zeile und Zitat unter „Was genau?“ -->
         <div id="eingabe-diagnose" class="stand-karte fehler diagnose-karte" role="status" hidden></div>
       </div>
@@ -561,13 +579,18 @@
             <textarea id="korrektur-eingabe" rows="5" spellcheck="false"></textarea>
             <div class="kopieren"><button type="button" id="korrektur-uebernehmen" class="knopf">Antwort einsetzen</button></div>
           </div>
-          <p id="korrektur-ergebnis" class="stand-karte" role="status" aria-live="polite" hidden></p>
+          <p id="korrektur-ergebnis" class="stand-karte" role="status" aria-live="polite" tabindex="-1" hidden></p>
+          <button type="button" id="korrektur-erledigt" class="knopf knopf-erledigt" aria-disabled="true"
+            aria-describedby="korrektur-ergebnis" data-stand="korrektur-ergebnis" hidden><span class="erledigt-wort">Antwort eingesetzt</span><span
+            class="erledigt-haken" aria-hidden="true"></span></button>
           <div id="korrektur-diagnose" class="stand-karte fehler diagnose-karte" role="status" hidden></div>
         </div>
       </div>
       <!-- AP13.35 §2.3, MF3: die gelbe Zeile der Einheit, nur unter drei Vierteln der Dauer, mit „Verlängern lassen“ -->
       <p id="einheit-warnung" class="karten-warnung einheit-warnung" role="status" hidden></p>
       <p id="einheit-warnung-info" class="info-text einheit-warnung-info" hidden></p>
+      <!-- AP13.47: mit Arbeitsheft eine graue Zeile: Übungen und Punkte im Heft, Übungen außerhalb -->
+      <p id="heft-zeile" class="leise heft-zeile" hidden></p>
       <!-- ein Hauptknopf zum nächsten Schritt, daneben der Editor (AP13.43 §5; einer statt zwei) -->
       <div class="knopf-reihe weiter-reihe">
         <button type="button" id="weiter-5" class="knopf haupt" hidden>Weiter</button>
@@ -685,6 +708,9 @@
         </div>
         <!-- MF7: nach dem Einfügen „Antwort eingesetzt: 11 Lösungen verglichen. …“ an der Stelle des Felds -->
         <p id="gegen-eingesetzt" class="stand-karte" role="status" aria-live="polite" tabindex="-1" hidden></p>
+        <button type="button" id="gegen-erledigt" class="knopf knopf-erledigt" aria-disabled="true"
+          aria-describedby="gegen-eingesetzt" data-stand="gegen-eingesetzt" hidden><span class="erledigt-wort">Antwort eingesetzt</span><span
+          class="erledigt-haken" aria-hidden="true"></span></button>
         <p id="gegen-ki-stand" class="stand-karte" role="status" aria-live="polite" hidden></p>
         <p id="gegen-stand" class="stand" role="status" aria-live="polite"></p>
       </div>

@@ -724,6 +724,44 @@
     "zeile": "Je Übung eine H5P-Aktivität mit H5P-Optik; jede lädt einzeln."
    }
   ],
+  "arbeitsheft_info": "Die Schülerinnen und Schüler sammeln im Heft Punkte und schicken es am Ende ab; dann steht die Punktzahl im Kursbuch. Texte, Seiten und Geschichten bleiben auf der Kursseite.",
+  "arbeitsheft": {
+   "titel": "Übungen einzeln oder als Heft",
+   "wahl": [
+    {
+     "wert": "nein",
+     "text": "Einzeln",
+     "zeile": "Jede Übung für sich, wie oben gewählt."
+    },
+    {
+     "wert": "ja",
+     "text": "Als ein Arbeitsheft mit Punkten",
+     "zeile": "Alle Übungen einer Einheit in einem H5P-Heft, je Übung eine Seite.",
+     "probe": "Import auf der Plattform noch nicht geprüft"
+    }
+   ],
+   "bestehen": "Abschluss ab Prozent der Punkte (1 bis 100)",
+   "bestehen_zeile": "Leer: abgeschlossen, sobald das Heft abgeschickt ist.",
+   "fazit": "Arbeitsheft",
+   "fazit_bestehen": "Arbeitsheft, Abschluss ab {prozent} %",
+   "name": "Arbeitsheft: {einheit}",
+   "zeile": "{n} Übungen mit {punkte} Punkten stehen im Arbeitsheft.",
+   "zeile_eine": "1 Übung mit {punkte} Punkten steht im Arbeitsheft.",
+   "zeile_mehr": "{n} Übungen mit {punkte} Punkten stehen in {hefte} Arbeitsheften.",
+   "aussen": "{n} Übungen stehen außerhalb des Hefts.",
+   "aussen_eine": "1 Übung steht außerhalb des Hefts.",
+   "pruef_name": "Arbeitsheft",
+   "grund_geschichte": "Eine Geschichte passt nicht in ein H5P-Heft und steht außerhalb.",
+   "grund_zusatz": "Die Zusatzaufgabe zählt nicht für die Punkte und steht außerhalb des Hefts.",
+   "grund_badge": "Die Übung ist Voraussetzung eines Abzeichens und bleibt deshalb außerhalb des Hefts.",
+   "hilfe": "Das Arbeitsheft zeigt keine Hilfen; sie fallen weg.",
+   "h5p": {
+    "submitReport": "Ergebnis absenden",
+    "summaryAndSubmit": "Zusammenfassung und Absenden",
+    "yourAnswersAreSubmittedForReview": "Dein Ergebnis ist abgeschickt.",
+    "totalScoreLabel": "Punkte im Heft"
+   }
+  },
   "bilder": [
    {
     "wert": "0",
@@ -985,6 +1023,7 @@
    "unterabschnitt": "Unterabschnitt",
    "quiz_aktivitaet": "Ein Quiz mit Bestehensgrenze wird eine eigene Aktivität.",
    "platzhalter_h5p": "Übung als eigene Aktivität{menge}. Die Vorschau zeigt sie nicht; im Kurs ist sie bedienbar.",
+   "platzhalter_heft": "Seite {seite} in „{heft}“{menge}. Die Vorschau zeigt sie nicht; im Kurs ist sie bedienbar.",
    "platzhalter_test": "Test als eigene Aktivität{menge}. Die Vorschau zeigt ihn nicht.",
    "platzhalter_website": "Teil der Website „{abschnitt}“. Die Vorschau zeigt die Website nicht.",
    "platzhalter_link": "Link auf {adresse}",
@@ -1051,6 +1090,14 @@
    "chat_oeffnen": "{chat} öffnen",
    "plan_element_plus_name": "+ Element in {titel}",
    "plan_kachel_text_name": "Was soll hier rein? Kachel {titel}",
+   "kacheln_bleiben": "Deine {n} Kacheln bleiben, wie du sie geplant hast; der Chat hat {gefuellt} von {alle} Elementen gefüllt.",
+   "kacheln_bleiben_eine": "Deine Kachel bleibt, wie du sie geplant hast; der Chat hat {gefuellt} von {alle} Elementen gefüllt.",
+   "kacheln_leer": "Noch leer sind {titel}.",
+   "kacheln_leer_eins": "Noch leer ist {titel}.",
+   "kacheln_bitte": "Die Korrekturbitte darunter fragt den Chat nach ihnen.",
+   "kacheln_bitte_eins": "Die Korrekturbitte darunter fragt den Chat danach.",
+   "kacheln_rot": "{n} davon brauchen eine Korrektur.",
+   "kacheln_rot_eins": "Eines davon braucht eine Korrektur.",
    "modell_satz": "Nimm das stärkste Modell, das dein Chat anbietet.",
    "bitte_titel": "Bitte an den Chat",
    "bitte_antwort": "Antwort des Chats auf die Bitte",
@@ -1077,7 +1124,7 @@
    "modus_satz_teil": "Teil {n} von {von}: die Antwort füllt die geplanten Bausteine dieses Teils in {name}.",
    "modus_satz_ersetzen": "Die Antwort ersetzt den Inhalt von {name} ({bausteine}); andere Einheiten bleiben.",
    "modus_satz_ersetzen_eine": "Die Antwort ersetzt den Inhalt der Einheit ({bausteine}).",
-   "modus_satz_baustein": "Die Antwort ersetzt nur Bausteine mit derselben id. {name} hat jetzt {bausteine}; die übrigen bleiben.",
+   "modus_satz_baustein": "Die Antwort ersetzt nur die Bausteine, die sie neu bringt. {name} hat jetzt {bausteine}; die übrigen bleiben.",
    "modus_satz_anhaengen": "Die Antwort kommt als neue Einheit hinter die letzte, {name}; deren Inhalt ({bausteine}) bleibt unverändert.",
    "modus_satz_spaeter": "Gilt für die nächste Antwort; die letzte bleibt, weil du danach etwas geändert hast.",
    "teil_geaendert": "Teil {n} hat sich geändert. Kopiere ihn neu.",

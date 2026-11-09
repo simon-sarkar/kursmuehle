@@ -88,7 +88,10 @@
       })) : null;
       // MF7: Lösungen lesbar statt mit Semikolons: Lücken nummeriert (die Nummer steht auch an der Lücke im Text), Zuordnen
       // als Paar „Begriff → Gruppe“, mehrere richtige Antworten als „A, B oder C“
-      var loesung = f.art === "auswahl" || f.art === "zuordnen" ? null : f.art === "luecken" && f.loesung.length > 1 ?
+      // MF8: passt die Zahl der Lücken im Text zur Zahl der Lösungen, stehen die Lösungen in den Lücken selbst (unterstrichen,
+      // für Vorlesegeräte mit „Lücke n:“ davor); keine Nummern mehr, die sich mit Zahlen als Lösung verwechseln lassen
+      var gefuellt = f.art === "luecken" && f.loesung.length >= 1 && String(f.frage).split("___").length - 1 === f.loesung.length;
+      var loesung = f.art === "auswahl" || f.art === "zuordnen" || gefuellt ? null : f.art === "luecken" && f.loesung.length > 1 ?
         el("ol", { cls: "f-luecken", "aria-label": "Lösungen der Lücken" }, f.loesung.map(function (l, i) {
           return el("li", {}, [el("span", { cls: "f-nr", text: String(i + 1) }), oder(l)]); }))
         : el("p", { cls: "f-loesung" }, ["Lösung: ", el("strong", { text: f.loesung.map(oder).join(", ") })]);
@@ -112,7 +115,8 @@
       var offenTeil = unsicher.length ? el("div", { cls: "f-offen" }, [el("p", {}, [el("span", { cls: "f-offen-wort",
           text: PT("offen_frage") + " " }), unsicher.map(function (o) { return o.text; }).join(" ")])]) : null;
       var fText = f.art === "zuordnen" ? [f.frage, el("span", { cls: "f-pfeil", text: " → " }),
-          el("strong", { text: oder(f.loesung[0] || []) })] : f.art === "luecken" && f.loesung.length > 1 ? lueckenNummern(f.frage)
+          el("strong", { text: oder(f.loesung[0] || []) })] : gefuellt ? lueckenGefuellt(f.frage, f.loesung)
+          : f.art === "luecken" && f.loesung.length > 1 ? lueckenNummern(f.frage)
           : [(f.art === "rf" ? "Richtig oder falsch: " : "") + f.frage];
       ol.appendChild(el("li", { cls: cls + " art-" + f.art, "data-nr": f.nr, "data-key": key }, [kopf, el("div", { cls: "f-zeile" }, [
         el("p", { cls: "f-frage" }, fText), aendern]),
@@ -121,6 +125,15 @@
   }
   // MF7: Alternativen einer Lösung als „A, B oder C“; Lücken im Text der Frage mit ihrer Nummer
   function oder(l) { l = l || []; return l.length < 2 ? (l[0] || "") : l.slice(0, -1).join(", ") + " oder " + l[l.length - 1]; }
+  function lueckenGefuellt(t, loesung) {
+    var out = [];
+    String(t).split("___").forEach(function (teil, i) {
+      if (i) out.push(el("span", { cls: "f-luecke-l" }, [el("span", { cls: "unsichtbar", text: "Lücke " + i + ": " }),
+          oder(loesung[i - 1])]));
+      out.push(teil);
+    });
+    return out;
+  }
   function lueckenNummern(t) {
     var n = 0, out = [];
     String(t).split("___").forEach(function (teil, i) {
@@ -355,6 +368,7 @@
         S.editorText(v.abweichungen.length + v.gleich.length === 1 ? "gegen_eingesetzt_eine" : "gegen_eingesetzt",
           { n: v.abweichungen.length + v.gleich.length }) + S.schonSatz(gegenFrisch === "auto"), "ok");
     else if (!frisch) S.standKarte($("gegen-eingesetzt"), "");
+    if (S.erledigt) S.erledigt($("gegen-erledigt"), !!frisch);      // MF8: „Antwort eingesetzt“ mit Haken an der Stelle des Knopfs
     var fehlt = v && v.fehlend.length ? "Ohne Antwort: " + v.fehlend.length + (v.fehlend.length === 1 ? " Frage." :
         " Fragen.") : "";
     $("gegen-stand").textContent = v && !v.abweichungen.length && !v.gleich.length ?
@@ -545,6 +559,8 @@
     z.push({ name: "Einheit", wert: (voll === 1 ? "1 Baustein" : voll + " Bausteine") + (f ? ", " + f + " Fehler" :
         ", geprüft") + (kurz ? " · " + (S.zeitGrau(kurz[1], kurz[2]) ? S.editorText("zeit_dauer_pruef", { ist: kurz[1],
           minuten: kurz[2] }) : "etwa " + kurz[1] + " von " + kurz[2] + " Minuten") : ""), editor: true });
+    var heft = S.heftZeile ? S.heftZeile() : "";       // AP13.47: Übungen im Heft und außerhalb; „Ändern“ führt zu Schritt 3
+    if (heft) z.push({ name: S.katalog.oberflaeche.arbeitsheft.pruef_name, wert: heft, nr: 3 });
     var w = S.bildwuensche().filter(function (b) { return b.datei; });
     if (sichtbar.indexOf(5.5) >= 0 && w.length) {
       var da = w.filter(function (b) { return Z.assets[b.datei]; }).length;

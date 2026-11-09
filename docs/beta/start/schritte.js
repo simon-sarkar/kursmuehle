@@ -42,7 +42,7 @@
     }
     if (n === 3) return [oberText("familie", S.angaben.familie || "sachlich"), feinheitenText(),
       oberText("format", S.angaben.format), bilderText(), oberText("website", S.angaben.website ||
-          "textfeld")].filter(Boolean).join(" · ");
+          "textfeld"), heftFazit()].filter(Boolean).join(" · ");
     if (n === 4) { var c = chatInfo(Z.mappe.chat); return c ? c.text + (!Z.mappe.kopiert ? "" : S.teilGeaendert &&
         S.teilGeaendert() ? " · " + S.teilGeaendert() : texte.veraltet ?
         " · " + S.editorText(S.anKiAktiv && S.anKiAktiv() ? "text_geaendert_ki" : "text_geaendert") : S.textGesendet &&
@@ -65,6 +65,12 @@
           "nicht_angesehen"), S.pruefStand()].filter(Boolean).join(" · ");
     }
     return "";
+  }
+
+  function heftFazit() {          // AP13.47: nur mit Heft; „einzeln“ ist der Standard und bleibt aus der Zusammenfassung
+    var t = S.katalog && S.katalog.oberflaeche.arbeitsheft;
+    if (!t || S.angaben.arbeitsheft !== "ja") return "";
+    return S.angaben.arbeitsheft_bestehen ? t.fazit_bestehen.replace("{prozent}", S.angaben.arbeitsheft_bestehen) : t.fazit;
   }
 
   // AP13.35 §4.3: eigener Plan in „Ich steuere“ (eine eigene Kachel, eine Beschreibung oder eine Änderung am Aufbau)
@@ -1519,6 +1525,7 @@
         S.angaben.bildbeschriftung || o.bildbeschriftung.filter(function (w) { return w.standard; })[0].wert);
     kachelGruppe($("aus-website"), "website", o.website, function (w) { return miniWebsite(w, hue); },
         S.angaben.website || "textfeld");
+    zeichneHeftWahl(o.arbeitsheft, hue);
     $("format-karte").hidden = false;
     if (S.familien) $("vorschau-name").textContent = [(familieInfo(familieJetzt()) || {}).text,
       oberText("format", format)].filter(Boolean).join(" · ");
@@ -1553,6 +1560,64 @@
         'font-family="system-ui, sans-serif">1</text><text x="102" y="36" text-anchor="middle" font-size="11" ' +
         'font-weight="700" fill="#0B1220" font-family="system-ui, sans-serif">2</text></svg>';      // nur Ziffern
   }
+  // AP13.47: Übungen einzeln oder als ein Arbeitsheft; die Kachel mit Dreieck bleibt in der Reihe (nur zwei Werte, kein
+  // Ausklappteil „Weitere“); Prozent für den Abschluss nur mit Heft
+  var HEFT_KACHELN = {};
+  function zeichneHeftWahl(t, hue) {
+    if (!t) return;
+    var an = S.angaben.arbeitsheft === "ja";
+    if ($("aus-arbeitsheft-titel").textContent !== t.titel) $("aus-arbeitsheft-titel").textContent = t.titel;
+    kachelGruppe($("aus-arbeitsheft"), "arbeitsheft", t.wahl.map(function (w) {
+      if (w.probe && !HEFT_KACHELN[w.wert]) HEFT_KACHELN[w.wert] = kachel("arbeitsheft", w.wert, w.text, "", false, w.zeile,
+          w.probe);
+      return { wert: w.wert, text: w.text, zeile: w.zeile, element: HEFT_KACHELN[w.wert] };
+    }), function (w) { return miniHeft(w, hue); }, an ? "ja" : "nein");
+    $("heft-bestehen-l").hidden = $("heft-bestehen-zeile").hidden = !an;
+    if ($("heft-bestehen-text").textContent !== t.bestehen) $("heft-bestehen-text").textContent = t.bestehen;
+    $("heft-bestehen-zeile").textContent = t.bestehen_zeile;
+    if (document.activeElement !== $("heft-bestehen")) $("heft-bestehen").value = S.angaben.arbeitsheft_bestehen || "";
+  }
+  function miniHeft(wert, hue) {
+    var s = '<svg viewBox="0 0 120 50" aria-hidden="true" focusable="false"><rect width="120" height="50" fill="#fff"/>';
+    if (wert !== "ja") {
+      [8, 46, 84].forEach(function (x) { s += '<rect x="' + x + '" y="10" width="28" height="30" rx="3" fill="#F2F4F7"/>' +
+          '<rect x="' + (x + 5) + '" y="16" width="12" height="4" rx="1" fill="' + hue + '"/><rect x="' + (x + 5) +
+          '" y="25" width="18" height="3" rx="1" fill="#5B6475"/>'; });
+      return s + "</svg>";
+    }
+    return s + '<rect x="30" y="6" width="60" height="38" rx="3" fill="#F2F4F7" stroke="#C3C8D2"/><line x1="60" y1="6" ' +
+        'x2="60" y2="44" stroke="#C3C8D2"/><rect x="36" y="13" width="18" height="4" rx="1" fill="' + hue + '"/><rect ' +
+        'x="36" y="22" width="18" height="3" rx="1" fill="#5B6475"/><rect x="66" y="13" width="18" height="4" rx="1" fill="' +
+        hue + '"/><rect x="66" y="34" width="18" height="4" rx="2" fill="' + mischen(hue, 0.3) + '"/><rect x="66" y="34" ' +
+        'width="11" height="4" rx="2" fill="' + hue + '"/></svg>';
+  }
+  // AP13.47: Zeile in Schritt 5 und auf der Prüfseite: Übungen und Punkte im Heft der laufenden Einheit, Übungen außerhalb
+  function heftZeile() {
+    var t = S.katalog && S.katalog.oberflaeche.arbeitsheft, h = (Z.pruefung && Z.pruefung.hefte) || [];
+    if (!t || S.angaben.arbeitsheft !== "ja" || !h.length || !Z.mappe) return "";
+    var ids = {};
+    Z.mappe.bausteine.forEach(function (k) { if ((k.einheit || "") === (einheitTag() || "")) ids[k.id] = true; });
+    var eigene = h.filter(function (x) { return x.uebungen.concat(x.aussen).some(function (u) { return ids[u.id]; }); });
+    if (eigene.length) h = eigene;
+    var fm = function (v, o) { return v.replace(/\{(\w+)\}/g, function (m, k) { return o[k] !== undefined ? o[k] : m; }); };
+    var mit = h.filter(function (x) { return x.name; }), saetze = [];
+    var n = mit.reduce(function (s, x) { return s + x.uebungen.length; }, 0);
+    var o = { n: n, hefte: mit.length, punkte: mit.reduce(function (s, x) { return s + x.punkte; }, 0) };
+    if (mit.length) saetze.push(fm(mit.length > 1 ? t.zeile_mehr : n === 1 ? t.zeile_eine : t.zeile, o));
+    var aussen = h.reduce(function (n, x) { return n + x.aussen.length; }, 0);
+    if (aussen) saetze.push(aussen === 1 ? t.aussen_eine : fm(t.aussen, { n: aussen }));
+    return saetze.join(" ");
+  }
+  S.heftZeile = heftZeile;
+  var heftTimer = null;
+  $("heft-bestehen").addEventListener("input", function () {
+    var w = $("heft-bestehen").value.trim();
+    if (!Z.mappe || (w && (!/^\d+$/.test(w) || +w < 1 || +w > 100))) return;
+    S.angaben.arbeitsheft_bestehen = w ? String(+w) : "";
+    clearTimeout(heftTimer);
+    heftTimer = setTimeout(function () { angabenSchreiben({ arbeitsheft_bestehen: S.angaben.arbeitsheft_bestehen }, true);
+      zeichneSchritte(); }, 300);
+  });
   function miniWebsite(wert, hue) {
     var s = '<svg viewBox="0 0 120 50" aria-hidden="true" focusable="false"><rect width="120" height="50" fill="#fff"/>'
       + '<rect x="8" y="6" width="70" height="4" rx="1" fill="#0B1220"/>';
@@ -1594,6 +1659,7 @@
     }
     a[feld] = wert;
     S.angaben[feld] = wert;
+    if (feld === "arbeitsheft" && wert !== "ja") a.arbeitsheft_bestehen = S.angaben.arbeitsheft_bestehen = "";
     zeichneAussehen(); felderFuellen(); zeichneSchritte();
     angabenSchreiben(a, true);
     if (b.dataset.feld === "format" && wert === "wochen" && !S.angaben.start) $("a-start").focus();
