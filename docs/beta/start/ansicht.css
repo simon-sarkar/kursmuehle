@@ -1225,7 +1225,7 @@ body:has(dialog[open]) .editor-schweb { display: none; }
 /* AP13.44 §2 am Handy: Fokus und Sprünge enden über dem schwebenden Knopf „Zum Editor“; „Im Editor ansehen“ an der
  * Karte steht rechts, wo der Knopf (links unten) nie liegt */
 @media (max-width: 999px) {
-  :root:has(body.mit-editor-schweb) { scroll-padding-bottom: calc(16px + 104px + env(safe-area-inset-bottom, 0px)); }
+  :root.mit-editor-schweb { scroll-padding-bottom: calc(16px + 104px + env(safe-area-inset-bottom, 0px)); }
   /* MF4: die grauen Zeilen der kommenden Schritte stehen unter dem offenen Schritt oft genau auf Höhe des Knopfs (links
      unten, 16 px + 88 px); sie beginnen rechts davon */
   body.mit-editor-schweb .schritt[data-stand=kommend]:not(.auf) > .s-zeile { padding-left: 104px; }
@@ -1335,4 +1335,15 @@ body:has(dialog[open]) .editor-schweb { display: none; }
  * steht er im freien linken Rand (AP13.44 §2) */
 @media (max-width: 999px) {
   body[data-offen="6"] .editor-schweb, body[data-offen="7"] .editor-schweb { display: none; }
+}
+/* AP13.45 (WCAG 2.4.11): unter 1100 px steht die Vorschau in Schritt 3 fest unten (96 px, aufgeklappt 60 vh); Fokus und
+ * Sprünge enden darüber, unter 1000 px auch über dem Knopf „Zum Editor“, der dann über der Leiste schwebt. Die Klassen am
+ * Wurzelelement setzt schritte.js/editor.js (WebKit wertet :has am Wurzelelement nicht neu aus) */
+@media (max-width: 1099px) {
+  :root[data-offen="3"] { scroll-padding-bottom: calc(16px + 96px + env(safe-area-inset-bottom, 0px)); }
+  :root[data-offen="3"].vorschau-auf { scroll-padding-bottom: calc(16px + 60vh); }
+}
+@media (max-width: 999px) {
+  :root[data-offen="3"].mit-editor-schweb { scroll-padding-bottom: calc(16px + 96px + 16px + 104px + env(safe-area-inset-bottom, 0px)); }
+  :root[data-offen="3"].mit-editor-schweb.vorschau-auf { scroll-padding-bottom: calc(16px + 60vh + 104px); }
 }

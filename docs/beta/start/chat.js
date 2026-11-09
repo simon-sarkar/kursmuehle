@@ -693,7 +693,10 @@
   async function eingabeUebernehmen(modusErzwungen, o) {
     var feld = !o;
     var zeige = feld ? function (x, art) { standKarte($("eingabe-stand"), x, art); } : o.stand;
-    var diagnose = feld ? function (d) { diagnoseKarte($("eingabe-diagnose"), d); } : o.diagnose;
+    // AP13.45 (WCAG 4.1.3): eine Karte, die mit ihrem Inhalt erst erscheint, lesen Vorleser oft nicht vor; der Fokus geht
+    // auf sie wie beim Erfolg auf die Stand-Karte
+    var diagnose = feld ? function (d) { var b = $("eingabe-diagnose"); diagnoseKarte(b, d);
+      if (d) { b.tabIndex = -1; b.focus(); } } : o.diagnose;
     var text = modusErzwungen && S.letzteAntwort ? S.letzteAntwort.text : feld ? $("eingabe").value : o.text || "";
     if (!text.trim()) return false;
     var eigen = !modusErzwungen && eigenerText(text);

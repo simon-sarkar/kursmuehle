@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 02e58d8 vom 09.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand fd6be91 vom 09.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -144,7 +144,7 @@
         <label class="feld feld-klein"><span class="feld-kopf"><span id="f-minuten-t">Minuten</span><button type="button"
             class="info-knopf" aria-expanded="false" aria-controls="f-minuten-info" aria-label="Erklärung zu Minuten"
             data-hinweis="1-minuten">i</button></span>
-          <input id="f-minuten" type="number" min="10" max="300" step="5" value="45" inputmode="numeric">
+          <input id="f-minuten" aria-labelledby="f-minuten-t" type="number" min="10" max="300" step="5" value="45" inputmode="numeric">
         </label>
         <p id="f-minuten-info" class="info-text feld-breit" hidden></p>
         <button type="submit" id="einheit-anlegen" class="knopf haupt">Weiter: Aufbau</button>
@@ -270,13 +270,14 @@
           <!-- AP13.13: Dateien lesen (web/material.js); Liste der Abschnitte unter dem Feld, nicht gespeichert. AP13.19 §1:
                bei „Einheit aus eigenem Material“ steht das Feld sichtbar im Weg (schritte.js materialOrt) -->
           <div id="r-material-feld" class="r-material-feld material-ort" data-material="r">
-            <label class="feld feld-breit"><span class="feld-kopf">Dein Material (Text, Stichpunkte oder Dateien)
+            <label class="feld feld-breit"><span class="feld-kopf"><span id="r-material-t">Dein Material (Text, Stichpunkte oder Dateien)</span>
                 <span class="info-knopf" role="button" tabindex="0" aria-expanded="false" aria-label="Hinweis zum Material im Chat"
                   data-info="material_info">ⓘ</span></span>
               <span class="info-text feld-zeile" data-info-text="material_info" hidden></span>
               <span id="r-material-zeile" class="feld-zeile">freiwillig</span>
-              <textarea id="r-material" class="von-lehrkraft" rows="4" spellcheck="true"></textarea>
-              <span class="feld-zeile">Nur Material, an dem du die Rechte hast.</span>
+              <textarea id="r-material" class="von-lehrkraft" rows="4" spellcheck="true" aria-labelledby="r-material-t"
+                aria-describedby="r-material-zeile r-material-recht r-material-grenze"></textarea>
+              <span id="r-material-recht" class="feld-zeile">Nur Material, an dem du die Rechte hast.</span>
               <span id="r-material-grenze" class="feld-zeile"></span>
             </label>
             <div class="material-datei">
@@ -324,14 +325,15 @@
                 <label class="feld">Umfang <select id="a-portionierung"></select></label>
                 <!-- AP13.19 §1: bei „Einheit aus eigenem Material“ steht dieser Block unter den Vorlagen -->
                 <div id="a-material-feld" class="feld-breit material-ort" data-material="a">
-                  <label class="feld"><span class="feld-kopf">Dein Material (Text, Stichpunkte oder Dateien)
+                  <label class="feld"><span class="feld-kopf"><span id="a-material-t">Dein Material (Text, Stichpunkte oder Dateien)</span>
                       <span class="info-knopf" role="button" tabindex="0" aria-expanded="false" aria-label="Hinweis zum Material im Chat"
                         data-info="material_info">ⓘ</span></span>
                     <span class="info-text feld-zeile" data-info-text="material_info" hidden></span>
                     <span id="a-material-zeile" class="feld-zeile"
                       hidden>für diese Art nötig</span>
-                    <textarea id="a-material" class="von-lehrkraft" rows="4" spellcheck="true"></textarea>
-                    <span class="feld-zeile">Nur Material, an dem du die Rechte hast.</span>
+                    <textarea id="a-material" class="von-lehrkraft" rows="4" spellcheck="true" aria-labelledby="a-material-t"
+                      aria-describedby="a-material-zeile a-material-recht material-grenze"></textarea>
+                    <span id="a-material-recht" class="feld-zeile">Nur Material, an dem du die Rechte hast.</span>
                     <span id="material-grenze" class="feld-zeile"></span>
                   </label>
                   <div class="material-datei">

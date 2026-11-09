@@ -79,6 +79,7 @@
     var sw = $("editor-schweb"), gruen = da && !S.fehlerZahl() && !S.teileOffen();
     sw.hidden = !gruen;
     document.body.classList.toggle("mit-editor-schweb", gruen);
+    document.documentElement.classList.toggle("mit-editor-schweb", gruen);
     if (S.weiterFuenf) S.weiterFuenf();
     if (S.katalog) { $("editor-schweb-text").textContent = T("schweb"); sw.setAttribute("aria-label", T("schweb") + ": " + T("knopf")); }   // WCAG 2.5.3: Name beginnt mit dem sichtbaren Wort
     leisteZeigen();

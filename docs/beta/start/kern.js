@@ -433,7 +433,8 @@ window.km = km;
     var blob = new Blob([u8], { type: typ || "application/octet-stream" });
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
-    a.href = url; a.download = name; document.body.appendChild(a); a.click();
+    a.href = url; a.download = name; a.tabIndex = -1; a.setAttribute("aria-hidden", "true");   // kein Halt für Tab und Vorleser
+    document.body.appendChild(a); a.click();
     setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 30000);   // Safari braucht den Link länger
   }
   function heute() {

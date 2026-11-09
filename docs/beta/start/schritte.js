@@ -175,6 +175,7 @@
     var offen = offenerSchritt();
     document.body.dataset.schritt = d ? "3" : String(s);
     document.body.dataset.offen = String(offen);
+    document.documentElement.dataset.offen = String(offen);   // für scroll-padding am Wurzelelement (WebKit wertet :has dort nicht neu aus)
     document.body.dataset.zweig = z;
     document.body.dataset.bildschirm = Z.mappe ? "ansicht" : "start";
     SCHRITTE.forEach(function (n) {
@@ -427,13 +428,19 @@
     p.append(satz);
     p.hidden = false;
     feld.setAttribute("aria-invalid", "true");
-    feld.setAttribute("aria-describedby", id);
+    feld.setAttribute("aria-describedby", (id + " " + beschreibung(feld)).trim());
+  }
+  // AP13.45: eine Beschreibung aus dem HTML (Materialfelder) bleibt neben der Meldung und nach ihr erhalten
+  function beschreibung(feld) {
+    if (feld.dataset.beschreibung === undefined) feld.dataset.beschreibung = feld.getAttribute("aria-describedby") || "";
+    return feld.dataset.beschreibung;
   }
   function feldOk(feld) {
     var p = $(feld.id + "-meldung");
     if (p) p.hidden = true;
     feld.removeAttribute("aria-invalid");
-    feld.removeAttribute("aria-describedby");
+    if (beschreibung(feld)) feld.setAttribute("aria-describedby", beschreibung(feld));
+    else feld.removeAttribute("aria-describedby");
   }
   // -> true, wenn alle Felder stimmen; sonst Meldung am ersten falschen und Fokus dorthin
   function felderPruefen(ids) {
@@ -1346,6 +1353,7 @@
   $("vorschau-leiste").onclick = function () {
     var auf = !$("vorschau-spalte").classList.contains("offen");
     $("vorschau-spalte").classList.toggle("offen", auf);
+    document.documentElement.classList.toggle("vorschau-auf", auf);
     $("vorschau-leiste").setAttribute("aria-expanded", String(auf));
     vorschauMassstab();
   };
