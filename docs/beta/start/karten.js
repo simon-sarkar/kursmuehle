@@ -213,12 +213,13 @@
       einheitGelb.forEach(function (d) {
         var m = /(\d+) von (\d+)/.exec(d.text || "");
         S.zeitKurzMinuten = m ? m[2] : "";
-        // MF7: ab der Hälfte der Dauer eine graue Zeile ohne Warnton, „Verlängern lassen“ als Textlink
+        // MF7: ab der Hälfte der Dauer eine graue Zeile ohne Warnton; AP13.45 B3: beide Zahlen und ein (i) zur Grundlage,
+        // „Verlängern lassen“ nur an der gelben Zeile
         if (m && zeitGrau(m[1], m[2])) {
           ew.classList.add("grau");
           ew.append(el("span", { cls: "ew-satz" }, [S.editorText("zeit_dauer_zeile", { ist: m[1], minuten: m[2] }), " ",
-            el("button", { type: "button", cls: "textlink k-sprache", "data-regel": d.regel,
-              text: S.editorText("zeit_kurz_knopf") })]));
+            el("button", { type: "button", cls: "info-knopf", "aria-expanded": "false", "aria-controls": "einheit-warnung-info",
+              "aria-label": S.editorText("zeit_dauer_info_name"), "data-hinweis": "5-dauer", text: "i" })]));
           return;
         }
         var satz = m ? S.editorText("zeit_kurz_zeile", { ist: m[1], minuten: m[2] }) || d.text : d.text;

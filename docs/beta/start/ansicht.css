@@ -458,6 +458,7 @@ select { appearance: auto; }
 .ki-eigene > .chat-gruppe { margin-top: 6px; }
 /* MF2: Zustand b. Der gewählte Chat mit „Anderer Chat“, ein Satz zum Modell mit (i), der Kopierknopf mit (i) */
 .chat-fuer { margin: 0 0 14px; font-weight: 600; }
+.chat-modell-satz { margin: -10px 0 14px; }
 .chat-fuer .textlink { font-weight: 400; margin-left: 8px; }
 /* MF6: das (i) zum Modell steht in der Zeile des Chats, der Satz nur im (i) */
 .chat-modell-zeile { display: inline-flex; vertical-align: middle; margin-left: 8px; }

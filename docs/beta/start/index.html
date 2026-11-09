@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 0c5dde7 vom 09.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand b1cf612 vom 09.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -487,10 +487,12 @@
            Sekunden „Kopiert“, dann zwei Zeilen und „Weiter: Antwort einfügen“ (zurueck-4). Ein Text in Teilen zeigt die Teile
            als Liste mit ihrem Stand (chat.js zeichneChat) -->
       <div id="chat-text" hidden>
-        <!-- MF6: der Satz zum Modell steht nur im (i) „Welches Modell?“ an der Zeile des Chats -->
+        <!-- MF6: der allgemeine Satz zum Modell steht im (i) „Welches Modell?“ an der Zeile des Chats; AP13.45 B1: der Satz
+             des gewählten Chats (katalog.yaml chats.aufwand) steht sichtbar darunter -->
         <p class="chat-fuer"><span id="chat-zeile"></span> <button type="button" id="chat-aendern" class="textlink">Anderer Chat</button><span
           id="chat-modell-zeile" class="chat-modell-zeile"><button type="button" class="info-knopf" aria-expanded="false"
           aria-controls="chat-modell-info" aria-label="Welches Modell?" data-hinweis="4-modell">i</button></span></p>
+        <p id="chat-modell-satz" class="chat-modell-satz" hidden></p>
         <p id="chat-modell-info" class="info-text" hidden></p>
         <!-- MF7: wie man zum Chat kommt; der Link nur, wenn katalog.yaml für den Chat eine `adresse` kennt -->
         <p id="chat-weg" class="chat-weg"><span id="chat-weg-satz"></span> <a id="chat-oeffnen" class="textlink" target="_blank"

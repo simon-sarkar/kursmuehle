@@ -60,6 +60,10 @@
       : "Für " + c.text + (von > 1 ? ", in " + von + " Teilen" + (ki() ? ". Die Mühle sendet Teil für Teil und setzt " +
           "jede Antwort ein." : "") : "");
     $("chat-modell-zeile").hidden = ki();
+    // AP13.45 B1: der Satz des gewählten Chats zum Modell sichtbar unter der Zeile (der allgemeine Rest im (i))
+    var satz = t && !ki() ? c.aufwand || "" : "";
+    $("chat-modell-satz").hidden = !satz;
+    if ($("chat-modell-satz").textContent !== satz) $("chat-modell-satz").textContent = satz;
     // MF7: eine Zeile, wie man zum Chat kommt; mit `adresse` im Katalog ein Link „<Chat> öffnen“ in einem neuen Tab
     var name = c.wert === "anderer" ? "deinen Chat" : c.text, adr = /^https:\/\//.test(c.adresse || "") ? c.adresse : "";
     $("chat-weg").hidden = ki();
@@ -801,6 +805,9 @@
       var rot = Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler" && (!e.ids ||
           e.ids.indexOf(b.id) >= 0); }).length;
       var aussen = Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler" && !d.baustein; }).length;
+      // AP13.45 B2: rote Bausteine, die nicht in dieser Antwort standen (die rote Karte zählt sie mit)
+      var rotSonst = e.ids ? Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler" &&
+          e.ids.indexOf(b.id) < 0; }).length : 0;
       var fehlend = fehlendZahl(), abg = S.abgeschnittenGilt();
       if (gleichE.length) mehr = " Die Antwort für „" + gleichE[0] + "“ ist dieselbe wie vorher." + mehr;
       if (umbenannt.length) mehr = " " + S.editorText("ids_zugeordnet", { titel: umbenannt.slice(0, 3).map(function (t) {
@@ -822,8 +829,10 @@
           + schonSatz(!knopfGeklickt && !modusErzwungen && !ki()) + mehr + e.text
         : wechsel + kopf + zahl + (zahl === 1 ? " Baustein" : " Bausteine")
         + (abg ? ". " + editorText("abgeschnitten") : standZahlen(rot, fehlend, aussen))
-        + schonSatz(feld && !abg && !knopfGeklickt && !modusErzwungen && !ki()) + mehr + e.text,
-        rot || aussen || fehlend ? "fehler" : "ok");
+        + schonSatz(feld && !abg && !knopfGeklickt && !modusErzwungen && !ki())
+        + (rotSonst && !abg ? " " + (rotSonst === 1 ? editorText("rot_sonst_eins") : editorText("rot_sonst", { n: rotSonst })) : "")
+        + mehr + e.text,
+        rot || aussen || fehlend || rotSonst ? "fehler" : "ok");
       // AP13.33 §2.1: stand der Fokus im Feld, geht er an die nächste Stelle. AP13.36 §1.2: nicht auf „Weiter“ (ein Enter
       // überginge die Durchsicht der Karten), sondern auf die erste rote Karte, sonst auf die Meldung über den Karten
       if (feld) {
