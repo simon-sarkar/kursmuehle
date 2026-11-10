@@ -1782,6 +1782,17 @@
     geaendert();
     window.scrollTo(0, y);
     $("zum-designer").focus({ preventScroll: true });
+    // WebKit hält die Stelle nicht, wenn die Seite danach weiter zeichnet (keine Scroll-Verankerung): in den nächsten
+    // Bildern noch einmal setzen, solange niemand selbst scrollt
+    var selbst = false, merk = function () { selbst = true; };
+    ["wheel", "touchstart", "keydown"].forEach(function (t) { window.addEventListener(t, merk, { once: true, passive: true }); });
+    var nach = function (n) {
+      if (selbst) return;
+      if (Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y);
+      if (n > 0) setTimeout(function () { requestAnimationFrame(function () { nach(n - 1); }); }, 50);
+      else ["wheel", "touchstart", "keydown"].forEach(function (t) { window.removeEventListener(t, merk); });
+    };
+    requestAnimationFrame(function () { nach(6); });
   };
   $("zum-material").onclick = function () {
     var f = $("a-material");
