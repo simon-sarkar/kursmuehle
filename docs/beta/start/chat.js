@@ -65,7 +65,7 @@
     var t = texte.teile[texte.teil] || "";
     $("chat-zeile").textContent = !t ? (Z.geladen ?
         "Der Text entsteht …" : "Der Text entsteht, sobald die Seite bereit ist.")
-      : "Für " + c.text + (von > 1 ? ", in " + von + " Teilen" + (ki() ? ". Die Mühle sendet Teil für Teil und setzt " +
+      : "Text für " + c.text + (von > 1 ? ", in " + von + " Teilen" + (ki() ? ". Die Mühle sendet Teil für Teil und setzt " +
           "jede Antwort ein." : "") : "");
     $("chat-modell-zeile").hidden = ki();
     // AP13.45 B1: der Satz des gewählten Chats zum Modell sichtbar unter der Zeile (der allgemeine Rest im (i))

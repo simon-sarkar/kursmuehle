@@ -331,6 +331,7 @@ select { appearance: auto; }
 .aus-gruppe .aus-kopf { display: flex; align-items: center; gap: 6px; margin: 6px 0 8px; }
 .aus-gruppe .aus-kopf .unterkopf { margin: 0; }
 .aus-gruppe { margin-top: 14px; }
+.aus-gruppe .aus-satz { margin: 8px 0 0; }
 .aussehen > .aus-gruppe:first-child { margin-top: 0; }
 .familie-alle { margin-top: 10px; }
 .aussehen .erw { margin-top: 22px; }
@@ -597,8 +598,8 @@ select { appearance: auto; }
 .karte { padding: 12px 14px 6px; border-top: 1px solid var(--linie); }
 .karten > .karte:first-child, .karten > .k-zwischen:first-child + .karte { border-top: 0; }
 .karte.neu { box-shadow: inset 4px 0 0 var(--text); }
-.karte.aus { opacity: 0.62; }
-.karte.aus:focus-within { opacity: 1; }
+/* R7 (axe): ausgeschaltet heißt gestrichelt, nicht blass; Transparenz drückte Text unter 4,5 : 1 */
+.karte.aus { border-left: 3px dashed var(--linie); padding-left: 11px; }
 .k-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 0.85rem; color: var(--leise); }
 .k-nr { min-width: 1.6em; height: 1.6em; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
   background: var(--creme); color: var(--text); font-weight: 650; font-size: 0.8rem; }
@@ -1162,8 +1163,7 @@ body:has(dialog[open]) #navi { display: none; }
 .plan-elemente { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .plan-el { border: 1px solid var(--linie); border-radius: 8px; background: var(--flaeche); min-width: 0; }
 .plan-el.offen { border-color: var(--ocker-tief); }
-.plan-el.aus { opacity: 0.62; }
-.plan-el.aus:focus-within { opacity: 1; }
+.plan-el.aus { border-style: dashed; border-width: 2px; }
 .plan-el-zeile { display: flex; align-items: flex-start; gap: 8px; width: 100%; min-height: 44px; padding: 8px 10px; border: 0; border-radius: 8px;
   background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .plan-el-zeile:hover { background: var(--grund); }

@@ -72,7 +72,11 @@
     ".km-ed-inhalt .km-aendern.km-zeigen:not(:focus) { outline: none; }",
     ".km-ed-inhalt .km-stelle:has(+ .km-aendern:focus), .km-ed-inhalt .km-stelle:has(+ .km-aendern.km-zeigen) { " +
         "outline: 2px dashed #8a6416; outline-offset: 3px; }",
-    "slot[name=km-stelle] { display: block; }"
+    "slot[name=km-stelle] { display: block; }",
+    // R7: an einer Kachel mit Knöpfen darin bedient die Tastatur den Titel (.km-ue-griff), nicht die ganze Kachel
+    ".km-ed-inhalt .km-ue-griff { pointer-events: auto; border-radius: 4px; }",
+    ".km-ed-inhalt .km-ue-griff:focus { outline: none; }",
+    ".km-ed-inhalt .km-ue-griff:focus-visible { outline: 2px dashed #8a6416; outline-offset: 3px; }"
   ].join("\n");
 
   function sichtbar() { return !!(Z.mappe && Z.pruefung && Z.pruefung.bausteine && Z.pruefung.bausteine.length); }
@@ -495,10 +499,15 @@
       // §9: Kurstitel, Abschnitte und Kacheln sind bedienbar (Tabulator, Enter, Leertaste); Pfeile verschieben
       // AP13.45 B4: der Kurstitel bleibt Überschrift (mit der Maus anklickbar); mit der Tastatur führt „Kurstitel ändern“
       // im Kopf der Kursübersicht dorthin
+      // R7: eine Kachel mit Knöpfen darin (Pfeile, „Kachel löschen“) ist selbst kein Knopf, sonst stecken Knöpfe im Knopf;
+      // die Rolle trägt dann ihr Titel, mit der Maus bleibt die ganze Kachel anklickbar
       Array.prototype.forEach.call(innen.querySelectorAll("[data-ziel]:not([data-ziel=kopf])"), function (x) {
-        x.setAttribute("tabindex", "0");
-        x.setAttribute("role", "button");
-        x.setAttribute("aria-label", x.dataset.ziel === "weitere" ? T("weitere") : T("abschnitt_titel") + ": " +
+        var g = x.querySelector("button") && x.querySelector(".km-ue-abtitel");
+        if (g) g.classList.add("km-ue-griff");
+        g = g || x;
+        g.setAttribute("tabindex", "0");
+        g.setAttribute("role", "button");
+        g.setAttribute("aria-label", x.dataset.ziel === "weitere" ? T("weitere") : T("abschnitt_titel") + ": " +
             (x.dataset.titel || x.textContent));
       });
       Array.prototype.forEach.call(innen.querySelectorAll("button[data-aktion]"), function (x) {
@@ -506,7 +515,7 @@
       root.addEventListener("click", ueKlick);
       root.addEventListener("keydown", function (ev) {
         var z = ev.target.closest && ev.target.closest("[data-ziel]");
-        if (z && z === ev.target && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); ueKlick(ev); }
+        if (z && griff(z) === ev.target && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); ueKlick(ev); }
       });
     }
     return host;
@@ -514,6 +523,13 @@
 
   // AP13.45 B7: Überschriften der Fläche (wie auf der Kursseite h1 bis h3) bekommen ihre Ebene unter der Überschrift des
   // Bausteins (h4) bzw. der Kursübersicht (h3); die oberste Ebene der Fläche wird `oben`
+  function griff(x) { return x && (x.querySelector(".km-ue-griff") || x); }
+  // die bedienbare Stelle zu einem Ziel („kopf“, „abschnitt:n“) in einer Fläche: das Ziel selbst oder sein Titel
+  function zielGriff(root, ziel) {
+    var x = null;
+    try { x = griff(root && root.querySelector("[data-ziel='" + ziel + "']")); } catch (e) { x = null; }
+    return x && x.hasAttribute("tabindex") ? x : null;
+  }
   function ebenen(innen, oben) {
     var hs = innen.querySelectorAll("h1, h2, h3, h4, h5, h6"), min = 6;
     Array.prototype.forEach.call(hs, function (h) { min = Math.min(min, +h.tagName.charAt(1)); });
@@ -570,12 +586,15 @@
     if (s !== k.sig) {
       // AP13.33 §2.1: lag der Fokus in der alten Fläche (Kurstitel, Kachel, Pfeil), geht er an dieselbe Stelle der neuen
       var alt = k.koerper.firstChild, inAlt = alt && document.activeElement === alt && alt.shadowRoot &&
-          alt.shadowRoot.activeElement, wo = inAlt ? (inAlt.dataset.ziel ? "[data-ziel='" + inAlt.dataset.ziel + "']" :
-          inAlt.dataset.aktion ? "[data-aktion='" + inAlt.dataset.aktion + "'][data-nr='" + inAlt.dataset.nr + "']" : "") : "";
+          alt.shadowRoot.activeElement;
+      var zielAlt = inAlt && (inAlt.dataset.ziel || (inAlt.classList.contains("km-ue-griff") &&
+          inAlt.closest("[data-ziel]").dataset.ziel)) || "";
+      var wo = inAlt && !zielAlt && inAlt.dataset.aktion ? "[data-aktion='" + inAlt.dataset.aktion + "'][data-nr='" +
+          inAlt.dataset.nr + "']" : "";
       k.sig = s; k.koerper.textContent = "";
       try { k.koerper.appendChild(flaeche(u.html, true)); } catch (e) { console.error("Vorschau", UE, e); }
-      var neu = wo && k.koerper.firstChild && k.koerper.firstChild.shadowRoot &&
-          k.koerper.firstChild.shadowRoot.querySelector(wo + ":not([disabled])");
+      var neuRoot = k.koerper.firstChild && k.koerper.firstChild.shadowRoot;
+      var neu = zielAlt ? zielGriff(neuRoot, zielAlt) : wo && neuRoot && neuRoot.querySelector(wo + ":not([disabled])");
       if (neu) neu.focus({ preventScroll: true });
     }
     if (ueZiel && !ueAbschnitt(ueZiel) && ueZiel !== "kopf" && ueZiel !== "weitere") ueZu(true);
@@ -721,9 +740,7 @@
     k.werk.hidden = true; k.werk.textContent = "";
     var kn = k.kopf.querySelector("[data-aktion=kurstitel]"); if (kn) kn.setAttribute("aria-expanded", "false");
     if (stumm) return;
-    var f = null;
-    try { f = ziel && k.koerper.firstChild && k.koerper.firstChild.shadowRoot &&
-        k.koerper.firstChild.shadowRoot.querySelector("[data-ziel='" + ziel + "'][tabindex]"); } catch (e) { f = null; }
+    var f = ziel ? zielGriff(k.koerper.firstChild && k.koerper.firstChild.shadowRoot, ziel) : null;
     (f || (ziel === "kopf" && k.kopf.querySelector("[data-aktion=kurstitel]")) || k.kopf.querySelector(".ed-b-titel"))
         .focus({ preventScroll: true });
   }
@@ -761,7 +778,7 @@
   function ueFokus(ziel) {
     var k = knoten[UE]; if (!k) return;
     var root = k.koerper.firstChild && k.koerper.firstChild.shadowRoot;
-    var f = root && root.querySelector("[data-ziel='" + ziel + "'][tabindex]");
+    var f = zielGriff(root, ziel);
     (f || (ziel === "kopf" && k.kopf.querySelector("[data-aktion=kurstitel]")) || k.kopf.querySelector(".ed-b-titel"))
         .focus({ preventScroll: true });
   }
@@ -777,7 +794,7 @@
     await aktualisieren();
     var k = knoten[UE], root = k && k.koerper.firstChild && k.koerper.firstChild.shadowRoot;
     var f = root && (root.querySelector("[data-aktion=" + (richtung < 0 ? "hoch" : "runter") + "][data-nr='" + r.nach + "']:not([disabled])")
-        || root.querySelector("[data-ziel='abschnitt:" + r.nach + "']"));
+        || griff(root.querySelector("[data-ziel='abschnitt:" + r.nach + "']")));
     if (f) f.focus({ preventScroll: true });
   }
 
@@ -968,7 +985,7 @@
     meldung(UE, T("weitere_eingesetzt"));
     var root = knoten[UE] && knoten[UE].koerper.firstChild && knoten[UE].koerper.firstChild.shadowRoot;
     var alle = root ? root.querySelectorAll("[data-ziel^='abschnitt:']") : [];
-    var f = alle.length ? alle[alle.length - 1] : knoten[UE] && knoten[UE].kopf.querySelector(".ed-b-titel");
+    var f = alle.length ? griff(alle[alle.length - 1]) : knoten[UE] && knoten[UE].kopf.querySelector(".ed-b-titel");
     if (f) f.focus({ preventScroll: true });
   }
 
