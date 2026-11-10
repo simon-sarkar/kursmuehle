@@ -1783,14 +1783,16 @@
     window.scrollTo(0, y);
     $("zum-designer").focus({ preventScroll: true });
     // WebKit hält die Stelle nicht, wenn die Seite danach weiter zeichnet (keine Scroll-Verankerung): in den nächsten
-    // Bildern noch einmal setzen, solange niemand selbst scrollt
-    var selbst = false, merk = function () { selbst = true; };
-    ["wheel", "touchstart", "keydown"].forEach(function (t) { window.addEventListener(t, merk, { once: true, passive: true }); });
+    // Bildern noch einmal setzen, solange niemand selbst scrollt oder klickt und nur, wenn die Seite neu gezeichnet hat
+    // (Höhe geändert)
+    var selbst = false, merk = function () { selbst = true; }, arten = ["wheel", "touchstart", "keydown", "pointerdown", "mousedown"];
+    var hoehe = function () { return document.documentElement.scrollHeight; }, h0 = hoehe();
+    arten.forEach(function (t) { window.addEventListener(t, merk, { capture: true, passive: true }); });
     var nach = function (n) {
-      if (selbst) return;
-      if (Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y);
-      if (n > 0) setTimeout(function () { requestAnimationFrame(function () { nach(n - 1); }); }, 50);
-      else ["wheel", "touchstart", "keydown"].forEach(function (t) { window.removeEventListener(t, merk); });
+      if (!selbst && hoehe() !== h0 && Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y);
+      h0 = hoehe();
+      if (!selbst && n > 0) setTimeout(function () { requestAnimationFrame(function () { nach(n - 1); }); }, 50);
+      else arten.forEach(function (t) { window.removeEventListener(t, merk, { capture: true }); });
     };
     requestAnimationFrame(function () { nach(6); });
   };
