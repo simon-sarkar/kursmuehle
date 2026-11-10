@@ -34,6 +34,11 @@
   var loeschLaeuft = false;     // AP13.30: „Löschen“ an einer leeren Kachel läuft
   var teilKnoten = {};          // AP13.30: id des unteren Bausteins -> {el, b, ka, offen}: „Hier neue Kachel beginnen“
   var BREIT = window.matchMedia ? matchMedia("(min-width: 1100px)") : { matches: true };
+  // AP13.45 (Heuristik B14): unter 1000 px gibt es keinen schwebenden Knopf; „Einheit ansehen“ an der Karte und das Menü
+  // führen in die Ansicht
+  var SCHMAL = window.matchMedia ? matchMedia("(max-width: 999px)") : { matches: false };
+  var ZEIGER = window.matchMedia ? matchMedia("(hover: hover)") : { matches: false };    // AP13.45: „Ändern“ beim Überfahren
+  var ueAuf = false;            // AP13.45 (Heuristik B12): die Kursübersicht ist eingeklappt, die Bausteine stehen vorn
   // Platzhalter für ein Bild, das noch nicht hochgeladen ist (hellgrau wie in der Sicherung)
   var BILD_FEHLT = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" ' +
       'height="400"><rect width="640" height="400" fill="#e5e7eb"/></svg>');
@@ -53,8 +58,20 @@
     // MF5: Stellen zum Ändern (Absatz, Liste); das Feld steht an ihrem Platz (slot), die Stelle ist solange verborgen
     ".km-ed-inhalt .km-stelle { pointer-events: auto; cursor: pointer; border-radius: 4px; }",
     ".km-ed-inhalt .km-stelle:hover { outline: 2px dashed #8a6416; outline-offset: 3px; }",
-    ".km-ed-inhalt .km-stelle:focus-visible { outline: 3px solid #8a6416; outline-offset: 3px; }",
     ".km-ed-inhalt .km-stelle-offen { display: none !important; }",
+    // AP13.45 B4: je Stelle ein Knopf „Ändern“ hinter ihr; er erscheint, sobald er den Fokus hat, über dem Anfang dessen,
+    // was folgt (ohne den Text zu verschieben, sonst ginge ein Klick daneben), die Stelle bekommt dann den Rahmen. Der
+    // Inhalt selbst bleibt Absatz, Liste oder Überschrift
+    ".km-ed-inhalt .km-aendern { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; " +
+        "overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }",
+    // AP13.45 (09.11.): mit der Maus erscheint er auch beim Überfahren der Stelle (Klasse km-zeigen, nur bei hover: hover)
+    ".km-ed-inhalt .km-aendern:focus, .km-ed-inhalt .km-aendern.km-zeigen { z-index: 1; width: auto; height: auto; margin: 4px 0 0; padding: 5px 14px; " +
+        "overflow: visible; clip: auto; border: 1px solid #8a6416; border-radius: 6px; background: #ffffff; color: #1d2125; " +
+        "font: 600 14px/1.3 system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif; cursor: pointer; pointer-events: auto; " +
+        "outline: 3px solid #8a6416; outline-offset: 2px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); }",
+    ".km-ed-inhalt .km-aendern.km-zeigen:not(:focus) { outline: none; }",
+    ".km-ed-inhalt .km-stelle:has(+ .km-aendern:focus), .km-ed-inhalt .km-stelle:has(+ .km-aendern.km-zeigen) { " +
+        "outline: 2px dashed #8a6416; outline-offset: 3px; }",
     "slot[name=km-stelle] { display: block; }"
   ].join("\n");
 
@@ -76,9 +93,12 @@
     if ($("karten-ort-5").contains($("editor-auf-2")) && !$("editor-auf-5").hidden) $("editor-auf-2").hidden = true;
     // AP13.38: der schwebende Knopf; AP13.44 §2: wie in Schritt 5 erst, wenn nichts rot ist. Das Wort darauf ist kürzer,
     // der Name für Vorlesegeräte nicht
-    var sw = $("editor-schweb"), gruen = da && !S.fehlerZahl() && !S.teileOffen();
+    var sw = $("editor-schweb"), gruen = da && !S.fehlerZahl() && !S.teileOffen() && !SCHMAL.matches;
     sw.hidden = !gruen;
+    $("navi").hidden = !gruen;          // R6: Navigation Mühle, Editor, Kursdatei; dieselbe Bedingung
+    $("ed-navi-datei").hidden = !(da && !S.fehlerZahl() && !S.teileOffen());
     document.body.classList.toggle("mit-editor-schweb", gruen);
+    document.documentElement.classList.toggle("mit-editor-schweb", gruen);
     if (S.weiterFuenf) S.weiterFuenf();
     if (S.katalog) { $("editor-schweb-text").textContent = T("schweb"); sw.setAttribute("aria-label", T("schweb") + ": " + T("knopf")); }   // WCAG 2.5.3: Name beginnt mit dem sichtbaren Wort
     leisteZeigen();
@@ -117,6 +137,10 @@
   }
   $("editor-zurueck").onclick = zurueck;
   $("editor-weiter").onclick = weiter;
+  // R6: Navigation; „Kursdatei“ führt in den Schritt „Kursdatei“ zum Herunterladen (wie „Weiter“ dorthin)
+  $("ed-navi-muehle").onclick = zurueck;
+  $("ed-navi-datei").onclick = function () { fokusDanach = function () { S.weiterZu(7); }; schliessen(); };
+  $("navi-datei").onclick = function () { S.weiterZu(7); };
 
   // ---------------------------------------------------------------- Öffnen, Schließen, Esc
   function oeffnen(von) {
@@ -172,19 +196,8 @@
   $("editor-zu").onclick = schliessen;
   ["editor-auf", "editor-auf-2", "editor-auf-5", "editor-auf-8", "editor-schweb"].forEach(function (id) {
     $(id).onclick = function () { oeffnen($(id)); }; });
-  // AP13.42: am schmalen Fenster beim Herunterscrollen ausblenden (verdeckt sonst Inhalt), beim Hochscrollen, am Seitenende
-  // und mit dem Fokus wieder da; nur durchsichtig und nicht antippbar, damit Tab ihn weiter erreicht
-  var SCHMAL = window.matchMedia("(max-width: 999px)"), letzteY = window.scrollY || 0;
-  function schwebWeg(weg) { document.body.classList.toggle("editor-schweb-weg", !!weg); }
-  window.addEventListener("scroll", function () {
-    var y = window.scrollY || 0, d = y - letzteY;
-    if (Math.abs(d) < 8) return;
-    letzteY = y;
-    var unten = window.innerHeight + y >= document.documentElement.scrollHeight - 24;
-    schwebWeg(SCHMAL.matches && d > 0 && y > 80 && !unten && document.activeElement !== $("editor-schweb"));
-  }, { passive: true });
-  $("editor-schweb").addEventListener("focus", function () { schwebWeg(false); });
-  if (SCHMAL.addEventListener) SCHMAL.addEventListener("change", function () { if (!SCHMAL.matches) schwebWeg(false); });
+  // AP13.45 (Heuristik B14): wird das Fenster schmal oder breit, kommt oder geht der schwebende Knopf
+  if (SCHMAL.addEventListener) SCHMAL.addEventListener("change", function () { if (S.katalog) knoepfeZeigen(); });
   if (BREIT.addEventListener) BREIT.addEventListener("change", function () {
     $("editor-liste").open = BREIT.matches;
     if (S.katalog) $("editor-liste-titel").textContent = BREIT.matches ? T("liste") : T("liste_auf");
@@ -202,7 +215,15 @@
     clearTimeout(timer);
     timer = setTimeout(aktualisieren, 30);
   }
+  // AP13.45: wer auf aktualisieren() wartet, wartet auch auf einen Lauf, der inzwischen begonnen hat (sonst setzte er den
+  // Fokus in die alte Fläche, die der neuere Lauf gleich ersetzt)
+  var laufend = null;
   async function aktualisieren() {
+    var p = laufend = aktualisierenLauf();
+    await p;
+    while (laufend !== p) { p = laufend; await p; }
+  }
+  async function aktualisierenLauf() {
     var s = sig(), nr = ++lauf;
     if (s !== standSig || !stand) {
       if (!stand) $("editor-vorschau").textContent = T("laedt");
@@ -273,6 +294,7 @@
   $("editor-liste-ol").addEventListener("click", function (ev) {
     var b = ev.target.closest("[data-ziel]"); if (!b) return;
     var k = knoten[b.dataset.ziel]; if (!k) return;
+    if (b.dataset.ziel === UE && !ueAuf) { ueAuf = true; uebersichtEintrag(); }
     if (!BREIT.matches) $("editor-liste").open = false;
     zeigen(k.el);
     var t = k.kopf.querySelector(".ed-b-titel");
@@ -280,9 +302,11 @@
   });
 
   // Baustein oben in den Bildlauf der Ansicht holen (unter der Leiste „Bausteine anzeigen“); nur .ed-rumpf scrollt
+  // AP13.45 B5: bei geringer Höhe scrollt die ganze Ansicht (Kopf und Leiste unten laufen mit)
   function zeigen(knoten_) {
-    var rumpf = dlg.querySelector(".ed-rumpf"), leiste = BREIT.matches ? 0 : $("editor-liste").offsetHeight;
-    rumpf.scrollTop += knoten_.getBoundingClientRect().top - rumpf.getBoundingClientRect().top - leiste - 8;
+    var rumpf = dlg.querySelector(".ed-rumpf"), sc = rumpf.scrollHeight > rumpf.clientHeight + 1 ? rumpf : dlg;
+    var leiste = getComputedStyle($("editor-liste")).position === "sticky" && !BREIT.matches ? $("editor-liste").offsetHeight : 0;
+    sc.scrollTop += knoten_.getBoundingClientRect().top - Math.max(0, sc.getBoundingClientRect().top) - leiste - 8;
   }
   // AP13.30: Kacheln (Abschnitte `## `) mit Nummer und den ids ihrer Bausteine, aus der Vorschau
   var ALLGEMEIN = ["allgemeines", "allgemein", "0"];
@@ -453,6 +477,7 @@
     // HTML aus dem Generator (gen/api.einheit_vorschau): KI-Text ist dort escaped; Skripte, iframes, Adressen und
     // Ereignis-Attribute sind entfernt. Nur in einem Shadow Root, ohne Zugriff auf die Seite.
     innen.innerHTML = html;
+    ebenen(innen, aktiv ? 4 : 5);
     Array.prototype.forEach.call(innen.querySelectorAll("img"), function (img) {
       var src = img.getAttribute("src") || "";
       if (src.indexOf("@@PLUGINFILE@@/") !== 0) return;
@@ -468,11 +493,13 @@
     uebungenAn(innen);
     if (aktiv) {
       // §9: Kurstitel, Abschnitte und Kacheln sind bedienbar (Tabulator, Enter, Leertaste); Pfeile verschieben
-      Array.prototype.forEach.call(innen.querySelectorAll("[data-ziel]"), function (x) {
+      // AP13.45 B4: der Kurstitel bleibt Überschrift (mit der Maus anklickbar); mit der Tastatur führt „Kurstitel ändern“
+      // im Kopf der Kursübersicht dorthin
+      Array.prototype.forEach.call(innen.querySelectorAll("[data-ziel]:not([data-ziel=kopf])"), function (x) {
         x.setAttribute("tabindex", "0");
         x.setAttribute("role", "button");
-        x.setAttribute("aria-label", x.dataset.ziel === "kopf" ? T("kurstitel") + ": " + x.textContent :
-            x.dataset.ziel === "weitere" ? T("weitere") : T("abschnitt_titel") + ": " + (x.dataset.titel || x.textContent));
+        x.setAttribute("aria-label", x.dataset.ziel === "weitere" ? T("weitere") : T("abschnitt_titel") + ": " +
+            (x.dataset.titel || x.textContent));
       });
       Array.prototype.forEach.call(innen.querySelectorAll("button[data-aktion]"), function (x) {
         x.setAttribute("tabindex", "0"); });
@@ -483,6 +510,17 @@
       });
     }
     return host;
+  }
+
+  // AP13.45 B7: Überschriften der Fläche (wie auf der Kursseite h1 bis h3) bekommen ihre Ebene unter der Überschrift des
+  // Bausteins (h4) bzw. der Kursübersicht (h3); die oberste Ebene der Fläche wird `oben`
+  function ebenen(innen, oben) {
+    var hs = innen.querySelectorAll("h1, h2, h3, h4, h5, h6"), min = 6;
+    Array.prototype.forEach.call(hs, function (h) { min = Math.min(min, +h.tagName.charAt(1)); });
+    Array.prototype.forEach.call(hs, function (h) {
+      var n = +h.tagName.charAt(1), soll = Math.min(6, oben + n - min);
+      if (soll !== n) h.setAttribute("aria-level", String(soll));
+    });
   }
 
   // AP13.44 §1: je Übungsblock (`.kmb`) das Skript der Übungen aus dem Kurs (web/uebungen.js aus
@@ -541,10 +579,20 @@
       if (neu) neu.focus({ preventScroll: true });
     }
     if (ueZiel && !ueAbschnitt(ueZiel) && ueZiel !== "kopf" && ueZiel !== "weitere") ueZu(true);
+    if (!ueAuf && ueZiel) ueZu(true);
+    k.zeile.hidden = k.koerper.hidden = !ueAuf;
+    k.el.classList.toggle("ed-ue-zu", !ueAuf);
     return k;
   }
+  // AP13.45 (Heuristik B12): „Kursübersicht anzeigen“ klappt Darstellung, Kurstitel und Kacheln auf; der Fokus bleibt am Knopf
+  function ueUmschalten() {
+    ueAuf = !ueAuf;
+    uebersichtEintrag();
+    var k = knoten[UE], f = k && k.kopf.querySelector("[data-aktion=ue-auf]");
+    if (f) f.focus({ preventScroll: true });
+  }
   function zeichneUeKopf(k, u) {
-    var a = document.activeElement, fokus = a && k.kopf.contains(a) ? (a.dataset.wert || a.className) : "";
+    var a = document.activeElement, fokus = a && k.kopf.contains(a) ? (a.dataset.wert || a.dataset.aktion || a.className) : "";
     k.kopf.textContent = "";
     var hue = S.akzent ? S.akzent() : "#1D5FD1";
     var wahl = el("div", { cls: "ed-darstellung", role: "radiogroup", "aria-label": T("darstellung") },
@@ -556,15 +604,20 @@
       b.append(m, el("span", { text: w.text }));
       return b;
     }));
-    k.kopf.append(el("h4", { cls: "ed-b-titel", id: "ed-t-" + UE, tabindex: "-1" }, [el("span", { cls: "ed-titel-text",
+    // AP13.45 B7: Kursübersicht auf der Ebene der Kacheln (h3), ihr Kurstitel darunter
+    k.kopf.append(el("h3", { cls: "ed-b-titel", id: "ed-t-" + UE, tabindex: "-1" }, [el("span", { cls: "ed-titel-text",
         text: T("uebersicht") })]),
       el("span", { cls: "ed-marken" }, [ueHand() ? el("span", { cls: "ed-hand", text: T("hand") }) : null]),
       // AP13.33 §1.10: der Kurstitel ist auch ohne Klick in die Vorschau zu finden
-      el("span", { cls: "ed-b-knoepfe" }, [el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": "kurstitel",
-          "aria-expanded": String(ueZiel === "kopf"), text: T("kurstitel_aendern") })]),
-      el("div", { cls: "ed-darstellung-l" }, [el("span", { cls: "ed-darstellung-t", text: T("darstellung") }), wahl]));
+      el("span", { cls: "ed-b-knoepfe" }, [
+        ueAuf ? el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": "kurstitel",
+            "aria-expanded": String(ueZiel === "kopf"), text: T("kurstitel_aendern") }) : null,
+        el("button", { type: "button", cls: "textlink ed-ue-auf", "data-aktion": "ue-auf", "aria-expanded": String(ueAuf),
+            text: T(ueAuf ? "uebersicht_zu" : "uebersicht_auf") })]),
+      ueAuf ? el("div", { cls: "ed-darstellung-l" }, [el("span", { cls: "ed-darstellung-t", text: T("darstellung") }), wahl]) : "");
     if (fokus) {
-      var f = k.kopf.querySelector("[data-wert='" + fokus + "']") || k.kopf.querySelector("." + String(fokus).split(" ")[0]);
+      var f = k.kopf.querySelector("[data-wert='" + fokus + "']") || k.kopf.querySelector("[data-aktion='" + fokus + "']") ||
+          k.kopf.querySelector("." + String(fokus).split(" ")[0]);
       if (f) f.focus({ preventScroll: true });
     }
     if (S.radioTabs) S.radioTabs();
@@ -670,8 +723,9 @@
     if (stumm) return;
     var f = null;
     try { f = ziel && k.koerper.firstChild && k.koerper.firstChild.shadowRoot &&
-        k.koerper.firstChild.shadowRoot.querySelector("[data-ziel='" + ziel + "']"); } catch (e) { f = null; }
-    (f || k.kopf.querySelector(".ed-b-titel")).focus({ preventScroll: true });
+        k.koerper.firstChild.shadowRoot.querySelector("[data-ziel='" + ziel + "'][tabindex]"); } catch (e) { f = null; }
+    (f || (ziel === "kopf" && k.kopf.querySelector("[data-aktion=kurstitel]")) || k.kopf.querySelector(".ed-b-titel"))
+        .focus({ preventScroll: true });
   }
   async function ueUebernehmen() {
     var k = knoten[UE], ziel = ueZiel; if (!k || !ziel) return;
@@ -707,8 +761,9 @@
   function ueFokus(ziel) {
     var k = knoten[UE]; if (!k) return;
     var root = k.koerper.firstChild && k.koerper.firstChild.shadowRoot;
-    var f = root && root.querySelector("[data-ziel='" + ziel + "']");
-    (f || k.kopf.querySelector(".ed-b-titel")).focus({ preventScroll: true });
+    var f = root && root.querySelector("[data-ziel='" + ziel + "'][tabindex]");
+    (f || (ziel === "kopf" && k.kopf.querySelector("[data-aktion=kurstitel]")) || k.kopf.querySelector(".ed-b-titel"))
+        .focus({ preventScroll: true });
   }
   async function verschieben(nr, richtung) {
     await km.bereit();
@@ -1168,22 +1223,39 @@
             (y.art === "absatz" || y.art === "liste"); })[0];
         if (!s) return;
         da[s.nr] = true;
+        // AP13.45 B4: die Stelle bleibt, was sie ist (Absatz, Liste, Überschrift, voller Text im Lesemodus); mit der
+        // Maus ist sie anklickbar, mit der Tastatur führt der Knopf „Ändern“ direkt dahinter zum Feld
         x.classList.add("km-stelle");
         x.setAttribute("data-km-nr", String(s.nr));
-        x.setAttribute("tabindex", "0");
-        x.setAttribute("role", "button");
-        x.setAttribute("aria-label", stelleLabel(b.id, s));
+        x.after(el("button", { type: "button", cls: "km-aendern", "data-km-nr": String(s.nr), "aria-label": stelleLabel(b.id, s),
+            text: TS("aendern") }));
+      });
+      // AP13.45 (09.11.): mit der Maus steht „Ändern“ auch, solange der Zeiger auf der Stelle oder dem Knopf ist; ein kurzer
+      // Nachlauf trägt ihn über den Abstand zwischen beiden. Auf Touch-Geräten (hover: none) bleibt es beim Fokus
+      var hoverAus = null;
+      var hoverWeg = function () { Array.prototype.forEach.call(root.querySelectorAll(".km-zeigen"), function (y) {
+        y.classList.remove("km-zeigen"); }); };
+      var stelleVon = function (t) { return t && t.closest ? t.closest(".km-stelle, .km-aendern") : null; };
+      root.addEventListener("mouseover", function (ev) {
+        var x = stelleVon(ev.target); if (!x || !ZEIGER.matches) return;
+        clearTimeout(hoverAus);
+        var nr = x.getAttribute("data-km-nr"), k = root.querySelector(".km-aendern[data-km-nr='" + nr + "']");
+        Array.prototype.forEach.call(root.querySelectorAll(".km-zeigen"), function (y) { if (y !== k) y.classList.remove("km-zeigen"); });
+        if (k) k.classList.add("km-zeigen");
+      });
+      root.addEventListener("mouseout", function (ev) {
+        var x = stelleVon(ev.target); if (!x) return;
+        var nach = stelleVon(ev.relatedTarget);
+        if (nach && nach.getAttribute("data-km-nr") === x.getAttribute("data-km-nr")) return;
+        clearTimeout(hoverAus);
+        hoverAus = setTimeout(hoverWeg, 600);
       });
       root.addEventListener("click", function (ev) {
-        var x = ev.target.closest && ev.target.closest(".km-stelle"); if (!x) return;
+        var x = ev.target.closest && ev.target.closest(".km-stelle, .km-aendern"); if (!x) return;
         ev.preventDefault();
-        stelleAuf(b.id, parseInt(x.getAttribute("data-km-nr"), 10), x);
-      });
-      root.addEventListener("keydown", function (ev) {
-        var x = ev.target.closest && ev.target.closest(".km-stelle");
-        if (x && x === ev.target && (ev.key === "Enter" || ev.key === " ")) {
-          ev.preventDefault(); stelleAuf(b.id, parseInt(x.getAttribute("data-km-nr"), 10), x);
-        }
+        clearTimeout(hoverAus); hoverWeg();
+        var nr = parseInt(x.getAttribute("data-km-nr"), 10);
+        stelleAuf(b.id, nr, x.classList.contains("km-aendern") ? root.querySelector(".km-stelle[data-km-nr='" + nr + "']") : x);
       });
     }
     var rest = st.filter(function (s) { return !da[s.nr]; });
@@ -1208,6 +1280,14 @@
         k.liste.querySelector(".ed-stelle-zeile[data-nr='" + nr + "']");
   }
 
+  // Fokus für eine Stelle: in der Vorschau ihr Knopf „Ändern“, in der Liste der Knopf ihrer Zeile
+  function stelleKnopf(ort) {
+    if (!ort) return null;
+    if (ort.classList.contains("ed-stelle-zeile")) return ort.querySelector(".ed-stelle-auf");
+    var n = ort.nextElementSibling;
+    while (n && n.tagName === "SLOT") n = n.nextElementSibling;
+    return n && n.classList.contains("km-aendern") ? n : ort;
+  }
   function feld(label, eingabe, cls) { return el("label", { cls: "feld ed-feld " + (cls || "") }, [label, eingabe]); }
   function textfeld(cls, wert, zeilenzahl) {
     var t = el("textarea", { cls: cls, rows: String(zeilenzahl || Math.min(8, Math.max(2, Math.ceil(String(wert || "").length / 70)))),
@@ -1336,6 +1416,7 @@
       slot.name = "km-stelle";
       ort.after(slot);
       ort.classList.add("km-stelle-offen");
+      if (stelleKnopf(ort) !== ort) stelleKnopf(ort).classList.add("km-stelle-offen");
       p.setAttribute("slot", "km-stelle");
       ort.getRootNode().host.appendChild(p);
     } else if (ort) {
@@ -1359,11 +1440,11 @@
     if (o.panel.parentNode) o.panel.remove();
     if (o.slot && o.slot.parentNode) o.slot.remove();
     if (o.ort) { o.ort.classList.remove("km-stelle-offen"); o.ort.classList.remove("offen"); }
+    var kn = stelleKnopf(o.ort); if (kn) kn.classList.remove("km-stelle-offen");
     var k = knoten[o.id];
     if (k) zeichneKopf(k, k.b, 0);
     if (fokus) {
-      var f = o.ort && o.ort.isConnected ? (o.ort.classList.contains("ed-stelle-zeile") ? o.ort.querySelector(".ed-stelle-auf") : o.ort)
-          : k && k.kopf.querySelector(".ed-b-titel");
+      var f = o.ort && o.ort.isConnected ? kn : k && k.kopf.querySelector(".ed-b-titel");
       if (f) f.focus({ preventScroll: true });
     }
   }
@@ -1391,8 +1472,7 @@
       await aktualisieren();
       meldung(o.id, T("uebernommen"));
       var neu = stelleOrt(o.id, o.nr), k2 = knoten[o.id];
-      var f = neu ? (neu.classList.contains("ed-stelle-zeile") ? neu.querySelector(".ed-stelle-auf") : neu) :
-          k2 && k2.kopf.querySelector(".ed-b-titel");
+      var f = neu ? stelleKnopf(neu) : k2 && k2.kopf.querySelector(".ed-b-titel");
       if (f) f.focus({ preventScroll: true });
     } catch (err) { S.zeigeFehler(err); }
     finally { knopf.disabled = false; }
@@ -1448,6 +1528,7 @@
         return;
       }
       if (a === "kurstitel") return ueZiel === "kopf" ? ueZu() : ueFormular("kopf");
+      if (a === "ue-auf") return ueUmschalten();
       if (a === "ue-uebernehmen") return await ueUebernehmen();
       if (a === "ue-abbrechen") return ueZu();
       if (a === "ue-hoch" || a === "ue-runter") {

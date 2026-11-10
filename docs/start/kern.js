@@ -357,6 +357,7 @@ window.km = km;
   S.spracheGelb = [];             // AP13.14: ids mit „Sprache anpassen lassen“ (flüchtig, nicht in der Mappe)
   S.letzteAntwort = null;
   S.modusSpaeter = false;         // AP13.41 §1.3: die Moduswahl gilt erst für die nächste Antwort (chat.js)
+  S.kiZugeklappt = false;         // R5: die Lehrkraft hat „So geht es“ selbst zugeklappt (verbindung.js)
   S.alleDesigns = false;          // MF2: Schritt 3 zeigt alle Designs („Alle Designs“), sonst vier und das gewählte
   S.schreibKette = Promise.resolve();
   S.angabenFuer = null;            // Mappe, deren Angaben aus dem Steckbrief gelesen sind (neuPruefen)
@@ -433,7 +434,8 @@ window.km = km;
     var blob = new Blob([u8], { type: typ || "application/octet-stream" });
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
-    a.href = url; a.download = name; document.body.appendChild(a); a.click();
+    a.href = url; a.download = name; a.tabIndex = -1; a.setAttribute("aria-hidden", "true");   // kein Halt für Tab und Vorleser
+    document.body.appendChild(a); a.click();
     setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 30000);   // Safari braucht den Link länger
   }
   function heute() {
@@ -732,9 +734,10 @@ window.km = km;
       S.autosaveTimer = null;
       if (!Z.geladen || !Z.mappe) { delete $("autosave-stand").dataset.offen; return; }
       // MF1: klein unter „Menü“; ohne Sicherung im Browser ein Satz, der auch auf dem Handy steht (Klasse warn)
-      km.autosaveSchreiben().then(function () { $("autosave-stand").textContent = "Gesichert " + zeit(Date.now());
+      // AP13.45 B11: „Gespeichert“; „Sicherung“ heißt auf der Plattform die Kursdatei
+      km.autosaveSchreiben().then(function () { $("autosave-stand").textContent = "Gespeichert " + zeit(Date.now());
           $("autosave-stand").classList.remove("warn"); if (!S.autosaveTimer) delete $("autosave-stand").dataset.offen; })
-        .catch(function () { $("autosave-stand").textContent = "Keine Sicherung im Browser; speichere den Zwischenstand.";
+        .catch(function () { $("autosave-stand").textContent = "Im Browser nicht gespeichert; speichere den Zwischenstand.";
           $("autosave-stand").classList.add("warn"); if (!S.autosaveTimer) delete $("autosave-stand").dataset.offen; });
     }, 700);
   }
@@ -807,6 +810,7 @@ window.km = km;
       if (f.tagName === "SELECT" && f.selectedIndex < 0) f.selectedIndex = 0;
     });
     if (S.zielgruppeSperre) { S.zielgruppeSperre("f", true); S.zielgruppeSperre("a", true); }
+    if (S.lernzielHoehe) S.lernzielHoehe();             // AP13.45 B10: das einzeilige Lernziel wächst mit dem Text
     // Grenzzeile an beiden Materialfeldern (AP13.13): ohne Chat oder ohne Messwert nur die Größe des Materials, rot
     // mit Satz, sobald Teil 1 den Messwert des Chats übersteigt
     var c = chatInfo(Z.mappe.chat), mat = Z.mappe.material || "", zuViel = false, zeile = "";

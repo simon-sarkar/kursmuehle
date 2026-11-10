@@ -213,12 +213,14 @@
       einheitGelb.forEach(function (d) {
         var m = /(\d+) von (\d+)/.exec(d.text || "");
         S.zeitKurzMinuten = m ? m[2] : "";
-        // MF7: ab der Hälfte der Dauer eine graue Zeile ohne Warnton, „Verlängern lassen“ als Textlink
+        // MF7: ab der Hälfte der Dauer eine graue Zeile ohne Warnton; AP13.45 B3: beide Zahlen und ein (i) zur Grundlage;
+        // R4: „Verlängern lassen“ hier als Textlink ohne Warnfarbe (kleine Modelle landen meist in diesem Bereich)
         if (m && zeitGrau(m[1], m[2])) {
           ew.classList.add("grau");
           ew.append(el("span", { cls: "ew-satz" }, [S.editorText("zeit_dauer_zeile", { ist: m[1], minuten: m[2] }), " ",
-            el("button", { type: "button", cls: "textlink k-sprache", "data-regel": d.regel,
-              text: S.editorText("zeit_kurz_knopf") })]));
+            el("button", { type: "button", cls: "info-knopf", "aria-expanded": "false", "aria-controls": "einheit-warnung-info",
+              "aria-label": S.editorText("zeit_dauer_info_name"), "data-hinweis": "5-dauer", text: "i" }), " ",
+            el("button", { type: "button", cls: "textlink", "data-regel": d.regel, text: S.editorText("zeit_kurz_knopf") })]));
           return;
         }
         var satz = m ? S.editorText("zeit_kurz_zeile", { ist: m[1], minuten: m[2] }) || d.text : d.text;
@@ -229,6 +231,10 @@
             text: S.editorText("zeit_kurz_knopf") }));
       });
     }
+    // AP13.47: mit Arbeitsheft eine graue Zeile unter der Antwort (wie viele Übungen im Heft, wie viele außerhalb)
+    var hz = $("heft-zeile"), ht = Z.pruefung && inhalt() && !teileOffen() && S.heftZeile ? S.heftZeile() : "";
+    hz.hidden = !ht;
+    if (hz.textContent !== ht) hz.textContent = ht;
     $("zeit-selbst").checked = zeitSelbst();
     $("zeit-schalter").hidden = !steuer;
     sollSummeZeigen();
@@ -928,15 +934,28 @@
     var nurZeit = nurBitte && S.korrekturen.every(function (k) { return k.regel === "zeit.kurz"; });
     $("korrektur").classList.toggle("neutral", nurBitte);
     ul.hidden = nurZeit;
+    // AP13.45 B2: geplante Bausteine, die in der Antwort fehlen, zählen eigens (wie die Stand-Karte darüber)
+    var fehlt = {};
+    S.korrekturen.forEach(function (k) { if (k.regel === "leer.antwort" && k.baustein) fehlt[k.baustein] = 1; });
+    var nf = Object.keys(fehlt).length, nk = n - nf;
+    var fehltText = nf === 1 ? S.editorText("fehlt_eins") : S.editorText("fehlen", { n: nf });
     $("korrektur-titel").textContent = nurZeit ? S.editorText("zeit_kurz_titel") : nurGelb ? (n === 1 ?
         "Ein Lesetext bekommt kürzere Sätze" : n + " Lesetexte bekommen kürzere Sätze")
       : nurBitte ? S.editorText("bitte_titel")
-      : n > 1 ? n + " Bausteine brauchen eine Korrektur" : n === 1 ? "Ein Baustein braucht eine Korrektur"
+      : nf && !nk ? (nf === 1 ? S.editorText("titel_fehlt_eins") : S.editorText("titel_fehlen", { n: nf }))
+      : nk > 1 ? nk + " Bausteine brauchen eine Korrektur" + (nf ? ", " + fehltText : "")
+      : nk === 1 ? "Ein Baustein braucht eine Korrektur" + (nf ? ", " + fehltText : "")
       : "Die Einheit braucht eine Korrektur";
     var ki = !!(S.anKiAktiv && S.anKiAktiv());
     // MF3: ein Satz vor dem Kopieren, nach dem Kopieren die zwei Zeilen wie in Schritt 4
+    // AP13.45 B2: ist die Antwort vermutlich abgeschnitten, ist die Bitte der zweite Weg (erster: „Andere Antwort einfügen“)
+    var abg = zeigen && !!(S.abgeschnittenGilt && S.abgeschnittenGilt());
+    $("korrektur-kopieren").classList.toggle("haupt", !abg);
+    $("eingabe-nochmal").classList.toggle("textlink", !abg);
+    $("eingabe-nochmal").classList.toggle("knopf", abg);
+    $("eingabe-nochmal").classList.toggle("haupt", abg);
     $("korrektur-zeile").textContent = ki ? "„An meine KI senden“ schickt die Bitte an deine KI; ihre Antwort setzt die " +
-        "Mühle ein." : S.korrektur.offen ? "" : nurZeit ? S.editorText("zeit_kurz_satz", { minuten: S.zeitKurzMinuten ||
+        "Mühle ein." : S.korrektur.offen ? "" : abg ? S.editorText("abgeschnitten_bitte") : nurZeit ? S.editorText("zeit_kurz_satz", { minuten: S.zeitKurzMinuten ||
         ((Z.mappe && Z.mappe.einheit) || {}).minuten || "" }) : "Die Bitte nennt dem Chat " +
         (S.korrekturen.length + neu.length > 1 ? "alle Punkte zusammen" : "die Stelle") + " und das Format.";
     $("korrektur-zeile").hidden = !$("korrektur-zeile").textContent;
@@ -949,9 +968,11 @@
     // MF6: nach einer eingesetzten Antwort ist das Feld zu, bis die Bitte wieder kopiert wird (kein leeres Feld)
     $("korrektur-schritte").hidden = ki || !S.korrektur.offen || !!S.korrektur.eingesetzt;
     $("korrektur-einfuegen").classList.toggle("zu", !!S.korrektur.eingesetzt);
+    if (S.erledigt) S.erledigt($("korrektur-erledigt"), !!S.korrektur.eingesetzt);   // MF8: an der Stelle des Knopfs
     $("korrektur-1").textContent = "Füg die Bitte in dasselbe Gespräch bei " + chatName + " ein und schick sie ab.";
     $("korrektur-2").textContent = "Kopier die ganze Antwort und füg sie unten ein.";
     auswegeKorrektur(zeigen);
+    selbstWege(zeigen && !abg && !nurBitte);
     modellHinweisZeigen(zeigen);
     $("korrektur-antwort").hidden = !S.korrektur.offen;
     S.standKarte($("korrektur-ergebnis"), S.korrektur.stand, S.korrektur.art);
@@ -1002,7 +1023,28 @@
               text: "Baustein weglassen" })])]));
     });
   }
-  $("korrektur-auswege").addEventListener("click", async function (ev) {
+  // AP13.45 B6: schon nach der ersten roten Antwort unter „Korrekturbitte kopieren“ „oder: im Editor selbst ändern ·
+  // Baustein weglassen“ für den ersten roten Baustein (der Editor öffnet an seinem ersten Fehler, wie die Auswege);
+  // stehen die Auswege je Baustein schon oben in der Karte, entfällt die Zeile
+  function selbstWege(zeigen) {
+    var p = $("korrektur-selbst"), T = S.editorText;
+    var rot = zeigen && $("korrektur-auswege").hidden ? korrekturZiele().filter(function (id) {
+      var b = pruefBaustein(id); return b && b.status === "fehler"; }) : [];
+    rot.sort(function (x, y) { return (nummer(x) || 999) - (nummer(y) || 999); });      // der erste in der Einheit
+    p.hidden = !rot.length;
+    var zustand = rot.length ? rot[0] + "|" + (rot.length > 1 ? nummer(rot[0]) : "") : "";
+    if (p.dataset.zustand === zustand && (p.childNodes.length || !rot.length)) return;
+    p.dataset.zustand = zustand;
+    p.textContent = "";
+    if (!rot.length) return;
+    var nr = rot.length > 1 ? nummer(rot[0]) : "";
+    p.append(T("selbst_oder") + " ",
+      el("button", { type: "button", cls: "textlink", "data-ausweg": "editor", "data-id": rot[0], text: T("selbst_editor") }),
+      el("span", { cls: "selbst-punkt", "aria-hidden": "true", text: " · " }),
+      el("button", { type: "button", cls: "textlink", "data-ausweg": "weglassen", "data-id": rot[0],
+          text: nr ? T("selbst_weglassen_nr", { n: nr }) : T("selbst_weglassen") }));
+  }
+  async function auswegKlick(ev) {
     var b = ev.target.closest("[data-ausweg]"); if (!b) return;
     var k = S.karteNach(b.dataset.id); if (!k) return;
     try {
@@ -1014,7 +1056,9 @@
         S.fokus(["rueckgaengig-knopf", "weiter-5", "eingabe-stand"], true);
       }
     } catch (e) { zeigeFehler(e); }
-  });
+  }
+  $("korrektur-auswege").addEventListener("click", auswegKlick);
+  $("korrektur-selbst").addEventListener("click", auswegKlick);
   // AP13.8: nach der zweiten roten Runde (Zähler `schleife`) einmal je Einheit eine Zeile unter der Korrekturbitte zum
   // Modell, nur im Kopierweg (mit verbundener KI, Testphase, Schlüssel oder Agent, ist das Modell gesetzt). Gemerkt in
   // `modellhinweis`.
@@ -1054,7 +1098,7 @@
     S.modellHinweis = null;                        // der Hinweis stand bei dieser Bitte; danach nicht wieder
     S.korrektur.offen = true; S.korrektur.stand = ""; S.korrektur.art = ""; S.korrektur.eingesetzt = false;
     $("korrektur-antwort").hidden = false; S.standKarte($("korrektur-ergebnis"), "");
-    $("korrektur-einfuegen").classList.remove("zu");
+    $("korrektur-einfuegen").classList.remove("zu"); if (S.erledigt) S.erledigt($("korrektur-erledigt"), false);
     // MF3: nach dem Kopieren die zwei Zeilen (im Kopierweg) statt des Satzes davor
     if (!(S.anKiAktiv && S.anKiAktiv())) { $("korrektur-schritte").hidden = false; $("korrektur-zeile").hidden = true; }
     // eigene KI: dieselbe Bitte ins Gespräch der Einheit, die Antwort durch korrekturEinsetzen wie eingefügt

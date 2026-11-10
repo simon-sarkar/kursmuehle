@@ -724,6 +724,45 @@
     "zeile": "Je Übung eine H5P-Aktivität mit H5P-Optik; jede lädt einzeln."
    }
   ],
+  "arbeitsheft_info": "Die Schülerinnen und Schüler sammeln im Heft Punkte und schicken es am Ende ab; dann steht die Punktzahl im Kursbuch. Texte, Seiten und Geschichten bleiben auf der Kursseite.",
+  "arbeitsheft": {
+   "nur_vorschau": true,
+   "titel": "Übungen einzeln oder als Heft",
+   "wahl": [
+    {
+     "wert": "nein",
+     "text": "Einzeln",
+     "zeile": "Jede Übung für sich, wie oben gewählt."
+    },
+    {
+     "wert": "ja",
+     "text": "Als ein Arbeitsheft mit Punkten",
+     "zeile": "Alle Übungen einer Einheit in einem H5P-Heft, je Übung eine Seite.",
+     "probe": "Import auf der Plattform noch nicht geprüft"
+    }
+   ],
+   "bestehen": "Abschluss ab Prozent der Punkte (1 bis 100)",
+   "bestehen_zeile": "Leer: abgeschlossen, sobald das Heft abgeschickt ist.",
+   "fazit": "Arbeitsheft",
+   "fazit_bestehen": "Arbeitsheft, Abschluss ab {prozent} %",
+   "name": "Arbeitsheft: {einheit}",
+   "zeile": "{n} Übungen mit {punkte} Punkten stehen im Arbeitsheft.",
+   "zeile_eine": "1 Übung mit {punkte} Punkten steht im Arbeitsheft.",
+   "zeile_mehr": "{n} Übungen mit {punkte} Punkten stehen in {hefte} Arbeitsheften.",
+   "aussen": "{n} Übungen stehen außerhalb des Hefts.",
+   "aussen_eine": "1 Übung steht außerhalb des Hefts.",
+   "pruef_name": "Arbeitsheft",
+   "grund_geschichte": "Eine Geschichte passt nicht in ein H5P-Heft und steht außerhalb.",
+   "grund_zusatz": "Die Zusatzaufgabe zählt nicht für die Punkte und steht außerhalb des Hefts.",
+   "grund_badge": "Die Übung ist Voraussetzung eines Abzeichens und bleibt deshalb außerhalb des Hefts.",
+   "hilfe": "Das Arbeitsheft zeigt keine Hilfen; sie fallen weg.",
+   "h5p": {
+    "submitReport": "Ergebnis absenden",
+    "summaryAndSubmit": "Zusammenfassung und Absenden",
+    "yourAnswersAreSubmittedForReview": "Dein Ergebnis ist abgeschickt.",
+    "totalScoreLabel": "Punkte im Heft"
+   }
+  },
   "bilder": [
    {
     "wert": "0",
@@ -817,7 +856,7 @@
    "sprache.lang": "Der Lesetext soll kürzere Sätze bekommen."
   },
   "keine_kursmappe": "Das ist keine Kursmappe: {grund}.",
-  "nachlieferung_geaendert": "Nach dem Import geändert: {namen}. Die Nachlieferung enthält diese Änderung nicht; mit der ganzen Datei kommt sie in den Kurs.",
+  "nachlieferung_geaendert": "Nach dem Import geändert: {namen}. Die Datei mit der weiteren Einheit enthält diese Änderung nicht; mit der ganzen Datei kommt sie in den Kurs.",
   "nachlieferung_ganz": "Ganze Datei herunterladen",
   "wiederherstellen_bilder": [],
   "abschluss": [
@@ -937,7 +976,7 @@
   ],
   "editor": {
    "knopf": "Einheit ansehen und bearbeiten",
-   "schweb": "Zum Editor",
+   "schweb": "Editor",
    "titel": "Einheit ansehen und bearbeiten",
    "schliessen": "Schließen",
    "zurueck_schritte": "Zurück zu den Schritten",
@@ -985,6 +1024,7 @@
    "unterabschnitt": "Unterabschnitt",
    "quiz_aktivitaet": "Ein Quiz mit Bestehensgrenze wird eine eigene Aktivität.",
    "platzhalter_h5p": "Übung als eigene Aktivität{menge}. Die Vorschau zeigt sie nicht; im Kurs ist sie bedienbar.",
+   "platzhalter_heft": "Seite {seite} in „{heft}“{menge}. Die Vorschau zeigt sie nicht; im Kurs ist sie bedienbar.",
    "platzhalter_test": "Test als eigene Aktivität{menge}. Die Vorschau zeigt ihn nicht.",
    "platzhalter_website": "Teil der Website „{abschnitt}“. Die Vorschau zeigt die Website nicht.",
    "platzhalter_link": "Link auf {adresse}",
@@ -993,6 +1033,8 @@
    "platzhalter_weg": "Dieser Baustein erscheint in diesem Kursformat nicht.",
    "platzhalter_video": "Eingebettetes Video. Die Vorschau lädt es nicht.",
    "uebersicht": "Kursübersicht",
+   "uebersicht_auf": "Kursübersicht anzeigen",
+   "uebersicht_zu": "Kursübersicht ausblenden",
    "darstellung": "Darstellung",
    "uebersicht_zeile": "Klicke auf den Kurstitel, einen Abschnitt oder eine Kachel, um sie zu ändern.",
    "uebersicht_zeile_touch": "Tippe auf den Kurstitel, einen Abschnitt oder eine Kachel, um sie zu ändern.",
@@ -1041,16 +1083,40 @@
    "zeit_kurz_satz": "Die Bitte an den Chat: Inhalte ergänzen, bis die Einheit etwa {minuten} Minuten füllt.",
    "zeit_kurz_kopieren": "Bitte kopieren",
    "zeit_kurz_abbrechen": "Abbrechen",
-   "zeit_dauer_zeile": "Geschätzte Dauer: etwa {ist} von {minuten} Minuten.",
-   "zeit_dauer_pruef": "geschätzt etwa {ist} von {minuten} Minuten",
+   "zeit_dauer_zeile": "Geplant sind {minuten} Minuten, der Text reicht für etwa {ist}.",
+   "zeit_dauer_pruef": "geplant {minuten} Minuten, Text für etwa {ist}",
+   "zeit_dauer_info": "Die Mühle schätzt die Dauer aus der Textmenge: Lesezeit der Texte, Abschreiben des Hefteintrags und eine feste Zeit je Aufgabe. Gespräche in der Klasse rechnet sie nicht mit, deshalb liegt die Schätzung oft unter der Planung.",
+   "zeit_dauer_info_name": "Woher kommt die Schätzung?",
    "antwort_eingesetzt": "Antwort eingesetzt",
    "schon_uebernommen": "Das Einfügen hat sie schon übernommen.",
    "gegen_eingesetzt": "{n} Lösungen verglichen.",
    "gegen_eingesetzt_eine": "1 Lösung verglichen.",
    "chat_weg": "Öffne {chat} in einem neuen Tab und beginne dort ein neues Gespräch.",
+   "chat_weg_handy": "Wechsle zu {chat} (App oder Browser), füg den Text ein und komm dann hierher zurück.",
    "chat_oeffnen": "{chat} öffnen",
    "plan_element_plus_name": "+ Element in {titel}",
    "plan_kachel_text_name": "Was soll hier rein? Kachel {titel}",
+   "kacheln_bleiben": "Deine {n} Kacheln bleiben, wie du sie geplant hast; der Chat hat {gefuellt} von {alle} Elementen gefüllt.",
+   "kacheln_bleiben_eine": "Deine Kachel bleibt, wie du sie geplant hast; der Chat hat {gefuellt} von {alle} Elementen gefüllt.",
+   "kacheln_leer": "Noch leer sind {titel}.",
+   "kacheln_leer_eins": "Noch leer ist {titel}.",
+   "kacheln_bitte": "Die Korrekturbitte darunter fragt den Chat nach ihnen.",
+   "kacheln_bitte_eins": "Die Korrekturbitte darunter fragt den Chat danach.",
+   "kacheln_rot": "{n} davon brauchen eine Korrektur.",
+   "kacheln_rot_eins": "Eines davon braucht eine Korrektur.",
+   "fehlt_eins": "1 Baustein fehlt",
+   "fehlen": "{n} Bausteine fehlen",
+   "titel_fehlt_eins": "1 Baustein fehlt in der Antwort",
+   "titel_fehlen": "{n} Bausteine fehlen in der Antwort",
+   "rot_sonst_eins": "Noch 1 weiterer Baustein braucht eine Korrektur.",
+   "rot_sonst": "Noch {n} weitere Bausteine brauchen eine Korrektur.",
+   "abgeschnitten": "Die Antwort ist vermutlich abgeschnitten. Kopier sie im Chat noch einmal ganz und füg sie mit „Andere Antwort einfügen“ ein.",
+   "abgeschnitten_bitte": "Endet die Antwort auch im Chat an dieser Stelle, kopier die Korrekturbitte; sie fragt den Chat nach dem Rest.",
+   "selbst_oder": "oder:",
+   "selbst_editor": "im Editor selbst ändern",
+   "selbst_weglassen": "Baustein weglassen",
+   "selbst_weglassen_nr": "Baustein {n} weglassen",
+   "lernziel": "Lernziel (freiwillig)",
    "modell_satz": "Nimm das stärkste Modell, das dein Chat anbietet.",
    "bitte_titel": "Bitte an den Chat",
    "bitte_antwort": "Antwort des Chats auf die Bitte",
@@ -1077,7 +1143,7 @@
    "modus_satz_teil": "Teil {n} von {von}: die Antwort füllt die geplanten Bausteine dieses Teils in {name}.",
    "modus_satz_ersetzen": "Die Antwort ersetzt den Inhalt von {name} ({bausteine}); andere Einheiten bleiben.",
    "modus_satz_ersetzen_eine": "Die Antwort ersetzt den Inhalt der Einheit ({bausteine}).",
-   "modus_satz_baustein": "Die Antwort ersetzt nur Bausteine mit derselben id. {name} hat jetzt {bausteine}; die übrigen bleiben.",
+   "modus_satz_baustein": "Die Antwort ersetzt nur die Bausteine, die sie neu bringt. {name} hat jetzt {bausteine}; die übrigen bleiben.",
    "modus_satz_anhaengen": "Die Antwort kommt als neue Einheit hinter die letzte, {name}; deren Inhalt ({bausteine}) bleibt unverändert.",
    "modus_satz_spaeter": "Gilt für die nächste Antwort; die letzte bleibt, weil du danach etwas geändert hast.",
    "teil_geaendert": "Teil {n} hat sich geändert. Kopiere ihn neu.",
@@ -1222,6 +1288,8 @@
   "schritt_satz": {
    "1": "Gib Thema, Schulart und Jahrgangsstufe an; die Minuten kannst du lassen.",
    "2": "„Mach du“ ist gewählt; wechsle nur, wenn du selbst mitplanen willst.",
+   "2-richtung": "„Ich gebe die Richtung“ ist gewählt; füll nur aus, was dir wichtig ist.",
+   "2-steuer": "„Ich steuere“ ist gewählt; leg die Kacheln und ihre Elemente selbst an.",
    "3": "Nimm ein Design oder lass alles, wie es ist.",
    "4": "Wähl deinen Chat, kopier den Text und schick ihn dort ab.",
    "5": "Füg die ganze Antwort des Chats ein; die Mühle prüft sie sofort.",
@@ -1246,11 +1314,12 @@
    "ohne_antwort_ki": "Ohne Antwort deiner KI",
    "korrektur_satz": "Korrigieren lassen: {fragen}. Die Bitte geht in das Gespräch der Einheit, die Antwort fügst du im Schritt „Antwort einfügen“ ein.",
    "angesehen": "Lösungen angesehen",
-   "nicht_angesehen": "Lösungen nicht angesehen",
+   "nicht_angesehen": "Lösungen freiwillig prüfen",
+   "nicht_angesehen_eine": "Lösung freiwillig prüfen",
    "satz": "Das kommt in deinen Kurs.",
    "heruntergeladen": "Heruntergeladen: {name} ({kb} KB), im Ordner „Downloads“ deines Browsers.",
    "nur_neue": "Sie enthält nur die neue Einheit.",
-   "importiert": "Vermerkt: Die Einheit ist im Kurs. Eine weitere Einheit kommt als Nachlieferung in denselben Kurs.",
+   "importiert": "Vermerkt: Die Einheit ist im Kurs. Legst du eine weitere Einheit an, kommt sie in denselben Kurs.",
    "wiederherstellen": [
     "Leg auf der ByCS-Lernplattform einen leeren Kurs an.",
     "Im Kurs: Mehr → Kurs wiederverwenden → Sicherung wiederherstellen, Datei hochladen.",
@@ -1589,5 +1658,5 @@
    }
   ]
  },
- "version": "2.0.0-b19"
+ "version": "2.0.0-b20"
 }

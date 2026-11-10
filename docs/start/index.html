@@ -60,6 +60,19 @@
     </details>
     <div id="editor-vorschau" class="ed-vorschau"></div>
   </div>
+  <!-- R6: dieselbe Navigation im Editor (ab 1460 px neben Bausteinen und Liste; schmaler tut die Leiste unten dasselbe) -->
+  <nav id="ed-navi" class="navi ed-navi" aria-label="Ansichten">
+    <button type="button" id="ed-navi-muehle" class="navi-k" aria-label="Mühle: zurück zu den Schritten">
+      <span class="sw-symbol" aria-hidden="true"><img src="logo.svg" alt="" width="44" height="44"></span>
+      <span class="sw-text">Mühle</span></button>
+    <span class="navi-k navi-hier" aria-current="page"><span class="sw-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" width="30"
+      height="30" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path
+      d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></span><span class="sw-text">Editor</span></span>
+    <button type="button" id="ed-navi-datei" class="navi-k" aria-label="Kursdatei: prüfen und herunterladen">
+      <span class="sw-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg></span>
+      <span class="sw-text">Kursdatei</span></button>
+  </nav>
   <!-- AP13.44 §3: zurück in die Schritte oder weiter zum nächsten offenen Schritt (editor.js leisteZeigen) -->
   <div class="ed-fuss">
     <button type="button" id="editor-zurueck" class="knopf">Zurück zu den Schritten</button>
@@ -112,7 +125,7 @@
  <div class="spalte-haupt">
   <div id="weiter" class="weiter" hidden>
     <button type="button" id="weiter-knopf" class="knopf"></button>
-    <button type="button" id="weiter-weg" class="kopf-x weiter-weg" aria-label="Gesicherte Einheit verwerfen" title="verwerfen">×</button>
+    <button type="button" id="weiter-weg" class="kopf-x weiter-weg" aria-label="Gespeicherte Einheit verwerfen" title="verwerfen">×</button>
     <span id="weiter-zeit" class="leise"></span>
   </div>
 
@@ -142,7 +155,7 @@
         <label class="feld feld-klein"><span class="feld-kopf"><span id="f-minuten-t">Minuten</span><button type="button"
             class="info-knopf" aria-expanded="false" aria-controls="f-minuten-info" aria-label="Erklärung zu Minuten"
             data-hinweis="1-minuten">i</button></span>
-          <input id="f-minuten" type="number" min="10" max="300" step="5" value="45" inputmode="numeric">
+          <input id="f-minuten" aria-labelledby="f-minuten-t" type="number" min="10" max="300" step="5" value="45" inputmode="numeric">
         </label>
         <p id="f-minuten-info" class="info-text feld-breit" hidden></p>
         <button type="submit" id="einheit-anlegen" class="knopf haupt">Weiter: Aufbau</button>
@@ -201,7 +214,7 @@
         </div>
       </div>
       <!-- in „Mach du“ und „Ich gebe die Richtung“: Beschreibung des Kurses ab Einheit 2 und der Vorschlag des Lehrplans;
-           „Worum geht es genau?“ steht unter „Erweitert“ -->
+           das Lernziel steht unter „Ich gebe die Richtung“ (AP13.45 B10) -->
       <div id="mach-teil" class="mach-teil" hidden>
         <div id="m-kurs"></div>
         <!-- AP13.24: schlägt der Lehrplan eine Art der Einheit vor, übernimmt „Mach du“ sie und sagt es; „ändern“ zeigt die Kacheln -->
@@ -232,6 +245,14 @@
         <div class="aus-gruppe"><h3 class="unterkopf" id="r-differenzierung-t">Hilfen und Zusatzaufgaben</h3>
           <div id="r-differenzierung" class="kacheln-wahl text-wahl" role="radiogroup" aria-labelledby="r-differenzierung-t"></div></div>
       </div>
+      <!-- Kontext in „Mach du“ und „Ich gebe die Richtung“, freiwillig; dieselbe Angabe wie unter „Mehr einstellen“ und im
+           Plan. AP13.45 B10: sichtbar über „Erweitert“ als einzeiliges Feld „Lernziel (freiwillig)“, das mit dem Text wächst
+           (ein Textfeld, Enter bricht keine Zeile; schritte.js lernzielHoehe) -->
+      <label id="m-kontext-l" class="feld feld-breit m-kontext-l" hidden><span id="m-kontext-t">Lernziel (freiwillig)</span>
+        <textarea id="m-kontext" class="von-lehrkraft einzeilig" rows="1" maxlength="600" spellcheck="true"
+          aria-describedby="m-kontext-beispiel"></textarea>
+        <span id="m-kontext-beispiel" class="feld-zeile">Was sollen die Lernenden danach können? Was ist vorausgesetzt, was nicht?</span>
+      </label>
       <div id="steuer-teil" class="steuer-teil" hidden>
         <!-- AP13.31: vor der ersten Antwort der Einheit der Plan (plan.js): beschreiben, Darstellung, Kacheln mit Elementen;
              Aufbau und Kartenliste stehen dann nicht hier -->
@@ -245,11 +266,11 @@
       </div>
       <!-- MF2: „Erweitert“ in Schritt 2: Lehrplan (AP13.12c: ein Ort in allen drei Wegen; zugeklappt „Lehrplanbezug
            (optional)“, mit gewähltem Lehrplan der Vermerk mit „×“; lehrplan.js), in „Mach du“ und „Ich gebe die Richtung“
-           „Worum geht es genau?“ und das Material, in „Ich steuere“ „Mehr einstellen“. Ist dort schon etwas eingetragen,
+           das Material, in „Ich steuere“ „Mehr einstellen“. Ist dort schon etwas eingetragen,
            steht „Erweitert“ offen (schritte.js erweitert2Pruefen) -->
       <div id="erweitert-2" class="erw" hidden>
         <button type="button" id="erweitert-2-knopf" class="erw-knopf" aria-expanded="false" aria-controls="erweitert-2-inhalt"><span
-          class="erw-wort">Erweitert</span><span id="erweitert-2-was" class="erw-was">Lehrplan, Worum geht es genau?, Material</span></button>
+          class="erw-wort">Erweitert</span><span id="erweitert-2-was" class="erw-was">Lehrplan, Material</span></button>
         <div id="erweitert-2-inhalt" class="erw-inhalt" hidden>
           <div id="lehrplan-teil" class="lehrplan-teil" hidden>
             <details id="lehrplan-ausklapp" class="ausklapp lehrplan-ausklapp" data-merken="lehrplan">
@@ -259,22 +280,17 @@
               <div id="lehrplan" class="lehrplan-ort"></div>
             </details>
           </div>
-          <!-- Kontext in „Mach du“ und „Ich gebe die Richtung“, freiwillig; dieselbe Angabe wie unter „Mehr einstellen“ -->
-          <label id="m-kontext-l" class="feld feld-breit m-kontext-l" hidden>Worum geht es genau? <span class="feld-zeile">freiwillig</span>
-            <textarea id="m-kontext" class="von-lehrkraft" rows="3" maxlength="600" spellcheck="true"
-              aria-describedby="m-kontext-beispiel"></textarea>
-            <span id="m-kontext-beispiel" class="feld-zeile">Was sollen die Lernenden danach können? Was ist vorausgesetzt, was nicht?</span>
-          </label>
           <!-- AP13.13: Dateien lesen (web/material.js); Liste der Abschnitte unter dem Feld, nicht gespeichert. AP13.19 §1:
                bei „Einheit aus eigenem Material“ steht das Feld sichtbar im Weg (schritte.js materialOrt) -->
           <div id="r-material-feld" class="r-material-feld material-ort" data-material="r">
-            <label class="feld feld-breit"><span class="feld-kopf">Dein Material (Text, Stichpunkte oder Dateien)
+            <label class="feld feld-breit"><span class="feld-kopf"><span id="r-material-t">Dein Material (Text, Stichpunkte oder Dateien)</span>
                 <span class="info-knopf" role="button" tabindex="0" aria-expanded="false" aria-label="Hinweis zum Material im Chat"
                   data-info="material_info">ⓘ</span></span>
               <span class="info-text feld-zeile" data-info-text="material_info" hidden></span>
               <span id="r-material-zeile" class="feld-zeile">freiwillig</span>
-              <textarea id="r-material" class="von-lehrkraft" rows="4" spellcheck="true"></textarea>
-              <span class="feld-zeile">Nur Material, an dem du die Rechte hast.</span>
+              <textarea id="r-material" class="von-lehrkraft" rows="4" spellcheck="true" aria-labelledby="r-material-t"
+                aria-describedby="r-material-zeile r-material-recht r-material-grenze"></textarea>
+              <span id="r-material-recht" class="feld-zeile">Nur Material, an dem du die Rechte hast.</span>
               <span id="r-material-grenze" class="feld-zeile"></span>
             </label>
             <div class="material-datei">
@@ -322,14 +338,15 @@
                 <label class="feld">Umfang <select id="a-portionierung"></select></label>
                 <!-- AP13.19 §1: bei „Einheit aus eigenem Material“ steht dieser Block unter den Vorlagen -->
                 <div id="a-material-feld" class="feld-breit material-ort" data-material="a">
-                  <label class="feld"><span class="feld-kopf">Dein Material (Text, Stichpunkte oder Dateien)
+                  <label class="feld"><span class="feld-kopf"><span id="a-material-t">Dein Material (Text, Stichpunkte oder Dateien)</span>
                       <span class="info-knopf" role="button" tabindex="0" aria-expanded="false" aria-label="Hinweis zum Material im Chat"
                         data-info="material_info">ⓘ</span></span>
                     <span class="info-text feld-zeile" data-info-text="material_info" hidden></span>
                     <span id="a-material-zeile" class="feld-zeile"
                       hidden>für diese Art nötig</span>
-                    <textarea id="a-material" class="von-lehrkraft" rows="4" spellcheck="true"></textarea>
-                    <span class="feld-zeile">Nur Material, an dem du die Rechte hast.</span>
+                    <textarea id="a-material" class="von-lehrkraft" rows="4" spellcheck="true" aria-labelledby="a-material-t"
+                      aria-describedby="a-material-zeile a-material-recht material-grenze"></textarea>
+                    <span id="a-material-recht" class="feld-zeile">Nur Material, an dem du die Rechte hast.</span>
                     <span id="material-grenze" class="feld-zeile"></span>
                   </label>
                   <div class="material-datei">
@@ -374,9 +391,9 @@
             class="aus-name"><span class="aus-name-text">Eigene</span></span></div>
           <p id="farbe-fest" class="leise" hidden></p></div>
         <!-- MF2: zwei Kacheln (keine Bilder, mit Bildern = 2 bis 3); die genaue Zahl unter „Erweitert“ -->
-        <div class="aus-gruppe" data-gruppe="bilder-kurz"><h3 class="unterkopf feld-kopf" id="aus-bilder-kurz-t"><span>Bilder</span><button
+        <div class="aus-gruppe" data-gruppe="bilder-kurz"><div class="aus-kopf"><h3 class="unterkopf" id="aus-bilder-kurz-t">Bilder</h3><button
             type="button" class="info-knopf" aria-expanded="false" aria-controls="aus-bilder-kurz-info"
-            aria-label="Erklärung zu Mit Bildern" data-hinweis="3-bilder">i</button></h3>
+            aria-label="Erklärung zu Mit Bildern" data-hinweis="3-bilder">i</button></div>
           <p id="aus-bilder-kurz-info" class="info-text" hidden></p>
           <div id="aus-bilder-kurz" class="kacheln-wahl bilder-wahl" role="radiogroup" aria-labelledby="aus-bilder-kurz-t"></div></div>
         <div id="erweitert-3" class="erw">
@@ -404,8 +421,28 @@
               <label id="start-l" class="feld feld-klein start-feld" hidden>Kursbeginn <input id="a-start" type="date"></label></div>
             <div class="aus-gruppe" data-gruppe="website"><h3 class="unterkopf" id="aus-website-t">Wie erscheinen Übungen?</h3>
               <div id="aus-website" class="kacheln-wahl breit" role="radiogroup" aria-labelledby="aus-website-t"></div></div>
+            <!-- AP13.47: Übungen einzeln (Standard) oder als ein Arbeitsheft je Einheit (Steckbrief kurs.arbeitsheft,
+                 kurs.arbeitsheft_bestehen; Wörter aus katalog.yaml oberflaeche.arbeitsheft) -->
+            <div class="aus-gruppe" data-gruppe="arbeitsheft"><div class="aus-kopf"><h3 class="unterkopf" id="aus-arbeitsheft-t"><span
+                id="aus-arbeitsheft-titel">Übungen einzeln oder als Heft</span></h3><button type="button" class="info-knopf"
+                aria-expanded="false" aria-controls="aus-arbeitsheft-info" aria-label="Erklärung zum Arbeitsheft"
+                data-info="arbeitsheft_info">i</button></div>
+              <p id="aus-arbeitsheft-info" class="info-text" hidden></p>
+              <div id="aus-arbeitsheft" class="kacheln-wahl breit" role="radiogroup" aria-labelledby="aus-arbeitsheft-t"></div>
+              <label id="heft-bestehen-l" class="feld feld-klein heft-bestehen" hidden><span id="heft-bestehen-text">Abschluss ab
+                Prozent der Punkte (1 bis 100)</span>
+                <input id="heft-bestehen" type="number" inputmode="numeric" min="1" max="100" step="1"
+                  aria-describedby="heft-bestehen-zeile"></label>
+              <p id="heft-bestehen-zeile" class="feld-zeile" hidden></p></div>
           </div>
         </div>
+        <!-- AP13.45 (Heuristik B5): die Knöpfe stehen in der linken Spalte direkt unter „Erweitert“, nicht unter der höheren
+             Vorschau rechts -->
+        <button type="button" id="weiter-3" class="knopf haupt">Weiter</button>
+        <!-- AP13.19 §3: im Designer statt „Weiter“; führt zurück zu „Mehr einstellen“ (MF2: der Designer öffnet „Erweitert“
+             und zeigt alle Designs) -->
+        <button type="button" id="designer-fertig" class="knopf haupt" hidden>Fertig</button>
+        <button type="button" id="zurueck-3" class="knopf haupt s-zurueck" data-nr="3" hidden></button>
       </div>
       <!-- Vorschau: ab 1100 px Spalte rechts, die beim Scrollen stehen bleibt (eigener Bildlauf), darunter Leiste am
            unteren Rand; zwei Karten: die Einheit im Design (gen/api.design_vorschau) und die Kursseite im Format
@@ -422,11 +459,6 @@
         </div>
       </aside>
       </div>
-      <button type="button" id="weiter-3" class="knopf haupt">Weiter</button>
-      <!-- AP13.19 §3: im Designer statt „Weiter“; führt zurück zu „Mehr einstellen“ (MF2: der Designer öffnet „Erweitert“
-           und zeigt alle Designs) -->
-      <button type="button" id="designer-fertig" class="knopf haupt" hidden>Fertig</button>
-      <button type="button" id="zurueck-3" class="knopf haupt s-zurueck" data-nr="3" hidden></button>
     </div>
   </section>
 
@@ -470,13 +502,17 @@
            Sekunden „Kopiert“, dann zwei Zeilen und „Weiter: Antwort einfügen“ (zurueck-4). Ein Text in Teilen zeigt die Teile
            als Liste mit ihrem Stand (chat.js zeichneChat) -->
       <div id="chat-text" hidden>
-        <!-- MF6: der Satz zum Modell steht nur im (i) „Welches Modell?“ an der Zeile des Chats -->
+        <!-- MF6: der allgemeine Satz zum Modell steht im (i) „Welches Modell?“ an der Zeile des Chats; AP13.45 B1: der Satz
+             des gewählten Chats (katalog.yaml chats.aufwand) steht sichtbar darunter -->
         <p class="chat-fuer"><span id="chat-zeile"></span> <button type="button" id="chat-aendern" class="textlink">Anderer Chat</button><span
           id="chat-modell-zeile" class="chat-modell-zeile"><button type="button" class="info-knopf" aria-expanded="false"
           aria-controls="chat-modell-info" aria-label="Welches Modell?" data-hinweis="4-modell">i</button></span></p>
+        <p id="chat-modell-satz" class="chat-modell-satz" hidden></p>
         <p id="chat-modell-info" class="info-text" hidden></p>
-        <!-- MF7: wie man zum Chat kommt; der Link nur, wenn katalog.yaml für den Chat eine `adresse` kennt -->
-        <p id="chat-weg" class="chat-weg"><span id="chat-weg-satz"></span> <a id="chat-oeffnen" class="textlink" target="_blank"
+        <!-- MF7: wie man zum Chat kommt; der Link nur, wenn katalog.yaml für den Chat eine `adresse` kennt. AP13.45 B7: auf dem
+             Handy ein eigener Satz mit App und Rückweg (ansicht.css zeigt je Breite einen) -->
+        <p id="chat-weg" class="chat-weg"><span id="chat-weg-satz" class="chat-weg-breit"></span><span id="chat-weg-handy"
+          class="chat-weg-handy"></span> <a id="chat-oeffnen" class="textlink" target="_blank"
           rel="noopener" hidden></a></p>
         <div id="kopier-warnung" class="warnung-box" role="status" hidden>
           <p id="kopier-warnung-text"></p>
@@ -495,6 +531,9 @@
         </div>
       </div>
       <button type="button" id="zurueck-4" class="knopf haupt s-zurueck" data-nr="4" hidden></button>
+      <!-- AP13.45 B17: vor dem Kopieren ein Textlink zu Schritt 5 für alle, die den Text anders in den Chat gebracht haben
+           (chat.js zeichneChat); nach dem Kopieren steht dort „Weiter: Antwort einfügen“ (zurueck-4) -->
+      <button type="button" id="weiter-4-ohne" class="textlink weiter-4-ohne" hidden>Weiter: Antwort einfügen</button>
       <!-- MF2: „Erweitert“ in Schritt 4: in „Ich steuere“ welcher Text, dazu der Text selbst zum Markieren und seine Größe -->
       <div id="erweitert-4" class="erw" hidden>
         <button type="button" id="erweitert-4-knopf" class="erw-knopf" aria-expanded="false" aria-controls="erweitert-4-inhalt"><span
@@ -536,7 +575,12 @@
           <div id="eingabe-knopf" class="kopieren"><button type="button" id="eingabe-uebernehmen" class="knopf haupt">Antwort einsetzen</button></div>
         </div>
         <p id="eingabe-stand" class="stand-karte" role="status" aria-live="polite" tabindex="-1" hidden></p>
-        <button type="button" id="eingabe-nochmal" class="textlink" hidden>Andere Antwort einfügen</button>
+        <!-- MF8: an der Stelle von „Antwort einsetzen“ steht nach dem Einsetzen derselbe Knopf als erledigt (aria-disabled,
+             erreichbar mit Tab; ein Klick zeigt nur die Stand-Karte) -->
+        <div class="erledigt-reihe"><button type="button" id="eingabe-erledigt" class="knopf knopf-erledigt" aria-disabled="true"
+          aria-describedby="eingabe-stand" data-stand="eingabe-stand" hidden><span class="erledigt-wort">Antwort eingesetzt</span><span
+          class="erledigt-haken" aria-hidden="true"></span></button>
+        <button type="button" id="eingabe-nochmal" class="textlink" hidden>Andere Antwort einfügen</button></div>
         <!-- die Antwort ergab keinen Baustein: ein Satz und der Satz für den Chat; Zeile und Zitat unter „Was genau?“ -->
         <div id="eingabe-diagnose" class="stand-karte fehler diagnose-karte" role="status" hidden></div>
       </div>
@@ -548,6 +592,9 @@
         <div id="korrektur-auswege" class="korrektur-auswege" hidden></div>
         <p id="korrektur-zeile" class="leise"></p>
         <button type="button" id="korrektur-kopieren" class="knopf haupt">Korrekturbitte kopieren</button>
+        <!-- AP13.45 B6: schon nach der ersten roten Antwort zwei Wege ohne den Chat als Textlinks (karten.js selbstWege);
+             nicht, solange die Auswege oben stehen, und nicht bei abgeschnittener Antwort -->
+        <p id="korrektur-selbst" class="korrektur-selbst" hidden></p>
         <!-- MF6: nur bei „Verlängern lassen“ (neutrale Karte): schließt die Bitte, die gelbe Zeile steht wieder da -->
         <button type="button" id="korrektur-abbrechen" class="textlink korrektur-abbrechen" hidden>Abbrechen</button>
         <p id="korrektur-stand" class="stand" role="status" aria-live="polite"></p>
@@ -559,13 +606,18 @@
             <textarea id="korrektur-eingabe" rows="5" spellcheck="false"></textarea>
             <div class="kopieren"><button type="button" id="korrektur-uebernehmen" class="knopf">Antwort einsetzen</button></div>
           </div>
-          <p id="korrektur-ergebnis" class="stand-karte" role="status" aria-live="polite" hidden></p>
+          <p id="korrektur-ergebnis" class="stand-karte" role="status" aria-live="polite" tabindex="-1" hidden></p>
+          <button type="button" id="korrektur-erledigt" class="knopf knopf-erledigt" aria-disabled="true"
+            aria-describedby="korrektur-ergebnis" data-stand="korrektur-ergebnis" hidden><span class="erledigt-wort">Antwort eingesetzt</span><span
+            class="erledigt-haken" aria-hidden="true"></span></button>
           <div id="korrektur-diagnose" class="stand-karte fehler diagnose-karte" role="status" hidden></div>
         </div>
       </div>
       <!-- AP13.35 §2.3, MF3: die gelbe Zeile der Einheit, nur unter drei Vierteln der Dauer, mit „Verlängern lassen“ -->
       <p id="einheit-warnung" class="karten-warnung einheit-warnung" role="status" hidden></p>
       <p id="einheit-warnung-info" class="info-text einheit-warnung-info" hidden></p>
+      <!-- AP13.47: mit Arbeitsheft eine graue Zeile: Übungen und Punkte im Heft, Übungen außerhalb -->
+      <p id="heft-zeile" class="leise heft-zeile" hidden></p>
       <!-- ein Hauptknopf zum nächsten Schritt, daneben der Editor (AP13.43 §5; einer statt zwei) -->
       <div class="knopf-reihe weiter-reihe">
         <button type="button" id="weiter-5" class="knopf haupt" hidden>Weiter</button>
@@ -580,7 +632,7 @@
            Auftrag, „Baustein hinzufügen“) und die Kennzahlen mit den Hinweisen der Prüfung -->
       <div id="erweitert-5" class="erw" hidden>
         <button type="button" id="erweitert-5-knopf" class="erw-knopf" aria-expanded="false" aria-controls="erweitert-5-inhalt"><span
-          class="erw-wort">Erweitert</span><span id="erweitert-5-was" class="erw-was">Bausteine, Kennzahlen</span></button>
+          class="erw-wort">Erweitert</span><span id="erweitert-5-was" class="erw-was">Zahlen zur Einheit</span></button>
         <div id="erweitert-5-inhalt" class="erw-inhalt" hidden>
           <div id="modus-ort" class="modus-ort">
             <div id="modus" class="modus" role="radiogroup" aria-label="Wie die Antwort eingesetzt wird">
@@ -593,7 +645,7 @@
           </div>
           <div id="karten-ort-5" class="karten-ort"></div>
           <div id="diagnosen" class="diagnosen">
-            <h3 class="unterkopf">Kennzahlen</h3>
+            <h3 class="unterkopf">Zahlen zur Einheit</h3>
             <dl class="zahlen">
               <div><dt id="kz-minuten-t">Minuten</dt><dd id="kz-minuten">–</dd></div>
               <div id="kz-zahl-z" hidden><dt>Bausteine</dt><dd id="kz-zahl">–</dd></div>
@@ -683,6 +735,9 @@
         </div>
         <!-- MF7: nach dem Einfügen „Antwort eingesetzt: 11 Lösungen verglichen. …“ an der Stelle des Felds -->
         <p id="gegen-eingesetzt" class="stand-karte" role="status" aria-live="polite" tabindex="-1" hidden></p>
+        <button type="button" id="gegen-erledigt" class="knopf knopf-erledigt" aria-disabled="true"
+          aria-describedby="gegen-eingesetzt" data-stand="gegen-eingesetzt" hidden><span class="erledigt-wort">Antwort eingesetzt</span><span
+          class="erledigt-haken" aria-hidden="true"></span></button>
         <p id="gegen-ki-stand" class="stand-karte" role="status" aria-live="polite" hidden></p>
         <p id="gegen-stand" class="stand" role="status" aria-live="polite"></p>
       </div>
@@ -824,17 +879,29 @@
  <datalist id="phasen"></datalist>
 </main>
 <!-- AP13.38: schwebender Knopf, öffnet dieselbe Ansicht wie der Link in der Kopfzeile (editor.js, Text aus katalog.yaml
-     oberflaeche.editor); im Tab-Lauf nach dem Hauptinhalt, vor der Fußzeile. AP13.44: ab 1000 px am linken Rand mittig,
-     schmaler unten links; erst ohne rote Karten -->
-<button type="button" id="editor-schweb" class="editor-schweb" aria-label="Zum Editor: Einheit ansehen und bearbeiten" hidden>
-  <span class="sw-symbol" aria-hidden="true"><img src="logo.svg" alt="" width="44" height="44"></span>
-  <span id="editor-schweb-text" class="sw-text">Zum Editor</span></button>
+     oberflaeche.editor); im Tab-Lauf nach dem Hauptinhalt, vor der Fußzeile. AP13.44: ab 1000 px mittig neben der Seite;
+     erst ohne rote Karten. R6: drei Knöpfe als Navigation (Mühle, Editor, Kursdatei); die aktuelle Ansicht ist markiert -->
+<nav id="navi" class="navi" aria-label="Ansichten" hidden>
+  <span class="navi-k navi-hier" aria-current="page"><span class="sw-symbol" aria-hidden="true"><img src="logo.svg" alt="" width="44" height="44"></span>
+    <span class="sw-text" data-navi="muehle">Mühle</span></span>
+  <button type="button" id="editor-schweb" class="navi-k editor-schweb" aria-label="Editor: Einheit ansehen und bearbeiten">
+    <span class="sw-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></span>
+    <span id="editor-schweb-text" class="sw-text">Editor</span></button>
+  <button type="button" id="navi-datei" class="navi-k" aria-label="Kursdatei: prüfen und herunterladen">
+    <span class="sw-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg></span>
+    <span class="sw-text" data-navi="datei">Kursdatei</span></button>
+</nav>
 <footer class="fuss">
   <button type="button" id="fuss-rueckmeldung" class="textlink">Rückmeldung</button>
   <a href="../impressum.html" class="fuss-klein">Impressum und Datenschutz</a>
   <a href="../">Startseite</a>
-  <!-- Link zur Beta-Vorschau; veroeffentlichen.py nimmt ihn in docs/beta/ heraus -->
-  <a href="../beta/start/" id="beta-link" class="fuss-klein">Testversion (noch nicht freigegeben, eigener Speicher)</a>
+  <!-- Link zur Beta-Vorschau; veroeffentlichen.py nimmt ihn in docs/beta/ heraus. AP13.45 B15: „Testversion“ mit (i)
+       (hinweise.json „fuss-beta“); die id steht an der ganzen Zeile, damit (i) und Text mit herausgehen -->
+  <p id="beta-link" class="fuss-klein fuss-beta"><a href="../beta/start/">Testversion</a><button type="button" class="info-knopf"
+    aria-expanded="false" aria-controls="beta-info" aria-label="Was ist die Testversion?" data-hinweis="fuss-beta">i</button><span
+    id="beta-info" class="info-text" hidden></span></p>
   <details id="fuss-mehr" class="fuss-mehr">
     <summary>Mehr</summary>
     <label for="ordner-oeffnen" class="textlink">Ordner aus Kursmühle 1 öffnen</label>

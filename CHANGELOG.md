@@ -2,6 +2,28 @@
 
 ## Unveröffentlicht
 
+## 2.0.0-b20 – 2026-11-10 (AP13.45: Tiefenprüfung, Barrierefreiheit, Navigation)
+
+* Navigation „Mühle“, „Editor“, „Kursdatei“ neben der Seite
+* Schulart schon auf der Startseite
+* Besser bedienbar mit Vorlesegerät, Tastatur und Zoom
+
+- Neben der Seite stehen „Mühle“, „Editor“ und „Kursdatei“, im Editor am selben Ort; der Editor steht mittig mit seiner Bausteinliste, unter 1000 px gibt es keinen schwebenden Knopf.
+- Die Startseite fragt die Schulart; fehlt sie, steht Schritt 1 ohne rote Meldung bereit.
+- „Text für den Chat“ nennt unter dem gewählten Chat Modell und Einstellung; am Handy steht, wie man zum Chat wechselt und zurückkommt.
+- Vor dem Kopieren führt „Weiter: Antwort einfügen“ zu Schritt 5; nach dem Einsetzen steht „Antwort eingesetzt“ mit Haken.
+- Abgeschnittene Antworten werden erkannt, fehlende Bausteine gezählt („1 Baustein fehlt“); die Meldung nennt auch übrige rote Bausteine.
+- Braucht ein Baustein eine Korrektur, stehen gleich „im Editor selbst ändern“ und „Baustein weglassen“ bereit.
+- Die Dauer-Zeile nennt geplante und geschätzte Minuten mit (i); „Verlängern lassen“ steht auch dort und nennt dem Chat die zu kurzen Bausteine.
+- In „Mach du“ und „Ich gebe die Richtung“ steht das Lernziel als sichtbare Zeile.
+- Der Editor beginnt mit den Bausteinen, die Kursübersicht ist eingeklappt; „Ändern“ erscheint mit der Tastatur und beim Überfahren mit der Maus.
+- Vorlesegeräte hören Feldnamen, Lücken mit Nummer („Lücke 2 von 5“), eine durchgehende Ordnung der Überschriften und Meldungen mit Fokus.
+- Bei 400 Prozent Zoom und 320 px Breite bleiben Editor und Menü bedienbar; ab 1000 px bleibt die Kopfzeile oben.
+- „Fragen und Lösungen“ zeigt Lösungen eines Lückentexts in den Lücken; ohne Durchsicht steht „(Lösungen freiwillig prüfen)“.
+- Neue Wörter: „Gespeichert 21:20“, „weitere Einheit“, „Zahlen zur Einheit“, „Testversion“ mit (i).
+- „Ich steuere“ sagt nach „Meine Kacheln behalten“, welche Elemente gefüllt und welche leer sind.
+- Nur in der Beta-Vorschau, bis der Import geprüft ist: alle Übungen einer Einheit als Arbeitsheft mit Punkten im Kursbuch.
+
 ## 2.0.0-b19 – 2026-11-08 (AP13.43, AP13.44, MF1–MF7: neue Menüführung)
 
 * Ein Schritt nach dem anderen, erledigte mit „Ändern“

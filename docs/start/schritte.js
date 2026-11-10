@@ -42,7 +42,7 @@
     }
     if (n === 3) return [oberText("familie", S.angaben.familie || "sachlich"), feinheitenText(),
       oberText("format", S.angaben.format), bilderText(), oberText("website", S.angaben.website ||
-          "textfeld")].filter(Boolean).join(" · ");
+          "textfeld"), heftFazit()].filter(Boolean).join(" · ");
     if (n === 4) { var c = chatInfo(Z.mappe.chat); return c ? c.text + (!Z.mappe.kopiert ? "" : S.teilGeaendert &&
         S.teilGeaendert() ? " · " + S.teilGeaendert() : texte.veraltet ?
         " · " + S.editorText(S.anKiAktiv && S.anKiAktiv() ? "text_geaendert_ki" : "text_geaendert") : S.textGesendet &&
@@ -58,13 +58,19 @@
       return !w.length ? "" : da === w.length ? (da === 1 ? "Bild da" : "alle " + da + " Bilder da") : da + " von " +
           w.length + " Bildern da, sonst Platzhalter";
     }
-    // MF4: „11 Fragen · Lösungen angesehen · Im Chat geprüft: 2 Abweichungen“ (angesehen: S.loesungenAngesehen, nachbau.js)
+    // MF4: „11 Fragen · Lösungen angesehen · Im Chat geprüft: 2 Abweichungen“; AP13.45 B16: ohne Durchsicht „11 Fragen
+    // (Lösungen freiwillig prüfen)“ (S.fragenWert, nachbau.js)
     if (n === 6) {
       var nf = S.fragenListe.length;
-      return !nf ? "keine Fragen" : [nf === 1 ? "1 Frage" : nf + " Fragen", S.pruefText(S.loesungenAngesehen() ? "angesehen" :
-          "nicht_angesehen"), S.pruefStand()].filter(Boolean).join(" · ");
+      return !nf ? "keine Fragen" : [S.fragenWert(nf, ""), S.pruefStand()].filter(Boolean).join(" · ");
     }
     return "";
+  }
+
+  function heftFazit() {          // AP13.47: nur mit Heft; „einzeln“ ist der Standard und bleibt aus der Zusammenfassung
+    var t = S.katalog && S.katalog.oberflaeche.arbeitsheft;
+    if (!t || S.angaben.arbeitsheft !== "ja") return "";
+    return S.angaben.arbeitsheft_bestehen ? t.fazit_bestehen.replace("{prozent}", S.angaben.arbeitsheft_bestehen) : t.fazit;
   }
 
   // AP13.35 §4.3: eigener Plan in „Ich steuere“ (eine eigene Kachel, eine Beschreibung oder eine Änderung am Aufbau)
@@ -109,15 +115,15 @@
     return z;
   }
   function kurzName(n) { var sec = sektion(n); return sec ? sec.dataset.kurz : ""; }
-  // Text eines (i) aus hinweise.json. MF2: das
-  // (i) zum Modell beginnt mit dem Satz des gewählten Chats (katalog.yaml chats.aufwand)
+  // Text eines (i) aus hinweise.json. Das (i) zum Modell beginnt mit modell_satz; AP13.45 B1: der Satz des gewählten
+  // Chats (katalog.yaml chats.aufwand) steht sichtbar darunter, nicht mehr im (i)
   function hinweisText(schl) {
     var t = S.hinweisTexte[schl] || "";
     // MF6: das (i) an der gelben Minutenzeile in Schritt 5 (Text aus katalog.yaml, mit der Dauer der Einheit)
+    if (schl === "5-dauer") return S.editorText("zeit_dauer_info");      // AP13.45 B3
     if (schl === "5-verlaengern") return S.editorText("zeit_kurz_info", { minuten: S.zeitKurzMinuten ||
         ((Z.mappe && Z.mappe.einheit) || {}).minuten || "" });
-    if (schl === "4-modell") { var c = Z.mappe && chatInfo(Z.mappe.chat); if (c && c.aufwand) t = c.aufwand + " " + t;
-      t = (S.editorText("modell_satz") + " " + t).trim(); }       // MF6: der Satz stand vorher sichtbar in der Zeile
+    if (schl === "4-modell") t = (S.editorText("modell_satz") + " " + t).trim();
     // MF3: am Auftrag eines Bildes dazu der Satz des Chats zu seinem Bildgenerator (katalog.yaml chats.bilder_hinweis)
     if (schl === "5.5-auftrag") { var cb = Z.mappe && chatInfo(Z.mappe.chat); if (cb && cb.bilder_hinweis) t += " " + cb.bilder_hinweis; }
     return t;
@@ -169,6 +175,7 @@
     var offen = offenerSchritt();
     document.body.dataset.schritt = d ? "3" : String(s);
     document.body.dataset.offen = String(offen);
+    document.documentElement.dataset.offen = String(offen);   // für scroll-padding am Wurzelelement (WebKit wertet :has dort nicht neu aus)
     document.body.dataset.zweig = z;
     document.body.dataset.bildschirm = Z.mappe ? "ansicht" : "start";
     SCHRITTE.forEach(function (n) {
@@ -208,14 +215,24 @@
     }
     ["mach", "richtung", "steuer"].forEach(function (w) { $("zweig-" + w).setAttribute("aria-checked", String(z === w));
         });
+    // AP13.45 B4: der Satz unter der Überschrift nennt den gewählten Weg (oberflaeche.schritt_satz „2“, „2-richtung“,
+    // „2-steuer“); ohne Wahl steht keiner
+    if (S.katalog) {
+      var ss = S.katalog.oberflaeche.schritt_satz || {}, s2 = !z ? "" : ss[z === "mach" ? "2" : "2-" + z] || "";
+      if ($("s-satz-2").textContent !== s2) $("s-satz-2").textContent = s2;
+    }
     $("steuer-teil").hidden = z !== "steuer";
     $("mach-teil").hidden = z !== "mach" && z !== "richtung";
     $("richtung-teil").hidden = z !== "richtung";
     // MF2: „Erweitert“ in Schritt 2, sobald ein Weg gewählt ist; was darin steht, hängt am Weg
     $("erweitert-2").hidden = !z;
     $("m-kontext-l").hidden = z !== "mach" && z !== "richtung";
+    if (S.lernzielHoehe) S.lernzielHoehe();
     $("mehr").hidden = z !== "steuer";
-    var was2 = z === "steuer" ? "Lehrplan, Mehr einstellen" : "Lehrplan, Worum geht es genau?, Material";
+    // AP13.45 B10: das Lernziel steht sichtbar über „Erweitert“
+    var was2 = z === "steuer" ? "Lehrplan, Mehr einstellen" : "Lehrplan, Material";
+    var lz = S.editorText("lernziel");
+    if (lz && $("m-kontext-t").textContent !== lz) $("m-kontext-t").textContent = lz;
     if ($("erweitert-2-was").textContent !== was2) $("erweitert-2-was").textContent = was2;
     erweitert2Pruefen();
     kursZeigen();
@@ -253,7 +270,8 @@
     }
     // MF3: in „Ich steuere“ schon vor der ersten Antwort, dann nur mit der Art des Einsetzens
     $("erweitert-5").hidden = !inhalt() && !(z === "steuer" && Z.mappe && s >= 5);
-    var was5 = !inhalt() ? "Einsetzen" : (z === "steuer" ? "Einsetzen, " : "") + "Bausteine, Kennzahlen";
+    // AP13.45 B15: „Zahlen zur Einheit“ statt „Bausteine, Kennzahlen“
+    var was5 = !inhalt() ? "Einsetzen" : (z === "steuer" ? "Einsetzen, " : "") + "Zahlen zur Einheit";
     $("diagnosen").hidden = !inhalt();
     if ($("erweitert-5-was").textContent !== was5) $("erweitert-5-was").textContent = was5;
     erweitert5Pruefen();
@@ -275,6 +293,7 @@
       b.hidden = d || S.aendern !== n;
       if (!b.hidden) b.textContent = zielText(n, s);
     });
+    if (S.weiterOhne) S.weiterOhne();                // AP13.45 B17
     // MF4 (Konzept §3.8): die Rückmeldung öffnet „Nein, es hakt“ oder „Rückmeldung geben“, nicht der Download selbst
     $("rueckmeldung").hidden = !!$("rueckmeldung").dataset.zu || !$("rueckmeldung").dataset.offen;
     $("speichern").hidden = !Z.mappe;
@@ -339,7 +358,7 @@
       $("weiter").hidden = !r || !!Z.mappe;
       if (!r) return;
       $("weiter-knopf").textContent = "Weiter mit „" + (r.titel || r.dateiname) + "“";
-      $("weiter-zeit").textContent = "Zuletzt gesichert " + datumZeit(r.zeit);
+      $("weiter-zeit").textContent = "Zuletzt gespeichert " + datumZeit(r.zeit);
       $("weiter-knopf").onclick = function () {
         oeffne(async function () { await km.mappeAusBytes(r.zip, null); }, "Wird geöffnet …");
       };
@@ -350,7 +369,7 @@
   // ersetzen. replaceState legt keinen Eintrag an, der Zurück-Knopf führt weiter zur Landingpage.
   function adresseLesen() {
     var q = new URLSearchParams(location.search), h = new URLSearchParams((location.hash || "").replace(/^#/, ""));
-    if (h.has("thema") || h.has("jahrgang") || h.has("minuten")) q = h;
+    if (h.has("thema") || h.has("jahrgang") || h.has("minuten") || h.has("schulart")) q = h;
     var weiter = q.get("weiter") === "1", thema = (q.get("thema") || "").trim().slice(0, 120);
     var vor = q.has("thema") || q.has("jahrgang") || q.has("minuten"), jg = (q.get("jahrgang") || "").trim();
     if (weiter || vor) history.replaceState(history.state, "", location.pathname + (q === h ? "" : location.hash));
@@ -367,10 +386,18 @@
     } else $("f-jahrgang").value = jg.slice(0, 12);
     $("f-minuten").value = min >= 10 && min <= 300 ? min : 45;
     if (!thema) { $("f-thema").focus(); return; }
-    S.katalogDa.then(function () { return km.autosaveLesen().catch(function () { return null; }); }).then(function (r) {
+    // R6: Schulart von der Startseite (nur ein Wert aus der Liste, die erst mit dem Katalog steht); fehlt sie, steht der
+    // Fokus dort ohne rote Meldung
+    var sa = (q.get("schulart") || "").trim(), fs = $("f-schulart"), ohneSchulart = false;
+    S.katalogDa.then(function () {
+      if (sa && [].some.call(fs.options, function (o) { return o.value && o.value === sa; })) { fs.value = sa; schulartMerken(sa); }
+      if (!fs.value && !fs.disabled) { ohneSchulart = true; fs.focus(); return null; }
+      return km.autosaveLesen().catch(function () { return null; });
+    }).then(function (r) {
+      if (ohneSchulart) return;
       if (!r) { startAbsenden(); return; }
       frage("Einheit „" + (r.titel || r.dateiname) +
-          "“ verwerfen? Was du nicht mit „Zwischenstand speichern“ gesichert hast, geht verloren.",
+          "“ verwerfen? Was du nicht mit „Zwischenstand speichern“ gespeichert hast, geht verloren.",
         async function () {
           await km.autosaveLoeschen();
           $("weiter").dataset.da = ""; $("weiter").hidden = true;
@@ -421,13 +448,19 @@
     p.append(satz);
     p.hidden = false;
     feld.setAttribute("aria-invalid", "true");
-    feld.setAttribute("aria-describedby", id);
+    feld.setAttribute("aria-describedby", (id + " " + beschreibung(feld)).trim());
+  }
+  // AP13.45: eine Beschreibung aus dem HTML (Materialfelder) bleibt neben der Meldung und nach ihr erhalten
+  function beschreibung(feld) {
+    if (feld.dataset.beschreibung === undefined) feld.dataset.beschreibung = feld.getAttribute("aria-describedby") || "";
+    return feld.dataset.beschreibung;
   }
   function feldOk(feld) {
     var p = $(feld.id + "-meldung");
     if (p) p.hidden = true;
     feld.removeAttribute("aria-invalid");
-    feld.removeAttribute("aria-describedby");
+    if (beschreibung(feld)) feld.setAttribute("aria-describedby", beschreibung(feld));
+    else feld.removeAttribute("aria-describedby");
   }
   // -> true, wenn alle Felder stimmen; sonst Meldung am ersten falschen und Fokus dorthin
   function felderPruefen(ids) {
@@ -973,10 +1006,11 @@
     // nur verschieben, wenn es nicht schon dort steht: ein Verschieben nimmt dem Feld den Fokus
     var nach = function (feld, anker) { if (feld.previousElementSibling !== anker) anker.after(feld); };
     var zuletzt = function (feld, ort) { if (feld.parentNode !== ort || feld.nextElementSibling) ort.appendChild(feld); };
-    // MF2: sonst unter „Erweitert“ nach „Worum geht es genau?“ (in „Ich steuere“ steht es unter „Mehr einstellen“)
+    // MF2: sonst unter „Erweitert“ nach dem Lehrplan (in „Ich steuere“ steht es unter „Mehr einstellen“); AP13.45 B10: das
+    // Lernziel steht nicht mehr dort
     if (p && z === "mach") zuletzt(r, $("mach-teil"));
     else if (p && z === "richtung") nach(r, $("r-art").closest(".aus-gruppe"));
-    else nach(r, $("m-kontext-l"));
+    else nach(r, $("lehrplan-teil"));
     r.hidden = z !== "mach" && z !== "richtung";
     if (p) nach(a, $("vorlagen")); else zuletzt(a, document.querySelector(".mehr-felder"));
     $("r-material-zeile").textContent = p ? "für diese Art nötig" : "freiwillig";
@@ -1164,7 +1198,8 @@
     if (!Z.mappe || erw2Fuer === Z.mappe || S.angabenFuer !== Z.mappe || !zweig()) return;
     erw2Fuer = Z.mappe;
     var a = S.angaben || {}, lp = a.lehrplan;
-    if (String(S.kontextJetzt() || "").trim() || /\S/.test(Z.mappe.material || "") || String(a.fach || "").trim() ||
+    // AP13.45 B10: das Lernziel steht außerhalb; in „Ich steuere“ öffnet es „Erweitert“ wie bisher („Mehr einstellen“)
+    if ((zweig() === "steuer" && String(S.kontextJetzt() || "").trim()) || /\S/.test(Z.mappe.material || "") || String(a.fach || "").trim() ||
         a.lehrplanbezug === "ja" || (lp && (lp.lernbereiche || []).length)) erweitertAuf("erweitert-2", true);
   }
   document.addEventListener("click", function (ev) {
@@ -1340,6 +1375,7 @@
   $("vorschau-leiste").onclick = function () {
     var auf = !$("vorschau-spalte").classList.contains("offen");
     $("vorschau-spalte").classList.toggle("offen", auf);
+    document.documentElement.classList.toggle("vorschau-auf", auf);
     $("vorschau-leiste").setAttribute("aria-expanded", String(auf));
     vorschauMassstab();
   };
@@ -1519,6 +1555,7 @@
         S.angaben.bildbeschriftung || o.bildbeschriftung.filter(function (w) { return w.standard; })[0].wert);
     kachelGruppe($("aus-website"), "website", o.website, function (w) { return miniWebsite(w, hue); },
         S.angaben.website || "textfeld");
+    zeichneHeftWahl(o.arbeitsheft, hue);
     $("format-karte").hidden = false;
     if (S.familien) $("vorschau-name").textContent = [(familieInfo(familieJetzt()) || {}).text,
       oberText("format", format)].filter(Boolean).join(" · ");
@@ -1553,6 +1590,72 @@
         'font-family="system-ui, sans-serif">1</text><text x="102" y="36" text-anchor="middle" font-size="11" ' +
         'font-weight="700" fill="#0B1220" font-family="system-ui, sans-serif">2</text></svg>';      // nur Ziffern
   }
+  // AP13.47: Übungen einzeln oder als ein Arbeitsheft; die Kachel mit Dreieck bleibt in der Reihe (nur zwei Werte, kein
+  // Ausklappteil „Weitere“); Prozent für den Abschluss nur mit Heft
+  var HEFT_KACHELN = {};
+  // b20: bis zur Plattformprobe (Import auf der ByCS-Lernplattform) steht die Wahl nur in der Vorschau und lokal, nicht
+  // in der stabilen Fassung auf kursmuehle.de (`nur_vorschau` im Katalog); eine Einheit mit Heft zeigt sie weiter
+  function stabilLive() {
+    return /(^|\.)(kursmuehle\.de|xn--kursmhle-[a-z0-9]+\.de)$/.test(location.hostname) && !/(^|\/)beta\//.test(location.pathname);
+  }
+  function zeichneHeftWahl(t, hue) {
+    if (!t) return;
+    var an = S.angaben.arbeitsheft === "ja";
+    var g = $("aus-arbeitsheft").closest(".aus-gruppe"), weg = !!t.nur_vorschau && !an && stabilLive();
+    if (g.hidden !== weg) g.hidden = weg;
+    if (weg) return;
+    if ($("aus-arbeitsheft-titel").textContent !== t.titel) $("aus-arbeitsheft-titel").textContent = t.titel;
+    kachelGruppe($("aus-arbeitsheft"), "arbeitsheft", t.wahl.map(function (w) {
+      if (w.probe && !HEFT_KACHELN[w.wert]) HEFT_KACHELN[w.wert] = kachel("arbeitsheft", w.wert, w.text, "", false, w.zeile,
+          w.probe);
+      return { wert: w.wert, text: w.text, zeile: w.zeile, element: HEFT_KACHELN[w.wert] };
+    }), function (w) { return miniHeft(w, hue); }, an ? "ja" : "nein");
+    $("heft-bestehen-l").hidden = $("heft-bestehen-zeile").hidden = !an;
+    if ($("heft-bestehen-text").textContent !== t.bestehen) $("heft-bestehen-text").textContent = t.bestehen;
+    $("heft-bestehen-zeile").textContent = t.bestehen_zeile;
+    if (document.activeElement !== $("heft-bestehen")) $("heft-bestehen").value = S.angaben.arbeitsheft_bestehen || "";
+  }
+  function miniHeft(wert, hue) {
+    var s = '<svg viewBox="0 0 120 50" aria-hidden="true" focusable="false"><rect width="120" height="50" fill="#fff"/>';
+    if (wert !== "ja") {
+      [8, 46, 84].forEach(function (x) { s += '<rect x="' + x + '" y="10" width="28" height="30" rx="3" fill="#F2F4F7"/>' +
+          '<rect x="' + (x + 5) + '" y="16" width="12" height="4" rx="1" fill="' + hue + '"/><rect x="' + (x + 5) +
+          '" y="25" width="18" height="3" rx="1" fill="#5B6475"/>'; });
+      return s + "</svg>";
+    }
+    return s + '<rect x="30" y="6" width="60" height="38" rx="3" fill="#F2F4F7" stroke="#C3C8D2"/><line x1="60" y1="6" ' +
+        'x2="60" y2="44" stroke="#C3C8D2"/><rect x="36" y="13" width="18" height="4" rx="1" fill="' + hue + '"/><rect ' +
+        'x="36" y="22" width="18" height="3" rx="1" fill="#5B6475"/><rect x="66" y="13" width="18" height="4" rx="1" fill="' +
+        hue + '"/><rect x="66" y="34" width="18" height="4" rx="2" fill="' + mischen(hue, 0.3) + '"/><rect x="66" y="34" ' +
+        'width="11" height="4" rx="2" fill="' + hue + '"/></svg>';
+  }
+  // AP13.47: Zeile in Schritt 5 und auf der Prüfseite: Übungen und Punkte im Heft der laufenden Einheit, Übungen außerhalb
+  function heftZeile() {
+    var t = S.katalog && S.katalog.oberflaeche.arbeitsheft, h = (Z.pruefung && Z.pruefung.hefte) || [];
+    if (!t || S.angaben.arbeitsheft !== "ja" || !h.length || !Z.mappe) return "";
+    var ids = {};
+    Z.mappe.bausteine.forEach(function (k) { if ((k.einheit || "") === (einheitTag() || "")) ids[k.id] = true; });
+    var eigene = h.filter(function (x) { return x.uebungen.concat(x.aussen).some(function (u) { return ids[u.id]; }); });
+    if (eigene.length) h = eigene;
+    var fm = function (v, o) { return v.replace(/\{(\w+)\}/g, function (m, k) { return o[k] !== undefined ? o[k] : m; }); };
+    var mit = h.filter(function (x) { return x.name; }), saetze = [];
+    var n = mit.reduce(function (s, x) { return s + x.uebungen.length; }, 0);
+    var o = { n: n, hefte: mit.length, punkte: mit.reduce(function (s, x) { return s + x.punkte; }, 0) };
+    if (mit.length) saetze.push(fm(mit.length > 1 ? t.zeile_mehr : n === 1 ? t.zeile_eine : t.zeile, o));
+    var aussen = h.reduce(function (n, x) { return n + x.aussen.length; }, 0);
+    if (aussen) saetze.push(aussen === 1 ? t.aussen_eine : fm(t.aussen, { n: aussen }));
+    return saetze.join(" ");
+  }
+  S.heftZeile = heftZeile;
+  var heftTimer = null;
+  $("heft-bestehen").addEventListener("input", function () {
+    var w = $("heft-bestehen").value.trim();
+    if (!Z.mappe || (w && (!/^\d+$/.test(w) || +w < 1 || +w > 100))) return;
+    S.angaben.arbeitsheft_bestehen = w ? String(+w) : "";
+    clearTimeout(heftTimer);
+    heftTimer = setTimeout(function () { angabenSchreiben({ arbeitsheft_bestehen: S.angaben.arbeitsheft_bestehen }, true);
+      zeichneSchritte(); }, 300);
+  });
   function miniWebsite(wert, hue) {
     var s = '<svg viewBox="0 0 120 50" aria-hidden="true" focusable="false"><rect width="120" height="50" fill="#fff"/>'
       + '<rect x="8" y="6" width="70" height="4" rx="1" fill="#0B1220"/>';
@@ -1594,6 +1697,7 @@
     }
     a[feld] = wert;
     S.angaben[feld] = wert;
+    if (feld === "arbeitsheft" && wert !== "ja") a.arbeitsheft_bestehen = S.angaben.arbeitsheft_bestehen = "";
     zeichneAussehen(); felderFuellen(); zeichneSchritte();
     angabenSchreiben(a, true);
     if (b.dataset.feld === "format" && wert === "wochen" && !S.angaben.start) $("a-start").focus();
@@ -1678,6 +1782,19 @@
     geaendert();
     window.scrollTo(0, y);
     $("zum-designer").focus({ preventScroll: true });
+    // WebKit hält die Stelle nicht, wenn die Seite danach weiter zeichnet (keine Scroll-Verankerung): in den nächsten
+    // Bildern noch einmal setzen, solange niemand selbst scrollt oder klickt und nur, wenn die Seite neu gezeichnet hat
+    // (Höhe geändert)
+    var selbst = false, merk = function () { selbst = true; }, arten = ["wheel", "touchstart", "keydown", "pointerdown", "mousedown"];
+    var hoehe = function () { return document.documentElement.scrollHeight; }, h0 = hoehe();
+    arten.forEach(function (t) { window.addEventListener(t, merk, { capture: true, passive: true }); });
+    var nach = function (n) {
+      if (!selbst && hoehe() !== h0 && Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y);
+      h0 = hoehe();
+      if (!selbst && n > 0) setTimeout(function () { requestAnimationFrame(function () { nach(n - 1); }); }, 50);
+      else arten.forEach(function (t) { window.removeEventListener(t, merk, { capture: true }); });
+    };
+    requestAnimationFrame(function () { nach(6); });
   };
   $("zum-material").onclick = function () {
     var f = $("a-material");
@@ -1744,7 +1861,7 @@
   };
   $("weiter-weg").onclick = function () {
     var titel = $("weiter-knopf").textContent.replace(/^Weiter mit /, "");
-    frage("Einheit " + titel + " verwerfen? Sie ist nur in diesem Browser gesichert.", async function () {
+    frage("Einheit " + titel + " verwerfen? Sie ist nur in diesem Browser gespeichert.", async function () {
       await km.autosaveLoeschen();
       $("weiter").dataset.da = ""; $("weiter").hidden = true;
       $("f-thema").focus();
@@ -1753,8 +1870,8 @@
   $("schliessen").onclick = function () {
     var titel = (Z.mappe && ((Z.mappe.einheit && Z.mappe.einheit.thema) || Z.mappe.titel)) || "";
     frage("Einheit „" + titel + "“ schließen? " + (S.gespeichert ?
-        "Die Einheit hast du gespeichert; die Sicherung im Browser wird gelöscht."
-      : "Was du nicht mit „Zwischenstand speichern“ gesichert hast, geht verloren."), async function () {
+        "Die Einheit hast du gespeichert; die Kopie in diesem Browser wird gelöscht."
+      : "Was du nicht mit „Zwischenstand speichern“ gespeichert hast, geht verloren."), async function () {
       clearTimeout(S.autosaveTimer); S.autosaveTimer = null; delete $("autosave-stand").dataset.offen;
       await km.autosaveLoeschen();
       S.leeren();
@@ -1817,7 +1934,20 @@
     kontextTimer = setTimeout(function () { var a = kontextOffen; kontextOffen = {}; angabenSchreiben(a);
         S.textSpaeter(); }, 400);
   }
-  $("m-kontext").addEventListener("input", function () { kontextSchreiben("kontext", $("m-kontext").value); });
+  $("m-kontext").addEventListener("input", function () { kontextSchreiben("kontext", $("m-kontext").value); lernzielHoehe(); });
+  // AP13.45 B10: das Lernziel ist ein einzeiliges Feld, das mit dem Text wächst; Enter bricht keine Zeile (wie ein Eingabefeld)
+  var lernzielSig = "";
+  function lernzielHoehe() {
+    var f = $("m-kontext"), sig = f.value + "|" + innerWidth + "|" + f.getClientRects().length;
+    if (sig === lernzielSig) return;
+    lernzielSig = sig;
+    if (!f.getClientRects().length) return;
+    f.style.height = "";
+    if (f.scrollHeight > f.clientHeight + 1) f.style.height = (f.scrollHeight + f.offsetHeight - f.clientHeight) + "px";
+  }
+  S.lernzielHoehe = lernzielHoehe;
+  $("m-kontext").addEventListener("keydown", function (ev) { if (ev.key === "Enter" && !ev.isComposing) ev.preventDefault(); });
+  window.addEventListener("resize", function () { lernzielHoehe(); });
   // AP13.35 M1: ab Einheit 2 steht die Beschreibung des Kurses (Text der ersten Einheit, `kurs.kontext`) über dem Feld der
   // Einheit, im Plan und in „Mach du“/„Ich gebe die Richtung“, mit „ändern“; das Feld dazu schreibt den Steckbrief. Leer:
   // keine Zeile „Kurs:“ im Text für den Chat. Ein Zustand für beide Stellen
@@ -1929,4 +2059,30 @@
     fachWoerter: fachWoerter, fachJetzt: fachJetzt, weiterAnzeigen: weiterAnzeigen, zeichneAussehen: zeichneAussehen,
     zeichneSchritte: zeichneSchritte, zeigeFehler: zeigeFehler, oeffneSchritt: oeffneSchritt, zurueckZumStand: zurueckZumStand,
     erweitertAuf: erweitertAuf, aufdecken: aufdecken, kurzName: kurzName });
+  // AP13.45 B8: ab 1000 px steht die Kopfzeile fest oben; ihre Höhe (`--kopf-h` am Wurzelelement) hält Sprünge und Fokus
+  // darunter (scroll-padding-top) und rückt die haftenden Leisten darunter (ansicht.css). Ein Wert, kein :has
+  (function () {
+    var k = document.querySelector(".kopf"); if (!k) return;
+    var setzen = function () {
+      var h = Math.ceil(k.getBoundingClientRect().height) + "px";
+      if (document.documentElement.style.getPropertyValue("--kopf-h") !== h) document.documentElement.style.setProperty("--kopf-h", h);
+    };
+    setzen();
+    if (window.ResizeObserver) new ResizeObserver(setzen).observe(k); else window.addEventListener("resize", setzen);
+    // WebKit hält beim Fokus mit Tab scroll-padding-top nicht ein: liegt das Element danach unter der festen Kopfzeile,
+    // rückt die Seite nach (nur der Fokuswechsel durch die Tab-Taste, nicht in Dialogen)
+    var tab = false;
+    document.addEventListener("keydown", function (ev) { if (ev.key === "Tab") tab = true; }, true);
+    document.addEventListener("keyup", function () { tab = false; }, true);
+    document.addEventListener("focusin", function (ev) {
+      var t = ev.target;
+      if (!tab || !t || !t.getBoundingClientRect || (t.closest && t.closest("dialog"))) return;
+      requestAnimationFrame(function () {
+        var pos = getComputedStyle(k).position;
+        if ((pos !== "fixed" && pos !== "sticky") || document.activeElement !== t) return;
+        var unten = k.getBoundingClientRect().bottom, r = t.getBoundingClientRect();
+        if (r.bottom > 0 && r.top < unten + 4) window.scrollBy(0, r.top - unten - 12);
+      });
+    });
+  })();
 })();

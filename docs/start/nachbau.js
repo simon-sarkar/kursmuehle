@@ -88,7 +88,10 @@
       })) : null;
       // MF7: Lösungen lesbar statt mit Semikolons: Lücken nummeriert (die Nummer steht auch an der Lücke im Text), Zuordnen
       // als Paar „Begriff → Gruppe“, mehrere richtige Antworten als „A, B oder C“
-      var loesung = f.art === "auswahl" || f.art === "zuordnen" ? null : f.art === "luecken" && f.loesung.length > 1 ?
+      // MF8: passt die Zahl der Lücken im Text zur Zahl der Lösungen, stehen die Lösungen in den Lücken selbst (unterstrichen,
+      // für Vorlesegeräte mit „Lücke n:“ davor); keine Nummern mehr, die sich mit Zahlen als Lösung verwechseln lassen
+      var gefuellt = f.art === "luecken" && f.loesung.length >= 1 && String(f.frage).split("___").length - 1 === f.loesung.length;
+      var loesung = f.art === "auswahl" || f.art === "zuordnen" || gefuellt ? null : f.art === "luecken" && f.loesung.length > 1 ?
         el("ol", { cls: "f-luecken", "aria-label": "Lösungen der Lücken" }, f.loesung.map(function (l, i) {
           return el("li", {}, [el("span", { cls: "f-nr", text: String(i + 1) }), oder(l)]); }))
         : el("p", { cls: "f-loesung" }, ["Lösung: ", el("strong", { text: f.loesung.map(oder).join(", ") })]);
@@ -112,7 +115,8 @@
       var offenTeil = unsicher.length ? el("div", { cls: "f-offen" }, [el("p", {}, [el("span", { cls: "f-offen-wort",
           text: PT("offen_frage") + " " }), unsicher.map(function (o) { return o.text; }).join(" ")])]) : null;
       var fText = f.art === "zuordnen" ? [f.frage, el("span", { cls: "f-pfeil", text: " → " }),
-          el("strong", { text: oder(f.loesung[0] || []) })] : f.art === "luecken" && f.loesung.length > 1 ? lueckenNummern(f.frage)
+          el("strong", { text: oder(f.loesung[0] || []) })] : gefuellt ? lueckenGefuellt(f.frage, f.loesung)
+          : f.art === "luecken" && f.loesung.length > 1 ? lueckenNummern(f.frage)
           : [(f.art === "rf" ? "Richtig oder falsch: " : "") + f.frage];
       ol.appendChild(el("li", { cls: cls + " art-" + f.art, "data-nr": f.nr, "data-key": key }, [kopf, el("div", { cls: "f-zeile" }, [
         el("p", { cls: "f-frage" }, fText), aendern]),
@@ -121,6 +125,15 @@
   }
   // MF7: Alternativen einer Lösung als „A, B oder C“; Lücken im Text der Frage mit ihrer Nummer
   function oder(l) { l = l || []; return l.length < 2 ? (l[0] || "") : l.slice(0, -1).join(", ") + " oder " + l[l.length - 1]; }
+  function lueckenGefuellt(t, loesung) {
+    var out = [];
+    String(t).split("___").forEach(function (teil, i) {
+      if (i) out.push(el("span", { cls: "f-luecke-l" }, [el("span", { cls: "unsichtbar", text: "Lücke " + i + ": " }),
+          oder(loesung[i - 1])]));
+      out.push(teil);
+    });
+    return out;
+  }
   function lueckenNummern(t) {
     var n = 0, out = [];
     String(t).split("___").forEach(function (teil, i) {
@@ -184,6 +197,14 @@
   var ANGESEHEN_MS = 1000, angesehenUhr = null;
   function angesehen() { return !!(Z.mappe && Z.mappe.durchsicht === true); }
   S.loesungenAngesehen = angesehen;
+  // AP13.45 B16: „12 Fragen · Lösungen angesehen“, sonst „12 Fragen (Lösungen freiwillig prüfen)“ (ein Vermerk, kein
+  // Mangel); `neu` ersetzt den Vermerk („Neu durchzusehen: …“). Zeile in Schritt 6 und in der Prüfliste von Schritt 7
+  function fragenWert(n, neu) {
+    var zahl = n === 1 ? "1 Frage" : n + " Fragen";
+    if (neu) return zahl + " · " + neu;
+    return angesehen() ? zahl + " · " + PT("angesehen") : zahl + " (" + PT(n === 1 ? "nicht_angesehen_eine" : "nicht_angesehen") + ")";
+  }
+  S.fragenWert = fragenWert;
   function endeImBlick(an) {
     clearTimeout(angesehenUhr);
     if (!an || !Z.mappe || angesehen() || !S.fragenListe.length || !$("schritt-6").classList.contains("auf")) return;
@@ -355,6 +376,7 @@
         S.editorText(v.abweichungen.length + v.gleich.length === 1 ? "gegen_eingesetzt_eine" : "gegen_eingesetzt",
           { n: v.abweichungen.length + v.gleich.length }) + S.schonSatz(gegenFrisch === "auto"), "ok");
     else if (!frisch) S.standKarte($("gegen-eingesetzt"), "");
+    if (S.erledigt) S.erledigt($("gegen-erledigt"), !!frisch);      // MF8: „Antwort eingesetzt“ mit Haken an der Stelle des Knopfs
     var fehlt = v && v.fehlend.length ? "Ohne Antwort: " + v.fehlend.length + (v.fehlend.length === 1 ? " Frage." :
         " Fragen.") : "";
     $("gegen-stand").textContent = v && !v.abweichungen.length && !v.gleich.length ?
@@ -514,7 +536,7 @@
     b.textContent = o.nachlieferung_ganz;
   };
   $("herunterladen-ganz").onclick = async function () {
-    S.bauLaeuft = true; knoepfe(); status("Datei wird erstellt …", "lauf");
+    S.bauLaeuft = true; knoepfe(); status("", "");         // AP13.45 B11: angesagt wird nur in Schritt 7 (#erstellen-stand)
     try {
       await km.baue(Object.assign({}, km.bauOptionen || {}));
       S.bauLaeuft = false;
@@ -523,8 +545,8 @@
         // die ganze Datei kommt als neuer Kurs: „Importiert?“ fragt wieder, und das Ja merkt den Stand aller Einheiten neu
         Z.mappe.importiert = []; Z.mappe.importiert_stand = {}; autosave();
         Z.bau.downloadName = (await km.mappeFn("dateiname", [Z.mappe, heute()])).replace(/\.kursmappe\.zip$/, ".mbz");
-        herunterladen(); status("Bereit", "ok");
-      } else status("Die Datei ließ sich nicht erstellen.", "fehler");
+        herunterladen();
+      } else if (!Z.bau) status("Die Datei ließ sich nicht erstellen.", "fehler");
       zeichneWiederherstellen(); knoepfe(); zeichneSchritte();
       S.fokusRetten(["herunterladen-ganz"]);
     } catch (e) { S.bauLaeuft = false; zeigeFehler(e); knoepfe(); }
@@ -545,6 +567,8 @@
     z.push({ name: "Einheit", wert: (voll === 1 ? "1 Baustein" : voll + " Bausteine") + (f ? ", " + f + " Fehler" :
         ", geprüft") + (kurz ? " · " + (S.zeitGrau(kurz[1], kurz[2]) ? S.editorText("zeit_dauer_pruef", { ist: kurz[1],
           minuten: kurz[2] }) : "etwa " + kurz[1] + " von " + kurz[2] + " Minuten") : ""), editor: true });
+    var heft = S.heftZeile ? S.heftZeile() : "";       // AP13.47: Übungen im Heft und außerhalb; „Ändern“ führt zu Schritt 3
+    if (heft) z.push({ name: S.katalog.oberflaeche.arbeitsheft.pruef_name, wert: heft, nr: 3 });
     var w = S.bildwuensche().filter(function (b) { return b.datei; });
     if (sichtbar.indexOf(5.5) >= 0 && w.length) {
       var da = w.filter(function (b) { return Z.assets[b.datei]; }).length;
@@ -554,8 +578,7 @@
     var n = S.fragenListe.length;
     if (n) {
       var neu = S.durchsichtNeuText ? S.durchsichtNeuText() : "";
-      z.push({ name: "Fragen", wert: [n + (n === 1 ? " Frage" : " Fragen"), neu ? neu.replace(/\.$/, "") :
-          PT(angesehen() ? "angesehen" : "nicht_angesehen"), pruefStand()].filter(Boolean).join(" · "), nr: 6,
+      z.push({ name: "Fragen", wert: [fragenWert(n, neu ? neu.replace(/\.$/, "") : ""), pruefStand()].filter(Boolean).join(" · "), nr: 6,
       });
     }
     return z;
@@ -671,7 +694,9 @@
     if (Z.bau && Z.bau.mbz) { herunterladen(); return; }
     S.bauLaeuft = true;
     knoepfe();
-    status("Datei wird erstellt …", "lauf");
+    // AP13.45 B11 (WCAG 4.1.3): den Zustand sagt nur die Zeile in Schritt 7 an (#erstellen-stand: „Datei wird erstellt …“,
+    // dann „Heruntergeladen: …“ oder der Fehler); die Statuszeile im Kopf schweigt dazu
+    status("", "");
     try {
       var neu = nachlieferung(), opt = Object.assign({}, km.bauOptionen || {});
       if (neu.length) opt.optionen = Object.assign({}, opt.optionen || {}, { delta: neu.join(",") });
@@ -682,12 +707,12 @@
           .replace(/\.kursmappe\.zip$/, neu.length ? "_nachlieferung.mbz" : ".mbz");
       S.bauLaeuft = false;
       if (Z.bau && Z.bau.mbz) {
-        herunterladen(); status("Bereit", "ok");
+        herunterladen();
         rueckmeldungBitteSpaeter();
         // AP13.12 a11: erster Download der Einheit, für die Minuten in der Rückmeldung
         if (Z.mappe && !Z.mappe.zeit_download) { Z.mappe.zeit_download = new Date().toISOString(); autosave(); }
       }
-      else status("Die Datei ließ sich nicht erstellen.", "fehler");
+      else if (!Z.bau) status("Die Datei ließ sich nicht erstellen.", "fehler");
       zeichneWiederherstellen(); knoepfe(); zeichneSchritte(); rueckmeldungFuellen();
       // AP13.33 §2.1: der Knopf war beim Bauen gesperrt (Fokus auf body); der Fokus kehrt zu ihm zurück
       S.fokusRetten(["herunterladen", "importiert-ja"]);

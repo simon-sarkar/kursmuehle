@@ -19,6 +19,14 @@
     return (document.querySelector("input[name=text-art]:checked") || {}).value || "einheit";
   }
 
+  // AP13.45 B17: vor dem Kopieren der Weg zu Schritt 5 ohne Kopieren (Text auf anderem Weg in den Chat gebracht); auch aus
+  // zeichneSchritte, damit er nach „Ändern“ nicht stehen bleibt
+  function weiterOhne() {
+    var b = $("weiter-4-ohne"); if (!b) return;
+    var t = texte.teile[texte.teil] || "";
+    b.hidden = !Z.mappe || !Z.mappe.chat || !t || ki() || schritt() !== 4 || (S.aendern !== null && S.aendern !== undefined);
+  }
+  S.weiterOhne = weiterOhne;
   function zeichneChat() {
     var gewaehlt = !!(Z.mappe && Z.mappe.chat && chatInfo(Z.mappe.chat));
     $("chat-wahl").hidden = gewaehlt && !S.chatWahlOffen;
@@ -60,10 +68,16 @@
       : "Für " + c.text + (von > 1 ? ", in " + von + " Teilen" + (ki() ? ". Die Mühle sendet Teil für Teil und setzt " +
           "jede Antwort ein." : "") : "");
     $("chat-modell-zeile").hidden = ki();
+    // AP13.45 B1: der Satz des gewählten Chats zum Modell sichtbar unter der Zeile (der allgemeine Rest im (i))
+    var satz = t && !ki() ? c.aufwand || "" : "";
+    $("chat-modell-satz").hidden = !satz;
+    if ($("chat-modell-satz").textContent !== satz) $("chat-modell-satz").textContent = satz;
     // MF7: eine Zeile, wie man zum Chat kommt; mit `adresse` im Katalog ein Link „<Chat> öffnen“ in einem neuen Tab
     var name = c.wert === "anderer" ? "deinen Chat" : c.text, adr = /^https:\/\//.test(c.adresse || "") ? c.adresse : "";
     $("chat-weg").hidden = ki();
     $("chat-weg-satz").textContent = S.editorText("chat_weg", { chat: name });
+    // AP13.45 B7: auf dem Handy „Wechsle zu …“ (Dativ), mit Rückweg; welcher Satz steht, entscheidet ansicht.css
+    $("chat-weg-handy").textContent = S.editorText("chat_weg_handy", { chat: c.wert === "anderer" ? "deinem Chat" : c.text });
     $("chat-oeffnen").hidden = !adr;
     if (adr) { $("chat-oeffnen").href = adr; $("chat-oeffnen").textContent = S.editorText("chat_oeffnen", { chat: c.text }); }
     // Größe nur unter „Erweitert“ (keine Kennzahl im Blick)
@@ -82,6 +96,7 @@
     k.classList.toggle("haupt", !(S.aendern === 4 && schritt() > 4));
     k.classList.toggle("ist-kopiert", gesperrt);
     $("s-satz-5").hidden = ki();
+    weiterOhne();
     zeichneKopiert(c);
   }
   // MF2: nach dem Kopieren zwei Zeilen, was im Chat zu tun ist (bei Teilen mit dem Teil und dem nächsten)
@@ -409,6 +424,7 @@
   // MF2 (Konzept §3.4, Entscheidung 3): kein Dialog vor dem Kopieren; der Satz zu den Rechten steht am Materialfeld und
   // hinter dem (i) neben dem Knopf
   $("text-kopieren").onclick = function () { textKopieren(); };
+  $("weiter-4-ohne").onclick = function () { if (S.gehe) S.gehe(5); };
 
   function setzeModus(m) { var r = document.querySelector("input[name=modus][value=" + m + "]");
       if (r) r.checked = true; }
@@ -648,9 +664,9 @@
         }).length, f = S.fehlerZahl(), rot = Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler"; }).length;
     if (!n) return;
     eingabeZu(true);
-    standKarte($("eingabe-stand"), eingesetztKopf() + ": " + n + (n === 1 ? " Baustein" : " Bausteine") + (rot ? ", " + rot +
-        (rot === 1 ? " braucht" : " brauchen") + " eine Korrektur." : f ? "; die Antwort braucht eine Korrektur." : "."),
-        f ? "fehler" : "ok");
+    var fehlend = fehlendZahl();
+    standKarte($("eingabe-stand"), eingesetztKopf() + ": " + n + (n === 1 ? " Baustein" : " Bausteine") +
+        standZahlen(rot, fehlend, f), f || fehlend ? "fehler" : "ok");
   }
   function zeichneTeile() {
     standOhneAntwort();
@@ -693,7 +709,10 @@
   async function eingabeUebernehmen(modusErzwungen, o) {
     var feld = !o;
     var zeige = feld ? function (x, art) { standKarte($("eingabe-stand"), x, art); } : o.stand;
-    var diagnose = feld ? function (d) { diagnoseKarte($("eingabe-diagnose"), d); } : o.diagnose;
+    // AP13.45 (WCAG 4.1.3): eine Karte, die mit ihrem Inhalt erst erscheint, lesen Vorleser oft nicht vor; der Fokus geht
+    // auf sie wie beim Erfolg auf die Stand-Karte
+    var diagnose = feld ? function (d) { var b = $("eingabe-diagnose"); diagnoseKarte(b, d);
+      if (d) { b.tabIndex = -1; b.focus(); } } : o.diagnose;
     var text = modusErzwungen && S.letzteAntwort ? S.letzteAntwort.text : feld ? $("eingabe").value : o.text || "";
     if (!text.trim()) return false;
     var eigen = !modusErzwungen && eigenerText(text);
@@ -754,6 +773,14 @@
       // neuer Inhalt: ab Schritt 5 neu durchsehen
       if (schritt() > 5 || schritt() < 5) { Z.mappe.schritt = 5; S.aendern = null; }
       await auswertung();
+      // AP13.45 B2: vermutlich abgeschnitten (gen/mappe.py abgeschnitten): die Stand-Karte nennt zuerst „Andere Antwort
+      // einfügen“, die rote Karte bleibt als zweiter Weg (karten.js zeichneKorrektur, S.abgeschnittenGilt); nicht mit eigener
+      // KI: deren Antwort kopiert niemand
+      S.abgeschnitten = null;
+      if (feld && !ki()) {
+        var ab = await km.mappeFn("abgeschnitten", [Z.mappe, Z.pruefung, text]);
+        if (ab && ab.abgeschnitten) S.abgeschnitten = { mappe: Z.mappe, fehlen: ab.fehlen };
+      }
       // Hash je Baustein merken; einzelne Bausteine zählen als Runde, eine ganze Einheit fängt neu an
       var gleichE = schleifeMerken(e.ids || Z.pruefung.bausteine.map(function (b) { return b.id; }), false);
       S.letzteAntwort.nach = antwortStand(); S.modusSpaeter = false;   // AP13.41 §1.3
@@ -790,6 +817,10 @@
       var rot = Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler" && (!e.ids ||
           e.ids.indexOf(b.id) >= 0); }).length;
       var aussen = Z.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler" && !d.baustein; }).length;
+      // AP13.45 B2: rote Bausteine, die nicht in dieser Antwort standen (die rote Karte zählt sie mit)
+      var rotSonst = e.ids ? Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler" &&
+          e.ids.indexOf(b.id) < 0; }).length : 0;
+      var fehlend = fehlendZahl(), abg = S.abgeschnittenGilt();
       if (gleichE.length) mehr = " Die Antwort für „" + gleichE[0] + "“ ist dieselbe wie vorher." + mehr;
       if (umbenannt.length) mehr = " " + S.editorText("ids_zugeordnet", { titel: umbenannt.slice(0, 3).map(function (t) {
           return "„" + t + "“"; }).join(", ") + (umbenannt.length > 3 ? " und " + (umbenannt.length - 3) + " weitere" : "") }) + mehr;
@@ -803,23 +834,66 @@
       var mitArt = zweig() === "steuer" || S.mehrereEinheiten() || modus !== "ersetzen";
       var kopf = eingesetzt ? eingesetzt + ": " : alleTeile ? "Alle " + alleTeile + " Teile eingesetzt: " :
           eingesetztKopf() + (mitArt ? " (" + modusText(modus) + ")" : "") + ": ";
-      zeige(wechsel + kopf + zahl + (zahl === 1 ? " Baustein" : " Bausteine")
-        + (rot ? ", " + rot + (rot === 1 ? " braucht" : " brauchen") + " eine Korrektur." : aussen ?
-            "; die Antwort braucht eine Korrektur." : ".") + schonSatz(feld && !knopfGeklickt && !modusErzwungen && !ki()) + mehr + e.text,
-        rot || aussen ? "fehler" : "ok");
+      // MF8: „Ich steuere“, „Meine Kacheln behalten“: ein Satz, was mit den Kacheln geschah und welche Elemente leer sind
+      var kachelSatz = feld && S.letzteAntwort.plan === "leer" && modus === "baustein" && !eingesetzt && !alleTeile ?
+          kachelnBehalten(rot) : "";
+      zeige(kachelSatz ? eingesetztKopf() + ": " + kachelSatz + (aussen && !rot ? " Die Antwort braucht eine Korrektur." : "")
+          + schonSatz(!knopfGeklickt && !modusErzwungen && !ki()) + mehr + e.text
+        : wechsel + kopf + zahl + (zahl === 1 ? " Baustein" : " Bausteine")
+        + (abg ? ". " + editorText("abgeschnitten") : standZahlen(rot, fehlend, aussen))
+        + schonSatz(feld && !abg && !knopfGeklickt && !modusErzwungen && !ki())
+        + (rotSonst && !abg ? " " + (rotSonst === 1 ? editorText("rot_sonst_eins") : editorText("rot_sonst", { n: rotSonst })) : "")
+        + mehr + e.text,
+        rot || aussen || fehlend || rotSonst ? "fehler" : "ok");
       // AP13.33 §2.1: stand der Fokus im Feld, geht er an die nächste Stelle. AP13.36 §1.2: nicht auf „Weiter“ (ein Enter
       // überginge die Durchsicht der Karten), sondern auf die erste rote Karte, sonst auf die Meldung über den Karten
       if (feld) {
         var rotId = (Z.pruefung.bausteine.filter(function (b) { return b.status === "fehler" && (!e.ids ||
             e.ids.indexOf(b.id) >= 0); })[0] || {}).id;
-        var neuOrt = S.fokusRetten([rotId ? $("karte-" + rotId) : null, "eingabe-stand", "korrektur-kopieren", "weiter-5",
-            "eingabe-nochmal"], $("eingabe-bereich"));
+        var neuOrt = S.fokusRetten(abg ? ["eingabe-stand", "eingabe-nochmal"] : [rotId ? $("karte-" + rotId) : null,
+            "eingabe-stand", "korrektur-kopieren", "weiter-5", "eingabe-nochmal"], $("eingabe-bereich"));
         if (neuOrt) neuOrt.scrollIntoView({ block: "nearest" });
         if (S.nachStunde) S.nachStunde(!!(rot || aussen));   // AP13.40: Sequenz, mit eigener KI weiter zur nächsten Stunde
       }
       return true;
     } catch (err) { zeigeFehler(err); return false; }
   }
+  // AP13.45 B2: geplante Bausteine, die nach der Antwort leer blieben (`leer_antwort`, wie die Punkte „fehlt“ der roten
+  // Karte); die Stand-Karte zählt rote und fehlende getrennt, mit denselben Zahlen wie der Titel der roten Karte
+  function fehlendZahl() {
+    return Z.mappe ? Z.mappe.bausteine.filter(function (k) { return k.geplant && k.leer_antwort && !k.aus; }).length : 0;
+  }
+  function standZahlen(rot, fehlend, aussen) {
+    var t = [];
+    if (rot) t.push(rot + (rot === 1 ? " braucht" : " brauchen") + " eine Korrektur");
+    if (fehlend) t.push(fehlend === 1 ? editorText("fehlt_eins") : editorText("fehlen", { n: fehlend }));
+    return t.length ? ", " + t.join(", ") + "." : aussen ? "; die Antwort braucht eine Korrektur." : ".";
+  }
+  S.fehlendZahl = fehlendZahl;
+  // gilt „abgeschnitten“ noch? Nur, solange die fehlenden Karten dieser Mappe leer sind
+  S.abgeschnitten = null;
+  S.abgeschnittenGilt = function () {
+    var a = S.abgeschnitten;
+    return !!a && a.mappe === Z.mappe && a.fehlen.length > 0 && a.fehlen.every(function (id) { var k = karteNach(id);
+      return k && k.geplant && k.leer_antwort && !k.aus; });
+  };
+  // MF8: Elemente der laufenden Einheit (ohne Struktur, ohne weggelassene): wie viele gefüllt, welche noch leer
+  function kachelnBehalten(rot) {
+    var tag = einheitTag() || "", ohneZeit = {};
+    ((S.katalog && S.katalog.typen) || []).forEach(function (t) { if (t.minuten === false) ohneZeit[t.typ] = 1; });
+    var el_ = Z.mappe.bausteine.filter(function (k) { return (k.einheit || "") === tag && !k.aus && !ohneZeit[k.typ]; });
+    var leer = el_.filter(function (k) { return k.geplant; }).map(function (k) { return "„" + (k.titel || k.typ) + "“"; });
+    var n = (Z.mappe.kacheln || []).filter(function (k) { return (k.einheit || "") === tag; }).length;
+    var namen = leer.length > 4 ? leer.slice(0, 3).join(", ") + " und " + (leer.length - 3) + " weitere" :
+        leer.length > 1 ? leer.slice(0, -1).join(", ") + " und " + leer[leer.length - 1] : leer[0] || "";
+    var t = editorText(n === 1 ? "kacheln_bleiben_eine" : "kacheln_bleiben", { n: n, gefuellt: el_.length - leer.length,
+        alle: el_.length });
+    if (leer.length) t += " " + editorText(leer.length === 1 ? "kacheln_leer_eins" : "kacheln_leer", { titel: namen }) +
+        (!$("korrektur").hidden ? " " + editorText(leer.length === 1 ? "kacheln_bitte_eins" : "kacheln_bitte") : "");
+    if (rot) t += " " + editorText(rot === 1 ? "kacheln_rot_eins" : "kacheln_rot", { n: rot });
+    return t;
+  }
+  function editorText(k, w) { return S.editorText(k, w); }
   $("eingabe").addEventListener("input", function () {
     clearTimeout(S.eingabeTimer);
     S.eingabeTimer = setTimeout(function () { eingabeUebernehmen(null); }, 500);
@@ -833,13 +907,33 @@
   function eingabeZu(zu) {
     if (!document.getElementById("stil-eingabe-zu")) {
       document.head.appendChild(el("style", { id: "stil-eingabe-zu", text: [
-        "#eingabe-bereich.zu { display: none; }",
-        "#eingabe-nochmal { display: block; margin-top: 6px; }"
+        "#eingabe-bereich.zu { display: none; }"
       ].join("\n") }));
     }
     $("eingabe-bereich").classList.toggle("zu", zu);
     $("eingabe-nochmal").hidden = !zu;
+    erledigt($("eingabe-erledigt"), zu);
   }
+  // MF8: „Antwort einsetzen“ bleibt nach dem Einsetzen an seiner Stelle stehen, als erledigt: „Antwort eingesetzt“ mit Haken,
+  // aria-disabled (mit Tab erreichbar, Vorlesegeräte hören „nicht verfügbar“ und über aria-describedby die Stand-Karte).
+  // Ein Klick ändert nichts; er setzt den Fokus auf die Stand-Karte und lässt sie noch einmal aufleuchten
+  function erledigt(b, an) {
+    if (!b) return;
+    b.hidden = !an;
+    if (an) b.querySelector(".erledigt-wort").textContent = eingesetztKopf();
+  }
+  Array.prototype.forEach.call(document.querySelectorAll(".knopf-erledigt"), function (b) {
+    b.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      var k = $(b.dataset.stand);
+      if (!k || k.hidden) return;
+      k.classList.remove("frisch"); void k.offsetWidth; k.classList.add("frisch");
+      clearTimeout(k._frisch);
+      k._frisch = setTimeout(function () { k.classList.remove("frisch"); }, 1800);
+      k.focus({ preventScroll: true });
+    });
+  });
+  S.erledigt = erledigt;
   // AP13.33 §1.5: die Meldung zur vorigen Antwort gilt für das leere Feld nicht mehr
   $("eingabe-nochmal").onclick = function () { feldOffenFuer = Z.mappe; eingabeZu(false); standKarte($("eingabe-stand"), "");
       $("eingabe").focus(); };

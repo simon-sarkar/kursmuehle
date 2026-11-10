@@ -24,10 +24,11 @@ und einzelne Chats antworten noch in einer Form, die die Seite nicht lesen kann.
 | Seiten und Textfelder mit Überschriften, Schritten, Tabellen, Kästen, Merksätzen und Bildern in elf Designs mit eigener Anordnung, Farbe, Dichte und Rändern (auch wellig und sehr wellig), sieben davon mit Motiv, Titelschrift und Bannerfläche | Lektion, Wiki, Datenbank, Chat, Workshop, externes Tool |
 | Test (Multiple Choice, Wahr/Falsch, Kurzantwort), Aufgabe, Datei, Verzeichnis, Forum, Buch, Abstimmung, Glossar | Weitere Fragetypen im Test, Zeitlimits, Forum-Diskussionen |
 | H5P-Inhalte: Interactive Book, Branching Scenario, Question Set, Drag and Drop, Lückentext, Lernkarten und weitere | Weitere H5P-Typen wie Interactive Video oder Image Hotspots |
+| Alle Übungen einer Einheit (Quiz, Zuordnen, Lernkarten, Lückentext) als ein Arbeitsheft (H5P Interactive Book) mit Punkten im Kursbuch, Abschluss beim Absenden oder ab einem Anteil der Punkte; vorerst nur in der Beta-Vorschau, bis der Import auf der Plattform geprüft ist | Geschichten und Hilfen im Heft, Fortschrittsanzeige je Seite im Heft |
 | Übungen als Website in einem Abschnitt oder als Block im Textfeld: Quiz, Zuordnen, Lückentext, Markieren, Lernkarten, Geschichte, mit Rückmeldung zur ganzen Übung; bis zu zwei Hilfen je Aufgabe und Zusatzaufgaben für Schnelle, ohne JavaScript mit Lösung zum Aufklappen | Bewertung und Abschluss je Übung in der Website, Hilfen im Test, eigene Spiele und Simulationen |
 | Feedback-Umfragen, Links und Videos, Badges, Kursbild, Abschlussverfolgung, Sichtbarkeit ab Datum | Gruppen, Termine, andere Zugriffsbedingungen |
 | Kursbanner und Kachelbilder (ohne Bild als Fläche im Design), Zahl der Bilder je Einheit (Stufe oder genaue Zahl), Bilder in jedem Baustein, je Bild ein Auftrag für einen Bildgenerator, Beschriftung im Bild als Wörter oder als Ziffern mit Legende, eigene Bilder hochladen (verkleinert, mit Prüffragen) | Abschnitts- und Kachelbilder automatisch aus dem Material |
-| Zwischenstand speichern und später weiterbauen (auch Einheiten aus älteren Versionen), nächste Einheit anhängen, Nachlieferung zu einem bestehenden Kurs; eine zu lange Antwort endet mit „Fortsetzung folgt“, die Mühle bittet um den Rest | Abbruch einer Antwort erkennen, wenn der Chat die Schlusszeile nicht schreibt |
+| Zwischenstand speichern und später weiterbauen (auch Einheiten aus älteren Versionen), nächste Einheit anhängen, weitere Einheit zu einem bestehenden Kurs; eine zu lange Antwort endet mit „Fortsetzung folgt“, die Mühle bittet um den Rest; eine abgeschnittene Antwort wird erkannt | Eine abgeschnittene Antwort erkennen, wenn nur der letzte Baustein fehlt |
 | Lizenz für Texte und Aufgaben (CC BY 4.0, CC BY-SA 4.0, alle Rechte vorbehalten) und der Satz „Mit KI erstellt, von der Lehrkraft geprüft.“ als kleine Zeile am Ende jedes Abschnitts | Lizenz je Baustein, Lizenz in den Datei- und H5P-Angaben der Plattform |
 | Eigene KI direkt anbinden: ein Programm wie Claude Code oder Codex (mit seinem Namen in der Mühle), ein eigener Zugangsschlüssel (OpenAI, Anthropic, Mistral) oder Ollama; Teile gehen von selbst nacheinander, Korrekturen ohne Kopieren | Bilder über die Verbindung, Verbindung vom iPad oder aus dem Schulnetz |
 | Prüfung der Antwort vor dem Bau mit Sätzen, was im Chat zu korrigieren ist, und Auswegen, wenn der Chat dieselbe Antwort wiederholt; Lösungen in einem zweiten Chat nachrechnen lassen, das Ergebnis steht an jeder Frage | Fachliche Prüfung des Inhalts; die bleibt bei der Lehrkraft |
@@ -93,6 +94,8 @@ Seit 2.0 läuft alles im Browser. Die Einzelheiten jeder Version stehen im [CHAN
       gemeldet; Bildnamen mit Leerzeichen; verständlichere Meldungen
 - [x] 2.0.0-b19 Neue Menüführung nach einer Messung mit zehn Lehrkraft-Rollen: ein Schritt nach dem anderen,
       Prüfseite vor dem Download, Sätze und Quizfragen direkt im Editor ändern
+- [x] 2.0.0-b20 Tiefenprüfung mit echten Chat-Antworten: Navigation „Mühle“, „Editor“, „Kursdatei“, Schulart auf
+      der Startseite, Bedienung mit Vorlesegerät, Tastatur und Zoom
 - [ ] Erste Testerinnen und Tester (Testphase mit Code seit 26.10.2026), Rückmeldungen einarbeiten
 - [ ] Prüfwoche: Sicherheit, Import aller Formate, Barrierefreiheit
 - [ ] 2.0 ohne Beta-Marke
