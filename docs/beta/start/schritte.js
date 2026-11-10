@@ -2056,5 +2056,20 @@
     };
     setzen();
     if (window.ResizeObserver) new ResizeObserver(setzen).observe(k); else window.addEventListener("resize", setzen);
+    // WebKit hält beim Fokus mit Tab scroll-padding-top nicht ein: liegt das Element danach unter der festen Kopfzeile,
+    // rückt die Seite nach (nur der Fokuswechsel durch die Tab-Taste, nicht in Dialogen)
+    var tab = false;
+    document.addEventListener("keydown", function (ev) { if (ev.key === "Tab") tab = true; }, true);
+    document.addEventListener("keyup", function () { tab = false; }, true);
+    document.addEventListener("focusin", function (ev) {
+      var t = ev.target;
+      if (!tab || !t || !t.getBoundingClientRect || (t.closest && t.closest("dialog"))) return;
+      requestAnimationFrame(function () {
+        var pos = getComputedStyle(k).position;
+        if ((pos !== "fixed" && pos !== "sticky") || document.activeElement !== t) return;
+        var unten = k.getBoundingClientRect().bottom, r = t.getBoundingClientRect();
+        if (r.bottom > 0 && r.top < unten + 4) window.scrollBy(0, r.top - unten - 12);
+      });
+    });
   })();
 })();
