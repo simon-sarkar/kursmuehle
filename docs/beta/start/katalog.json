@@ -726,6 +726,7 @@
   ],
   "arbeitsheft_info": "Die Schülerinnen und Schüler sammeln im Heft Punkte und schicken es am Ende ab; dann steht die Punktzahl im Kursbuch. Texte, Seiten und Geschichten bleiben auf der Kursseite.",
   "arbeitsheft": {
+   "nur_vorschau": true,
    "titel": "Übungen einzeln oder als Heft",
    "wahl": [
     {
@@ -975,7 +976,7 @@
   ],
   "editor": {
    "knopf": "Einheit ansehen und bearbeiten",
-   "schweb": "Zum Editor",
+   "schweb": "Editor",
    "titel": "Einheit ansehen und bearbeiten",
    "schliessen": "Schließen",
    "zurueck_schritte": "Zurück zu den Schritten",
@@ -1657,5 +1658,5 @@
    }
   ]
  },
- "version": "2.0.0-b19"
+ "version": "2.0.0-b20"
 }

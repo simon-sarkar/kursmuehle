@@ -95,6 +95,8 @@
     // der Name für Vorlesegeräte nicht
     var sw = $("editor-schweb"), gruen = da && !S.fehlerZahl() && !S.teileOffen() && !SCHMAL.matches;
     sw.hidden = !gruen;
+    $("navi").hidden = !gruen;          // R6: Navigation Mühle, Editor, Kursdatei; dieselbe Bedingung
+    $("ed-navi-datei").hidden = !(da && !S.fehlerZahl() && !S.teileOffen());
     document.body.classList.toggle("mit-editor-schweb", gruen);
     document.documentElement.classList.toggle("mit-editor-schweb", gruen);
     if (S.weiterFuenf) S.weiterFuenf();
@@ -135,6 +137,10 @@
   }
   $("editor-zurueck").onclick = zurueck;
   $("editor-weiter").onclick = weiter;
+  // R6: Navigation; „Kursdatei“ führt in den Schritt „Kursdatei“ zum Herunterladen (wie „Weiter“ dorthin)
+  $("ed-navi-muehle").onclick = zurueck;
+  $("ed-navi-datei").onclick = function () { fokusDanach = function () { S.weiterZu(7); }; schliessen(); };
+  $("navi-datei").onclick = function () { S.weiterZu(7); };
 
   // ---------------------------------------------------------------- Öffnen, Schließen, Esc
   function oeffnen(von) {

@@ -957,10 +957,15 @@ body.editor-offen { overflow: hidden; }
 .ed-punkt.status-fehler { background: var(--fehler); }
 .ed-nr { flex: none; min-width: 1.6em; height: 1.6em; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
   background: var(--creme); color: var(--text); font-weight: 650; font-size: 0.78rem; }
+/* R5 (Ultrawide: Bausteine links, Liste am rechten Fensterrand): Bausteine (928 px mit Rand) und Liste (300 px) stehen als
+ * eine Gruppe; R6: die Bausteine beginnen dort, wo in den Schritten die Seite beginnt (Navigation und Inhalt bleiben beim
+ * Wechsel am selben Ort), außer die Gruppe passte so nicht mehr ins Fenster. --ed-p = Rand links von der Gruppe; Kopf und
+ * Fußleiste richten sich an ihren Kanten aus */
 @media (min-width: 1100px) {
-  .ed-rumpf { flex-direction: row-reverse; align-items: flex-start; }
-  .ed-vorschau { flex: 1 1 auto; margin: 0; padding: 12px 24px 64px; max-width: none; display: block; }
-  .ed-vorschau > * { max-width: 880px; margin-left: auto; margin-right: auto; }
+  .editor { --ed-p: max(0px, min(calc((100vw - 760px) / 2 - 8px), calc(100vw - 1244px))); }
+  .ed-rumpf { flex-direction: row-reverse; align-items: flex-start; justify-content: flex-end; padding-left: var(--ed-p); }
+  .ed-vorschau { flex: 0 1 928px; min-width: 0; margin: 0; padding: 12px 24px 64px; max-width: none; display: block; }
+  .ed-kopf, .ed-fuss { padding-left: max(16px, calc(var(--ed-p) + 24px)); padding-right: max(16px, calc(100vw - var(--ed-p) - 1228px)); }
   .ed-liste { flex: none; width: 300px; position: sticky; top: 0; align-self: flex-start; max-height: 100%; overflow-y: auto;
     border-bottom: 0; border-left: 1px solid var(--linie); min-height: 100%; }
   .ed-liste > summary { pointer-events: none; list-style: none; color: var(--leise); font-size: 0.85rem; text-transform: uppercase;
@@ -1021,30 +1026,45 @@ body.editor-offen { overflow: hidden; }
  * Rand aus den Tokens (Rand --leise, Schrift --text); das Symbol sitzt auf dem festen Anthrazit des Logos in beiden Schemata.
  * Sichtbar nur ab 1000 px (AP13.45, Heuristik B14: schmaler fehlt ihm der freie Rand, „Einheit ansehen“ an der Karte und das
  * Menü tun dasselbe; editor.js setzt ihn dann nicht) und ohne offenen Dialog (die Ansicht selbst ist einer). */
-.editor-schweb { position: fixed; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 15; display: flex;
-  flex-direction: column; align-items: center; gap: 2px; min-width: 72px; padding: 6px 8px 5px; border: 2px solid var(--leise);
-  border-radius: 20px; background: var(--flaeche); color: var(--text); font: inherit; font-size: 0.8rem; font-weight: 650;
-  line-height: 1.25; cursor: pointer; box-shadow: 0 2px 10px var(--schatten); white-space: nowrap; }
-.editor-schweb:hover { background: var(--gewaehlt); border-color: var(--text); }
+/* R6: Navigation aus drei solchen Knöpfen untereinander; die aktuelle Ansicht ist kein Knopf, sie trägt einen
+ * farbigen Rand und Fläche (aria-current) */
+.navi { position: fixed; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 15; display: flex;
+  flex-direction: column; gap: 10px; }
+.navi[hidden] { display: none; }
+.navi-k { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 72px; padding: 6px 8px 5px;
+  border: 2px solid var(--leise); border-radius: 20px; background: var(--flaeche); color: var(--text); font: inherit;
+  font-size: 0.8rem; font-weight: 650; line-height: 1.25; cursor: pointer; box-shadow: 0 2px 10px var(--schatten); white-space: nowrap; }
+.navi-k:hover { background: var(--gewaehlt); border-color: var(--text); }
+.navi-k[hidden] { display: none; }
+/* im Editor erst ab 1350 px, links neben den Bausteinen; ab 1730 px genau dort, wo sie in den Schritten steht (die
+ * Bausteine beginnen dann, wo die Seite beginnt). Schmaler tut die Leiste unten dasselbe */
+.ed-navi { display: none; }
+@media (min-width: 1350px) {
+  .editor .ed-navi { display: flex; left: max(8px, calc(var(--ed-p) - 92px)); top: 50%; bottom: auto; transform: translateY(-50%); }
+}
+.navi-hier, .navi-hier:hover { cursor: default; border-color: var(--fokus); background: var(--gewaehlt); box-shadow: none; }
 .sw-symbol { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%;
   background: #2a2a2a; }
 .sw-symbol img { display: block; width: 44px; height: 44px; }
-body.editor-offen .editor-schweb { display: none; }
-body:has(dialog[open]) .editor-schweb { display: none; }
-/* AP13.44 §2: ab 1000 px als Lasche am linken Rand, senkrecht mittig (Rand zur Fensterkante offen, Wort in zwei Zeilen);
- * die Seite hält links so viel frei, dass der Knopf nicht über der Hauptspalte liegt: 96 px (76 px Knopf, 20 px Abstand)
- * abzüglich des freien Rands neben der Seite */
+body.editor-offen #navi { display: none; }
+body:has(dialog[open]) #navi { display: none; }
+/* AP13.44 §2: ab 1000 px senkrecht mittig, Wort in zwei Zeilen. R5 (am großen Bildschirm fand man ihn am Fensterrand
+ * nicht): er steht 24 px links neben der Seite, höchstens bis 8 px an den Fensterrand; die Seite hält links so viel frei,
+ * dass er nicht über der Hauptspalte liegt: 108 px (8 Rand, 76 Knopf, 24 Abstand) abzüglich des freien Rands neben ihr */
 @media (min-width: 1000px) {
-  .editor-schweb { left: 0; top: 50%; bottom: auto; transform: translateY(-50%); width: 76px; min-width: 0; padding: 8px 6px 7px 4px;
-    border-left: 0; border-radius: 0 20px 20px 0; white-space: normal; text-align: center; }
-  body.mit-editor-schweb .seite { padding-left: max(16px, calc(96px - max(0px, (100vw - 760px) / 2))); }
+  .navi { left: max(8px, calc((100vw - 760px) / 2 - 100px)); top: 50%; bottom: auto; transform: translateY(-50%); }
+  .navi-k { width: 76px; min-width: 0; padding: 8px 5px 7px; white-space: normal; text-align: center; }
+  body.mit-editor-schweb .seite { padding-left: max(16px, calc(108px - max(0px, (100vw - 760px) / 2))); }
 }
 @media (min-width: 1100px) {
-  body.mit-editor-schweb[data-schritt="3"] .seite { padding-left: max(16px, calc(96px - max(0px, (100vw - 1180px) / 2))); }
+  body[data-schritt="3"] .navi { left: max(8px, calc((100vw - 1180px) / 2 - 100px)); }
+  body.mit-editor-schweb[data-schritt="3"] .seite { padding-left: max(16px, calc(108px - max(0px, (100vw - 1180px) / 2))); }
 }
 @media (min-width: 1000px) and (max-width: 1099px) {
   /* aufgeklappte Vorschau (60 vh von unten): mittig in der freien Fläche darüber */
-  body[data-offen="3"]:has(.vorschau-spalte.offen) .editor-schweb { top: 20vh; }
+  /* aufgeklappte Vorschau (60 vh von unten): über ihr nur Platz für den Editor-Knopf */
+  body[data-offen="3"]:has(.vorschau-spalte.offen) .navi { top: 20vh; }
+  body[data-offen="3"]:has(.vorschau-spalte.offen) .navi .navi-k:not(#editor-schweb) { display: none; }
 }
 @media (max-width: 1099px) {
   /* unter 1100 px endet die Fußzeile in Schritt 3 über der Vorschauleiste (96 px) */

@@ -369,7 +369,7 @@
   // ersetzen. replaceState legt keinen Eintrag an, der Zurück-Knopf führt weiter zur Landingpage.
   function adresseLesen() {
     var q = new URLSearchParams(location.search), h = new URLSearchParams((location.hash || "").replace(/^#/, ""));
-    if (h.has("thema") || h.has("jahrgang") || h.has("minuten")) q = h;
+    if (h.has("thema") || h.has("jahrgang") || h.has("minuten") || h.has("schulart")) q = h;
     var weiter = q.get("weiter") === "1", thema = (q.get("thema") || "").trim().slice(0, 120);
     var vor = q.has("thema") || q.has("jahrgang") || q.has("minuten"), jg = (q.get("jahrgang") || "").trim();
     if (weiter || vor) history.replaceState(history.state, "", location.pathname + (q === h ? "" : location.hash));
@@ -386,7 +386,15 @@
     } else $("f-jahrgang").value = jg.slice(0, 12);
     $("f-minuten").value = min >= 10 && min <= 300 ? min : 45;
     if (!thema) { $("f-thema").focus(); return; }
-    S.katalogDa.then(function () { return km.autosaveLesen().catch(function () { return null; }); }).then(function (r) {
+    // R6: Schulart von der Startseite (nur ein Wert aus der Liste, die erst mit dem Katalog steht); fehlt sie, steht der
+    // Fokus dort ohne rote Meldung
+    var sa = (q.get("schulart") || "").trim(), fs = $("f-schulart"), ohneSchulart = false;
+    S.katalogDa.then(function () {
+      if (sa && [].some.call(fs.options, function (o) { return o.value && o.value === sa; })) { fs.value = sa; schulartMerken(sa); }
+      if (!fs.value && !fs.disabled) { ohneSchulart = true; fs.focus(); return null; }
+      return km.autosaveLesen().catch(function () { return null; });
+    }).then(function (r) {
+      if (ohneSchulart) return;
       if (!r) { startAbsenden(); return; }
       frage("Einheit „" + (r.titel || r.dateiname) +
           "“ verwerfen? Was du nicht mit „Zwischenstand speichern“ gespeichert hast, geht verloren.",
@@ -1585,9 +1593,17 @@
   // AP13.47: Übungen einzeln oder als ein Arbeitsheft; die Kachel mit Dreieck bleibt in der Reihe (nur zwei Werte, kein
   // Ausklappteil „Weitere“); Prozent für den Abschluss nur mit Heft
   var HEFT_KACHELN = {};
+  // b20: bis zur Plattformprobe (Import auf der ByCS-Lernplattform) steht die Wahl nur in der Vorschau und lokal, nicht
+  // in der stabilen Fassung auf kursmuehle.de (`nur_vorschau` im Katalog); eine Einheit mit Heft zeigt sie weiter
+  function stabilLive() {
+    return /(^|\.)(kursmuehle\.de|xn--kursmhle-[a-z0-9]+\.de)$/.test(location.hostname) && !/(^|\/)beta\//.test(location.pathname);
+  }
   function zeichneHeftWahl(t, hue) {
     if (!t) return;
     var an = S.angaben.arbeitsheft === "ja";
+    var g = $("aus-arbeitsheft").closest(".aus-gruppe"), weg = !!t.nur_vorschau && !an && stabilLive();
+    if (g.hidden !== weg) g.hidden = weg;
+    if (weg) return;
     if ($("aus-arbeitsheft-titel").textContent !== t.titel) $("aus-arbeitsheft-titel").textContent = t.titel;
     kachelGruppe($("aus-arbeitsheft"), "arbeitsheft", t.wahl.map(function (w) {
       if (w.probe && !HEFT_KACHELN[w.wert]) HEFT_KACHELN[w.wert] = kachel("arbeitsheft", w.wert, w.text, "", false, w.zeile,

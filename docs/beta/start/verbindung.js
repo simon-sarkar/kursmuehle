@@ -156,6 +156,12 @@
     reihe.before(teil);
     teil.appendChild(reihe);
     S.ausklapp(teil, "ki");
+    // R5: Zuklappen schließt auch „So geht es“ (der Kasten steht außerhalb, weil kern.js die Kacheln neu baut) und hält
+    // den Teil zu, bis man ihn selbst wieder öffnet
+    teil.addEventListener("toggle", function () {
+      S.kiZugeklappt = !teil.open;
+      if (!teil.open && S.verbindenOffen) { S.verbindenOffen = false; zeichne(); }
+    });
     var hilfe = el("button", { type: "button", cls: "textlink", id: "ki-hilfe", "aria-controls": "verbinden",
         text: "So geht es" });
     hilfe.onclick = function () { S.verbindenOffen = !S.verbindenOffen; zeichne();
@@ -189,7 +195,7 @@
   function zeichne() {
     if (!$("verbinden")) return;
     // gemerkte Verbindung, Testcode aus der Adresse oder gewählte Kachel: der Teil ist offen, bevor er gezeichnet wird
-    if ($("ki-eigene") && (V.gemerkt || vorwahl || (Z.mappe && Z.mappe.chat === "eigene"))) $("ki-eigene").open = true;
+    if ($("ki-eigene") && !S.kiZugeklappt && (V.gemerkt || vorwahl || (Z.mappe && Z.mappe.chat === "eigene"))) $("ki-eigene").open = true;
     var z = $("ki-zustand");
     if (z) z.textContent = zustandText();
     if ($("ki-hilfe")) $("ki-hilfe").setAttribute("aria-expanded", String(S.verbindenOffen));

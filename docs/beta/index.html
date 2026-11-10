@@ -87,9 +87,9 @@
        margin: 0 0 22px; }
 
   /* Felder wie Schritt 1 der Mühle (web/ansicht.css) */
-  .start-form { display: grid; grid-template-columns: 1fr 9rem 7rem; gap: 12px; align-items: end; }
+  .start-form { display: grid; grid-template-columns: 1fr 11rem 8rem 6.5rem; gap: 12px; align-items: end; }
   .feld { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: var(--leise); }
-  input[type=text], input[type=number] { font: inherit; font-size: 16px; color: var(--text); background: var(--feld);
+  input[type=text], input[type=number], select { font: inherit; font-size: 16px; color: var(--text); background: var(--feld);
     border: 1px solid var(--linie); border-radius: 8px; padding: 9px 10px; min-height: 44px; width: 100%; }
   input::placeholder { color: var(--leise); opacity: 1; }
   .knopf { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 9px 16px;
@@ -106,7 +106,7 @@
   .vorsatz { font-size: 0.9rem; color: var(--leise); margin: 14px 0 0; }
   @media (max-width: 640px) {
     .start-form { grid-template-columns: 1fr 1fr; }
-    .feld-thema { grid-column: 1 / -1; }
+    .feld-thema, .feld-schulart { grid-column: 1 / -1; }
     .start-form .knopf { justify-self: stretch; }
   }
 
@@ -158,7 +158,7 @@
 </style>
 </head>
 <body>
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand be3d7ff vom 09.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand c151c04 vom 10.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 
 <header class="kopfzeile">
   <div class="innen">
@@ -183,6 +183,20 @@
       <form id="start-form" class="start-form" action="start/" method="get" autocomplete="off" novalidate>
         <label class="feld feld-thema">Thema
           <input id="f-thema" name="thema" type="text" placeholder="Bruchrechnen" maxlength="120">
+        </label>
+        <!-- Schulart wie Schritt 1 der Mühle (katalog.yaml oberflaeche.schulart ohne „Nicht angegeben“; test_landing.py
+             vergleicht); vorbelegt mit der zuletzt gewählten (localStorage „kursmuehle-schulart“, unter /beta/ mit -beta) -->
+        <label class="feld feld-schulart">Schulart
+          <select id="f-schulart" name="schulart">
+            <option value="">Schulart wählen</option>
+            <option value="Grundschule">Grundschule</option>
+            <option value="Mittelschule">Mittelschule</option>
+            <option value="Realschule">Realschule</option>
+            <option value="Gymnasium">Gymnasium</option>
+            <option value="Wirtschaftsschule">Wirtschaftsschule (nur als Angabe)</option>
+            <option value="Förderschule">Förderschule</option>
+            <option value="Berufliche Schule">Berufliche Schule (nur als Angabe)</option>
+          </select>
         </label>
         <label class="feld feld-klein">Jahrgangsstufe
           <input id="f-jahrgang" name="jahrgang" type="text" inputmode="numeric" maxlength="12" placeholder="7">
@@ -236,7 +250,7 @@
       geistige Entwicklung) vorliegt; das Aussehen wählst du aus elf Designs.</p>
       <h2>So läuft es</h2>
       <ol class="ablauf">
-        <li>Du gibst Thema, Jahrgangsstufe und Minuten ein und klickst auf „Weiter“.</li>
+        <li>Du gibst Thema, Schulart, Jahrgangsstufe und Minuten ein und klickst auf „Weiter“.</li>
         <li>Du kopierst den Text für den Chat aus der Mühle in deinen KI-Chat und die Antwort zurück. Fehlt
           etwas, bekommst du eine Korrekturbitte für den Chat.</li>
         <li>Du lädst die Datei für die Lernplattform herunter und stellst sie in einem leeren Kurs wieder her: Mehr →
@@ -290,7 +304,7 @@
 
 <script src="start/themen.js"></script>
 <script>
-// „Weiter“ baut die Adresse start/#thema=…&jahrgang=…&minuten=…; das Fragment verlässt den Browser nicht.
+// „Weiter“ baut die Adresse start/#thema=…&schulart=…&jahrgang=…&minuten=…; das Fragment verlässt den Browser nicht.
 // Ohne Skript schickt das Formular dieselben Felder als ?thema=…, die Mühle liest beides.
 // Leeres Thema oder Minuten außerhalb 10 bis 300: eine Zeile mit roter Mühle unter den Feldern, keine Blase des Browsers.
 (function () {
@@ -312,15 +326,27 @@
   function pruefen() {
     var minuten = document.getElementById("f-minuten").value.trim(), m = Number(minuten);
     if (!document.getElementById("f-thema").value.trim()) { melden("f-thema", "Gib ein Thema ein."); return false; }
+    // die Mühle braucht die Schulart, außer statt der Jahrgangsstufe steht eine Zielgruppe (Text ohne Zahl)
+    var jg = document.getElementById("f-jahrgang").value.trim();
+    if (!document.getElementById("f-schulart").value && (!jg || /\d/.test(jg))) {
+      melden("f-schulart", "Wähl eine Schulart."); return false; }
     if (minuten && !(m >= 10 && m <= 300)) {
       melden("f-minuten", "Gib bei Minuten eine Zahl von 10 bis 300 ein."); return false; }
     return true;
   }
   f.addEventListener("input", function (e) { if (e.target.getAttribute("aria-invalid")) aufheben(); });
+  f.addEventListener("change", function (e) { if (e.target.getAttribute("aria-invalid")) aufheben(); });
+  (function () {
+    var sa = document.getElementById("f-schulart"), v = "";
+    // Schlüssel wie km.speicher() der Mühle: unter einem Pfadsegment beta/ mit dem Zusatz -beta
+    try { v = localStorage.getItem("kursmuehle-schulart" + (("/" + location.pathname).indexOf("/beta/") >= 0 ? "-beta" : "")) || ""; } catch (e) {}
+    if (v && [].some.call(sa.options, function (o) { return o.value === v; })) sa.value = v;
+  })();
   function adresse() {
     var wert = function (id) { return document.getElementById(id).value.trim(); };
-    var thema = wert("f-thema"), jahrgang = wert("f-jahrgang"), minuten = wert("f-minuten");
+    var thema = wert("f-thema"), jahrgang = wert("f-jahrgang"), minuten = wert("f-minuten"), schulart = wert("f-schulart");
     var q = thema ? "thema=" + encodeURIComponent(thema) : "";
+    if (q && schulart) q += "&schulart=" + encodeURIComponent(schulart);
     if (q && jahrgang) q += "&jahrgang=" + encodeURIComponent(jahrgang);
     if (q && minuten) q += "&minuten=" + encodeURIComponent(minuten);
     return "start/" + (q ? "#" + q : "");

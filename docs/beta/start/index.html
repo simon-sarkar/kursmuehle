@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand be3d7ff vom 09.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand c151c04 vom 10.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -62,6 +62,19 @@
     </details>
     <div id="editor-vorschau" class="ed-vorschau"></div>
   </div>
+  <!-- R6: dieselbe Navigation im Editor (ab 1460 px neben Bausteinen und Liste; schmaler tut die Leiste unten dasselbe) -->
+  <nav id="ed-navi" class="navi ed-navi" aria-label="Ansichten">
+    <button type="button" id="ed-navi-muehle" class="navi-k" aria-label="Mühle: zurück zu den Schritten">
+      <span class="sw-symbol" aria-hidden="true"><img src="logo.svg" alt="" width="44" height="44"></span>
+      <span class="sw-text">Mühle</span></button>
+    <span class="navi-k navi-hier" aria-current="page"><span class="sw-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" width="30"
+      height="30" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path
+      d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></span><span class="sw-text">Editor</span></span>
+    <button type="button" id="ed-navi-datei" class="navi-k" aria-label="Kursdatei: prüfen und herunterladen">
+      <span class="sw-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg></span>
+      <span class="sw-text">Kursdatei</span></button>
+  </nav>
   <!-- AP13.44 §3: zurück in die Schritte oder weiter zum nächsten offenen Schritt (editor.js leisteZeigen) -->
   <div class="ed-fuss">
     <button type="button" id="editor-zurueck" class="knopf">Zurück zu den Schritten</button>
@@ -868,11 +881,20 @@
  <datalist id="phasen"></datalist>
 </main>
 <!-- AP13.38: schwebender Knopf, öffnet dieselbe Ansicht wie der Link in der Kopfzeile (editor.js, Text aus katalog.yaml
-     oberflaeche.editor); im Tab-Lauf nach dem Hauptinhalt, vor der Fußzeile. AP13.44: ab 1000 px am linken Rand mittig,
-     schmaler unten links; erst ohne rote Karten -->
-<button type="button" id="editor-schweb" class="editor-schweb" aria-label="Zum Editor: Einheit ansehen und bearbeiten" hidden>
-  <span class="sw-symbol" aria-hidden="true"><img src="logo.svg" alt="" width="44" height="44"></span>
-  <span id="editor-schweb-text" class="sw-text">Zum Editor</span></button>
+     oberflaeche.editor); im Tab-Lauf nach dem Hauptinhalt, vor der Fußzeile. AP13.44: ab 1000 px mittig neben der Seite;
+     erst ohne rote Karten. R6: drei Knöpfe als Navigation (Mühle, Editor, Kursdatei); die aktuelle Ansicht ist markiert -->
+<nav id="navi" class="navi" aria-label="Ansichten" hidden>
+  <span class="navi-k navi-hier" aria-current="page"><span class="sw-symbol" aria-hidden="true"><img src="logo.svg" alt="" width="44" height="44"></span>
+    <span class="sw-text" data-navi="muehle">Mühle</span></span>
+  <button type="button" id="editor-schweb" class="navi-k editor-schweb" aria-label="Editor: Einheit ansehen und bearbeiten">
+    <span class="sw-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></span>
+    <span id="editor-schweb-text" class="sw-text">Editor</span></button>
+  <button type="button" id="navi-datei" class="navi-k" aria-label="Kursdatei: prüfen und herunterladen">
+    <span class="sw-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg></span>
+    <span class="sw-text" data-navi="datei">Kursdatei</span></button>
+</nav>
 <footer class="fuss">
   <button type="button" id="fuss-rueckmeldung" class="textlink">Rückmeldung</button>
   <a href="../impressum.html" class="fuss-klein">Impressum und Datenschutz</a>

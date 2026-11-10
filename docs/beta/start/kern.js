@@ -357,6 +357,7 @@ window.km = km;
   S.spracheGelb = [];             // AP13.14: ids mit „Sprache anpassen lassen“ (flüchtig, nicht in der Mappe)
   S.letzteAntwort = null;
   S.modusSpaeter = false;         // AP13.41 §1.3: die Moduswahl gilt erst für die nächste Antwort (chat.js)
+  S.kiZugeklappt = false;         // R5: die Lehrkraft hat „So geht es“ selbst zugeklappt (verbindung.js)
   S.alleDesigns = false;          // MF2: Schritt 3 zeigt alle Designs („Alle Designs“), sonst vier und das gewählte
   S.schreibKette = Promise.resolve();
   S.angabenFuer = null;            // Mappe, deren Angaben aus dem Steckbrief gelesen sind (neuPruefen)
