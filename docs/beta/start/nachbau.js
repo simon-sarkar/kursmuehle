@@ -796,6 +796,7 @@
     neuStart();
     $("f-thema").value = ""; $("f-jahrgang").value = ""; $("f-minuten").value = 45;
     $("f-schulart").value = S.schulartGemerkt();
+    if (window.KM_BEISPIEL) window.KM_BEISPIEL();           // Beispiel passend zur gemerkten Schulart neu ziehen
     $("s1-titel").textContent = "Worum geht es?";
     S.gespeichert = false;
     zeichne();

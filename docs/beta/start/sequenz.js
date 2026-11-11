@@ -102,8 +102,8 @@
   }
 
   // ---------------------------------------------------------------- Schritt 1
-  // Umschalter als Radiogruppe (role=radio, Pfeiltasten aus kern.js), dazu bei „Sequenz“ die Zahl der Stunden mit ⓘ
-  // (ein echter Knopf; das Feld hat sein eigenes label, das ⓘ liegt daneben)
+  // Umschalter als Radiogruppe (role=radio, Pfeiltasten aus kern.js), dazu bei „Sequenz“ die Zahl der Stunden mit (i)
+  // (ein echter Knopf; das Feld hat sein eigenes label, das (i) liegt daneben)
   function zeile1() {
     var box = $("f-art-zeile");
     if (box.firstChild || !S.katalog) return;
@@ -115,7 +115,7 @@
     var zahl = el("input", { id: "f-stunden", type: "number", min: String(MIN), max: String(MAX), step: "1",
         inputmode: "numeric", placeholder: T("stunden_platz") });
     var info = el("button", { type: "button", cls: "info-knopf", "aria-expanded": "false", "aria-label": T("info_label"),
-        "data-info": "sequenz_info", text: "ⓘ" });
+        "data-info": "sequenz_info", text: "i" });
     var l = el("div", { id: "f-stunden-l", cls: "feld seq-stunden-l info-ort", hidden: true }, [
       el("label", { "for": "f-stunden", cls: "feld-kopf", text: T("stunden") }), info, zahl,
       el("span", { cls: "info-text feld-zeile", "data-info-text": "sequenz_info", hidden: true })]);

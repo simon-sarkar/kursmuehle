@@ -59,17 +59,23 @@
     ".km-ed-inhalt .km-stelle { pointer-events: auto; cursor: pointer; border-radius: 4px; }",
     ".km-ed-inhalt .km-stelle:hover { outline: 2px dashed #8a6416; outline-offset: 3px; }",
     ".km-ed-inhalt .km-stelle-offen { display: none !important; }",
-    // AP13.45 B4: je Stelle ein Knopf „Ändern“ hinter ihr; er erscheint, sobald er den Fokus hat, über dem Anfang dessen,
-    // was folgt (ohne den Text zu verschieben, sonst ginge ein Klick daneben), die Stelle bekommt dann den Rahmen. Der
-    // Inhalt selbst bleibt Absatz, Liste oder Überschrift
+    // AP13.45 B4: je Stelle ein Knopf „Ändern“ hinter ihr; er erscheint, sobald er den Fokus hat, die Stelle bekommt dann
+    // den Rahmen. Der Inhalt selbst bleibt Absatz, Liste oder Überschrift. Er steht rechts neben der letzten Zeile
+    // seiner Stelle in einem freien Rand der Fläche (km-mit-stellen), nie über Text und ohne den Text zu verschieben
+    // (sonst ginge ein Klick daneben); die Kästen der Kurse haben keine eigene Position, Bezug ist die Fläche
+    ".km-ed-inhalt.km-mit-stellen { position: relative; padding-right: 108px; }",
     ".km-ed-inhalt .km-aendern { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; " +
         "overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }",
     // AP13.45 (09.11.): mit der Maus erscheint er auch beim Überfahren der Stelle (Klasse km-zeigen, nur bei hover: hover)
-    ".km-ed-inhalt .km-aendern:focus, .km-ed-inhalt .km-aendern.km-zeigen { z-index: 1; width: auto; height: auto; margin: 4px 0 0; padding: 5px 14px; " +
+    ".km-ed-inhalt .km-aendern:focus, .km-ed-inhalt .km-aendern.km-zeigen { z-index: 1; right: 10px; width: auto; height: 30px; " +
+        "margin: -30px 0 0; padding: 0 12px; " +
         "overflow: visible; clip: auto; border: 1px solid #8a6416; border-radius: 6px; background: #ffffff; color: #1d2125; " +
-        "font: 600 14px/1.3 system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif; cursor: pointer; pointer-events: auto; " +
+        "font: 600 14px/28px system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif; cursor: pointer; pointer-events: auto; " +
         "outline: 3px solid #8a6416; outline-offset: 2px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); }",
     ".km-ed-inhalt .km-aendern.km-zeigen:not(:focus) { outline: none; }",
+    // schmal (Handy): kein Rand; der Knopf steht mit dem Fokus unter seiner Stelle im Fluss und schiebt, was folgt
+    "@media (max-width: 699px) { .km-ed-inhalt.km-mit-stellen { padding-right: 18px; } " +
+        ".km-ed-inhalt .km-aendern:focus, .km-ed-inhalt .km-aendern.km-zeigen { position: static; display: block; margin: 6px 0 10px; } }",
     ".km-ed-inhalt .km-stelle:has(+ .km-aendern:focus), .km-ed-inhalt .km-stelle:has(+ .km-aendern.km-zeigen) { " +
         "outline: 2px dashed #8a6416; outline-offset: 3px; }",
     "slot[name=km-stelle] { display: block; }",
@@ -143,8 +149,9 @@
   $("editor-weiter").onclick = weiter;
   // R6: Navigation; „Kursdatei“ führt in den Schritt „Kursdatei“ zum Herunterladen (wie „Weiter“ dorthin)
   $("ed-navi-muehle").onclick = zurueck;
-  $("ed-navi-datei").onclick = function () { fokusDanach = function () { S.weiterZu(7); }; schliessen(); };
-  $("navi-datei").onclick = function () { S.weiterZu(7); };
+  // Gesperrt, bis der Schritt „Kursdatei“ erreicht ist (schritte.js zeichneSchritte); danach nur Navigation
+  $("ed-navi-datei").onclick = function () { if (this.disabled) return; fokusDanach = function () { S.weiterZu(7); }; schliessen(); };
+  $("navi-datei").onclick = function () { if (!this.disabled) S.weiterZu(7); };
 
   // ---------------------------------------------------------------- Öffnen, Schließen, Esc
   function oeffnen(von) {
@@ -1247,6 +1254,8 @@
         x.after(el("button", { type: "button", cls: "km-aendern", "data-km-nr": String(s.nr), "aria-label": stelleLabel(b.id, s),
             text: TS("aendern") }));
       });
+      var flaeche = root.querySelector(".km-ed-inhalt");
+      if (flaeche) flaeche.classList.toggle("km-mit-stellen", !!Object.keys(da).length);   // Rand für „Ändern“
       // AP13.45 (09.11.): mit der Maus steht „Ändern“ auch, solange der Zeiger auf der Stelle oder dem Knopf ist; ein kurzer
       // Nachlauf trägt ihn über den Abstand zwischen beiden. Auf Touch-Geräten (hover: none) bleibt es beim Fokus
       var hoverAus = null;

@@ -280,6 +280,10 @@
     // MF1: die Hauptknöpfe nennen den nächsten Schritt
     $("weiter-5").dataset.ziel = "Weiter: " + kurzName(sichtbar.indexOf(5.5) >= 0 ? 5.5 : S.fragenListe.length ? 6 : 7);
     weiterFuenf();
+    // „Kursdatei“ im schwebenden Menü und im Editor dient nur der Navigation dorthin; vorher gesperrt
+    var dateiFrei = !!Z.mappe && s >= 7;
+    $("navi-datei").disabled = !dateiFrei;
+    $("ed-navi-datei").disabled = !dateiFrei;
     $("weiter-bilder").hidden = S.aendern === 5.5;
     // MF4: „Weiter: Kursdatei“ neutral, ohne Bestätigung; nach „Ändern“ steht dort „Zurück zu“ (zurueck-6)
     $("weiter-6").hidden = S.aendern === 6;
@@ -761,7 +765,7 @@
   async function dateienLesen(files) {
     var out = {};
     for (var i = 0; i < files.length; i++) {
-      var f = files[i], name = f.webkitRelativePath || f.name;
+      var f = files[i], name = f.name;
       // einzeln gewählte Bilder gehören nach assets/ (iPad, „Dateien wählen“)
       if (name.indexOf("/") < 0 && ["kurs.md", "steckbrief.yaml", "mappe.json"].indexOf(name) < 0) name = "assets/" +
           name;
@@ -782,14 +786,13 @@
     }
   }
   // Dateiwahl über Beschriftungen: auch mit der Tastatur erreichbar
-  Array.prototype.forEach.call(document.querySelectorAll("label[for=datei-oeffnen], label[for=ordner-oeffnen]"),
+  Array.prototype.forEach.call(document.querySelectorAll("label[for=datei-oeffnen]"),
       function (l) {
     l.tabIndex = 0; l.setAttribute("role", "button");
     l.addEventListener("keydown", function (ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault();
         $(l.htmlFor).click(); } });
   });
   $("datei-oeffnen").onchange = dateiWahl;
-  $("ordner-oeffnen").onchange = dateiWahl;
 
   // Nächste Einheit: Aussehen und Chat sind vorbelegt, nach Schritt 2 geht es direkt zum Text für den Chat
   function nachZwei() { return Z.mappe && Z.mappe.anhaengen && Z.mappe.aussehen && chatInfo(Z.mappe.chat) ? 4 : 3; }

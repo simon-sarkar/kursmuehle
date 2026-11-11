@@ -320,7 +320,7 @@ select { appearance: auto; }
 .mehr-felder { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 12px 0 4px; }
 
 /* Ausklappteile (AP13.12): was nicht zum kürzesten Weg gehört, liegt zugeklappt dahinter */
-.ausklapp > summary, .ungeprueft > summary, .fuss-mehr > summary { cursor: pointer; color: var(--link); font-weight: 600;
+.ausklapp > summary, .ungeprueft > summary { cursor: pointer; color: var(--link); font-weight: 600;
   padding: 6px 0; width: max-content; max-width: 100%; }
 .ausklapp[open] > summary { margin-bottom: 4px; }
 
@@ -394,10 +394,15 @@ select { appearance: auto; }
 .vs-innen, .vs-innen *, .format-vorschau, .format-vorschau * { pointer-events: none !important; }
 .vorschau-leiste { display: none; }
 .schritt:not(.auf) .vorschau-spalte { display: none; }
+/* Ab 1100 px sind alle Schritte so breit wie „Wie soll der Kurs aussehen?“ (1180 px); in den übrigen Schritten bleibt
+   der Inhalt links in der bisherigen Breite (Zeilenlänge, Formulare). Der Platz für den Rollbalken der Spalte ist
+   fest reserviert, sonst änderte er die Breite der Vorschau, die ihren Maßstab daraus nimmt (Schleife im Bildtakt) */
 @media (min-width: 1100px) {
-  body[data-offen="3"] .seite { max-width: 1180px; }
+  .seite { max-width: 1180px; }
+  .schritt:not(#schritt-3) > .s-inhalt { max-width: 728px; }
   .aus-raster { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 0 24px; align-items: start; }
-  .vorschau-spalte { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto; }
+  .vorschau-spalte { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto; scrollbar-gutter: stable; }
+  @supports not (scrollbar-gutter: stable) { .vorschau-spalte { overflow-y: scroll; } }
 }
 @media (max-width: 1099px) {
   body[data-offen="3"] .seite { padding-bottom: 120px; }
@@ -410,7 +415,7 @@ select { appearance: auto; }
   .vs-auf::after { content: "▴"; color: var(--leise); }
   .vorschau-spalte.offen .vs-auf::after { content: "▾"; }
   .vs-karten { flex: 1 1 auto; min-height: 0; margin: 0 16px; overflow: hidden; }
-  .vorschau-spalte.offen .vs-karten { overflow-x: hidden; overflow-y: auto; padding-bottom: 12px; max-width: 560px; }
+  .vorschau-spalte.offen .vs-karten { overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; padding-bottom: 12px; max-width: 560px; }
 }
 @media (max-width: 899px) {
   .vierer { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -846,9 +851,7 @@ textarea.von-lehrkraft { background: var(--lehrkraft); }
 .fuss a, .fuss .textlink { color: var(--leise); font-size: inherit; padding: 4px 0; }
 .fuss a { text-underline-offset: 3px; }
 .fuss .fuss-klein { font-size: 0.8rem; }
-.fuss-mehr > summary { font-weight: 400; color: var(--leise); padding: 4px 0; }
-.fuss-mehr[open] { display: flex; flex-wrap: wrap; gap: 4px 22px; }
-.fuss-mehr[open] > summary { width: auto; }          /* Impressum: klein, Seite liegt unter ../ (kursmuehle.de/impressum.html) */
+/* Impressum: klein, Seite liegt unter ../ (kursmuehle.de/impressum.html) */
 
 @media (max-width: 640px) {
   .seite { padding-top: 14px; }
@@ -963,7 +966,7 @@ body.editor-offen { overflow: hidden; }
  * Wechsel am selben Ort), außer die Gruppe passte so nicht mehr ins Fenster. --ed-p = Rand links von der Gruppe; Kopf und
  * Fußleiste richten sich an ihren Kanten aus */
 @media (min-width: 1100px) {
-  .editor { --ed-p: max(0px, min(calc((100vw - 760px) / 2 - 8px), calc(100vw - 1244px))); }
+  .editor { --ed-p: max(0px, min(calc((100vw - 1180px) / 2 - 8px), calc(100vw - 1244px))); }
   .ed-rumpf { flex-direction: row-reverse; align-items: flex-start; justify-content: flex-end; padding-left: var(--ed-p); }
   .ed-vorschau { flex: 0 1 928px; min-width: 0; margin: 0; padding: 12px 24px 64px; max-width: none; display: block; }
   .ed-kopf, .ed-fuss { padding-left: max(16px, calc(var(--ed-p) + 24px)); padding-right: max(16px, calc(100vw - var(--ed-p) - 1228px)); }
@@ -1035,10 +1038,11 @@ body.editor-offen { overflow: hidden; }
 .navi-k { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 72px; padding: 6px 8px 5px;
   border: 2px solid var(--leise); border-radius: 20px; background: var(--flaeche); color: var(--text); font: inherit;
   font-size: 0.8rem; font-weight: 650; line-height: 1.25; cursor: pointer; box-shadow: 0 2px 10px var(--schatten); white-space: nowrap; }
-.navi-k:hover { background: var(--gewaehlt); border-color: var(--text); }
+.navi-k:hover:not(:disabled) { background: var(--gewaehlt); border-color: var(--text); }
+.navi-k:disabled { opacity: 0.45; cursor: default; box-shadow: none; }
 .navi-k[hidden] { display: none; }
-/* im Editor erst ab 1350 px, links neben den Bausteinen; ab 1730 px genau dort, wo sie in den Schritten steht (die
- * Bausteine beginnen dann, wo die Seite beginnt). Schmaler tut die Leiste unten dasselbe */
+/* im Editor erst ab 1350 px, links neben den Bausteinen, genau dort, wo sie in den Schritten steht (die Bausteine beginnen
+ * dann, wo die Seite beginnt). Schmaler tut die Leiste unten dasselbe */
 .ed-navi { display: none; }
 @media (min-width: 1350px) {
   .editor .ed-navi { display: flex; left: max(8px, calc(var(--ed-p) - 92px)); top: 50%; bottom: auto; transform: translateY(-50%); }
@@ -1057,9 +1061,10 @@ body:has(dialog[open]) #navi { display: none; }
   .navi-k { width: 76px; min-width: 0; padding: 8px 5px 7px; white-space: normal; text-align: center; }
   body.mit-editor-schweb .seite { padding-left: max(16px, calc(108px - max(0px, (100vw - 760px) / 2))); }
 }
+/* Ab 1100 px ist die Seite in jedem Schritt 1180 px breit; das Menü steht links neben ihr */
 @media (min-width: 1100px) {
-  body[data-schritt="3"] .navi { left: max(8px, calc((100vw - 1180px) / 2 - 100px)); }
-  body.mit-editor-schweb[data-schritt="3"] .seite { padding-left: max(16px, calc(108px - max(0px, (100vw - 1180px) / 2))); }
+  .navi { left: max(8px, calc((100vw - 1180px) / 2 - 100px)); }
+  body.mit-editor-schweb .seite { padding-left: max(16px, calc(108px - max(0px, (100vw - 1180px) / 2))); }
 }
 @media (min-width: 1000px) and (max-width: 1099px) {
   /* aufgeklappte Vorschau (60 vh von unten): mittig in der freien Fläche darüber */
@@ -1379,5 +1384,8 @@ textarea.einzeilig { resize: none; overflow-y: hidden; }
 /* AP13.45 B17: vor dem Kopieren unauffällig der Weg zu Schritt 5 */
 .weiter-4-ohne { display: block; margin-top: 8px; font-size: 0.93rem; }
 /* AP13.45 B15: „Testversion“ mit (i) in der Fußzeile */
-.fuss-beta { margin: 0; display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 6px; }
-.fuss-beta .info-text { flex-basis: 100%; max-width: 24rem; margin: 4px auto 0; text-align: left; }
+/* Der Info-Text steht in einer eigenen Zeile unter der Reihe der Verweise und verschiebt sie nicht; „Testversion“ und
+   (i) bleiben Teil der Reihe (die Zeile #beta-link löst sich darin auf) */
+.fuss-beta { display: contents; }
+.fuss-beta > a { margin-right: -16px; }
+.fuss-beta .info-text { order: 1; flex: 0 1 100%; margin: 4px max(0px, calc((100% - 24rem) / 2)) 0; text-align: left; }

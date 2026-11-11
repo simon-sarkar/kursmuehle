@@ -643,6 +643,7 @@ window.km = km;
     fs.appendChild(el("option", { value: "", text: "Noch keine Schulart" }));
     o.schulart.forEach(function (w) { if (w.wert) fs.appendChild(el("option", { value: w.wert, text: w.text })); });
     if (!Z.mappe && S.schulartGemerkt) fs.value = S.schulartGemerkt();
+    if (window.KM_BEISPIEL) window.KM_BEISPIEL();           // Beispiel unter dem Thema passend zur Schulart
     var gruppen = S.katalog.chat_gruppen;
     var chat = $("a-chat"); chat.innerHTML = "";
     chat.appendChild(el("option", { value: "", text: "Noch nicht gewählt" }));

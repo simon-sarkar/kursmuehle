@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 62e6942 vom 10.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand aff22c9 vom 11.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -162,7 +162,7 @@
         <p id="f-minuten-info" class="info-text feld-breit" hidden></p>
         <button type="submit" id="einheit-anlegen" class="knopf haupt">Weiter: Aufbau</button>
         <!-- MF1: „Erweitert“ (schritte.js erweitert). MF2: dazu die Sequenz (AP13.40: Umschalter „Stunde“ / „Sequenz“ mit
-             Zahl der Stunden und ⓘ, sequenz.js); c2: Zielgruppe statt Jahrgangsstufe, gilt dann ohne Lehrplanbezug -->
+             Zahl der Stunden und (i), sequenz.js); c2: Zielgruppe statt Jahrgangsstufe, gilt dann ohne Lehrplanbezug -->
         <div id="erweitert" class="erw feld-breit">
           <button type="button" id="erweitert-knopf" class="erw-knopf" aria-expanded="false" aria-controls="erweitert-inhalt"><span
             class="erw-wort">Erweitert</span><span class="erw-was">Sequenz, Zielgruppe</span></button>
@@ -287,7 +287,7 @@
           <div id="r-material-feld" class="r-material-feld material-ort" data-material="r">
             <label class="feld feld-breit"><span class="feld-kopf"><span id="r-material-t">Dein Material (Text, Stichpunkte oder Dateien)</span>
                 <span class="info-knopf" role="button" tabindex="0" aria-expanded="false" aria-label="Hinweis zum Material im Chat"
-                  data-info="material_info">ⓘ</span></span>
+                  data-info="material_info">i</span></span>
               <span class="info-text feld-zeile" data-info-text="material_info" hidden></span>
               <span id="r-material-zeile" class="feld-zeile">freiwillig</span>
               <textarea id="r-material" class="von-lehrkraft" rows="4" spellcheck="true" aria-labelledby="r-material-t"
@@ -342,7 +342,7 @@
                 <div id="a-material-feld" class="feld-breit material-ort" data-material="a">
                   <label class="feld"><span class="feld-kopf"><span id="a-material-t">Dein Material (Text, Stichpunkte oder Dateien)</span>
                       <span class="info-knopf" role="button" tabindex="0" aria-expanded="false" aria-label="Hinweis zum Material im Chat"
-                        data-info="material_info">ⓘ</span></span>
+                        data-info="material_info">i</span></span>
                     <span class="info-text feld-zeile" data-info-text="material_info" hidden></span>
                     <span id="a-material-zeile" class="feld-zeile"
                       hidden>für diese Art nötig</span>
@@ -881,7 +881,6 @@
  </div>
 
  <input id="datei-oeffnen" class="unsichtbar" type="file" tabindex="-1" aria-label="Zwischenstand öffnen" multiple accept=".zip,application/zip,.md,.yaml,.yml,image/png,image/jpeg">
- <input id="ordner-oeffnen" class="unsichtbar" type="file" tabindex="-1" aria-label="Ordner aus Kursmühle 1 öffnen" multiple webkitdirectory>
  <datalist id="phasen"></datalist>
 </main>
 <!-- AP13.38: schwebender Knopf, öffnet dieselbe Ansicht wie der Link in der Kopfzeile (editor.js, Text aus katalog.yaml
@@ -901,21 +900,30 @@
 </nav>
 <footer class="fuss">
   <button type="button" id="fuss-rueckmeldung" class="textlink">Rückmeldung</button>
-  <a href="../impressum.html" class="fuss-klein">Impressum und Datenschutz</a>
+  <a href="../impressum.html" class="fuss-klein">Impressum</a>
+  <a href="../datenschutz.html" class="fuss-klein">Datenschutz</a>
   <a href="../">Startseite</a>
-  <details id="fuss-mehr" class="fuss-mehr">
-    <summary>Mehr</summary>
-    <label for="ordner-oeffnen" class="textlink">Ordner aus Kursmühle 1 öffnen</label>
-  </details>
 </footer>
 <script src="themen.js"></script>
 <script>
 // MF2 (Konzept §7, Entscheidung 5): kein Platzhalter im Feld; unter dem Thema steht grau ein Beispiel, bei jedem Laden ein
-// anderes aus references/themen.yaml (themen.js, AP13.8 §8)
+// anderes aus references/themen.yaml (themen.js, AP13.8 §8). Passend zur gewählten Schulart (Grundschule:
+// Grundschulthemen, jede andere: Mittelschulthemen, keine: beliebig); kern.js ruft es nach dem Vorbelegen der Schulart,
+// ein Wechsel der Schulart bei leerem Thema zieht ein passendes
 (function () {
-  var paare = window.KM_THEMEN || [], z = document.getElementById("f-thema-beispiel");
+  var paare = window.KM_THEMEN || [], z = document.getElementById("f-thema-beispiel"), los = Math.random();
   if (!paare.length || !z) return;
-  z.textContent = "zum Beispiel: " + paare[Math.floor(Math.random() * paare.length)].thema;
+  function beispiel() {
+    var sa = document.getElementById("f-schulart"), v = sa ? sa.value : "";
+    var art = v ? (v === "Grundschule" ? "Grundschule" : "Mittelschule") : "";
+    var wahl = art ? paare.filter(function (x) { return x.schulart === art; }) : paare;
+    if (!wahl.length) wahl = paare;
+    z.textContent = "zum Beispiel: " + wahl[Math.min(wahl.length - 1, Math.floor(los * wahl.length))].thema;
+  }
+  beispiel();
+  window.KM_BEISPIEL = beispiel;
+  document.getElementById("f-schulart").addEventListener("change", function () {
+    if (!document.getElementById("f-thema").value.trim()) beispiel(); });
 })();
 </script>
 <script src="kern.js"></script>
