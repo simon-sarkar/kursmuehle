@@ -227,6 +227,7 @@
     // MF2: „Erweitert“ in Schritt 2, sobald ein Weg gewählt ist; was darin steht, hängt am Weg
     $("erweitert-2").hidden = !z;
     $("m-kontext-l").hidden = z !== "mach" && z !== "richtung";
+    fachOrt(z);
     if (S.lernzielHoehe) S.lernzielHoehe();
     $("mehr").hidden = z !== "steuer";
     // AP13.45 B10: das Lernziel steht sichtbar über „Erweitert“
@@ -718,6 +719,50 @@
     return Promise.resolve();
   }
 
+  // Schritt Bilder, „Stunde verwerfen und zurück zum Text für den Chat“: die eingesetzte Antwort der laufenden Einheit
+  // geht aus der Kursdatei (gen/mappe.py einheit_verwerfen), ihre Karten stehen wieder geplant da (in „Ich steuere“ und
+  // in einer Sequenz der Plan, sonst neu aus der Vorlage), Thema und Angaben bleiben; Bilder werden „keine“, damit der neue
+  // Text für den Chat keine verlangt. Danach Schritt 4
+  async function stundeVerwerfen() {
+    if (!Z.mappe) return;
+    var tag = einheitTag() || "", e = Z.mappe.einheit || {};
+    var eigen = function (k) { return (k.einheit || "") === tag; };
+    var md = await km.mappeFn("einheit_verwerfen", [Z.mappe, Z.kurs_md]);
+    var alt = Z.mappe.bausteine.filter(eigen), rest = Z.mappe.bausteine.filter(function (k) { return !eigen(k); });
+    var karten;
+    if (zweig() === "steuer" || Z.mappe.sequenz) {
+      karten = alt.filter(function (k) { return !/-\d+$/.test(k.id); }).map(function (k) {
+        var g = { id: k.id, typ: k.typ, titel: k.titel, abschnitt: k.abschnitt || null, minuten: null, auftrag: k.auftrag || "",
+          phase: k.phase || "", soll: k.soll || k.minuten || null, geplant: true, neu: false };
+        if (k.schritt) g.schritt = k.schritt;
+        if (k.aus) g.aus = true;
+        return g;
+      });
+    } else {
+      Z.mappe.bausteine = rest;
+      karten = vorlageKarten(vorlageNach(e.vorlage) || S.katalog.vorlagen[0], e.minuten || 45,
+          rest.length ? S.naechsteNummer() : 1);
+    }
+    karten.forEach(function (k) { if (tag) k.einheit = tag; });
+    var hand = Z.mappe.hand || {};
+    alt.forEach(function (k) { delete hand[k.id]; });
+    Z.mappe.bausteine = rest.concat(karten);
+    Z.mappe.durchsicht = false; delete Z.mappe.kopiert; delete Z.mappe.durchsicht_neu;
+    delete Z.mappe.durchsicht_antwort; delete Z.mappe.durchsicht_weg;
+    Z.bau = null;
+    neuStart();
+    $("eingabe").value = "";
+    S.angaben.bilder = "0";
+    await angabenSchreiben({ bilder: "0" }, false);
+    await km.stand(md);
+    Z.mappe.schritt = 4;
+    gehe(4);
+    await neuPruefen();
+    // Tastatur und Vorlesegerät landen an der Überschrift von Schritt 4 (wie beim Rückweg aus dem Editor)
+    var sec = sektion(4);
+    if (sec && !sec.hidden) { sec.scrollIntoView({ block: "start" }); S.fokus([sec.querySelector(".s-kopf")], true); }
+  }
+
   function neuStart() {
     clearTimeout(S.kennzahlTimer); clearTimeout(S.textTimer); clearTimeout(S.eingabeTimer);
     texte.teile = []; texte.ids = []; texte.teil = 0; texte.art = "einheit"; texte.kopiert = {}; texte.veraltet = false;
@@ -1004,6 +1049,13 @@
   function materialPflicht() { return !!Z.mappe && (Z.mappe.einheit || {}).vorlage === EIGENES && !inhalt(); }
   function materialFehlt() { return materialPflicht() && !/\S/.test(Z.mappe.material || ""); }
   function materialFeld() { return zweig() === "steuer" ? $("a-material") : $("r-material"); }
+  // Freies Fach: unter dem Lernziel, in „Ich steuere“ unter „Worum geht es genau?“ (nur verschieben, wenn es nicht schon
+  // dort steht: ein Verschieben nimmt dem Feld den Fokus)
+  function fachOrt(z) {
+    var f = $("fach-ort"), anker = z === "steuer" ? $("a-kontext").closest("label") : $("m-kontext-l");
+    if (f.previousElementSibling !== anker) anker.after(f);
+    f.hidden = !z;
+  }
   function materialOrt() {
     var p = materialPflicht(), z = zweig(), r = $("r-material-feld"), a = $("a-material-feld");
     // nur verschieben, wenn es nicht schon dort steht: ein Verschieben nimmt dem Feld den Fokus
@@ -1601,9 +1653,17 @@
   function stabilLive() {
     return /(^|\.)(kursmuehle\.de|xn--kursmhle-[a-z0-9]+\.de)$/.test(location.hostname) && !/(^|\/)beta\//.test(location.pathname);
   }
+  // Übungen „Auf der Kursseite“ (Blöcke im Textfeld) und ein H5P-Heft gehen nicht zusammen: dort ist das Heft gesperrt
+  function aufKursseite() { return (S.angaben.website || "textfeld") === "textfeld"; }
+  S.heftGlaetten = function () {       // eine gespeicherte Einheit mit beidem öffnet ohne Heft (kern.js neuPruefen)
+    if (S.angaben.arbeitsheft !== "ja" || !aufKursseite()) return;
+    S.angaben.arbeitsheft = "nein"; S.angaben.arbeitsheft_bestehen = "";
+    angabenSchreiben({ arbeitsheft: "nein", arbeitsheft_bestehen: "" }, true);
+  };
   function zeichneHeftWahl(t, hue) {
     if (!t) return;
-    var an = S.angaben.arbeitsheft === "ja";
+    var sperre = aufKursseite();
+    var an = S.angaben.arbeitsheft === "ja" && !sperre;
     var g = $("aus-arbeitsheft").closest(".aus-gruppe"), weg = !!t.nur_vorschau && !an && stabilLive();
     if (g.hidden !== weg) g.hidden = weg;
     if (weg) return;
@@ -1613,6 +1673,13 @@
           w.probe);
       return { wert: w.wert, text: w.text, zeile: w.zeile, element: HEFT_KACHELN[w.wert] };
     }), function (w) { return miniHeft(w, hue); }, an ? "ja" : "nein");
+    var heft = HEFT_KACHELN.ja || $("aus-arbeitsheft").querySelector(".aus-kachel[data-wert=ja]");
+    if (heft) {
+      heft.toggleAttribute("disabled", sperre);
+      var z = heft.querySelector(".aus-zeile"), soll = sperre ? t.nur_aktivitaeten : (t.wahl.filter(function (w) {
+        return w.wert === "ja"; })[0] || {}).zeile;
+      if (z && soll && z.textContent !== soll) z.textContent = soll;
+    }
     $("heft-bestehen-l").hidden = $("heft-bestehen-zeile").hidden = !an;
     if ($("heft-bestehen-text").textContent !== t.bestehen) $("heft-bestehen-text").textContent = t.bestehen;
     $("heft-bestehen-zeile").textContent = t.bestehen_zeile;
@@ -1701,6 +1768,9 @@
     a[feld] = wert;
     S.angaben[feld] = wert;
     if (feld === "arbeitsheft" && wert !== "ja") a.arbeitsheft_bestehen = S.angaben.arbeitsheft_bestehen = "";
+    if (feld === "website" && wert === "textfeld" && S.angaben.arbeitsheft === "ja") {     // kein Heft auf der Kursseite
+      a.arbeitsheft = S.angaben.arbeitsheft = "nein"; a.arbeitsheft_bestehen = S.angaben.arbeitsheft_bestehen = "";
+    }
     zeichneAussehen(); felderFuellen(); zeichneSchritte();
     angabenSchreiben(a, true);
     if (b.dataset.feld === "format" && wert === "wochen" && !S.angaben.start) $("a-start").focus();
@@ -1796,7 +1866,7 @@
     var d = $("lehrplan-ausklapp");
     d.open = true;
     $("lehrplan-teil").scrollIntoView({ block: "start" });
-    $("fach").focus({ preventScroll: true });
+    $("lehrplanbezug").focus({ preventScroll: true });
   };
 
   // Schreiben nacheinander: schnelle Klicks auf mehrere Kacheln und das erste Anlegen dürfen sich den Steckbrief nicht
@@ -1912,6 +1982,16 @@
   // AP13.35 §1.2: „Worum geht es?“ einer angehängten Einheit steht in ihrer Einheit der Mappe; die erste Einheit schreibt
   // den Steckbrief (`kurs.kontext`) wie bisher. Ein Weg für die drei Felder (Plan, „Mach du“, „Mehr einstellen“)
   // `kurs` (AP13.35 M1): ab Einheit 2 das Feld „ändern“ der Kursbeschreibung, das den Steckbrief schreibt
+  // Fach sofort setzen (ohne Verzögerung, eine ausstehende Eingabe im Feld fällt weg): die Lehrplanwahl leert das Feld,
+  // wenn sie ein anderes Fach wählt (lehrplan.js); S.fachAbbrechen nur die ausstehende Eingabe
+  S.fachAbbrechen = function () { delete kontextOffen.fach; };
+  S.fachFeld = function (wert) {
+    delete kontextOffen.fach;
+    $("fach").value = wert; S.angaben.fach = wert;
+    $("fach-treffer").hidden = true;
+    angabenSchreiben({ fach: wert }); S.textSpaeter();
+    if (Z.mappe && S.katalog) { zeichneRichtung(); vorlagenZeigen(); zeichneMachArt(); }
+  };
   function kontextSchreiben(feld, wert, kurs) {
     if (!Z.mappe) return;
     if (feld === "kontext" && einheitTag() && !kurs) {
@@ -2039,7 +2119,7 @@
     schemaZeigen();
   };
   Object.assign(S, { kursZeile: kursZeile, eigenerPlan: eigenerPlan, vorlageGewaehlt: vorlageGewaehlt, kontextSetzen: function (wert) { kontextSchreiben("kontext", wert); }, schulartGemerkt: schulartGemerkt, adresseLesen: adresseLesen, angabenSchreiben: angabenSchreiben, ausklapp: ausklapp,
-    kursangabenMerken: kursangabenMerken, einheitAnhaengen: einheitAnhaengen,
+    kursangabenMerken: kursangabenMerken, einheitAnhaengen: einheitAnhaengen, stundeVerwerfen: stundeVerwerfen,
     felderPruefen: felderPruefen, feldOk: feldOk, feldMeldung: feldMeldung, karteVorlage: karteVorlage, vorlageKarten: vorlageKarten,
     typenUebernehmen: typenUebernehmen, materialFehlt: materialFehlt, materialZeigen: materialZeigen,
     akzent: akzent, gehe: gehe, miniFormat: miniFormat, jahrgangZahl: jahrgangZahl, nachZwei: nachZwei, neuStart: neuStart,

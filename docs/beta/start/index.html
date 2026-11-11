@@ -13,7 +13,7 @@
 </script>
 </head>
 <body data-muster="locker" data-schritt="1">
-<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand aff22c9 vom 11.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
+<p id="beta-zeile" style="margin:0;padding:6px 16px;background:#2a2a2a;color:#f3e9d8;font:14px/1.4 system-ui,sans-serif;text-align:center">Beta-Vorschau, Stand 3639643 vom 11.11.2026. Stabile Fassung: <a href="https://kursmuehle.de/" style="color:inherit">kursmuehle.de</a></p>
 <header class="kopf">
 <div class="innen">
   <a class="marke" href="../" aria-label="Kursmühle, zur Startseite"><img src="logo.svg" alt="" width="32" height="32"><span>Kursmühle</span></a>
@@ -114,6 +114,19 @@
       <button type="button" id="hinweis-aufbau-geben" class="knopf haupt" autofocus></button>
       <button type="button" id="hinweis-aufbau-zu" class="knopf"></button>
       <label class="hinweis-aufbau-nie"><input type="checkbox" id="hinweis-aufbau-nie"> <span id="hinweis-aufbau-nie-text"></span></label>
+    </div>
+  </div>
+</dialog>
+
+<!-- Schritt Bilder: vor „Platzhalter entfernen und ohne Bilder weiter“ die Frage, ob die Stunde neu beauftragt werden
+     soll (bilder.js); Wörter aus katalog.yaml oberflaeche.bilder_ohne -->
+<dialog id="bilder-frage" class="rm-bitte" role="alertdialog" aria-labelledby="bilder-frage-text">
+  <div class="rm-bitte-innen">
+    <p id="bilder-frage-text"></p>
+    <div class="rm-bitte-knoepfe">
+      <button type="button" id="bilder-frage-neu" class="knopf haupt"></button>
+      <button type="button" id="bilder-frage-ohne" class="knopf"></button>
+      <button type="button" id="bilder-frage-ab" class="textlink"></button>
     </div>
   </div>
 </dialog>
@@ -255,6 +268,13 @@
           aria-describedby="m-kontext-beispiel"></textarea>
         <span id="m-kontext-beispiel" class="feld-zeile">Was sollen die Lernenden danach können? Was ist vorausgesetzt, was nicht?</span>
       </label>
+      <!-- Freies Fach direkt unter dem Lernziel, in „Ich steuere“ unter „Worum geht es genau?“ in „Mehr einstellen“
+           (schritte.js fachOrt); darunter die Fächer aus dem Lehrplan zur Eingabe (lehrplan.js fachTreffer). Die
+           Lehrplanwahl hat ihr eigenes Fach; wählt sie ein anderes, wird dieses Feld leer -->
+      <div id="fach-ort" class="feld-breit fach-ort" hidden>
+        <label class="feld" id="fach-l"><span id="fach-t">Fach (freiwillig)</span>
+          <input id="fach" type="text" maxlength="60" autocomplete="off"></label>
+      </div>
       <div id="steuer-teil" class="steuer-teil" hidden>
         <!-- AP13.31: vor der ersten Antwort der Einheit der Plan (plan.js): beschreiben, Darstellung, Kacheln mit Elementen;
              Aufbau und Kartenliste stehen dann nicht hier -->
@@ -277,8 +297,6 @@
           <div id="lehrplan-teil" class="lehrplan-teil" hidden>
             <details id="lehrplan-ausklapp" class="ausklapp lehrplan-ausklapp" data-merken="lehrplan">
               <summary id="lehrplan-auf"><span id="lehrplan-auf-text">Lehrplanbezug (optional)</span></summary>
-              <label class="feld">Fach <span class="feld-zeile">freiwillig</span>
-                <input id="fach" type="text" maxlength="60" autocomplete="off"></label>
               <div id="lehrplan" class="lehrplan-ort"></div>
             </details>
           </div>
@@ -683,7 +701,7 @@
       <p id="bilder-stand" class="stand" role="status" aria-live="polite"></p>
       <div class="knopf-reihe">
         <button type="button" id="weiter-bilder" class="knopf haupt">Weiter</button>
-        <button type="button" id="bilder-weg" class="knopf" hidden>Ohne Bilder weiter</button>
+        <button type="button" id="bilder-weg" class="knopf" hidden>Platzhalter entfernen und ohne Bilder weiter</button>
       </div>
       <button type="button" id="zurueck-bilder" class="knopf haupt s-zurueck" data-nr="5.5" hidden></button>
     </div>

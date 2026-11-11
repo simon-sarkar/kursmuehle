@@ -741,6 +741,7 @@
      "probe": "Import auf der Plattform noch nicht geprüft"
     }
    ],
+   "nur_aktivitaeten": "Nur mit „Als eigene Aktivitäten“.",
    "bestehen": "Abschluss ab Prozent der Punkte (1 bis 100)",
    "bestehen_zeile": "Leer: abgeschlossen, sobald das Heft abgeschickt ist.",
    "fazit": "Arbeitsheft",
@@ -763,6 +764,32 @@
     "totalScoreLabel": "Punkte im Heft"
    }
   },
+  "bilder_ohne": [
+   {
+    "wert": "knopf_alle",
+    "text": "Platzhalter entfernen und ohne Bilder weiter"
+   },
+   {
+    "wert": "knopf_fehlende",
+    "text": "Platzhalter entfernen und ohne die fehlenden Bilder weiter"
+   },
+   {
+    "wert": "frage",
+    "text": "Diese Stunde ist mit Bildern geplant; Texte und Aufgaben können sich auf sie beziehen. Besser ist eine neue Stunde ohne Bilder. Der Text für den Chat verlangt dann keine Bilder."
+   },
+   {
+    "wert": "verwerfen",
+    "text": "Stunde verwerfen und zurück zum Text für den Chat"
+   },
+   {
+    "wert": "trotzdem",
+    "text": "Trotzdem ohne Bilder weiter"
+   },
+   {
+    "wert": "abbrechen",
+    "text": "Abbrechen"
+   }
+  ],
   "bilder": [
    {
     "wert": "0",
@@ -1238,6 +1265,7 @@
     "Beispiel": "Beispiel",
     "Hinweis": "Hinweis",
     "Text": "Text",
+    "Titel": "Titel des Kastens",
     "Liste": "Liste",
     "Schritte": "Schritte",
     "Frage": "Frage",
@@ -1658,5 +1686,5 @@
    }
   ]
  },
- "version": "2.0.0-b20"
+ "version": "2.0.0-b21"
 }
