@@ -402,7 +402,7 @@
     }
     k.koerper.hidden = !!bearbeiten[b.id];
     k.liste.hidden = !!bearbeiten[b.id] || !k.liste.childNodes.length;
-    if (neuOffen[b.id] && !(karte(b.id) || {}).neu) neuZu(b.id);       // eingesetzt oder an der Karte zurückgenommen
+    if (neuOffen[b.id] && !(karte(b.id) || {}).neu && !neuBehalten(k)) neuZu(b.id);   // eingesetzt oder an der Karte zurückgenommen
     return k;
   }
 
@@ -977,19 +977,22 @@
   }
   async function weitereEinsetzen() {
     var k = knoten[UE]; if (!k || ueZiel !== "weitere") return;
-    var antwort = k.werk.querySelector(".ed-w-antwort");
-    var ok = await S.eingabeUebernehmen(null, { text: antwort.value, stand: weitereStand,
+    var antwort = k.werk.querySelector(".ed-w-antwort"), text = antwort.value;
+    // was die Lehrkraft während des Einsetzens ins Feld getippt hat, bleibt dort und das Feld offen
+    var ok = await S.eingabeUebernehmen(null, { text: text, stand: weitereStand,
       diagnose: function (d) { var box = k.werk.querySelector(".ed-w-diagnose"); if (box) S.diagnoseKarte(box, d); },
-      leeren: function () { antwort.value = ""; } });
+      leeren: function () { if (antwort.value === text) antwort.value = ""; } });
     if (!ok) return;
     if (offeneEinheit() || (S.teileOffen && S.teileOffen())) {
       k.werk.querySelector("[data-aktion=weitere-kopieren]").textContent = weitereKnopfText();
       await aktualisieren();
       return;
     }
-    ueZu(true);
+    var behalten = antwort.isConnected && !!antwort.value.trim();
+    if (!behalten) ueZu(true);
     await aktualisieren();
     meldung(UE, T("weitere_eingesetzt"));
+    if (behalten) return;
     var root = knoten[UE] && knoten[UE].koerper.firstChild && knoten[UE].koerper.firstChild.shadowRoot;
     var alle = root ? root.querySelectorAll("[data-ziel^='abschnitt:']") : [];
     var f = alle.length ? griff(alle[alle.length - 1]) : knoten[UE] && knoten[UE].kopf.querySelector(".ed-b-titel");
@@ -1136,6 +1139,11 @@
     textVorbereiten(id);
   }
   // `fokus`: der Fokus geht auf „Neu schreiben lassen“ dieses Bausteins (Esc)
+  // nach „Antwort einsetzen“ trägt das Feld anderen Text als den eingesetzten: offen lassen, sonst wäre er weg
+  function neuBehalten(k) {
+    var a = k.gesetzt !== undefined && k.neu.querySelector(".ed-antwort");
+    return !!a && !!a.value.trim() && a.value !== k.gesetzt;
+  }
   function neuZu(id, abwaehlen, fokus) {
     var k = knoten[id], kt = karte(id);
     delete neuOffen[id]; delete neuText[id];
@@ -1143,6 +1151,7 @@
     if (abwaehlen && kt && kt.neu) { kt.neu = false; S.korrektur.text = ""; S.zeichneKarten(); S.zeichneKorrektur();
         S.geaendert(); S.korrekturSpaeter(0); }
     if (!k) return;
+    delete k.gesetzt;
     k.neu.hidden = true; k.neu.textContent = "";
     zeichneKopf(k, k.b, 0);
     if (fokus) S.fokus([k.kopf.querySelector("[data-aktion=neu]")], true);
@@ -1196,16 +1205,19 @@
   }
   async function neuEinsetzen(id) {
     var k = knoten[id]; if (!k) return;
-    var antwort = k.neu.querySelector(".ed-antwort");
-    var ok = await S.korrekturEinsetzen({ text: antwort.value, sprung: false, fokus: false, nur: id,
+    var antwort = k.neu.querySelector(".ed-antwort"), text = k.gesetzt = antwort.value;
+    // was die Lehrkraft während des Einsetzens ins Feld getippt hat, bleibt dort und das Feld offen (auch eintrag)
+    var ok = await S.korrekturEinsetzen({ text: text, sprung: false, fokus: false, nur: id,
       stand: function (x, art) { neuStand(id, x, art); },
       diagnose: function (d) { var box = k.neu.querySelector(".ed-neu-diagnose"); if (box) S.diagnoseKarte(box, d); },
-      leeren: function () { antwort.value = ""; } });
+      leeren: function () { if (antwort.value === text) antwort.value = ""; } });
     if (!ok) return;
     if (!(karte(id) || {}).neu) {
-      neuZu(id);
+      var behalten = neuBehalten(k);
+      if (!behalten) neuZu(id);
       await aktualisieren();
       meldung(id, T("eingesetzt"));
+      if (behalten) return;                             // der Fokus bleibt im Feld, in dem die Lehrkraft schreibt
       // AP13.33 §2.3: Fokus auf den eingesetzten Baustein, die Ansicht zeigt seinen Anfang
       var k2 = knoten[id], t = k2 && k2.kopf.querySelector(".ed-b-titel");
       if (t) { zeigen(k2.el); t.focus({ preventScroll: true }); }

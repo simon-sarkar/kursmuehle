@@ -75,9 +75,9 @@ var km = (function () {
     zustand.pruefung = a.ergebnis;
     zustand.kurs_md = a.ergebnis.kursdatei;
     if (zustand.mappe) {
-      var gesendet = zustand.mappe;
+      var gesendet = zustand.mappe, vorher = JSON.stringify(gesendet.bausteine || []);
       var g = await anfrage("abgleich", { mappe: gesendet, bausteine: a.ergebnis.bausteine });
-      mappeUebernehmen(gesendet, g.ergebnis);
+      mappeUebernehmen(gesendet, g.ergebnis, vorher);
     }
     messen("pruefe", zustand.beispiel, a, { bausteine: a.ergebnis.bausteine.length,
         fehler: a.ergebnis.diagnosen.filter(function (d) { return d.stufe === "fehler"; }).length,
@@ -108,8 +108,14 @@ var km = (function () {
 
   // Der Worker gleicht eine Kopie der Mappe ab und ändert dabei nur diese Schlüssel. Was die Seite während der Anfrage
   // an derselben Mappe gesetzt hat (Schritt, Durchsicht, Prüffragen), ginge sonst mit der Antwort verloren.
-  function mappeUebernehmen(gesendet, antwort) {
-    if (zustand.mappe !== gesendet) { zustand.mappe = antwort; return; }
+  // `vorher` = Karten beim Senden (JSON): hat die Lehrkraft im Plan („Ich steuere“) inzwischen geplante Karten geändert,
+  // verschoben, entfernt oder Karten angelegt, gilt das auch nach der Antwort, die noch den alten Stand kannte.
+  // -> true, wenn die Karten der Seite seit dem Senden anders waren (die Kennzahlen der Antwort passen dann nicht mehr)
+  function mappeUebernehmen(gesendet, antwort, vorher) {
+    if (zustand.mappe !== gesendet) { zustand.mappe = antwort; return false; }
+    var anders = vorher !== undefined && JSON.stringify(gesendet.bausteine || []) !== vorher;
+    if (anders) antwort.bausteine = kartenNachziehen(gesendet.bausteine || [], antwort.bausteine,
+        idsVon({ bausteine: JSON.parse(vorher) }));
     kachelnNachziehen(gesendet, antwort.bausteine);
     ["bausteine", "format", "kursmuehle"].forEach(function (k) { gesendet[k] = antwort[k]; });
     // AP13.11: Handänderungen ohne Baustein fallen weg (wie gen/mappe.py abgleich); was die Seite inzwischen gesetzt hat, bleibt
@@ -125,6 +131,33 @@ var km = (function () {
         if (!da[id] && id !== "kopf" && !abschnitt) delete gesendet.hand[id];
       });
     }
+    return anders;
+  }
+
+  function idsVon(mappe) { return (mappe.bausteine || []).map(function (k) { return k.id; }); }
+  // jetzt = Karten der Seite, neu = Karten der Antwort, ids = ids beim Senden. Geplante Karten, die die Seite nicht mehr
+  // hat, fallen weg, die übrigen gelten in ihrer Fassung auf der Seite (eine frei gewordene id kann inzwischen eine andere
+  // Karte tragen) und in ihrer Reihenfolge untereinander; Karten, die sie seitdem angelegt hat, kommen hinter ihre Vorgängerin.
+  function kartenNachziehen(jetzt, neu, ids) {
+    var da = {}, gesendet = {}, inNeu = {}, rang = {};
+    jetzt.forEach(function (k, i) { rang[k.id] = i; });
+    jetzt.forEach(function (k) { da[k.id] = k; });
+    ids.forEach(function (id) { gesendet[id] = 1; });
+    var liste = neu.filter(function (k) { return !k.geplant || da[k.id]; }).map(function (k) {
+      return k.geplant ? da[k.id] : k; });
+    liste.forEach(function (k) { inNeu[k.id] = 1; });
+    var platz = 0;
+    jetzt.forEach(function (k) {
+      if (inNeu[k.id] && !gesendet[k.id]) return;
+      if (inNeu[k.id]) {
+        for (var i = 0; i < liste.length; i++) if (liste[i].id === k.id) { platz = i + 1; break; }
+      } else if (!gesendet[k.id]) { liste.splice(platz, 0, k); platz++; inNeu[k.id] = 1; }
+    });
+    var plaetze = [], geplant = [];
+    liste.forEach(function (k, i) { if (k.geplant && da[k.id] === k) { plaetze.push(i); geplant.push(k); } });
+    geplant.sort(function (x, y) { return rang[x.id] - rang[y.id]; });
+    plaetze.forEach(function (p, i) { liste[p] = geplant[i]; });
+    return liste;
   }
 
   // Prüfen, Mappe abgleichen und Kennzahlen in einem Lauf; leere Kursdatei = nur geplante Bausteine
@@ -143,12 +176,15 @@ var km = (function () {
           zustand.steckbrief_text]);
       return zustand.pruefung;
     }
+    var vorher = JSON.stringify(gesendet.bausteine || []);
     var a = await anfrage("stand", { text: text, assets: assetsKopie(), steckbrief: zustand.steckbrief_text,
         mappe: gesendet });
     zustand.pruefung = a.ergebnis.pruefung;
     zustand.kurs_md = a.ergebnis.pruefung.kursdatei;
-    mappeUebernehmen(gesendet, a.ergebnis.mappe);
+    var anders = mappeUebernehmen(gesendet, a.ergebnis.mappe, vorher);
     zustand.kennzahlen = a.ergebnis.kennzahlen;
+    if (anders) zustand.kennzahlen = await mappeFn("kennzahlen", [zustand.mappe, zustand.pruefung, null,
+        zustand.steckbrief_text]);
     if (km.seite && km.seite.nachStand) km.seite.nachStand();     // AP13.35 §3.3 (chat.js)
     messen("pruefe", zustand.beispiel, a, { bausteine: zustand.pruefung.bausteine.length, zeichen: (text || "").length,
       fehler: zustand.pruefung.diagnosen.filter(function (d) { return d.stufe === "fehler"; }).length });

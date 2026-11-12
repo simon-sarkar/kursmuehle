@@ -714,6 +714,8 @@
     var diagnose = feld ? function (d) { var b = $("eingabe-diagnose"); diagnoseKarte(b, d);
       if (d) { b.tabIndex = -1; b.focus(); } } : o.diagnose;
     var text = modusErzwungen && S.letzteAntwort ? S.letzteAntwort.text : feld ? $("eingabe").value : o.text || "";
+    // bei erzwungenem Modus wird die letzte Antwort eingesetzt, nicht der Feldinhalt: der bleibt dann stehen
+    var gelesen = feld && !modusErzwungen ? $("eingabe").value : null;
     if (!text.trim()) return false;
     var eigen = !modusErzwungen && eigenerText(text);
     if (eigen) { diagnose(null); zeige(EIGEN[eigen], "fehler"); return false; }
@@ -785,7 +787,8 @@
       var gleichE = schleifeMerken(e.ids || Z.pruefung.bausteine.map(function (b) { return b.id; }), false);
       S.letzteAntwort.nach = antwortStand(); S.modusSpaeter = false;   // AP13.41 §1.3
       zeichne(); geaendert();
-      if (feld) $("eingabe").value = ""; else o.leeren();
+      // was während des Einsetzens neu ins Feld kam, bleibt dort für den nächsten Durchgang
+      if (feld) { if ($("eingabe").value === gelesen) $("eingabe").value = ""; } else o.leeren();
       var st = Z.mappe.stueckelung, mehr = "", baust = e.n + (e.n === 1 ? " Baustein" : " Bausteine");
       // „Fortsetzung folgt“: Karten, die noch fehlen, und die Bitte darum kommen aus gen/mappe.py modus
       var leer = leerRest;

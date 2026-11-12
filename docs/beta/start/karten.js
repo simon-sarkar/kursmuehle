@@ -1125,11 +1125,13 @@
   // nur (AP13.33: Baustein, an den ein Block ohne passende id geht; der Editor setzt je Feld seinen)}
   // -> true, wenn eingesetzt
   function korrekturBlock() {
-    return { text: $("korrektur-eingabe").value, sprung: true, fokus: true,
+    var text = $("korrektur-eingabe").value;
+    return { text: text, sprung: true, fokus: true,
       stand: function (x, art) { S.korrektur.stand = x; S.korrektur.art = art || ""; S.standKarte($("korrektur-ergebnis"),
           x, art); },
       diagnose: function (d) { S.diagnoseKarte($("korrektur-diagnose"), d); },
-      leeren: function () { $("korrektur-eingabe").value = ""; } };
+      // was während des Einsetzens neu ins Feld kam, bleibt dort für den nächsten Durchgang
+      leeren: function () { if ($("korrektur-eingabe").value === text) $("korrektur-eingabe").value = ""; } };
   }
   async function korrekturEinsetzen(o) {
     o = o || korrekturBlock();

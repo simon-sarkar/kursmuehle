@@ -537,7 +537,8 @@
     ["bausteine", "kacheln", "sequenz", "themen"].forEach(function (k) { gesendet[k] = r.mappe[k]; });
     hinweise = r.hinweise || []; hinweiseFuer = gesendet;
     diagnose(null); zeige("");
-    if (feld) $("eingabe").value = ""; else if (o && o.leeren) o.leeren();
+    // was während des Einsetzens neu ins Feld kam, bleibt dort für den nächsten Durchgang
+    if (feld) { if ($("eingabe").value === text) $("eingabe").value = ""; } else if (o && o.leeren) o.leeren();
     delete Z.mappe.kopiert;
     S.texte.kopiert = {}; S.texte.teil = 0;
     Z.mappe.schritt = 4; S.aendern = null; S.planStunde = null;
