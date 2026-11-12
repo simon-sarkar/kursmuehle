@@ -96,10 +96,23 @@
     if (k) k.focus({ preventScroll: true });
   }
 
+  // Je Bildzeile gilt die zuletzt gewählte Datei; ein älteres Ergebnis (großes Bild, langsam dekodiert) oder eines für
+  // eine andere Einheit wird verworfen. Ein Zuschnitt verwirft keine gewählte Datei: er gilt nur, solange seither keine
+  // Datei gewählt, kein anderer Zuschnitt begonnen und das Bild, das er zuschneidet, noch dasselbe ist
+  var bildLauf = {}, zuLauf = {};
+  function bildGilt(name) {
+    var nr = bildLauf[name] = (bildLauf[name] || 0) + 1, kennung = S.einheitKennung();
+    return function () { return bildLauf[name] === nr && kennung === S.einheitKennung(); };
+  }
+  function zuschnittGilt(name) {
+    var nr = bildLauf[name], zu = zuLauf[name] = (zuLauf[name] || 0) + 1, kennung = S.einheitKennung();
+    return function () { return bildLauf[name] === nr && zuLauf[name] === zu && kennung === S.einheitKennung(); };
+  }
   async function bildSetzen(datei, name) {
-    var fokus = false;
+    var fokus = false, gilt = bildGilt(name), alt = false;
     try {
       var bild = await bildVorbereiten(datei);
+      if (!gilt()) { alt = true; return; }
       Z.assets[name] = bild.bytes;
       fokus = fokusAb(name);
       if (Z.mappe && Z.mappe.bildformat) delete Z.mappe.bildformat[name];      // neues Bild: Format und Prüfung neu
@@ -109,13 +122,15 @@
       await km.stand(Z.kurs_md);
       await auswertung();
       zeichne();
-    } catch (e) { bildFehler(e, name); }
-    finally { bildGezeichnet(name, fokusAb(name) || fokus); }
+    } catch (e) { if (gilt()) bildFehler(e, name); else alt = true; }
+    finally { if (!alt) bildGezeichnet(name, fokusAb(name) || fokus); }
   }
   // AP13.42 B1: Meldung an der Zeile (und im Kopf) für eine Datei, die kein Bild ist; der nächste Erfolg räumt beides ab
   var bildMeldung = S.bildMeldung = {};      // schritte.js neuStart leert sie beim Mappenwechsel
+  var meldeLauf = {};
   function bildFehler(e, name) {
     if (!e || e.bildLesen === undefined) { zeigeFehler(e); return; }
+    meldeLauf[name] = (meldeLauf[name] || 0) + 1;
     var satz = S.katalog.oberflaeche.bild_nicht_lesbar.replace("{name}", e.bildLesen || name);
     console.warn(e.message);
     bildMeldung[name] = satz;
@@ -129,19 +144,20 @@
 
   // c7: mittiger Ausschnitt im Format des Prompts aus dem Bild im Speicher; die Wahl steht in der Mappe (`bildformat`)
   async function zuschneiden(name, f) {
-    var fokus = false;
+    var fokus = false, gilt = zuschnittGilt(name), alt = false, quelle = Z.assets[name], meldung = meldeLauf[name];
     try {
-      var bild = await bildVorbereiten(new Blob([Z.assets[name]]), f);
+      var bild = await bildVorbereiten(new Blob([quelle]), f);
+      if (!gilt() || Z.assets[name] !== quelle) { alt = true; return; }
       Z.assets[name] = bild.bytes;
       fokus = fokusAb(name);
       formatMerken(name, "zugeschnitten");
       bildGroesse[name] = "Auf " + f[0] + ":" + f[1] + " zugeschnitten, " + bild.breite + " × " + bild.hoehe + " px.";
-      bildFehlerWeg(name);
+      if (meldeLauf[name] === meldung) bildFehlerWeg(name);     // die Meldung einer seither gewählten Datei bleibt
       await km.stand(Z.kurs_md);
       await auswertung();
       zeichne();
-    } catch (e) { bildFehler(e, name); }
-    finally { bildGezeichnet(name, fokusAb(name) || fokus); }
+    } catch (e) { if (gilt()) bildFehler(e, name); else alt = true; }
+    finally { if (!alt) bildGezeichnet(name, fokusAb(name) || fokus); }
   }
   function formatMerken(name, wahl) { (Z.mappe.bildformat = Z.mappe.bildformat || {})[name] = wahl; }
 

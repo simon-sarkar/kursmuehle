@@ -620,9 +620,10 @@
   async function zusatzKarte() {
     try {
       await km.bereit();
-      var gesendet = Z.mappe, neu = await km.mappeFn("zusatzaufgabe", [gesendet, true]);
+      var gesendet = Z.mappe, vorher = JSON.stringify(gesendet.bausteine || []);
+      var neu = await km.mappeFn("zusatzaufgabe", [gesendet, true]);
       if (Z.mappe !== gesendet) return;
-      km.mappeUebernehmen(gesendet, neu);
+      km.mappeUebernehmen(gesendet, neu, vorher);
       zeichne(); geaendert();
     } catch (e) { zeigeFehler(e); }
   }
@@ -654,16 +655,18 @@
   }
 
   async function steckbriefAnlegen() {
-    var o = S.katalog.oberflaeche, e = (Z.mappe && Z.mappe.einheit) || {}, g = kursangabenGemerkt();
-    Z.steckbrief_text = await km.mappeFn("angaben_schreiben", ["", {
+    var o = S.katalog.oberflaeche, e = (Z.mappe && Z.mappe.einheit) || {}, g = kursangabenGemerkt(), kennung = Z.kennung;
+    var t = await km.mappeFn("angaben_schreiben", ["", {
       thema: e.thema || "", jahrgang: e.jahrgang || "", minuten: e.minuten || "", fach: "",
       schulart: S.angaben.schulart || "", bilder: bilderStandard(),
       format: o.format[0].wert, familie: S.familien.standard, farbe: o.farbe[0].wert, website: o.website[0].wert,
       abschluss: o.abschluss[0].wert, portionierung: o.portionierung[0].wert, lizenz: g.lizenz,
       lizenz_name: g.lizenz ? g.name : "" }]);
+    if (kennung === Z.kennung) Z.steckbrief_text = t;
   }
 
   function einheitAnlegen(e, v, schulart, stunden) {
+    km.wechsel();
     e.vorlage = v.name;
     Z.mappe = km.neueMappe(e.thema, e, vorlageKarten(v, e.minuten));
     Z.mappe.schritt = 2;
@@ -763,7 +766,10 @@
     if (sec && !sec.hidden) { sec.scrollIntoView({ block: "start" }); S.fokus([sec.querySelector(".s-kopf")], true); }
   }
 
+  var neuStartFuer = null;
   function neuStart() {
+    if (S.kiAbbrechen) S.kiAbbrechen();           // eine Antwort der eigenen KI gehört zur vorigen Einheit
+    if (neuStartFuer !== Z.kennung) { neuStartFuer = Z.kennung; S.angehalten = {}; }    // „Anhalten“ gilt je Mappe
     clearTimeout(S.kennzahlTimer); clearTimeout(S.textTimer); clearTimeout(S.eingabeTimer);
     texte.teile = []; texte.ids = []; texte.teil = 0; texte.art = "einheit"; texte.kopiert = {}; texte.veraltet = false;
     texte.geaendert = []; delete texte.teilMd;                // AP13.41 §1.2
@@ -1132,8 +1138,9 @@
     zeichneRichtung(); zeichneSchritte();
     try {
       await km.bereit();
-      var gesendet = Z.mappe, neu = await km.mappeFn("zusatzaufgabe", [gesendet, an]);
-      if (Z.mappe === gesendet) km.mappeUebernehmen(gesendet, neu);
+      var gesendet = Z.mappe, vorher = JSON.stringify(gesendet.bausteine || []);
+      var neu = await km.mappeFn("zusatzaufgabe", [gesendet, an]);
+      if (Z.mappe === gesendet) km.mappeUebernehmen(gesendet, neu, vorher);
       await angabenSchreiben({ differenzierung: an });
       zeichne();
     } catch (e) { zeigeFehler(e); }
@@ -1749,6 +1756,12 @@
     var b = ev.target.closest(".aus-kachel");
     if (!b || !Z.mappe || b.hasAttribute("disabled") || ev.target.id === "farbe-eigen") return;
     var a = {}, wert = b.dataset.wert;
+    // eine Kachel der Bilder gilt; eine eben getippte Zahl schreibt danach nicht mehr dazwischen. Steht sie noch aus
+    // und behält die Kachel sie („Mit Bildern“, eigene Zahl), schreibt der Klick sie selbst
+    var zahlOffen = false;
+    if (b.dataset.feld === "bilder" || b.dataset.feld === "bilder-kurz") {
+      zahlOffen = bilderTimer !== null; clearTimeout(bilderTimer); bilderTimer = null;
+    }
     if (b.dataset.feld === "farbe" && wert === "eigen") {
       farbwaehlerOeffnen();
       if (!EIGEN.dataset.gewaehlt) { zeichneAussehen(); return; }
@@ -1763,7 +1776,7 @@
     if (feld === "bilder-kurz") {
       feld = "bilder";
       wert = wert === "0" ? "0" : String(bilderWert()) !== "0" ? String(bilderWert()) : "2-3";
-      if (wert === String(bilderWert()) && S.angaben.bilder) { zeichneAussehen(); return; }
+      if (wert === String(bilderWert()) && S.angaben.bilder && !zahlOffen) { zeichneAussehen(); return; }
     }
     a[feld] = wert;
     S.angaben[feld] = wert;
@@ -1783,7 +1796,7 @@
     if (!Z.mappe || !/^\d+$/.test(w) || +w < 1 || +w > 30) return;
     S.angaben.bilder = String(+w);
     clearTimeout(bilderTimer);
-    bilderTimer = setTimeout(function () { angabenSchreiben({ bilder: String(+w) }, true); }, 300);
+    bilderTimer = setTimeout(function () { bilderTimer = null; angabenSchreiben({ bilder: String(+w) }, true); }, 300);
   });
   // MF3: ohne Zahl verlassen, gilt wieder die bisherige Wahl (keine stille Vorgabe)
   $("bilder-zahl").addEventListener("blur", function () {
@@ -1877,19 +1890,30 @@
       .catch(zeigeFehler);
     return S.schreibKette;
   }
+  // Ein Glied gehört zur Mappe, die beim Klick offen war; ist inzwischen eine andere offen (oder keine), schreibt es nichts
   function angabenSchreiben(a, mitStand) {
-    S.schreibKette = S.schreibKette.then(function () { return angabenSchreibenJetzt(a, mitStand); });
+    var kennung = Z.kennung;
+    S.schreibKette = S.schreibKette.then(function () { return angabenSchreibenJetzt(a, mitStand, kennung); });
     return S.schreibKette;
   }
-  async function angabenSchreibenJetzt(a, mitStand) {
+  async function angabenSchreibenJetzt(a, mitStand, kennung) {
+    var gilt = function () { return kennung === Z.kennung; };
     try {
       await km.bereit();
+      if (!gilt()) return;
       if (!Z.steckbrief_text) await steckbriefAnlegen();
-      Z.steckbrief_text = await km.mappeFn("angaben_schreiben", [Z.steckbrief_text, a]);
+      if (!gilt()) return;
+      var t = await km.mappeFn("angaben_schreiben", [Z.steckbrief_text, a]);
+      if (!gilt()) return;
+      Z.steckbrief_text = t;
       Object.assign(S.angaben, a);
       if (a.schulart) schulartMerken(a.schulart);
       // die Bilder-Stufe ändert die Prüfung
-      if (mitStand) { await km.stand(Z.kurs_md); if (inhalt()) { await auswertung(); zeichne(); } }
+      if (mitStand) {
+        await km.stand(Z.kurs_md);
+        if (!gilt()) return;
+        if (inhalt()) { await auswertung(); if (!gilt()) return; zeichne(); }
+      }
       zeichneAussehen(); zeichneSchritte();
       geaendert();
     } catch (e) { zeigeFehler(e); }

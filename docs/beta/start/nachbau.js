@@ -466,14 +466,20 @@
     var v = vergleichJetzt(), a = v && v.abweichungen.filter(function (x) { return schluessel(x) === k; })[0];
     if (!a) return;
     var l = a.luecken && a.luecken.filter(function (x) { return x.nr === nr; })[0];
+    var kennung = Z.kennung, weg = function () { return kennung !== Z.kennung; };
     try {
       await km.bereit();
-      Z.kurs_md = await km.mappeFn("loesung_zulassen", [Z.kurs_md, a.baustein, a.aufgabe, nr, l ? l.chat : a.chat]);
+      if (weg()) return;
+      var md = await km.mappeFn("loesung_zulassen", [Z.kurs_md, a.baustein, a.aufgabe, nr, l ? l.chat : a.chat]);
+      if (weg()) return;
+      Z.kurs_md = md;
       delete korrigieren[k];
       await km.stand(Z.kurs_md);
+      if (weg()) return;
       await S.auswertung();
+      if (weg()) return;
       zeichne(); geaendert();
-    } catch (e) { zeigeFehler(e); }
+    } catch (e) { if (!weg()) zeigeFehler(e); }
   }
   // Korrekturen gehen in das Gespräch der Einheit (nicht in das Prüfgespräch); die Antwort setzt Schritt 5 ein wie eine
   // Korrekturrunde: ein Baustein mit `id:` ersetzt den Baustein
@@ -535,18 +541,36 @@
         .join(", "));
     b.textContent = o.nachlieferung_ganz;
   };
+  // Kursangaben aus Schritt 7 schreibt erst das change beim Klick auf den Knopf; sie stehen dann noch in der Kette
+  async function schreibenAbwarten() { for (var k = null; k !== S.schreibKette;) { k = S.schreibKette; await k; } }
+  // Bau für die Datei der Lehrkraft mit dem Stand nach allen ausstehenden Eingaben. Ändert sich während Bau oder
+  // Dateiname etwas (Z.aenderung), gilt der Bau nicht (km.baue legt ihn dann nicht in Z.bau): neu bauen, höchstens
+  // dreimal. -> Bau mit `name` (Dateiname der Mappe), null, wenn die Mappe inzwischen eine andere ist
+  async function bauFuerDatei(optionen) {
+    var kennung = Z.kennung, e = null;
+    for (var i = 0; i < 3; i++) {
+      await schreibenAbwarten();
+      if (kennung !== Z.kennung) return null;
+      var stand = Z.aenderung;
+      e = await km.baue(optionen());
+      if (e.mbz && kennung === Z.kennung) e.name = await km.mappeFn("dateiname", [Z.mappe, heute()]);
+      if (kennung !== Z.kennung) return null;
+      if (stand === Z.aenderung) break;
+    }
+    return e;
+  }
   $("herunterladen-ganz").onclick = async function () {
     S.bauLaeuft = true; knoepfe(); status("", "");         // AP13.45 B11: angesagt wird nur in Schritt 7 (#erstellen-stand)
     try {
-      await km.baue(Object.assign({}, km.bauOptionen || {}));
+      var b = await bauFuerDatei(function () { return Object.assign({}, km.bauOptionen || {}); });
       S.bauLaeuft = false;
-      if (Z.bau && Z.bau.mbz) {
-        Z.bau.nachlieferung = null;
+      if (b && b.mbz) {
+        b.nachlieferung = null;
         // die ganze Datei kommt als neuer Kurs: „Importiert?“ fragt wieder, und das Ja merkt den Stand aller Einheiten neu
         Z.mappe.importiert = []; Z.mappe.importiert_stand = {}; autosave();
-        Z.bau.downloadName = (await km.mappeFn("dateiname", [Z.mappe, heute()])).replace(/\.kursmappe\.zip$/, ".mbz");
-        herunterladen();
-      } else if (!Z.bau) status("Die Datei ließ sich nicht erstellen.", "fehler");
+        b.downloadName = b.name.replace(/\.kursmappe\.zip$/, ".mbz");
+        herunterladen(b);
+      } else if (b && !Z.bau) status("Die Datei ließ sich nicht erstellen.", "fehler");
       zeichneWiederherstellen(); knoepfe(); zeichneSchritte();
       S.fokusRetten(["herunterladen-ganz"]);
     } catch (e) { S.bauLaeuft = false; zeigeFehler(e); knoepfe(); }
@@ -669,20 +693,33 @@
     if (!sel.options.length) o.lizenz.forEach(function (w) { sel.appendChild(el("option", { value: w.wert,
         text: w.text })); });
     $("k-ki-text").textContent = "Hinweis im Kurs: „" + o.ki_hinweis + "“";
-    var lizenz = a.lizenz || "", ki = a.ki_hinweis === "ja", teile = [];
+    var lizenz = kaWert(a, "lizenz") || "", ki = kaWert(a, "ki_hinweis") === "ja", teile = [];
     if (document.activeElement !== sel) sel.value = lizenz;
     $("k-ki").checked = ki;
-    if (document.activeElement !== $("k-name")) $("k-name").value = a.lizenz_name || "";
+    if (document.activeElement !== $("k-name")) $("k-name").value = kaWert(a, "lizenz_name") || "";
     $("k-name-l").hidden = !lizenz;
     if (lizenz) teile.push(oberText("lizenz", lizenz));
     if (ki) teile.push("KI-Hinweis");
     $("kursangaben-stand").textContent = "Lizenz und KI-Hinweis im Kurs: " + (teile.join(", ") || "keine");
   }
+  // die Wahl gilt sofort: zeichnet die Seite neu, bevor sie geschrieben ist, zeigt das Feld sie weiter. Sie steht
+  // nur bis zum Ende des Schreibens hier, nicht in S.angaben: scheitert es, zeigt das Feld wieder den Steckbrief
+  var kaWunsch = {}, kaLauf = 0;
+  function kaWert(a, k) { var w = kaWunsch[k]; return w && w.kennung === Z.kennung ? w.wert : a[k]; }
   function kursangabe(a) {
     if (!Z.mappe) return;
+    var lauf = ++kaLauf;
+    Object.keys(a).forEach(function (k) { kaWunsch[k] = { wert: a[k], lauf: lauf, kennung: Z.kennung }; });
     S.angabenSchreiben(a, false).then(function () {
+      Object.keys(a).forEach(function (k) { if (kaWunsch[k] && kaWunsch[k].lauf === lauf) delete kaWunsch[k]; });
       if (!("ki_hinweis" in a)) S.kursangabenMerken(S.angaben.lizenz, S.angaben.lizenz_name);
       zeichneKursangaben();
+      // auch ein Feld mit Fokus zeigt danach den Steckbrief, solange es noch den Wert dieses Schreibens trägt
+      var sel = $("k-lizenz"), nm = $("k-name"), l = kaWert(S.angaben, "lizenz") || "",
+          n = kaWert(S.angaben, "lizenz_name") || "";
+      if ("lizenz" in a && sel.value === a.lizenz && sel.value !== l) sel.value = l;
+      if ("lizenz_name" in a && nm.value.replace(/\s+/g, " ").trim().slice(0, 80) === a.lizenz_name && nm.value !== n)
+        nm.value = n;
     });
   }
   $("k-ki").addEventListener("change", function () { kursangabe({ ki_hinweis: $("k-ki").checked ? "ja" : "nein" }); });
@@ -690,36 +727,47 @@
   $("k-name").addEventListener("change", function () {
     kursangabe({ lizenz_name: $("k-name").value.replace(/\s+/g, " ").trim().slice(0, 80) }); });
 
+  // Das change eines Felds kommt beim Drücken auf den Knopf. Ist es vor dem Loslassen geschrieben, fallen darunter die
+  // Zeilen des alten Baus weg, die Seite rückt am Ende nach, und der Klick ginge daneben: bis dahin bleibt die Höhe
+  $("herunterladen").addEventListener("mousedown", function () {
+    var s = $("schritt-7");
+    s.style.minHeight = s.offsetHeight + "px";
+    window.addEventListener("mouseup", function () { s.style.minHeight = ""; }, { once: true });
+  });
   $("herunterladen").onclick = async function () {
-    if (Z.bau && Z.bau.mbz) { herunterladen(); return; }
+    if (S.bauLaeuft) return;
     S.bauLaeuft = true;
+    try { await schreibenAbwarten(); } catch (e) { /* zeigt angabenSchreiben selbst */ }
+    if (Z.bau && Z.bau.mbz) { S.bauLaeuft = false; knoepfe(); herunterladen(); return; }
     knoepfe();
     // AP13.45 B11 (WCAG 4.1.3): den Zustand sagt nur die Zeile in Schritt 7 an (#erstellen-stand: „Datei wird erstellt …“,
     // dann „Heruntergeladen: …“ oder der Fehler); die Statuszeile im Kopf schweigt dazu
     status("", "");
     try {
-      var neu = nachlieferung(), opt = Object.assign({}, km.bauOptionen || {});
-      if (neu.length) opt.optionen = Object.assign({}, opt.optionen || {}, { delta: neu.join(",") });
-      await km.baue(opt);
-      if (Z.bau) Z.bau.nachlieferung = neu.length ? neu : null;
+      var neu = [];
+      var b = await bauFuerDatei(function () {
+        neu = nachlieferung(); var opt = Object.assign({}, km.bauOptionen || {});
+        if (neu.length) opt.optionen = Object.assign({}, opt.optionen || {}, { delta: neu.join(",") });
+        return opt;
+      });
+      if (b) b.nachlieferung = neu.length ? neu : null;
       // Name beim Herunterladen wie die Kursdatei; in der Sicherung bleibt der Name des Generators
-      if (Z.bau && Z.bau.mbz) Z.bau.downloadName = (await km.mappeFn("dateiname", [Z.mappe, heute()]))
-          .replace(/\.kursmappe\.zip$/, neu.length ? "_nachlieferung.mbz" : ".mbz");
+      if (b && b.mbz) b.downloadName = b.name.replace(/\.kursmappe\.zip$/, neu.length ? "_nachlieferung.mbz" : ".mbz");
       S.bauLaeuft = false;
-      if (Z.bau && Z.bau.mbz) {
-        herunterladen();
+      if (b && b.mbz) {
+        herunterladen(b);
         rueckmeldungBitteSpaeter();
         // AP13.12 a11: erster Download der Einheit, für die Minuten in der Rückmeldung
         if (Z.mappe && !Z.mappe.zeit_download) { Z.mappe.zeit_download = new Date().toISOString(); autosave(); }
       }
-      else if (!Z.bau) status("Die Datei ließ sich nicht erstellen.", "fehler");
+      else if (b && !Z.bau) status("Die Datei ließ sich nicht erstellen.", "fehler");
       zeichneWiederherstellen(); knoepfe(); zeichneSchritte(); rueckmeldungFuellen();
       // AP13.33 §2.1: der Knopf war beim Bauen gesperrt (Fokus auf body); der Fokus kehrt zu ihm zurück
       S.fokusRetten(["herunterladen", "importiert-ja"]);
     } catch (e) { S.bauLaeuft = false; zeigeFehler(e); knoepfe(); S.fokusRetten(["herunterladen"]); }
   };
-  function herunterladen() {
-    var b = Z.bau; if (b && b.mbz) download(b.mbz, b.downloadName || b.dateiname, "application/vnd.moodle.backup");
+  function herunterladen(b) {
+    b = b || Z.bau; if (b && b.mbz) download(b.mbz, b.downloadName || b.dateiname, "application/vnd.moodle.backup");
   }
   $("glossar-laden").onclick = function () {
     var g = Z.bau && Z.bau.glossare;
@@ -741,7 +789,7 @@
     var n = (Z.mappe.einheiten || einheitenImKurs().length) + 1;
     Z.mappe.einheiten = n;
     Z.mappe.anhaengen = "e" + n;
-    Z.bau = null;
+    Z.bau = null; Z.aenderung++;
     if (S.angaben.ki_hinweis === "ja") kursangabe({ ki_hinweis: "nein" });   // AP13.15: je Einheit neu gesetzt
     delete Z.mappe.material;                      // AP13.19 §1: das Material gehört zur vorigen Einheit
   }
@@ -789,6 +837,7 @@
     S.fokus(S.beruehrung() ? [document.querySelector("#start .s-kopf"), "f-thema"] : ["f-thema"], true);
   };
   function leeren() {
+    km.wechsel();
     delete $("rueckmeldung").dataset.offen; delete $("rueckmeldung").dataset.zu;
     Z.mappe = null; Z.kurs_md = ""; Z.steckbrief_text = ""; Z.assets = {}; Z.pruefung = null; Z.kennzahlen = null;
         Z.bau = null; Z.vergleich = null; korrigieren = {}; gegenFuer = null; feldAuf = false;

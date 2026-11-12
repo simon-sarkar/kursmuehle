@@ -702,6 +702,7 @@
   });
 
   S.planPhase = planPhase;
+  S.planUmbenannt = function (alt, neu) { if (offen === alt) offen = neu; };     // kern.js kartenNachziehen
   S.planBelegt = planBelegt;
   S.planZweig = planZweig;
   S.planKachelZahl = kachelZahl;
