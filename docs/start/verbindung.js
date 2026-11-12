@@ -295,6 +295,16 @@
   }
   function dauer(ms) { var s = Math.round(ms / 1000); return Math.floor(s / 60) + ":" + ("0" + s % 60).slice(-2); }
 
+  // Auftrag, dessen Antwort noch aussteht: {o, uhr}. Öffnen, „Neue Einheit“, Schließen und der Wechsel der Einheit
+  // (schritte.js neuStart) geben die Seite sofort frei; die Antwort wird dann noch abgeholt, aber nicht eingesetzt
+  var wartend = null;
+  S.kiAbbrechen = function () {
+    var w = wartend; if (!w) return;
+    wartend = null; w.weg = true;
+    clearInterval(w.uhr); S.kiLaeuft = false;
+    w.o.stand("", "");
+    felder();
+  };
   // Text an die eigene KI: „Deine KI schreibt …“ mit Dauer über o.stand (davor o.vor, etwa „Teil 2 von 3 · “), die
   // Antwort an o.fertig (dasselbe Einsetzen wie beim Einfügen von Hand); ohne Verbindung öffnet sich „So geht es“
   S.anKi = async function (text, o) {
@@ -313,13 +323,19 @@
     function tick() { o.stand((o.vor || "") + "Deine KI schreibt … " + dauer(Date.now() - t0), "laeuft"); }
     tick();
     var uhr = setInterval(tick, 1000);
+    var ich = wartend = { o: o, uhr: uhr }, kennung = S.einheitKennung();
     try {
       var antwort = await V.senden(text, { einheit: o.einheit, neu: o.neu });
+      if (ich.weg) return false;
+      wartend = null;
       clearInterval(uhr); o.stand("", ""); S.kiLaeuft = false;
+      if (kennung !== S.einheitKennung()) { zeichne(); return false; }
       zeichne();
       await o.fertig(antwort);
       return true;
     } catch (e) {
+      if (ich.weg) return false;
+      if (wartend === ich) wartend = null;
       clearInterval(uhr); o.stand("", ""); S.kiLaeuft = false;
       if (e.art !== "anbieter") V.fehler = e.art;
       zeichne();

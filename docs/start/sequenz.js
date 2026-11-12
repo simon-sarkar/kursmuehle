@@ -526,9 +526,9 @@
   // ---------------------------------------------------------------- Sequenzplan einsetzen (chat.js eingabeUebernehmen)
   // -> true, wenn eingesetzt. Fehler: Karte mit Zeilen und Korrekturbitte (chat.js diagnoseKarte), nichts geändert
   S.sequenzplanEinsetzen = async function (text, zeige, diagnose, feld, o) {
-    var gesendet = Z.mappe;
+    var gesendet = Z.mappe, kennung = Z.kennung;
     var r = await km.mappeFn("sequenzplan_einsetzen", [gesendet, text]);
-    if (Z.mappe !== gesendet) return false;
+    if (Z.mappe !== gesendet || kennung !== Z.kennung) return false;
     if (!r.ok) {
       zeige("");
       diagnose({ kopf: T("nicht_lesbar"), meldungen: r.meldungen, satz: r.satz });
@@ -537,12 +537,15 @@
     ["bausteine", "kacheln", "sequenz", "themen"].forEach(function (k) { gesendet[k] = r.mappe[k]; });
     hinweise = r.hinweise || []; hinweiseFuer = gesendet;
     diagnose(null); zeige("");
-    if (feld) $("eingabe").value = ""; else if (o && o.leeren) o.leeren();
+    // was während des Einsetzens neu ins Feld kam, bleibt dort für den nächsten Durchgang
+    if (feld) { if ($("eingabe").value === text) $("eingabe").value = ""; } else if (o && o.leeren) o.leeren();
     delete Z.mappe.kopiert;
     S.texte.kopiert = {}; S.texte.teil = 0;
     Z.mappe.schritt = 4; S.aendern = null; S.planStunde = null;
     await S.neuPruefen();
+    if (kennung !== Z.kennung) return false;
     await S.texteErzeugen();
+    if (kennung !== Z.kennung) return false;
     S.zeichne();
     var st = $("sequenz-stand"); if (st) st.textContent = T("uebernommen", { von: r.stunden });
     var sec = S.sektion(4); if (sec) sec.scrollIntoView({ block: "start" });

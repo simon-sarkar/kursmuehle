@@ -23,7 +23,7 @@
   var offenVon = null;          // Knopf, der die Ansicht geöffnet hat
   var knoten = {};              // id -> {el, kopf, koerper, werk, neu, sig}
   var abschnittKnoten = {};     // Schlüssel -> <h3>
-  var bearbeiten = {};          // id -> {text, meldungen}: offenes Textfeld
+  var bearbeiten = {};          // id -> {text, alt, meldungen}: offenes Textfeld (`alt`: Fassung, die es zuletzt bekam)
   var erw = {};                 // MF5: id -> true: „Erweitert“ am Baustein offen (Text des ganzen Bausteins)
   var offen = null;             // MF5: offenes Feld einer Stelle {id, nr, panel, ziel, slot, s}
   var neuOffen = {};            // id -> true: Teil „Neu schreiben lassen“ offen
@@ -84,6 +84,43 @@
     ".km-ed-inhalt .km-ue-griff:focus { outline: none; }",
     ".km-ed-inhalt .km-ue-griff:focus-visible { outline: 2px dashed #8a6416; outline-offset: 3px; }"
   ].join("\n");
+
+  // Änderungen an der Kursdatei aus der Ansicht laufen nacheinander: jede liest Z.kurs_md erst, wenn die vorige ihren
+  // Stand geschrieben hat (sonst rechnete die zweite auf dem alten Stand und nähme die erste zurück). Ein Fehler hält
+  // die folgenden nicht auf; der Aufrufer bekommt ihn trotzdem.
+  // Ein Schritt gehört zur Mappe, die beim Einreihen offen war; `gilt` sagt ihm nach jedem await, ob sie es noch ist (sonst
+  // schriebe er in eine inzwischen geöffnete oder neue Einheit). Nicht das Einheit-Tag: „Weitere Einheit“ ändert es, die
+  // Kursdatei bleibt dieselbe.
+  var kette = Promise.resolve();
+  function folge(fn) {
+    var kennung = Z.kennung, gilt = function () { return kennung === Z.kennung; };
+    var p = kette.then(function () { return gilt() ? fn(gilt) : { verworfen: true }; });
+    kette = p.catch(function () {});
+    return p;
+  }
+  // Kachel, die die Lehrkraft beim Klick vor sich hatte: ihre Nummer folgt den Umstellungen durch frühere Schritte der
+  // Kette (Verschieben, Teilen, Löschen); null, wenn es sie nicht mehr gibt
+  var ziele = [];
+  function kachelZiel(nr) { var z = { nr: isNaN(nr) ? null : nr }; ziele.push(z); return z; }
+  function zielFrei(z) { var i = ziele.indexOf(z); if (i >= 0) ziele.splice(i, 1); }
+  // das offene Kachelformular gehört zu seiner Kachel wie ein wartendes Ziel; ist sie weg, geht es zu
+  function umstellen(f) {
+    ziele.forEach(function (z) { if (z.nr !== null) z.nr = f(z.nr); });
+    var m = /^abschnitt:(\d+)$/.exec(String(ueZiel || ""));
+    if (!m) return;
+    var n = f(parseInt(m[1], 10));
+    if (n === null) ueZu(true); else ueZiel = "abschnitt:" + n;
+  }
+  function mitZiel(z, p) {
+    return p.then(function (r) { zielFrei(z); return r; }, function (e) { zielFrei(z); throw e; });
+  }
+  // Die Lehrkraft schreibt gerade in einem Feld außerhalb von `ausser`: dorthin springt kein Fokus
+  function woanders(ausser) {
+    var a = document.activeElement;
+    if (!a || (ausser && ausser.contains(a))) return false;
+    return a.tagName === "TEXTAREA" || a.tagName === "SELECT" || (a.tagName === "INPUT" &&
+        ["text", "number", "search", ""].indexOf(a.type) >= 0);
+  }
 
   function sichtbar() { return !!(Z.mappe && Z.pruefung && Z.pruefung.bausteine && Z.pruefung.bausteine.length); }
   function karte(id) { return S.karteNach(id); }
@@ -188,7 +225,7 @@
   // Chromium lässt ein abgefangenes `cancel` ohne Nutzeraktion dazwischen nur einmal zu (Esc zählt nicht); darum wirkt Esc
   // schon beim Tastendruck, `cancel` bleibt für andere Wege (Zurück-Geste)
   function escInnen() {
-    if (offen) { stelleZu(true); return true; }
+    if (offen) { stelleAbbrechen(); return true; }
     if (ueZiel) { ueZu(); return true; }
     var teilOffen = Object.keys(teilKnoten).filter(function (id) { return teilKnoten[id].offen; })[0];
     if (teilOffen) { teilenZu(teilOffen, true); return true; }
@@ -263,12 +300,21 @@
 
   // AP13.33 §1.5: Meldung zur letzten Handlung am betroffenen Baustein (nicht im Kopf der Ansicht); die nächste Handlung
   // nimmt sie weg
+  // Bei offenem Feld steht sie unter seinen Knöpfen (dort, wo die Zeilen der Sofortprüfung beginnen): über dem Feld schöbe
+  // sie die Knöpfe, wenn sie erscheint oder verschwindet
   function meldung(id, text, art) {
     meldungenWeg();
     var k = knoten[id]; if (!k || !k.meldung) return;
+    var pr = !k.werk.hidden && k.werk.querySelector(".ed-knoepfe") && k.werk.querySelector(".ed-pruefung");
+    if (pr) pr.before(k.meldung);
+    else if (!k.werk.hidden && k.werk.querySelector(".ed-knoepfe")) k.werk.appendChild(k.meldung);
+    else if (offen && offen.id === id && offen.panel.isConnected) offen.panel.appendChild(k.meldung);
+    else meldungZurueck(k);
     k.meldung.className = "ed-b-meldung" + (art ? " " + art : "");
     k.meldung.textContent = text || "";
   }
+  // vor dem Leeren eines Felds: die Meldung kommt an ihren Platz unter dem Kopf zurück (sonst ginge sie mit)
+  function meldungZurueck(k) { if (k && k.meldung && k.meldung.parentNode !== k.el) k.kopf.after(k.meldung); }
   function meldungenWeg() {
     Object.keys(knoten).forEach(function (id) { var m = knoten[id].meldung; if (m && m.textContent) m.textContent = ""; });
   }
@@ -400,9 +446,17 @@
       }
       try { stellenAn(k, b); } catch (e) { console.error("Stellen", b.id, e); }
     }
+    // ein unverändertes Textfeld folgt einer neuen Fassung (sonst schriebe „Übernehmen“ die alte zurück); Leerraum am
+    // Rand zählt nicht als Änderung, wie beim Übernehmen (karten.js handUebernehmen)
+    var e = bearbeiten[b.id], tf = e && k.werk.querySelector(".ed-text"), alt = e ? String(e.alt).trim() : "";
+    if (tf && e.text.trim() === alt && tf.value.trim() === alt && b.text.trim() !== alt) {
+      tf.value = e.text = e.alt = b.text;
+      tf.rows = zeilen(b.text);
+      e.meldungen = []; meldungenZeigen(b.id, []);
+    }
     k.koerper.hidden = !!bearbeiten[b.id];
     k.liste.hidden = !!bearbeiten[b.id] || !k.liste.childNodes.length;
-    if (neuOffen[b.id] && !(karte(b.id) || {}).neu) neuZu(b.id);       // eingesetzt oder an der Karte zurückgenommen
+    if (neuOffen[b.id] && !(karte(b.id) || {}).neu && !neuBehalten(k)) neuZu(b.id);   // eingesetzt oder an der Karte zurückgenommen
     return k;
   }
 
@@ -606,6 +660,13 @@
     }
     if (ueZiel && !ueAbschnitt(ueZiel) && ueZiel !== "kopf" && ueZiel !== "weitere") ueZu(true);
     if (!ueAuf && ueZiel) ueZu(true);
+    // ein offenes Formular überlebt Umstellungen anderer Kacheln; der Rand kann sich dabei verschoben haben
+    var ua = ueZiel && ueZiel !== "kopf" && ueZiel !== "weitere" ? ueAbschnitt(ueZiel) : null;
+    if (ua) {
+      var rd = ueRand(ua);
+      ["ue-hoch", "ue-runter"].forEach(function (x, i) {
+        var b = k.werk.querySelector("[data-aktion=" + x + "]"); if (b) b.disabled = rd[i]; });
+    }
     k.zeile.hidden = k.koerper.hidden = !ueAuf;
     k.el.classList.toggle("ed-ue-zu", !ueAuf);
     return k;
@@ -651,6 +712,12 @@
   function ueAbschnitt(ziel) {
     var nr = parseInt(String(ziel).replace("abschnitt:", ""), 10);
     return (stand.uebersicht.abschnitte || []).filter(function (a) { return a.nr === nr && !a.allgemein; })[0] || null;
+  }
+  // [Hoch gesperrt, Runter gesperrt]: am Rand (und bei nur einer Kachel) wie die Pfeile in der Vorschau
+  function ueRand(a) {
+    var reihe = (stand.uebersicht.abschnitte || []).filter(function (x) {
+      return !x.allgemein && (x.einheit || "") === (a.einheit || ""); }), stelle = reihe.indexOf(a);
+    return [stelle <= 0, stelle < 0 || stelle >= reihe.length - 1];
   }
   function ueKlick(ev) {
     var t = ev.target.closest && ev.target.closest("[data-aktion], [data-ziel]");
@@ -713,20 +780,19 @@
           "farbe_hinweis_abschnitt") }));
       // AP13.33 §1.8: am Rand (und bei nur einer Kachel) gesperrt wie die Pfeile in der Vorschau
       // AP13.37 §3: nur innerhalb der Einheit (wie „In Kachel …“)
-      var reihe = (u.abschnitte || []).filter(function (x) { return !x.allgemein && (x.einheit || "") === (a.einheit || ""); }),
-          stelle = reihe.indexOf(a);
-      var quer = kachel || u.format === "einthemen";
+      var rand = ueRand(a), quer = kachel || u.format === "einthemen";
       teile.push(el("div", { cls: "ed-knoepfe" }, [
-        el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": "ue-hoch", disabled: stelle <= 0,
+        el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": "ue-hoch", disabled: rand[0],
             text: quer ? T("links") : T("hoch") }),
-        el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": "ue-runter",
-            disabled: stelle < 0 || stelle >= reihe.length - 1, text: quer ? T("rechts") : T("runter") })]));
+        el("button", { type: "button", cls: "knopf klein-knopf", "data-aktion": "ue-runter", disabled: rand[1],
+            text: quer ? T("rechts") : T("runter") })]));
     }
-    teile.push(el("p", { cls: "ed-meldungen ed-ue-meldung", role: "status" }));
+    // Meldungen unter den Knöpfen: darüber schöben sie „Übernehmen“, wenn sie erscheinen
     teile.push(el("div", { cls: "ed-knoepfe" }, [
       el("button", { type: "button", cls: "knopf haupt", "data-aktion": "ue-uebernehmen", text: T("uebernehmen") }),
       el("button", { type: "button", cls: "knopf", "data-aktion": "ue-abbrechen", text: T("abbrechen") })]));
-    k.werk.textContent = "";
+    teile.push(el("p", { cls: "ed-meldungen ed-ue-meldung", role: "status" }));
+    meldungZurueck(k); k.werk.textContent = "";
     k.werk.setAttribute("role", "group");
     k.werk.setAttribute("aria-label", a ? T("abschnitt_titel") + ": " + a.titel : T("kurstitel"));
     k.werk.append.apply(k.werk, teile);
@@ -744,7 +810,7 @@
     var k = knoten[UE], ziel = ueZiel;
     ueZiel = null;
     if (!k) return;
-    k.werk.hidden = true; k.werk.textContent = "";
+    k.werk.hidden = true; meldungZurueck(k); k.werk.textContent = "";
     var kn = k.kopf.querySelector("[data-aktion=kurstitel]"); if (kn) kn.setAttribute("aria-expanded", "false");
     if (stumm) return;
     var f = ziel ? zielGriff(k.koerper.firstChild && k.koerper.firstChild.shadowRoot, ziel) : null;
@@ -756,30 +822,53 @@
     // nur Felder, die die Lehrkraft geändert hat (sonst gingen Werte außerhalb der Listen verloren)
     var w = function (c) { var x = k.werk.querySelector("." + c); return x && x.value !== x.dataset.alt ? x.value : undefined; };
     var mfeld = k.werk.querySelector(".ed-ue-meldung"), titel = w("ed-ue-titel");
-    await km.bereit();
     if (ziel === "kopf" && titel === undefined) { ueZu(); return; }
-    if (ziel === "kopf") {
-      var r = await km.mappeFn("kurstitel_setzen", [Z.kurs_md, Z.steckbrief_text, titel]);
-      if (r.fehler) { mfeld.textContent = r.fehler; mfeld.className = "ed-meldungen ed-ue-meldung fehler"; return; }
-      Z.steckbrief_text = r.steckbrief; S.angaben.thema = titel.trim(); Z.mappe.titel = titel.trim();
-      ueZu();
-      await S.uebersichtAendern(r.kurs_md, "kopf", r.vorher, { titel: titel.trim() });
-    } else {
-      var nr = parseInt(ziel.replace("abschnitt:", ""), 10), angaben = {};
+    var z = ziel === "kopf" ? null : kachelZiel(parseInt(ziel.replace("abschnitt:", ""), 10)), angaben = {};
+    // das Formular gehört zur Kachel, auch wenn sie inzwischen eine andere Nummer trägt
+    var hier = function () { return ueZiel === (z ? "abschnitt:" + z.nr : "kopf"); };
+    if (ziel !== "kopf") {
       if (titel !== undefined) angaben.titel = titel;
       ["bild", "icon", "farbe"].forEach(function (x, i) {
         var v = w("ed-ue-" + x); if (v !== undefined) angaben[["kachelbild", "kachelicon", "farbe"][i]] = v; });
-      if (!Object.keys(angaben).length) { ueZu(); return; }
-      var r2 = await km.mappeFn("abschnitt_setzen", [Z.kurs_md, nr, angaben, Z.mappe.hand || {}]);
-      if (r2.fehler) { mfeld.textContent = r2.fehler; mfeld.className = "ed-meldungen ed-ue-meldung fehler"; return; }
-      ueZu();
-      // AP13.30: Abschnitte mit Handänderung nach diesem (neuer Titel = neuer Vorgänger) ziehen nach
-      if (r2.vorher !== r2.nachher) await S.gliederungAendern(r2.kurs_md, [{ schluessel: r2.schluessel, vorher: r2.vorher,
-          werte: { nachher: r2.nachher } }].concat(r2.hand || []), []);
+      if (!Object.keys(angaben).length) { zielFrei(z); ueZu(); return; }
     }
-    await aktualisieren();
-    meldung(UE, T("uebernommen"));
-    ueFokus(ziel);
+    // geschlossen wird nur dieses Formular, solange es die übernommenen Werte trägt; eines, das die Lehrkraft inzwischen
+    // geöffnet oder weiter beschrieben hat, bleibt offen
+    var felder = Array.prototype.slice.call(k.werk.querySelectorAll("input, select"));
+    var werte = function () { return felder.map(function (x) { return x.isConnected ? x.value : null; }); };
+    var anfang = werte();
+    var fehler = function (t) {
+      if (hier() && mfeld.isConnected) { mfeld.textContent = t; mfeld.className = "ed-meldungen ed-ue-meldung fehler"; }
+    };
+    await mitZiel(z, folge(async function (gilt) {
+      await km.bereit();
+      if (!gilt() || (z && z.nr === null)) return;
+      var zu = false, gleich = function () { return hier() && werte().join("\u0000") === anfang.join("\u0000"); };
+      if (ziel === "kopf") {
+        var r = await km.mappeFn("kurstitel_setzen", [Z.kurs_md, Z.steckbrief_text, titel]);
+        if (!gilt()) return;
+        if (r.fehler) { fehler(r.fehler); return; }
+        Z.steckbrief_text = r.steckbrief; S.angaben.thema = titel.trim(); Z.mappe.titel = titel.trim();
+        zu = gleich(); if (zu) ueZu();
+        await S.uebersichtAendern(r.kurs_md, "kopf", r.vorher, { titel: titel.trim() });
+      } else {
+        var r2 = await km.mappeFn("abschnitt_setzen", [Z.kurs_md, z.nr, angaben, Z.mappe.hand || {}]);
+        if (!gilt()) return;
+        if (r2.fehler) { fehler(r2.fehler); return; }
+        zu = gleich(); if (zu) ueZu();
+        // AP13.30: Abschnitte mit Handänderung nach diesem (neuer Titel = neuer Vorgänger) ziehen nach
+        if (r2.vorher !== r2.nachher) await S.gliederungAendern(r2.kurs_md, [{ schluessel: r2.schluessel, vorher: r2.vorher,
+            werte: { nachher: r2.nachher } }].concat(r2.hand || []), []);
+      }
+      if (!gilt()) return;
+      // weiter beschrieben: das Übernommene ist der neue Ausgangswert des Formulars
+      if (!zu && hier()) felder.forEach(function (x, i) {
+        if (x.isConnected && x.dataset.alt !== undefined) x.dataset.alt = anfang[i]; });
+      await aktualisieren();
+      if (!gilt()) return;
+      meldung(UE, T("uebernommen"));
+      if (zu && !woanders(null)) ueFokus(z ? "abschnitt:" + z.nr : "kopf");
+    }));
   }
   // Fokus auf die Stelle in der (neu gebauten) Übersicht, sonst auf ihre Überschrift
   function ueFokus(ziel) {
@@ -789,36 +878,56 @@
     (f || (ziel === "kopf" && k.kopf.querySelector("[data-aktion=kurstitel]")) || k.kopf.querySelector(".ed-b-titel"))
         .focus({ preventScroll: true });
   }
-  async function verschieben(nr, richtung) {
-    await km.bereit();
-    var r = await km.mappeFn("abschnitt_verschieben", [Z.kurs_md, nr, richtung, Z.mappe.hand || {}]);
-    if (r.nach === nr) return;
-    if (ueZiel === "abschnitt:" + nr) ueZiel = "abschnitt:" + r.nach;
-    // §8.7: Verschieben ist eine Handänderung des Abschnitts (Kopf und Vorgänger); Rückgängig und Moduswechsel gelten nicht mehr
-    // AP13.30: auch die Nachbarkachel bekommt ihren neuen Vorgänger, falls sie eine Handänderung trägt
-    await S.gliederungAendern(r.kurs_md, [{ schluessel: r.schluessel, vorher: r.vorher, werte: { nachher: r.nachher,
-        nach: r.vorgaenger } }].concat(r.hand || []), []);
-    await aktualisieren();
-    var k = knoten[UE], root = k && k.koerper.firstChild && k.koerper.firstChild.shadowRoot;
-    var f = root && (root.querySelector("[data-aktion=" + (richtung < 0 ? "hoch" : "runter") + "][data-nr='" + r.nach + "']:not([disabled])")
-        || griff(root.querySelector("[data-ziel='abschnitt:" + r.nach + "']")));
-    if (f) f.focus({ preventScroll: true });
+  // zweimal „Hoch“ an derselben Kachel, bevor das erste fertig ist: sie rückt zweimal (die Nummer folgt ihr)
+  function verschieben(nr, richtung) {
+    var z = kachelZiel(nr);
+    return mitZiel(z, folge(async function (gilt) {
+      await km.bereit();
+      if (!gilt() || z.nr === null) return;
+      nr = z.nr;
+      var r = await km.mappeFn("abschnitt_verschieben", [Z.kurs_md, nr, richtung, Z.mappe.hand || {}]);
+      if (!gilt() || r.nach === nr) return;
+      umstellen(function (n) { return n === nr ? r.nach : n === r.nach ? nr : n; });
+      // §8.7: Verschieben ist eine Handänderung des Abschnitts (Kopf und Vorgänger); Rückgängig und Moduswechsel gelten nicht mehr
+      // AP13.30: auch die Nachbarkachel bekommt ihren neuen Vorgänger, falls sie eine Handänderung trägt
+      await S.gliederungAendern(r.kurs_md, [{ schluessel: r.schluessel, vorher: r.vorher, werte: { nachher: r.nachher,
+          nach: r.vorgaenger } }].concat(r.hand || []), []);
+      if (!gilt()) return;
+      await aktualisieren();
+      var k = knoten[UE], root = k && k.koerper.firstChild && k.koerper.firstChild.shadowRoot;
+      var f = root && (root.querySelector("[data-aktion=" + (richtung < 0 ? "hoch" : "runter") + "][data-nr='" + r.nach + "']:not([disabled])")
+          || griff(root.querySelector("[data-ziel='abschnitt:" + r.nach + "']")));
+      if (!gilt()) return;
+      if (f && !woanders(null)) f.focus({ preventScroll: true });
+    }));
   }
 
   // ---------------------------------------------------------------- Gliederung (AP13.30)
   // Kachel teilen, Baustein in eine andere Kachel, leere Kachel löschen: gen/mappe.py stellt die Zeilen der Kursdatei
   // um (die Bausteine bleiben Byte für Byte); karten.js gliederungAendern merkt es als Handänderung der Abschnitte.
   // -> Ergebnis von gen/mappe.py; mit `fehler` ist nichts geändert. Die Meldung steht an `ort` (Baustein oder Übersicht)
-  async function gliederung(funktion, args, satz, ort) {
-    await km.bereit();
-    var r = await km.mappeFn(funktion, args.concat([Z.mappe.hand || {}]));
-    if (r.fehler) { meldung(ort, r.fehler, "fehler"); return r; }
-    if (r.kurs_md === Z.kurs_md) return r;
-    await S.gliederungAendern(r.kurs_md, r.hand, r.weg);
-    await aktualisieren();
-    meldung(ort, satz);
-    return r;
+  // `args()` erst, wenn die Änderung an der Reihe ist: frühere Schritte können die Kacheln umgestellt haben. null: das
+  // Ziel gibt es nicht mehr; dann wie bei einer anderen Einheit {verworfen}
+  function gliederung(funktion, args, satz, ort) {
+    return folge(async function (gilt) {
+      await km.bereit();
+      var a = gilt() ? args() : null;
+      if (!a) return { verworfen: true };
+      var r = await km.mappeFn(funktion, [Z.kurs_md].concat(a, [Z.mappe.hand || {}]));
+      if (!gilt()) return { verworfen: true };
+      if (r.fehler) { meldung(ort, r.fehler, "fehler"); return r; }
+      if (r.kurs_md === Z.kurs_md) return r;
+      if (funktion === "kachel_teilen") umstellen(function (n) { return n >= r.nr ? n + 1 : n; });
+      if (funktion === "kachel_loeschen") umstellen(function (n) { return n === a[0] ? null : n > a[0] ? n - 1 : n; });
+      await S.gliederungAendern(r.kurs_md, r.hand, r.weg);
+      if (!gilt()) return { verworfen: true };
+      await aktualisieren();
+      if (!gilt()) return { verworfen: true };
+      meldung(ort, satz);
+      return r;
+    });
   }
+  function da(id) { return !!pruef(id); }
   function teilenEintrag(b, ka) {
     var t = teilKnoten[b.id];
     if (!t) t = teilKnoten[b.id] = { el: el("div", { cls: "ed-teilen", "data-id": b.id }), offen: false };
@@ -840,10 +949,10 @@
     t.el.setAttribute("role", "group");
     t.el.setAttribute("aria-label", T("teilen") + ": " + t.b.titel);
     t.el.append(el("label", { cls: "feld ed-feld" }, [T("teilen_titel"), titel]),
-      el("p", { cls: "ed-meldungen ed-teilen-meldung fehler", role: "status" }),
       el("div", { cls: "ed-knoepfe" }, [
         el("button", { type: "button", cls: "knopf haupt", "data-aktion": "teilen-ok", text: T("uebernehmen") }),
-        el("button", { type: "button", cls: "knopf", "data-aktion": "teilen-abbrechen", text: T("abbrechen") })]));
+        el("button", { type: "button", cls: "knopf", "data-aktion": "teilen-abbrechen", text: T("abbrechen") })]),
+      el("p", { cls: "ed-meldungen ed-teilen-meldung fehler", role: "status" }));
     titel.focus(); titel.select();
   }
   function teilenZu(id, fokus) {
@@ -855,21 +964,27 @@
   async function kachelTeilen(id) {
     var t = teilKnoten[id]; if (!t) return;
     var titel = t.el.querySelector(".ed-teilen-titel").value;
-    var r = await gliederung("kachel_teilen", [Z.kurs_md, id, titel], T("geteilt"), id);
+    var r = await gliederung("kachel_teilen", function () { return da(id) ? [id, titel] : null; }, T("geteilt"), id);
+    if (r.verworfen) return;
     if (r.fehler) { meldungenWeg(); t.el.querySelector(".ed-teilen-meldung").textContent = r.fehler; return; }
     delete teilKnoten[id];
     var f = knoten[id] && knoten[id].kopf.querySelector(".ed-b-titel");
-    if (f) { zeigen(knoten[id].el); f.focus({ preventScroll: true }); }
+    if (f && !woanders(t.el)) { zeigen(knoten[id].el); f.focus({ preventScroll: true }); }
   }
   async function bausteinVerschieben(id, nr) {
     if (!nr) return;
-    await gliederung("baustein_verschieben", [Z.kurs_md, id, nr], T("verschoben"), id);
+    var z = kachelZiel(nr);
+    var r = await mitZiel(z, gliederung("baustein_verschieben", function () { return da(id) && z.nr ? [id, z.nr] : null; },
+        T("verschoben"), id));
+    if (r.verworfen) return;
     var k = knoten[id];
-    if (k) { zeigen(k.el); var f = k.kopf.querySelector(".ed-in-kachel"); if (f) f.focus({ preventScroll: true }); }
+    if (k && !woanders(k.el)) { zeigen(k.el); var f = k.kopf.querySelector(".ed-in-kachel"); if (f) f.focus({ preventScroll: true }); }
   }
   async function kachelLoeschen(nr) {
-    if ((await gliederung("kachel_loeschen", [Z.kurs_md, nr], T("geloescht"), UE)).fehler) return;
-    var k = knoten[UE]; if (k) k.kopf.querySelector(".ed-b-titel").focus({ preventScroll: true });
+    var z = kachelZiel(nr);
+    var r = await mitZiel(z, gliederung("kachel_loeschen", function () { return z.nr ? [z.nr] : null; }, T("geloescht"), UE));
+    if (r.fehler || r.verworfen) return;
+    var k = knoten[UE]; if (k && !woanders(null)) k.kopf.querySelector(".ed-b-titel").focus({ preventScroll: true });
   }
 
   // §2: „Weitere Einheit“ am Ende der Übersicht: Thema und Dauer, dann derselbe Weg wie „Einheit hinzufügen“
@@ -882,7 +997,7 @@
   function weitereFormular() {
     var k = knoten[UE]; if (!k) return;
     ueZiel = "weitere";
-    k.werk.textContent = "";
+    meldungZurueck(k); k.werk.textContent = "";
     k.werk.setAttribute("role", "group");
     k.werk.setAttribute("aria-label", T("weitere"));
     k.werk.hidden = false;
@@ -897,11 +1012,11 @@
     k.werk.append(el("p", { cls: "ed-ue-zeile", text: T("weitere_zeile") }),
       el("div", { cls: "ed-ue-reihe" }, [el("label", { cls: "feld ed-feld ed-w-thema-l" }, [T("weitere_thema"), thema]),
         el("label", { cls: "feld ed-feld ed-w-minuten-l" }, [T("weitere_minuten"), minuten])]),
-      el("p", { cls: "ed-meldungen ed-ue-meldung", role: "status" }),
       el("div", { cls: "ed-knoepfe" }, [
         el("button", { type: "button", cls: "knopf haupt", "data-aktion": "weitere-erstellen",
             text: T(S.zweig() === "steuer" ? "weitere_planen" : "weitere_erstellen") }),
-        el("button", { type: "button", cls: "knopf", "data-aktion": "ue-abbrechen", text: T("abbrechen") })]));
+        el("button", { type: "button", cls: "knopf", "data-aktion": "ue-abbrechen", text: T("abbrechen") })]),
+      el("p", { cls: "ed-meldungen ed-ue-meldung", role: "status" }));
     thema.focus();
   }
   async function weitereErstellen(knopf) {
@@ -937,7 +1052,7 @@
     var e = (Z.mappe && Z.mappe.einheit) || {};
     var feld = el("textarea", { cls: "unsichtbar ed-w-feld", readonly: true, "aria-hidden": "true", tabindex: "-1" });
     feld.value = S.texte.teile[S.texte.teil] || "";
-    k.werk.textContent = "";
+    meldungZurueck(k); k.werk.textContent = "";
     k.werk.append(el("p", { cls: "ed-ue-zeile", text: T("weitere") + ": " + (e.thema || "") + (e.minuten ? " · " +
         e.minuten + " min" : "") }),
       el("div", { cls: "kopieren" }, [el("button", { type: "button", cls: "knopf haupt", "data-aktion": "weitere-kopieren",
@@ -977,19 +1092,22 @@
   }
   async function weitereEinsetzen() {
     var k = knoten[UE]; if (!k || ueZiel !== "weitere") return;
-    var antwort = k.werk.querySelector(".ed-w-antwort");
-    var ok = await S.eingabeUebernehmen(null, { text: antwort.value, stand: weitereStand,
+    var antwort = k.werk.querySelector(".ed-w-antwort"), text = antwort.value;
+    // was die Lehrkraft während des Einsetzens ins Feld getippt hat, bleibt dort und das Feld offen
+    var ok = await S.eingabeUebernehmen(null, { text: text, stand: weitereStand,
       diagnose: function (d) { var box = k.werk.querySelector(".ed-w-diagnose"); if (box) S.diagnoseKarte(box, d); },
-      leeren: function () { antwort.value = ""; } });
+      leeren: function () { if (antwort.value === text) antwort.value = ""; } });
     if (!ok) return;
     if (offeneEinheit() || (S.teileOffen && S.teileOffen())) {
       k.werk.querySelector("[data-aktion=weitere-kopieren]").textContent = weitereKnopfText();
       await aktualisieren();
       return;
     }
-    ueZu(true);
+    var behalten = antwort.isConnected && !!antwort.value.trim();
+    if (!behalten) ueZu(true);
     await aktualisieren();
     meldung(UE, T("weitere_eingesetzt"));
+    if (behalten) return;
     var root = knoten[UE] && knoten[UE].koerper.firstChild && knoten[UE].koerper.firstChild.shadowRoot;
     var alle = root ? root.querySelectorAll("[data-ziel^='abschnitt:']") : [];
     var f = alle.length ? griff(alle[alle.length - 1]) : knoten[UE] && knoten[UE].kopf.querySelector(".ed-b-titel");
@@ -1013,19 +1131,20 @@
     stelleZu(false);
     erw[id] = true;
     var b = k.b;
-    bearbeiten[id] = { text: b.text, meldungen: [] };
+    bearbeiten[id] = { text: b.text, alt: b.text, meldungen: [] };
     var feld = el("textarea", { cls: "ed-text", rows: String(zeilen(b.text)), spellcheck: "true" });
     feld.value = b.text;
     var format = el("div", { cls: "ed-format" }, [el("p", { cls: "ed-format-titel", text: T("format") })]);
-    k.werk.textContent = "";
+    meldungZurueck(k); k.werk.textContent = "";
     k.werk.setAttribute("role", "group");
     k.werk.setAttribute("aria-label", T("bearbeiten") + ": " + b.titel);
     k.werk.append(
       el("label", { cls: "feld ed-feld" }, [T("feld"), feld]),
-      el("ul", { cls: "ed-meldungen ed-pruefung", "aria-live": "polite" }),
       el("div", { cls: "ed-knoepfe" }, [
         el("button", { type: "button", cls: "knopf haupt", "data-aktion": "uebernehmen", text: T("uebernehmen") }),
         el("button", { type: "button", cls: "knopf", "data-aktion": "abbrechen", text: T("abbrechen") })]),
+      // die Zeilen der Sofortprüfung kommen nach dem Tippen; unter den Knöpfen verschieben sie keinen Klick
+      el("ul", { cls: "ed-meldungen ed-pruefung", "aria-live": "polite" }),
       format);
     k.werk.hidden = false;
     k.koerper.hidden = true;
@@ -1078,26 +1197,41 @@
     var k = knoten[id];
     delete bearbeiten[id];
     if (!k) return;
-    k.werk.hidden = true; k.werk.textContent = ""; k.koerper.hidden = false; k.liste.hidden = !k.liste.childNodes.length;
+    k.werk.hidden = true; meldungZurueck(k); k.werk.textContent = ""; k.koerper.hidden = false; k.liste.hidden = !k.liste.childNodes.length;
     zeichneKopf(k, k.b, 0);
-    var f = k.kopf.querySelector("[data-aktion=bearbeiten]"); if (f) f.focus();
+    var f = k.kopf.querySelector("[data-aktion=bearbeiten]"); if (f && !woanders(k.el)) f.focus();
   }
   async function uebernehmen(id, knopf) {
     var e = bearbeiten[id]; if (!e || !e.text.trim()) return;
+    var text = e.text;
     knopf.disabled = true;
     try {
-      var r = await S.handUebernehmen(id, e.text, (knoten[id] || {}).b ? knoten[id].b.text : null);
-      if (r.unveraendert) { abbrechen(id); return; }
-      if (!r.ok) { e.meldungen = r.meldungen; meldungenZeigen(id, r.meldungen); var f = knoten[id] &&
-          knoten[id].werk.querySelector(".ed-text"); if (f) f.focus(); return; }
-      delete bearbeiten[id];
-      var k = knoten[id];
-      if (k) { k.werk.hidden = true; k.werk.textContent = ""; k.koerper.hidden = false; k.liste.hidden = !k.liste.childNodes.length; }
-      await aktualisieren();
-      meldung(id, T("uebernommen"));
-      k = knoten[id];
-      var b = k && k.kopf.querySelector("[data-aktion=bearbeiten]");
-      if (b) b.focus({ preventScroll: true });
+      await folge(async function (gilt) {
+        if (!da(id)) return;
+        var r = await S.handUebernehmen(id, text, (knoten[id] || {}).b ? knoten[id].b.text : null, false, gilt);
+        if (!gilt()) return;
+        // zu geht nur dasselbe Feld, solange es den übernommenen Text trägt; Weitergetipptes bleibt im offenen Feld
+        var dasselbe = bearbeiten[id] === e && e.text === text;
+        if (r.unveraendert) { if (dasselbe) abbrechen(id); return; }
+        if (!r.ok) {
+          if (bearbeiten[id] !== e) return;
+          e.meldungen = r.meldungen; meldungenZeigen(id, r.meldungen);
+          var f = knoten[id] && knoten[id].werk.querySelector(".ed-text"); if (f && !woanders(f)) f.focus();
+          return;
+        }
+        var k = knoten[id];
+        if (dasselbe) {
+          delete bearbeiten[id];
+          if (k) { k.werk.hidden = true; meldungZurueck(k); k.werk.textContent = ""; k.koerper.hidden = false; k.liste.hidden = !k.liste.childNodes.length; }
+        } else if (bearbeiten[id] === e) e.alt = text;
+        await aktualisieren();
+        if (!gilt()) return;
+        meldung(id, T("uebernommen"));
+        if (!dasselbe) return;
+        k = knoten[id];
+        var b = k && k.kopf.querySelector("[data-aktion=bearbeiten]");
+        if (b && !woanders(k.el)) b.focus({ preventScroll: true });
+      });
     } catch (err) { S.zeigeFehler(err); }
     finally { knopf.disabled = false; }
   }
@@ -1136,6 +1270,11 @@
     textVorbereiten(id);
   }
   // `fokus`: der Fokus geht auf „Neu schreiben lassen“ dieses Bausteins (Esc)
+  // nach „Antwort einsetzen“ trägt das Feld anderen Text als den eingesetzten: offen lassen, sonst wäre er weg
+  function neuBehalten(k) {
+    var a = k.gesetzt !== undefined && k.neu.querySelector(".ed-antwort");
+    return !!a && !!a.value.trim() && a.value !== k.gesetzt;
+  }
   function neuZu(id, abwaehlen, fokus) {
     var k = knoten[id], kt = karte(id);
     delete neuOffen[id]; delete neuText[id];
@@ -1143,6 +1282,7 @@
     if (abwaehlen && kt && kt.neu) { kt.neu = false; S.korrektur.text = ""; S.zeichneKarten(); S.zeichneKorrektur();
         S.geaendert(); S.korrekturSpaeter(0); }
     if (!k) return;
+    delete k.gesetzt;
     k.neu.hidden = true; k.neu.textContent = "";
     zeichneKopf(k, k.b, 0);
     if (fokus) S.fokus([k.kopf.querySelector("[data-aktion=neu]")], true);
@@ -1196,16 +1336,19 @@
   }
   async function neuEinsetzen(id) {
     var k = knoten[id]; if (!k) return;
-    var antwort = k.neu.querySelector(".ed-antwort");
-    var ok = await S.korrekturEinsetzen({ text: antwort.value, sprung: false, fokus: false, nur: id,
+    var antwort = k.neu.querySelector(".ed-antwort"), text = k.gesetzt = antwort.value;
+    // was die Lehrkraft während des Einsetzens ins Feld getippt hat, bleibt dort und das Feld offen (auch eintrag)
+    var ok = await S.korrekturEinsetzen({ text: text, sprung: false, fokus: false, nur: id,
       stand: function (x, art) { neuStand(id, x, art); },
       diagnose: function (d) { var box = k.neu.querySelector(".ed-neu-diagnose"); if (box) S.diagnoseKarte(box, d); },
-      leeren: function () { antwort.value = ""; } });
+      leeren: function () { if (antwort.value === text) antwort.value = ""; } });
     if (!ok) return;
     if (!(karte(id) || {}).neu) {
-      neuZu(id);
+      var behalten = neuBehalten(k);
+      if (!behalten) neuZu(id);
       await aktualisieren();
       meldung(id, T("eingesetzt"));
+      if (behalten) return;                             // der Fokus bleibt im Feld, in dem die Lehrkraft schreibt
       // AP13.33 §2.3: Fokus auf den eingesetzten Baustein, die Ansicht zeigt seinen Anfang
       var k2 = knoten[id], t = k2 && k2.kopf.querySelector(".ed-b-titel");
       if (t) { zeigen(k2.el); t.focus({ preventScroll: true }); }
@@ -1407,10 +1550,10 @@
       w.luecken.forEach(function (l, i) { lb.appendChild(lueckeZeile(i + 1, l)); });
       teile.push(lb);
     }
-    teile.push(el("div", { cls: "ed-stelle-meldung", role: "alert", hidden: true }),
-      el("div", { cls: "ed-knoepfe" }, [
+    teile.push(el("div", { cls: "ed-knoepfe" }, [
         el("button", { type: "button", cls: "knopf haupt", "data-aktion": "stelle-ok", text: T("uebernehmen") }),
-        el("button", { type: "button", cls: "knopf", "data-aktion": "stelle-abbrechen", text: T("abbrechen") })]));
+        el("button", { type: "button", cls: "knopf", "data-aktion": "stelle-abbrechen", text: T("abbrechen") })]),
+      el("div", { cls: "ed-stelle-meldung", role: "alert", hidden: true }));
     return el("div", { cls: "ed-stelle", role: "group", "aria-label": TS("aendern") + ": " + titel },
       (s.art === "absatz" || s.art === "liste" ? [] : [el("p", { cls: "ed-stelle-titel", text: titel })]).concat(teile));
   }
@@ -1429,14 +1572,15 @@
     return w;
   }
   // Feld öffnen an der Stelle `ort` (Element in der Vorschau: das Feld steht an seinem Platz; Zeile der Liste: in ihr)
-  function stelleAuf(id, nr, ort) {
+  // `alt`: das schon beschriebene Feld statt eines neuen (sonst verlöre das Neuzeichnen, was die Lehrkraft weitertippt)
+  function stelleAuf(id, nr, ort, alt) {
     var k = knoten[id], s = stelleVon(id, nr); if (!k || !s) return false;
     if (offen && offen.id === id && offen.nr === nr) { fokusIn(offen.panel); return true; }
     stelleZu(false);
     if (bearbeiten[id]) return false;                      // der ganze Text ist offen: dort ändern
     meldungenWeg();
     ort = ort || stelleOrt(id, nr);
-    var p = stellePanel(id, s), slot = null;
+    var p = alt || stellePanel(id, s), slot = null;
     if (ort && ort.getRootNode && ort.getRootNode() !== document && ort.getRootNode().host) {
       slot = document.createElement("slot");
       slot.name = "km-stelle";
@@ -1452,17 +1596,19 @@
     offen = { id: id, nr: nr, panel: p, ort: ort, slot: slot, s: s };
     zeichneKopf(k, k.b, 0);
     p.scrollIntoView({ block: "nearest" });
-    fokusIn(p);
+    if (!alt) fokusIn(p);
     return true;
   }
   function fokusIn(p) {
     var f = p.querySelector("textarea, input[type=text]");
     if (f) { f.focus({ preventScroll: true }); if (f.tagName === "TEXTAREA") { f.setSelectionRange(0, 0); f.scrollTop = 0; } }
   }
+  function stelleAbbrechen() { if (offen) offen.abgebrochen = true; stelleZu(true); }
   // `fokus`: der Fokus geht zurück an die Stelle (Esc, Abbrechen)
   function stelleZu(fokus) {
     var o = offen; if (!o) return;
     offen = null;
+    meldungZurueck(knoten[o.id]);
     if (o.panel.parentNode) o.panel.remove();
     if (o.slot && o.slot.parentNode) o.slot.remove();
     if (o.ort) { o.ort.classList.remove("km-stelle-offen"); o.ort.classList.remove("offen"); }
@@ -1482,24 +1628,46 @@
     m.hidden = false;
   }
   async function stelleUebernehmen(knopf) {
-    var o = offen; if (!o) return;
-    var k = knoten[o.id]; if (!k) return;
-    var w = stelleWerte(o.panel, o.s);
+    var o = offen; if (!o || !knoten[o.id]) return;
+    var w = stelleWerte(o.panel, o.s), ws = JSON.stringify(w), vorher = JSON.stringify(o.s.werte);
     knopf.disabled = true;
     try {
-      await km.bereit();
-      var r = await km.mappeFn("stelle_setzen", [Z.mappe, k.b.text, o.id, o.nr, w]);
-      if (offen !== o) return;
-      if (!r.ok) { stelleMeldung(o.panel, r.meldungen); return; }
-      if (r.unveraendert) { stelleZu(true); return; }
-      var e = await S.handUebernehmen(o.id, r.text, k.b.text, true);
-      if (!e.ok) { stelleMeldung(o.panel, (e.meldungen || []).map(function (x) { return x.text; })); return; }
-      stelleZu(false);
-      await aktualisieren();
-      meldung(o.id, T("uebernommen"));
-      var neu = stelleOrt(o.id, o.nr), k2 = knoten[o.id];
-      var f = neu ? stelleKnopf(neu) : k2 && k2.kopf.querySelector(".ed-b-titel");
-      if (f) f.focus({ preventScroll: true });
+      await folge(async function (einheit) {
+        // „Abbrechen“ oder Esc, bevor die Übernahme wirkt, nimmt sie zurück; eine andere Stelle zu öffnen nicht
+        var gilt = function () { return einheit() && !o.abgebrochen; };
+        var k = knoten[o.id]; if (!k || !gilt()) return;
+        // die Stelle mit den Werten, die das Feld beim Öffnen bekam (ein früherer Schritt kann die Nummern verschoben haben)
+        var gleich = stellen(o.id).filter(function (x) { return x.art === o.s.art && JSON.stringify(x.werte) === vorher; });
+        var st = gleich.filter(function (x) { return x.nr === o.nr; })[0] || gleich[0];
+        if (!st) return;
+        var nr = st.nr;
+        await km.bereit();
+        var r = await km.mappeFn("stelle_setzen", [Z.mappe, k.b.text, o.id, nr, w]);
+        if (!gilt()) return;
+        // das Feld gehört noch zu dieser Übernahme, solange es offen ist und die übernommenen Werte trägt
+        var dasselbe = function () { return offen === o && JSON.stringify(stelleWerte(o.panel, o.s)) === ws; };
+        if (!r.ok) { if (offen === o) stelleMeldung(o.panel, r.meldungen); return; }
+        if (r.unveraendert) { if (dasselbe()) stelleZu(true); return; }
+        var e = await S.handUebernehmen(o.id, r.text, k.b.text, true, gilt);
+        if (e.verworfen || !einheit()) return;
+        if (!e.ok) { if (offen === o) stelleMeldung(o.panel, (e.meldungen || []).map(function (x) { return x.text; })); return; }
+        var zu = dasselbe(), bleibt = !zu && offen === o;
+        var a = bleibt && o.panel.contains(document.activeElement) ? document.activeElement : null;
+        var sel = a && typeof a.selectionStart === "number" ? [a.selectionStart, a.selectionEnd] : null;
+        if (zu) stelleZu(false);
+        await aktualisieren();
+        if (!einheit()) return;
+        // weitergetippt: das Feld kommt mit seinen Werten an die neu gezeichnete Stelle
+        if (bleibt && !offen && !o.panel.isConnected && stelleAuf(o.id, nr, null, o.panel) && a && !woanders(o.panel)) {
+          a.focus({ preventScroll: true });
+          if (sel) a.setSelectionRange(sel[0], sel[1]);
+        }
+        meldung(o.id, T("uebernommen"));
+        if (!zu) return;
+        var neu = stelleOrt(o.id, nr), k2 = knoten[o.id];
+        var f = neu ? stelleKnopf(neu) : k2 && k2.kopf.querySelector(".ed-b-titel");
+        if (f && !woanders(k2 && k2.el)) f.focus({ preventScroll: true });
+      });
     } catch (err) { S.zeigeFehler(err); }
     finally { knopf.disabled = false; }
   }
@@ -1550,17 +1718,16 @@
       if (a === "darstellung") {
         if (knopf.getAttribute("aria-checked") === "true") return;
         S.angaben.format = knopf.dataset.wert;
-        await S.angabenSchreiben({ format: knopf.dataset.wert }, true);
+        var wert = knopf.dataset.wert;
+        await folge(function () { return S.angabenSchreiben({ format: wert }, true); });
         return;
       }
       if (a === "kurstitel") return ueZiel === "kopf" ? ueZu() : ueFormular("kopf");
       if (a === "ue-auf") return ueUmschalten();
       if (a === "ue-uebernehmen") return await ueUebernehmen();
       if (a === "ue-abbrechen") return ueZu();
-      if (a === "ue-hoch" || a === "ue-runter") {
-        var nr = parseInt(String(ueZiel).replace("abschnitt:", ""), 10);
-        return await verschieben(nr, a === "ue-hoch" ? -1 : 1);
-      }
+      if (a === "ue-hoch" || a === "ue-runter") return await verschieben(parseInt(String(ueZiel).replace("abschnitt:", ""), 10),
+          a === "ue-hoch" ? -1 : 1);
       if (a === "erweitert") {
         erw[id] = !erw[id];
         if (!erw[id] && bearbeiten[id]) { erw[id] = true; abbrechenFragen(id, false); return; }
@@ -1571,7 +1738,7 @@
       }
       if (a === "stelle-auf") return stelleAuf(id, parseInt(knopf.dataset.nr, 10), knopf.closest(".ed-stelle-zeile"));
       if (a === "stelle-ok") return await stelleUebernehmen(knopf);
-      if (a === "stelle-abbrechen") return stelleZu(true);
+      if (a === "stelle-abbrechen") return stelleAbbrechen();
       if (a === "stelle-dazu") return antwortDazu();
       if (a === "bearbeiten") { if (bearbeiten[id]) abbrechenFragen(id, false); else await bearbeitenAuf(id); }
       else if (a === "abbrechen") abbrechenFragen(id, false);
@@ -1579,12 +1746,15 @@
       else if (a === "verwerfen-nein") verwerfenZu(id);
       else if (a === "uebernehmen") await uebernehmen(id, knopf);
       else if (a === "zuruecknehmen") {
-        var war = handArt(id);
-        if (await S.handZuruecknehmen(id)) {
+        await folge(async function (gilt) {
+          var war = handArt(id);
+          if (!war || !da(id) || !(await S.handZuruecknehmen(id, gilt)) || !gilt()) return;
           await aktualisieren();
+          if (!gilt()) return;
           meldung(id, T(war === "neu" ? "neu_zurueckgenommen" : "zurueckgenommen"));
-          var t = knoten[id] && knoten[id].kopf.querySelector("[data-aktion=bearbeiten]"); if (t) t.focus();
-        }
+          var t = knoten[id] && knoten[id].kopf.querySelector("[data-aktion=bearbeiten]");
+          if (t && !woanders(knoten[id].el)) t.focus();
+        });
       }
       else if (a === "neu") { if (neuOffen[id]) neuZu(id, true); else neuAuf(id); }
       else if (a === "neu-kopieren") neuKopieren(id);

@@ -98,6 +98,8 @@ Seit 2.0 läuft alles im Browser. Die Einzelheiten jeder Version stehen im [CHAN
       der Startseite, Bedienung mit Vorlesegerät, Tastatur und Zoom
 - [x] 2.0.0-b21 Rückmeldungen aus dem Durchklicken: Menü und Breite in allen Schritten einheitlich, Kastentitel im
       Editor änderbar, Fach unter dem Lernziel, Impressum und Datenschutz getrennt
+- [x] 2.0.0-b22 Kursangaben stehen auch bei sofortigem Download in der Datei, schnelle Änderungen im Editor und
+      beim Einsetzen bleiben erhalten, Hinweis zu KI-Fehlern verständlicher
 - [ ] Erste Testerinnen und Tester (Testphase mit Code seit 26.10.2026), Rückmeldungen einarbeiten
 - [ ] Prüfwoche: Sicherheit, Import aller Formate, Barrierefreiheit
 - [ ] 2.0 ohne Beta-Marke

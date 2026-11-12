@@ -1004,6 +1004,8 @@ body.editor-offen { overflow: hidden; }
 .ed-b-meldung { margin: -2px 0 8px; font-size: 0.9rem; font-weight: 600; color: var(--ok); }
 .ed-b-meldung.fehler { color: var(--fehler); }
 .ed-b-meldung:empty { display: none; }
+/* bei offenem Feld unter dessen Knöpfen (editor.js meldung) */
+.ed-b-werk > .ed-b-meldung, .ed-stelle > .ed-b-meldung { margin: 0; }
 /* §2.2: Frage „Änderungen verwerfen?“ unter den Knöpfen des Textfelds */
 .ed-verwerfen { padding: 10px 12px; border: 1px solid var(--warn); border-radius: 8px; background: var(--flaeche); }
 .ed-verwerfen p { margin: 0 0 8px; font-weight: 600; }

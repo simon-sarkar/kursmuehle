@@ -2,6 +2,29 @@
 
 ## Unveröffentlicht
 
+## 2.0.0-b22 – 2026-11-12 (Wettläufe im Produkt Paket 2, Download nach Kursangabe, Einsetzen in einer Zeile, Chat-Text)
+
+* Name, Lizenz und KI-Hinweis stehen sicher in der heruntergeladenen Kursdatei
+* Schnelle Änderungen im Editor und beim Einsetzen gehen nicht mehr verloren
+* Hinweis zu KI-Fehlern verständlicher, Text für den Chat kürzer
+
+- Mehrere Änderungen im Editor oder an Kartentiteln kurz nacheinander gehen nicht mehr verloren, treffen die gemeinte Kachel und landen nie in einer danach geöffneten Einheit; ein offenes, unverändertes Textfeld zeigt nach „Neu schreiben lassen“ die neue Fassung.
+- Was du während „Übernehmen“ weitertippst oder in einem anderen Feld schreibst, bleibt dort, der Fokus springt nicht weg; das gilt auch für Kartentitel in Schritt 5. „Abbrechen“ oder Escape an einer Stelle nimmt auch eine noch laufende Übernahme zurück.
+- Die Zeilen der Sofortprüfung stehen unter „Übernehmen“ und „Abbrechen“, die Knöpfe rutschen nicht mehr weg.
+- Das offene Formular einer Kachel bleibt bei seiner Kachel und behält das Getippte, wenn du eine andere Kachel teilst oder löschst.
+- Was du im Plan („Ich steuere“) änderst, während die Mühle noch prüft, bleibt; entfernte Vorlagekarten kommen nicht zurück.
+- Text, der während des Einsetzens ins Einfügefeld, ins Feld der Korrektur oder in ein Antwortfeld des Editors kommt, wird danach eingesetzt oder bleibt im Feld.
+- Eine andere Art der Antwort zu wählen leert das Einfügefeld nicht mehr.
+- Eine noch laufende Anfrage schreibt nicht mehr in eine inzwischen geöffnete oder neue Einheit, und eine geschlossene bleibt geschlossen.
+- Was du an Karten änderst, während „Hilfen und Zusatzaufgaben“, „Fehlende Phase ergänzen“ oder eine Prüfung läuft, bleibt; „Neu schreiben lassen“ und dein Wunsch bleiben gesetzt.
+- Ein neuer Baustein aus der Antwort und ein währenddessen im Plan angelegtes Element bleiben zwei eigene Karten.
+- Bei Bild, Fach im Lehrplan und Lehrplantreffer gilt die zuletzt gewählte Datei oder Wahl.
+- „Keine Bilder“ gilt auch direkt nach dem Tippen einer Zahl; KI-Hinweis, Lizenz und Name springen in Schritt 7 nicht mehr zurück.
+- Name, Lizenz und KI-Hinweis stehen auch dann in der Kursdatei, wenn du direkt nach der Eingabe herunterlädst.
+- Der Hinweis in Schritt 7 sagt „Dinge erfinden“ statt „halluzinieren“.
+- Eine Quizfrage „Einsetzen“ mit dem Lückensatz in derselben Zeile wird angenommen statt rot markiert.
+- Der Text für den Chat nennt Diktatur, Krieg und Gewalt nur noch bei Einheiten, zu denen das passt.
+
 ## 2.0.0-b21 – 2026-11-11 (AP15a Runde 1, Rückmeldungen aus zwei Durchgängen: Menü, Editor, Bilder, Datenschutzseite)
 
 * Menü und Breite in allen Schritten einheitlich, die Vorschau steht ruhig

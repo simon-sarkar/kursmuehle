@@ -75,7 +75,16 @@
     var ol = $("karten");
     // vor dem Leeren der Liste in Sicherheit; sein Platz ist vor der gelben Zeile (MF3: die Karten liegen unter „Erweitert“)
     if (ol.contains($("korrektur"))) $("einheit-warnung").before($("korrektur"));
-    ol.innerHTML = "";
+    // ein Feld, in dem gerade getippt wird, steht danach wieder da: Wert, Fokus, Cursor (der Titel gilt erst bei change
+    // oder Enter; das alte Feld löst beim Entfernen nichts aus)
+    var a = document.activeElement, merk = null;
+    if (a && ol.contains(a) && (a.tagName === "TEXTAREA" || (a.tagName === "INPUT" && (a.type === "text" || a.type === "number")))) {
+      var li0 = a.closest(".karte"), pos = null;
+      try { if (typeof a.selectionStart === "number") pos = [a.selectionStart, a.selectionEnd]; } catch (e) { /* number */ }
+      if (li0) merk = { id: li0.dataset.id, cls: a.classList[0], wert: a.value, pos: pos };
+    }
+    neuZeichnen = true;
+    try { ol.innerHTML = ""; } finally { neuZeichnen = false; }
     var liste = Z.mappe.bausteine, letzter = null, steuer = zweig() === "steuer";
     var abschnitte = liste.filter(function (k) { return k.abschnitt; }).map(function (k) { return k.abschnitt; });
     var mehrere = abschnitte.some(function (a) { return a !== abschnitte[0]; });
@@ -246,7 +255,14 @@
         "e1") }) : "Einheit ersetzen";
     if (S.modusSatzZeigen) S.modusSatzZeigen();      // AP13.41 §3.3
     korrekturOrt();
+    var f = merk && ol.querySelector("#karte-" + CSS.escape(merk.id) + " ." + merk.cls);
+    if (f && !f.readOnly && !f.disabled) {
+      if (f.value !== merk.wert) { f.value = merk.wert; if (merk.cls === "k-auftrag") hoehe(f); }
+      f.focus({ preventScroll: true });
+      if (merk.pos) { try { f.setSelectionRange(merk.pos[0], merk.pos[1]); } catch (e) { /* number */ } }
+    }
   }
+  var neuZeichnen = false;
   // MF7: die gelbe Minutenzeile nur unter der Hälfte der geplanten Dauer; darüber (bis drei Viertel, Regel zeit.kurz) grau
   function zeitGrau(ist, minuten) { return Number(minuten) > 0 && Number(ist) * 2 >= Number(minuten); }
   S.zeitGrau = zeitGrau;
@@ -316,8 +332,8 @@
   }
   var selbstTimer = null;
   async function selbstPruefen(id, text) {
-    var m = (await km.mappeFn("hand_pruefen", [Z.mappe, text, id])).meldungen;
-    if (!selbst[id]) return;
+    var gilt = noch(), m = (await km.mappeFn("hand_pruefen", [Z.mappe, text, id])).meldungen;
+    if (!gilt() || !selbst[id]) return;
     selbst[id].meldungen = m;
     var ul = document.querySelector("#karte-" + CSS.escape(id) + " .ausweg-pruefung");
     if (ul) { ul.innerHTML = ""; m.forEach(function (x) { ul.appendChild(el("li", { cls: x.stufe, text: x.text })); });
@@ -329,13 +345,19 @@
       S.rueckgaengig = { mappe: JSON.parse(JSON.stringify(Z.mappe)), kurs_md: Z.kurs_md, titel: k.titel };
       var z = (Z.kennzahlen && Z.kennzahlen.zeit && Z.kennzahlen.zeit[k.id]) || {};
       var minuten = (zeitSelbst() ? k.soll || (b && b.minuten) : (b && b.minuten) || z.gerechnet) || k.soll || 0;
+      var gilt = noch();
       await km.bereit();
-      Z.kurs_md = await km.mappeFn("entferne", [Z.kurs_md, k.id]);
+      if (!gilt()) return;
+      var ohne = await km.mappeFn("entferne", [Z.kurs_md, k.id]);
+      if (!gilt()) return;
+      Z.kurs_md = ohne;
       if (S.ausAntwort) S.ausAntwort(Z.kurs_md);   // MF3: kein Grund, den Text für den Chat neu zu kopieren
       k.geplant = true; k.aus = true; k.weggelassen = { minuten: minuten }; k.neu = false;
       delete schleife()[k.id]; delete selbst[k.id];
       await km.stand(Z.kurs_md);
+      if (!gilt()) return;
       await auswertung();
+      if (!gilt()) return;
       zeichne(); geaendert();
       $("rueckgaengig-text").textContent = "„" + k.titel + "“ weggelassen.";
       $("rueckgaengig").hidden = false;
@@ -351,6 +373,7 @@
       var text = (selbst[k.id] || {}).text || "";
       if (!text.trim()) return;
       var e = await handUebernehmen(k.id, text, b ? b.text : null);
+      if (e.verworfen) return;
       if (!e.ok) { if (selbst[k.id]) selbst[k.id].meldungen = e.meldungen; zeichneKarten(); return; }
       delete selbst[k.id];
       zeichne();
@@ -402,38 +425,54 @@
   // `angezeigt` = Text, den das Feld anfangs zeigte: unverändert übernommen, passiert nichts (keine Markierung)
   // MF5: `vorgeprueft` (Feld für eine Stelle, gen/stelle.py setzen): der Text ist schon geprüft; Fehler, die der Baustein
   // vorher hatte, halten dort nicht auf
-  async function handUebernehmen(id, text, angezeigt, vorgeprueft) {
+  // `gilt` (Editor): nach jedem await gefragt; false heißt, nichts mehr schreiben (andere Mappe offen, Feld abgebrochen)
+  function noch(gilt) {
+    var kennung = Z.kennung;
+    return function () { return kennung === Z.kennung && (!gilt || gilt()); };
+  }
+  var VERWORFEN = { ok: false, verworfen: true, meldungen: [] };
+  async function handUebernehmen(id, text, angezeigt, vorgeprueft, gilt) {
     if (angezeigt !== undefined && angezeigt !== null && String(text).trim() === String(angezeigt).trim())
       return { ok: true, unveraendert: true, meldungen: [] };
+    var mappe = noch();
+    gilt = noch(gilt);
     await km.bereit();
+    if (!gilt()) return VERWORFEN;
     var pr = vorgeprueft ? { ok: true, meldungen: [] } : await km.mappeFn("hand_pruefen", [Z.mappe, text, id]);
+    if (!gilt()) return VERWORFEN;
     if (!pr.ok) return pr;
     var b = pruefBaustein(id), vorher = b ? b.text : "";
     var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, text, id, true, true]);
+    if (!gilt()) return VERWORFEN;
     if (!r.ersetzt.length && !r.eingefuegt.length) return { ok: false, meldungen: [{ stufe: "fehler",
         text: r.fehler.join(" ") || S.editorText("kein_baustein") }] };
     var hand = Z.mappe.hand = Z.mappe.hand || {}, fr = fragenStand([id]);
     if (!hand[id]) hand[id] = { vorher: vorher, zeit: Date.now() }; else hand[id].zeit = Date.now();
     delete hand[id].art;                     // ein neu geschriebener Baustein ist jetzt von Hand geändert
     await km.stand(r.kurs_md);
+    if (!mappe()) return VERWORFEN;            // ab hier ist geschrieben: nur eine andere Mappe hält auf
     nachHandAenderung(id);
     await auswertung();
+    if (!mappe()) return pr;
     durchsichtNach(fr);
     zeichne(); geaendert();
     return pr;
   }
   // „Handänderung zurücknehmen“: der Stand vor der ersten Handänderung kommt zurück, die Markierung entfällt
-  async function handZuruecknehmen(id) {
+  async function handZuruecknehmen(id, gilt) {
     var h = Z.mappe && Z.mappe.hand && Z.mappe.hand[id];
     if (!h) return false;
+    gilt = noch(gilt);
     await km.bereit();
     var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, h.vorher, id, false, true]);
-    if (!r.ersetzt.length && !r.eingefuegt.length) return false;
+    if (!gilt() || (!r.ersetzt.length && !r.eingefuegt.length)) return false;
     var fr = fragenStand([id]);
     delete Z.mappe.hand[id];
     await km.stand(r.kurs_md);
+    if (!gilt()) return false;
     nachHandAenderung(id);
     await auswertung();
+    if (!gilt()) return true;
     durchsichtNach(fr);
     zeichne(); geaendert();
     return true;
@@ -448,6 +487,7 @@
   // kachel_teilen, baustein_verschieben, kachel_loeschen); `weg` = Einträge, deren Abschnitt es nicht mehr gibt. Danach
   // gelten Rückgängig und die letzte Antwort (Moduswechsel) nicht mehr; eine neue Antwort fragt „Erhalten/Verwerfen“.
   async function gliederungAendern(md, eintraege, weg) {
+    var gilt = noch();
     var hand = Z.mappe.hand = Z.mappe.hand || {};
     (weg || []).forEach(function (k) { delete hand[k]; });
     (eintraege || []).forEach(function (e) {
@@ -457,8 +497,10 @@
       Object.assign(hand[e.schluessel], e.werte, { zeit: Date.now() });
     });
     await km.stand(md);
+    if (!gilt()) return;
     S.rueckgaengig = null; $("rueckgaengig").hidden = true; S.letzteAntwort = null;
     await auswertung();
+    if (!gilt()) return;
     zeichne(); geaendert();
   }
   // AP13.30 §4a: nach dem Einsetzen einer Antwort die Karten markieren, die noch leer sind (gen/mappe.py
@@ -466,14 +508,16 @@
   // ergänzt wurde (`ergaenzt`, aus ids_ergaenzen; grauer Hinweis bis zur nächsten Antwort). `ohne`: ein Teil oder der
   // Rest steht noch aus, dann keine Markierung „leer“.
   async function nachAntwortMarkieren(ergaenzt, ohne) {
-    var leer = ohne ? [] : await km.mappeFn("leer_nach_antwort", [Z.mappe]);
+    var gilt = noch(), leer = ohne ? [] : await km.mappeFn("leer_nach_antwort", [Z.mappe]);
+    if (!gilt()) return;
     var vorher = JSON.stringify(Z.mappe.bausteine);
     Z.mappe.bausteine.forEach(function (k) {
       if (leer.indexOf(k.id) >= 0) k.leer_antwort = true; else delete k.leer_antwort;
       if ((ergaenzt || []).indexOf(k.id) >= 0 && !k.geplant) k.id_ergaenzt = true; else delete k.id_ergaenzt;
     });
-    if (JSON.stringify(Z.mappe.bausteine) !== vorher)
-      Z.kennzahlen = await km.mappeFn("kennzahlen", [Z.mappe, Z.pruefung, null, Z.steckbrief_text]);
+    if (JSON.stringify(Z.mappe.bausteine) === vorher) return;
+    var kz = await km.mappeFn("kennzahlen", [Z.mappe, Z.pruefung, null, Z.steckbrief_text]);
+    if (gilt()) Z.kennzahlen = kz;
   }
   function kopfTitel(kopf) {
     return String(kopf || "").split("\n")[0].replace(/^##\s*/, "").replace(/\s*·\s*\d+\s*min.*$/, "").trim();
@@ -635,12 +679,14 @@
     var pos = S.spracheGelb.indexOf("zeit.kurz");
     if (an && pos < 0) S.spracheGelb.push("zeit.kurz"); else if (!an && pos >= 0) S.spracheGelb.splice(pos, 1);
     if (!an) { S.korrektur.offen = false; S.korrektur.stand = ""; S.korrektur.art = ""; S.korrektur.eingesetzt = false; }
+    var gilt = noch();
     try {
       await auswertung();
+      if (!gilt()) return;
       S.korrektur.text = ""; zeichneKarten(); zeichneKorrektur(); korrekturSpaeter(0);
       var nb = an ? $("korrektur-kopieren") : $("einheit-warnung").querySelector("[data-regel='zeit.kurz']");
       if (nb && !nb.closest("[hidden]")) nb.focus({ preventScroll: true });
-    } catch (e) { zeigeFehler(e); }
+    } catch (e) { if (gilt()) zeigeFehler(e); }
   }
   $("einheit-warnung").addEventListener("click", function (ev) {
     var b = ev.target.closest("[data-regel]"); if (!b) return;
@@ -744,21 +790,29 @@
   });
 
   // Titel übernehmen: bei change (Fokus verlässt das Feld) und bei Enter; Safari löst bei Enter kein change aus
-  var umbenennenLaeuft = {};
+  // zwei Titel kurz nacheinander: die zweite Umbenennung rechnet auf der Kursdatei der ersten (sonst nähme sie sie zurück)
+  var umbenennenLaeuft = {}, umbenennenKette = Promise.resolve();
   async function titelUebernehmen(feld) {
+    if (neuZeichnen || !feld.isConnected) return;
     var k = karteVon(feld); if (!k || umbenennenLaeuft[k.id] || feld.readOnly) return;
     var titel = feld.value.replace(/\s+/g, " ").trim();
     if (!titel || titel === k.titel) { feld.value = k.titel; return; }
     if (k.geplant) { k.titel = titel; geaendert(); return; }
     umbenennenLaeuft[k.id] = true;
-    try {
+    var gilt = noch();
+    var p = umbenennenKette.then(async function () {
       await km.bereit();
+      if (!gilt()) return;
       var md = await km.mappeFn("umbenennen", [Z.kurs_md, k.id, titel]);
+      if (!gilt()) return;
       k.titel = titel; k.herkunft = { titel: "lehrkraft" };      // bleibt, bis der Chat den Titel ersetzt
       await km.stand(md);
+      if (!gilt()) return;
       await auswertung();
       zeichne(); geaendert();
-    } catch (e) { zeigeFehler(e); feld.value = k.titel; }
+    });
+    umbenennenKette = p.catch(function () {});
+    try { await p; } catch (e) { if (gilt()) { zeigeFehler(e); feld.value = k.titel; } }
     finally { delete umbenennenLaeuft[k.id]; }
   }
 
@@ -778,6 +832,10 @@
     if (ev.key === "Enter" && ev.target.classList.contains("k-titel")) { ev.preventDefault();
         titelUebernehmen(ev.target); }
   });
+  // das Feld nach dem Neuzeichnen hat beim Fokus schon den getippten Titel; change käme beim Verlassen nicht mehr
+  $("karten").addEventListener("focusout", function (ev) {
+    if (ev.target.classList && ev.target.classList.contains("k-titel")) titelUebernehmen(ev.target);
+  });
 
   $("karten").addEventListener("click", async function (ev) {
     var p = ev.target.closest(".k-plus");
@@ -795,7 +853,7 @@
     // MF1: der Typ an der Karte wechselt nach „Ich steuere“; offen bleibt der Schritt mit den Karten
     if (knopf.dataset.aktion === "steuern") { Z.mappe.zweig = "steuer"; zeichne(); geaendert(); return; }
     var k = karteVon(knopf); if (!k) return;
-    var liste = Z.mappe.bausteine, i = liste.indexOf(k), a = knopf.dataset.aktion;
+    var liste = Z.mappe.bausteine, i = liste.indexOf(k), a = knopf.dataset.aktion, gilt = noch();
     try {
       if (a === "zur-korrektur") { ev.preventDefault(); zurKorrektur(); }
       else if (a === "im-editor") { await S.editorBei(k.id, knopf); }
@@ -803,6 +861,7 @@
         var pos = S.spracheGelb.indexOf(k.id);
         if (pos >= 0) S.spracheGelb.splice(pos, 1); else S.spracheGelb.push(k.id);
         await auswertung();
+        if (!gilt()) return;
         S.korrektur.ort = pos >= 0 ? (S.korrektur.ort === k.id ? null : S.korrektur.ort) : k.id;
         S.korrektur.text = ""; zeichneKarten(); zeichneKorrektur(); korrekturSpaeter(0);
         var sk = document.querySelector("#karte-" + CSS.escape(k.id) + " .k-sprache");
@@ -825,8 +884,12 @@
           liste[i] = liste[j]; liste[j] = k;          // ohne Inhalt: nur die Reihenfolge der Karten
         } else {
           await km.bereit();
-          Z.kurs_md = await km.mappeFn("verschiebe", [Z.kurs_md, k.id, a === "hoch" ? -1 : 1]);
+          if (!gilt()) return;
+          var md = await km.mappeFn("verschiebe", [Z.kurs_md, k.id, a === "hoch" ? -1 : 1]);
+          if (!gilt()) return;
+          Z.kurs_md = md;
           await km.stand(Z.kurs_md);
+          if (!gilt()) return;
         }
         zeichne(); geaendert();
         var neuKnopf = document.querySelector("#karte-" + CSS.escape(k.id) + " .k-" + a);
@@ -836,24 +899,30 @@
         if (k.geplant) liste.splice(i, 1);
         else {
           await km.bereit();
-          Z.kurs_md = await km.mappeFn("entferne", [Z.kurs_md, k.id]);
+          if (!gilt()) return;
+          var rest = await km.mappeFn("entferne", [Z.kurs_md, k.id]);
+          if (!gilt()) return;
+          Z.kurs_md = rest;
           await km.stand(Z.kurs_md);
+          if (!gilt()) return;
           await auswertung();
+          if (!gilt()) return;
         }
         zeichne(); geaendert();
         $("rueckgaengig-text").textContent = "„" + S.rueckgaengig.titel + "“ gelöscht.";
         $("rueckgaengig").hidden = false;
         $("rueckgaengig-knopf").focus();
       }
-    } catch (e) { zeigeFehler(e); }
+    } catch (e) { if (gilt()) zeigeFehler(e); }
   });
 
   $("rueckgaengig-knopf").onclick = async function () {
     if (!S.rueckgaengig) return;
     Z.mappe = S.rueckgaengig.mappe; Z.kurs_md = S.rueckgaengig.kurs_md; S.rueckgaengig = null;
     if (S.ausAntwort) S.ausAntwort(Z.kurs_md);      // MF3: der Stand davor, kein neuer Text für den Chat
-    try { if (Z.geladen) { await km.stand(Z.kurs_md); await auswertung(); } zeichne(); geaendert(); } catch (e) {
-        zeigeFehler(e); }
+    var gilt = noch();
+    try { if (Z.geladen) { await km.stand(Z.kurs_md); if (gilt()) await auswertung(); }
+      if (gilt()) { zeichne(); geaendert(); } } catch (e) { if (gilt()) zeigeFehler(e); }
     $("rueckgaengig").hidden = true;          // erst nach dem Neuzeichnen, dann ist die Liste wieder bedienbar
   };
 
@@ -898,13 +967,15 @@
     clearTimeout(S.korrekturTimer);
     S.korrekturTimer = setTimeout(async function () {
       if (!Z.geladen || !Z.mappe) return;
+      var gilt = noch();
       try {
         var t = await korrekturText();
+        if (!gilt()) return;
         S.korrektur.text = t;
         if (S.korrektur.kopiert !== t) $("korrektur-stand").textContent = "";      // „Kopiert“ gilt nur für den kopierten Text
         $("korrektur-feld").value = t;
         $("korrektur-kopieren").disabled = !t || S.kiBesetzt();
-      } catch (e) { zeigeFehler(e); }
+      } catch (e) { if (gilt()) zeigeFehler(e); }
     }, ms === undefined ? 400 : ms);
   }
   function zeichneKorrektur() {
@@ -1047,15 +1118,17 @@
   async function auswegKlick(ev) {
     var b = ev.target.closest("[data-ausweg]"); if (!b) return;
     var k = S.karteNach(b.dataset.id); if (!k) return;
+    var gilt = noch();
     try {
       if (b.dataset.ausweg === "editor") await editorAnFehler(k.id, b);
       else {
         await auswegAktion("weglassen", k);
+        if (!gilt()) return;
         S.standKarte($("eingabe-stand"), "„" + k.titel + "“ weggelassen." + (fehlerZahl() ? "" : " Keine Fehler mehr."),
             fehlerZahl() ? "fehler" : "ok");
         S.fokus(["rueckgaengig-knopf", "weiter-5", "eingabe-stand"], true);
       }
-    } catch (e) { zeigeFehler(e); }
+    } catch (e) { if (gilt()) zeigeFehler(e); }
   }
   $("korrektur-auswege").addEventListener("click", auswegKlick);
   $("korrektur-selbst").addEventListener("click", auswegKlick);
@@ -1125,11 +1198,13 @@
   // nur (AP13.33: Baustein, an den ein Block ohne passende id geht; der Editor setzt je Feld seinen)}
   // -> true, wenn eingesetzt
   function korrekturBlock() {
-    return { text: $("korrektur-eingabe").value, sprung: true, fokus: true,
+    var text = $("korrektur-eingabe").value;
+    return { text: text, sprung: true, fokus: true,
       stand: function (x, art) { S.korrektur.stand = x; S.korrektur.art = art || ""; S.standKarte($("korrektur-ergebnis"),
           x, art); },
       diagnose: function (d) { S.diagnoseKarte($("korrektur-diagnose"), d); },
-      leeren: function () { $("korrektur-eingabe").value = ""; } };
+      // was während des Einsetzens neu ins Feld kam, bleibt dort für den nächsten Durchgang
+      leeren: function () { if ($("korrektur-eingabe").value === text) $("korrektur-eingabe").value = ""; } };
   }
   async function korrekturEinsetzen(o) {
     o = o || korrekturBlock();
@@ -1137,17 +1212,24 @@
     if (!text.trim()) return false;
     var eigen = S.eigenerText(text);
     if (eigen) { o.stand(S.EIGEN[eigen], "fehler"); return false; }
+    // wie chat.js einsetzen: nach jedem Warten setzt die Antwort nichts mehr, ist die Einheit zu oder eine andere offen
+    var gilt = noch();
     try {
       await km.bereit();
+      if (!gilt()) return false;
       var saetzeVorher = S.korrekturen.map(function (k) { return k.satz; }).join("\n");
       var zeitBat = S.korrekturen.some(function (k) { return k.regel === "zeit.kurz"; });
       var ziele = korrekturZiele(), ohne = S.korrekturen.some(function (k) { return !k.baustein; });
       var ie = await km.mappeFn("ids_ergaenzen", [Z.mappe, text]);     // AP13.30 §4a: id aus Typ und Titel
+      if (!gilt()) return false;
       text = ie.text;
       var mo = await km.mappeFn("modus", [Z.mappe, text]);
+      if (!gilt()) return false;
       if (mo.modus === "keine") {
         o.stand("", "");
-        o.diagnose(await km.prompt("diagnose", [text])); return false;
+        var dg = await km.prompt("diagnose", [text]);
+        if (!gilt()) return false;
+        o.diagnose(dg); return false;
       }
       o.diagnose(null);
       var nur = o.nur || (ziele.length === 1 ? ziele[0] : null);
@@ -1171,21 +1253,27 @@
       // AP13.37: trifft die Antwort Bausteine einer anderen Einheit (Typ und Titel passen), fragt die Seite mit Namen;
       // „Abbrechen“ und Esc setzen nichts ein, die Antwort bleibt im Feld
       var um = await km.mappeFn("andere_einheiten", [Z.mappe, Z.kurs_md, text, "baustein", nur]);
-      if (um.ids.length && await frage(um.frage, [], um.haupt, um.abbrechen, "riskant") !== "sicher") {
-        o.stand(S.editorText("abgebrochen"), "ok"); return false;
-      }
+      if (!gilt()) return false;
+      var umWahl = um.ids.length ? await frage(um.frage, [], um.haupt, um.abbrechen, "riskant") : "sicher";
+      if (!gilt()) return false;
+      if (umWahl !== "sicher") { o.stand(S.editorText("abgebrochen"), "ok"); return false; }
       var hv = await handVorEinsetzen(frageMappe, Z.kurs_md, text, "baustein", nur, null);
+      if (!gilt()) return false;
       if (hv.bausteine === 0) { o.leeren(); o.stand(S.editorText("hand_bleibt"), "ok"); return false; }
       // AP13.37 §1.3: Bausteine gehören zur laufenden Einheit; neu nummerierte kommen nicht in eine andere
       var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, hv.text, nur, true, false, true, um.ids, false]);
+      if (!gilt()) return false;
       var ids = r.ersetzt.concat(r.eingefuegt);
       if (!ids.length && ohne && mo.modus === "ersetzen") {
         // ganze Kursdatei ohne passende ids: ersetzt die Einheit, also fragt die Seite für alle Handfassungen
         hv = await handVorEinsetzen(Z.mappe, Z.kurs_md, text, "ersetzen", null, null);
+        if (!gilt()) return false;
         var ganz = await km.mappeFn("einheit_ersetzen", [Z.mappe, Z.kurs_md, hv.text]);   // AP13.37 §1.2
+        if (!gilt()) return false;
         if (S.ausAntwort) S.ausAntwort(ganz);       // MF3: Antwort des Chats, kein Grund, Teile neu zu kopieren
         S.einheitGesehen = false;                    // MF5: neuer Inhalt
         await km.stand(ganz);
+        if (!gilt()) return false;
         // AP13.37: gezählt werden die Bausteine der laufenden Einheit, nicht die des ganzen Kurses
         ids = Z.pruefung.bausteine.map(function (b) { return b.id; }).filter(function (id) {
           var k = S.karteNach(id);
@@ -1197,6 +1285,7 @@
         if (S.ausAntwort) S.ausAntwort(r.kurs_md);  // MF3 (Befund 3): sonst hieße es in Schritt 4 „Teil 1 hat sich geändert“
         S.einheitGesehen = false;                    // MF5: neuer Inhalt
         await km.stand(r.kurs_md);
+        if (!gilt()) return false;
       }
       var fr = fragenStand(ids);
       handNachEinsetzen(ids, hv);
@@ -1211,8 +1300,10 @@
       // die gelbe Zeile
       if (zeitBat) S.spracheGelb = S.spracheGelb.filter(function (r) { return r !== "zeit.kurz"; });
       await nachAntwortMarkieren(ie.ids, teileOffen());
+      if (!gilt()) return false;
       if (o.sprung && schritt() !== 5) { Z.mappe.schritt = 5; S.aendern = null; }
       await auswertung();
+      if (!gilt()) return false;
       durchsichtNach(fr);
       var gleich = schleifeMerken(ids, true);
       o.leeren();
@@ -1253,7 +1344,7 @@
         if (f && !f.hidden) f.focus({ preventScroll: true });
       }
       return true;
-    } catch (e) { zeigeFehler(e); return false; }
+    } catch (e) { if (gilt()) zeigeFehler(e); return false; }
   }
   var korrekturEingabeTimer = null;
   $("korrektur-eingabe").addEventListener("input", function (ev) {

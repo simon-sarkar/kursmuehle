@@ -488,9 +488,10 @@
       var e = P.schulart && lp && gewaehlt() && lp.schulart === P.schulart ? dateiZuLehrplan(index, lp) : null;
       if (!e) { if (!obenVorwaehlen()) zeichnePicker(); fokusSetzen(); return; }
       P.fach = e.fach; P.datei = e.datei;
+      var lauf = P.lauf = {};
       zeichnePicker();
       return ladeDatei(e.datei).then(function (d) {
-        if (P !== p) return;
+        if (P !== p || P.lauf !== lauf || P.datei !== e.datei) return;
         P.daten = d;
         wahlAusLehrplan(lp);
         zeichnePicker();
@@ -533,11 +534,12 @@
       P.auf[i] = true;
     });
   }
+  // nur das Ergebnis der letzten Wahl gilt (eine ältere Fachdatei kann später ankommen)
   function dateiLaden() {
-    var p = P, datei = P.datei;
+    var p = P, datei = P.datei, lauf = P.lauf = {};
     zeichnePicker();
     ladeDatei(datei).then(function (d) {
-      if (P !== p || P.datei !== datei) return;
+      if (P !== p || P.lauf !== lauf || P.datei !== datei) return;
       P.daten = d;
       zeichnePicker();
     })
@@ -702,10 +704,14 @@
         text: t.fach + " " + t.jahrgangsstufe + (t.zusatz ? " " + t.zusatz : "") + ", " + t.kuerzel + " " + t.titel }));
     });
   }
+  // der zuletzt gewählte Treffer gilt; gehört das Ergebnis zu einer anderen Einheit, wird es verworfen
+  var vorschlagLauf = 0;
   function vorschlagNehmen(nr, auto) {
     var t = vorschlag.erg && vorschlag.erg.treffer[nr], index = vorschlag.index; if (!t) return;
     var eintrag = index.schularten[t.schulart].faecher.filter(function (f) { return f.datei === t.datei; })[0];
+    var lauf = ++vorschlagLauf, kennung = S.einheitKennung();
     ladeDatei(t.datei).then(function (d) {
+      if (lauf !== vorschlagLauf || kennung !== S.einheitKennung()) return;
       if (auto && (S.angaben.lehrplan || S.angabenFuer !== Z.mappe)) return;   // nie über eine gespeicherte Wahl
       var wahl = {}; wahl[t.pfad] = { an: true, tb: {} };
       var alt = P; P = { schulart: t.schulart };

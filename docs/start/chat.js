@@ -151,10 +151,11 @@
     try {
       await km.bereit();
       // wie km.stand: nur die Bausteine aus der Antwort; was die Seite inzwischen gesetzt hat (Schritt, Durchsicht,
-      // Chat), bleibt; eine inzwischen geöffnete andere Mappe bleibt unberührt
-      var gesendet = Z.mappe, neu = await km.mappeFn("auffuellen", [gesendet]);
+      // Chat, geänderte oder gelöschte Karten), bleibt; eine inzwischen geöffnete andere Mappe bleibt unberührt
+      var gesendet = Z.mappe, vorher = JSON.stringify(gesendet.bausteine || []);
+      var neu = await km.mappeFn("auffuellen", [gesendet]);
       if (Z.mappe !== gesendet) return;
-      km.mappeUebernehmen(gesendet, neu);
+      km.mappeUebernehmen(gesendet, neu, vorher);
       Z.kennzahlen = await km.mappeFn("kennzahlen", [Z.mappe, Z.pruefung, null, Z.steckbrief_text]);
       zeichne(); geaendert(); textSpaeter(0);
       $("kopiert").textContent = "Bausteine ergänzt. Sie stehen jetzt im Text unten.";
@@ -172,7 +173,7 @@
   async function texteLauf() {
     if (!Z.geladen || !Z.mappe || !Z.mappe.chat) { if (Z.mappe) zeichneChat(); return; }
     var nr = ++texte.laeuft;
-    var art = textArt(), md0 = pruefsumme(Z.kurs_md), mappe0 = Z.mappe;
+    var art = textArt(), md0 = pruefsumme(Z.kurs_md), mappe0 = Z.mappe, kennung = Z.kennung;
     try {
       // Teile aus gen/prompt.py: nur die laufende Einheit; nach dem ersten Kopieren gilt die eingefrorene Stückelung
       // AP13.40: in einer Sequenz ohne Plan holt der Text nur den Sequenzplan
@@ -181,6 +182,7 @@
           art === "kachel"]);
       var teile = e.teile;
       basis(mappe0, md0, teile);                    // AP13.35 §3.3: auch ein überholter Lauf setzt den Stand
+      if (kennung !== Z.kennung) return;            // Einheit inzwischen geschlossen oder eine andere offen
       if (nr !== texte.laeuft) return texte.lauf;   // ein neuerer Lauf ist schon unterwegs
       if (art !== texte.art || teile.length !== texte.teile.length) { texte.teil = 0; texte.kopiert = {}; texte.geaendert = []; }
       else teilePruefen(teile, md0, e.ids || []);
@@ -189,7 +191,7 @@
       if (texte.teil >= teile.length) texte.teil = 0;
       zeichneChat();
       felderFuellen();
-    } catch (e) { zeigeFehler(e); }
+    } catch (e) { if (kennung === Z.kennung) zeigeFehler(e); }   // der Fehler einer geschlossenen Einheit gilt nicht mehr
   }
 
   $("chat-knoepfe").addEventListener("click", function (ev) {
@@ -439,6 +441,9 @@
   // Antwort mit einem Modus einsetzen; vorher den Stand sichern, damit ein anderer Modus von dort aus neu einsetzt.
   // AP13.11 §4: betrifft die Antwort von Hand geänderte Bausteine, fragt die Seite einmal je Antwort (`merk`)
   async function einsetzen(text, modus, vorher, merk) {
+    // nach jedem Warten: ist die Einheit inzwischen geschlossen oder eine andere offen, setzt die Antwort nichts mehr
+    var kennung = Z.kennung, WEG = { ok: false, weg: true };
+    var weg = function () { return kennung !== Z.kennung; };
     var jetzt = { mappe: JSON.parse(JSON.stringify(Z.mappe)), kurs_md: Z.kurs_md };
     Z.mappe = JSON.parse(JSON.stringify(vorher.mappe)); Z.kurs_md = vorher.kurs_md;
     var neu, meldung = "", erlaubt = [];
@@ -447,6 +452,7 @@
     // Bausteine ein, deren id eine leere geplante Karte trägt (gen/mappe.py plan_rueckfrage), sonst steht „Abbrechen“ da
     if (modus === "ersetzen" && zweig() === "steuer" && !(merk && merk.plan)) {
       var pf = await km.mappeFn("plan_rueckfrage", [Z.mappe, text]);
+      if (weg()) return WEG;
       if (pf.frage) {
         var TS = function (k, w) { var t = ((S.katalog && S.katalog.oberflaeche.stelle) || {})[k] || "";
           Object.keys(w || {}).forEach(function (x) { t = t.split("{" + x + "}").join(w[x]); }); return t; };
@@ -454,10 +460,12 @@
         var wahl = await S.frage(pf.kacheln === 1 ? TS("plan_frage_eine") : TS("plan_frage", { n: pf.kacheln }),
             [pf.leer ? TS("plan_satz_leer") : TS("plan_satz_abbrechen"), TS("plan_satz_ersetzen")],
             pf.leer ? TS("plan_leer") : TS("plan_abbrechen"), TS("plan_ersetzen"), "sicher");
+        if (weg()) return WEG;
         if (merk) merk.plan = wahl === "riskant" ? "ersetzen" : pf.leer ? "leer" : "abbrechen";
         if (wahl !== "riskant" && !pf.leer) {
           Z.mappe = JSON.parse(JSON.stringify(vorher.mappe));
           await km.stand(vorher.kurs_md);
+          if (weg()) return WEG;
           if (merk) delete merk.plan;
           return { ok: false, art: "ok", text: S.editorText("abgebrochen"), zurueck: true };
         }
@@ -469,13 +477,16 @@
     // sie dort erst nach „In Einheit 1 ändern“. „Abbrechen“ und Esc setzen nichts ein; die Antwort bleibt im Feld
     if (modus === "ersetzen" || modus === "baustein") {
       var um = await km.mappeFn("andere_einheiten", [Z.mappe, Z.kurs_md, text, modus, null]);
+      if (weg()) return WEG;
       if (um.ids.length) {
         var gemerkt = merk && merk["andere_" + modus];
         var w = gemerkt || await S.frage(um.frage, [], um.haupt, um.abbrechen, "riskant");
+        if (weg()) return WEG;
         if (w !== "sicher") {
           // AP13.40 (S2-3): „Abbrechen“ führt zum Stand vor dieser Antwort; ein Anhang derselben Antwort geht mit weg
           Z.mappe = JSON.parse(JSON.stringify(vorher.mappe));
           await km.stand(vorher.kurs_md);
+          if (weg()) return WEG;
           return { ok: false, art: "ok", text: S.editorText("abgebrochen"), zurueck: true };
         }
         if (merk) merk["andere_" + modus] = w;
@@ -483,19 +494,23 @@
       }
     }
     var hv = await S.handVorEinsetzen(Z.mappe, Z.kurs_md, text, modus, null, merk);
+    if (weg()) return WEG;
     text = hv.text;
-    if (hv.bausteine === 0) { await km.stand(Z.kurs_md); return { ok: false, art: "ok", text: S.editorText("hand_bleibt") }; }
+    if (hv.bausteine === 0) { await km.stand(Z.kurs_md); if (weg()) return WEG; return { ok: false, art: "ok", text: S.editorText("hand_bleibt") }; }
     if (modus === "baustein") {
       // AP13.37 §1.3: die Antwort gehört zur laufenden Einheit (neu nummerierte landen in ihrer Kachel, kein Doppel)
       var r = await km.mappeFn("einsetzen", [Z.mappe, Z.kurs_md, text, null, false, false, true, erlaubt]);
+      if (weg()) return WEG;
       if (!r.ersetzt.length && !r.eingefuegt.length) {
         await km.stand(Z.kurs_md);
+        if (weg()) return WEG;
         return { ok: false, text: r.fehler.join(" ") || "Kein Baustein passte zu einer Karte." };
       }
       var ids = r.ersetzt.concat(r.eingefuegt);
       neu = r.kurs_md;
       S.ausAntwort(neu);
       await km.stand(neu);
+      if (weg()) return WEG;
       S.handNachEinsetzen(ids, hv);
       Z.mappe.bausteine.forEach(function (k) { if (ids.indexOf(k.id) >= 0) k.neu = false; });
       if (r.fehler.length) meldung = " " + r.fehler.join(" ");
@@ -503,9 +518,11 @@
     }
     if (modus === "anhaengen") neu = await km.mappeFn("anhaengen", [Z.kurs_md, text, Z.mappe.anhaengen || null]);
     else neu = await km.mappeFn("einheit_ersetzen", [Z.mappe, Z.kurs_md, text]);
+    if (weg()) return WEG;
     var tag = modus === "anhaengen" ? Z.mappe.anhaengen : null;
     S.ausAntwort(neu);
     var pr = await km.stand(neu);
+    if (weg()) return WEG;
     if (modus === "ersetzen") S.handNachEinsetzen([], hv);
     if (modus === "anhaengen" && Z.mappe.anhaengen) delete Z.mappe.anhaengen;
     // AP13.37 §1.2: ersetzt zählt die Meldung die Bausteine der laufenden Einheit, sobald es mehrere gibt
@@ -714,12 +731,17 @@
     var diagnose = feld ? function (d) { var b = $("eingabe-diagnose"); diagnoseKarte(b, d);
       if (d) { b.tabIndex = -1; b.focus(); } } : o.diagnose;
     var text = modusErzwungen && S.letzteAntwort ? S.letzteAntwort.text : feld ? $("eingabe").value : o.text || "";
+    // bei erzwungenem Modus wird die letzte Antwort eingesetzt, nicht der Feldinhalt: der bleibt dann stehen
+    var gelesen = feld && !modusErzwungen ? $("eingabe").value : null;
     if (!text.trim()) return false;
     var eigen = !modusErzwungen && eigenerText(text);
     if (eigen) { diagnose(null); zeige(EIGEN[eigen], "fehler"); return false; }
     restWeg();
+    // wie in einsetzen: eine Antwort für eine inzwischen geschlossene oder andere Einheit ändert nichts mehr
+    var kennung = Z.kennung, weg = function () { return kennung !== Z.kennung; };
     try {
       await km.bereit();
+      if (weg()) return false;
       // AP13.40: in einer Sequenz ohne Plan ist die Antwort der Sequenzplan (sequenz.js)
       if (!modusErzwungen && S.sequenzOffen && S.sequenzOffen()) return await S.sequenzplanEinsetzen(text, zeige, diagnose, feld, o);
       var modus = modusErzwungen, mo = null, ergaenzt = [], umbenannt = [], wechsel = "";
@@ -727,11 +749,15 @@
         // AP13.30 §4a: Baustein ohne id: mit Typ und Titel eines geplanten bekommt dessen id; AP13.37 §1.3: eine id, die
         // nicht zu ihrer Karte passt, die einer leeren Karte gleichen Typs und Titels
         var ie = await km.mappeFn("ids_ergaenzen", [Z.mappe, text]);
+        if (weg()) return false;
         text = ie.text; ergaenzt = ie.ids; umbenannt = ie.titel || [];
         mo = await km.mappeFn("modus", [Z.mappe, text]);
+        if (weg()) return false;
         if (mo.modus === "keine") {
+          var dg = await km.prompt("diagnose", [text]);
+          if (weg()) return false;
           zeige("");
-          diagnose(await km.prompt("diagnose", [text]));
+          diagnose(dg);
           return false;
         }
         // nächste Einheit, die noch ohne Inhalt ist: anhängen statt in die erste Einheit einsetzen
@@ -739,7 +765,9 @@
             return k.einheit === Z.mappe.anhaengen && k.geplant; });
         modus = neueOffen ? "anhaengen" : mo.modus;
         // AP13.40 (Korrekturrunde): passt die Antwort nicht zur laufenden Stunde, fragt die Mühle, bevor sie anhängt
-        if (modus === "anhaengen" && S.sequenzFremd && !(await S.sequenzFremd(text, mo))) {
+        var fremdJa = !(modus === "anhaengen" && S.sequenzFremd) || await S.sequenzFremd(text, mo);
+        if (weg()) return false;
+        if (!fremdJa) {
           zeige(S.editorText("abgebrochen"), "ok");
           return false;
         }
@@ -753,6 +781,7 @@
       } else { ergaenzt = S.letzteAntwort.ergaenzt || []; umbenannt = S.letzteAntwort.umbenannt || []; }
       diagnose(null);
       var e = await einsetzen(text, modus, S.letzteAntwort.vorher, S.letzteAntwort);
+      if (e.weg || weg()) return false;
       if (e.ok && e.modus && e.modus !== modus) { modus = e.modus; setzeModus(modus); }    // MF5: nur die leeren gefüllt
       if (e.ok) S.einheitGesehen = false;                 // MF5: neuer Inhalt, Schritt 5 bietet wieder „Einheit ansehen“
       if (!e.ok) {
@@ -769,23 +798,27 @@
       if (!mo || !mo.fortsetzung) { kopiertOffen = false; $("kopiert").textContent = ""; }
       var leerRest = (mo && mo.rest_ids || []).filter(function (id) { var k = karteNach(id); return k && k.geplant; });
       await S.nachAntwortMarkieren(ergaenzt, teileOffen() || (leerRest.length && mo.rest));
+      if (weg()) return false;
       Z.mappe.durchsicht = false; delete Z.mappe.durchsicht_neu;
       // neuer Inhalt: ab Schritt 5 neu durchsehen
       if (schritt() > 5 || schritt() < 5) { Z.mappe.schritt = 5; S.aendern = null; }
       await auswertung();
+      if (weg()) return false;
       // AP13.45 B2: vermutlich abgeschnitten (gen/mappe.py abgeschnitten): die Stand-Karte nennt zuerst „Andere Antwort
       // einfügen“, die rote Karte bleibt als zweiter Weg (karten.js zeichneKorrektur, S.abgeschnittenGilt); nicht mit eigener
       // KI: deren Antwort kopiert niemand
       S.abgeschnitten = null;
       if (feld && !ki()) {
         var ab = await km.mappeFn("abgeschnitten", [Z.mappe, Z.pruefung, text]);
+        if (weg()) return false;
         if (ab && ab.abgeschnitten) S.abgeschnitten = { mappe: Z.mappe, fehlen: ab.fehlen };
       }
       // Hash je Baustein merken; einzelne Bausteine zählen als Runde, eine ganze Einheit fängt neu an
       var gleichE = schleifeMerken(e.ids || Z.pruefung.bausteine.map(function (b) { return b.id; }), false);
       S.letzteAntwort.nach = antwortStand(); S.modusSpaeter = false;   // AP13.41 §1.3
       zeichne(); geaendert();
-      if (feld) $("eingabe").value = ""; else o.leeren();
+      // was während des Einsetzens neu ins Feld kam, bleibt dort für den nächsten Durchgang
+      if (feld) { if ($("eingabe").value === gelesen) $("eingabe").value = ""; } else o.leeren();
       var st = Z.mappe.stueckelung, mehr = "", baust = e.n + (e.n === 1 ? " Baustein" : " Bausteine");
       // „Fortsetzung folgt“: Karten, die noch fehlen, und die Bitte darum kommen aus gen/mappe.py modus
       var leer = leerRest;
@@ -856,7 +889,7 @@
         if (S.nachStunde) S.nachStunde(!!(rot || aussen));   // AP13.40: Sequenz, mit eigener KI weiter zur nächsten Stunde
       }
       return true;
-    } catch (err) { zeigeFehler(err); return false; }
+    } catch (err) { if (!weg()) zeigeFehler(err); return false; }
   }
   // AP13.45 B2: geplante Bausteine, die nach der Antwort leer blieben (`leer_antwort`, wie die Punkte „fehlt“ der roten
   // Karte); die Stand-Karte zählt rote und fehlende getrennt, mit denselben Zahlen wie der Titel der roten Karte
