@@ -96,6 +96,8 @@ Seit 2.0 läuft alles im Browser. Die Einzelheiten jeder Version stehen im [CHAN
       Prüfseite vor dem Download, Sätze und Quizfragen direkt im Editor ändern
 - [x] 2.0.0-b20 Tiefenprüfung mit echten Chat-Antworten: Navigation „Mühle“, „Editor“, „Kursdatei“, Schulart auf
       der Startseite, Bedienung mit Vorlesegerät, Tastatur und Zoom
+- [x] 2.0.0-b21 Rückmeldungen aus dem Durchklicken: Menü und Breite in allen Schritten einheitlich, Kastentitel im
+      Editor änderbar, Fach unter dem Lernziel, Impressum und Datenschutz getrennt
 - [ ] Erste Testerinnen und Tester (Testphase mit Code seit 26.10.2026), Rückmeldungen einarbeiten
 - [ ] Prüfwoche: Sicherheit, Import aller Formate, Barrierefreiheit
 - [ ] 2.0 ohne Beta-Marke
@@ -130,7 +132,7 @@ schickt nichts, was du eingibst, an kursmuehle.de; es gibt dort keinen Server, d
 deine eigene KI, geht der Auftrag von deinem Rechner an den Anbieter, den du selbst eingerichtet hast, oder an dein
 eigenes Programm; Adresse und Code dafür liegen in deinem Browser. Was du in den Chat einfügst oder an deine KI
 schickst, verarbeitet dessen Anbieter; dafür gelten dessen Bedingungen und die Regeln deiner Schule. Gib in den Chat keine personenbezogenen Daten von Schülerinnen und Schülern. Datenfluss, Speicher und
-Verantwortung für Schulleitung und Datenschutzbeauftragte fasst [kursmuehle.de/schule.html](https://kursmuehle.de/schule.html)
+Verantwortung für Schulleitung und Datenschutzbeauftragte fasst [kursmuehle.de/datenschutz.html](https://kursmuehle.de/datenschutz.html#schulleitung)
 zusammen.
 
 ## Kachel fürs Schulportal

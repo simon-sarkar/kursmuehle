@@ -1,6 +1,6 @@
 {
-"version": "2.0.0-b20",
-"generator": "49e81ffb3e8b4d71",
+"version": "2.0.0-b21",
+"generator": "1023e965ba2d4d73",
 "dateien": [
 "ansicht.css",
 "bilder.js",
@@ -751,6 +751,7 @@
 "lehrplan/realschule/wirtschaft-und-recht_9_wpfg1-3.json",
 "lehrplan/realschule/wirtschaft-und-recht_9_wpfg2.json",
 "vendor/LIZENZEN.md",
+"vendor/PRUEFSUMMEN",
 "vendor/pyodide/pyodide-lock.json",
 "vendor/pyodide/pyodide.asm.js",
 "vendor/pyodide/pyodide.asm.wasm",

@@ -116,6 +116,19 @@
   </div>
 </dialog>
 
+<!-- Schritt Bilder: vor „Platzhalter entfernen und ohne Bilder weiter“ die Frage, ob die Stunde neu beauftragt werden
+     soll (bilder.js); Wörter aus katalog.yaml oberflaeche.bilder_ohne -->
+<dialog id="bilder-frage" class="rm-bitte" role="alertdialog" aria-labelledby="bilder-frage-text">
+  <div class="rm-bitte-innen">
+    <p id="bilder-frage-text"></p>
+    <div class="rm-bitte-knoepfe">
+      <button type="button" id="bilder-frage-neu" class="knopf haupt"></button>
+      <button type="button" id="bilder-frage-ohne" class="knopf"></button>
+      <button type="button" id="bilder-frage-ab" class="textlink"></button>
+    </div>
+  </div>
+</dialog>
+
 <!-- Schrittfolge (MF1): immer ist genau ein Schritt offen; erledigte stehen als eine Zeile mit Zusammenfassung und
      „Ändern“ darüber, kommende als graue Zeile darunter. Die Kursdatei ist in allen Zweigen dieselbe. Schritt „Bilder“
      (data-nr 5.5) nur, wenn die Antwort Bildwünsche hat; die Nummern zählt schritte.js. `data-kurz` ist der Name für
@@ -160,7 +173,7 @@
         <p id="f-minuten-info" class="info-text feld-breit" hidden></p>
         <button type="submit" id="einheit-anlegen" class="knopf haupt">Weiter: Aufbau</button>
         <!-- MF1: „Erweitert“ (schritte.js erweitert). MF2: dazu die Sequenz (AP13.40: Umschalter „Stunde“ / „Sequenz“ mit
-             Zahl der Stunden und ⓘ, sequenz.js); c2: Zielgruppe statt Jahrgangsstufe, gilt dann ohne Lehrplanbezug -->
+             Zahl der Stunden und (i), sequenz.js); c2: Zielgruppe statt Jahrgangsstufe, gilt dann ohne Lehrplanbezug -->
         <div id="erweitert" class="erw feld-breit">
           <button type="button" id="erweitert-knopf" class="erw-knopf" aria-expanded="false" aria-controls="erweitert-inhalt"><span
             class="erw-wort">Erweitert</span><span class="erw-was">Sequenz, Zielgruppe</span></button>
@@ -253,6 +266,13 @@
           aria-describedby="m-kontext-beispiel"></textarea>
         <span id="m-kontext-beispiel" class="feld-zeile">Was sollen die Lernenden danach können? Was ist vorausgesetzt, was nicht?</span>
       </label>
+      <!-- Freies Fach direkt unter dem Lernziel, in „Ich steuere“ unter „Worum geht es genau?“ in „Mehr einstellen“
+           (schritte.js fachOrt); darunter die Fächer aus dem Lehrplan zur Eingabe (lehrplan.js fachTreffer). Die
+           Lehrplanwahl hat ihr eigenes Fach; wählt sie ein anderes, wird dieses Feld leer -->
+      <div id="fach-ort" class="feld-breit fach-ort" hidden>
+        <label class="feld" id="fach-l"><span id="fach-t">Fach (freiwillig)</span>
+          <input id="fach" type="text" maxlength="60" autocomplete="off"></label>
+      </div>
       <div id="steuer-teil" class="steuer-teil" hidden>
         <!-- AP13.31: vor der ersten Antwort der Einheit der Plan (plan.js): beschreiben, Darstellung, Kacheln mit Elementen;
              Aufbau und Kartenliste stehen dann nicht hier -->
@@ -275,8 +295,6 @@
           <div id="lehrplan-teil" class="lehrplan-teil" hidden>
             <details id="lehrplan-ausklapp" class="ausklapp lehrplan-ausklapp" data-merken="lehrplan">
               <summary id="lehrplan-auf"><span id="lehrplan-auf-text">Lehrplanbezug (optional)</span></summary>
-              <label class="feld">Fach <span class="feld-zeile">freiwillig</span>
-                <input id="fach" type="text" maxlength="60" autocomplete="off"></label>
               <div id="lehrplan" class="lehrplan-ort"></div>
             </details>
           </div>
@@ -285,7 +303,7 @@
           <div id="r-material-feld" class="r-material-feld material-ort" data-material="r">
             <label class="feld feld-breit"><span class="feld-kopf"><span id="r-material-t">Dein Material (Text, Stichpunkte oder Dateien)</span>
                 <span class="info-knopf" role="button" tabindex="0" aria-expanded="false" aria-label="Hinweis zum Material im Chat"
-                  data-info="material_info">ⓘ</span></span>
+                  data-info="material_info">i</span></span>
               <span class="info-text feld-zeile" data-info-text="material_info" hidden></span>
               <span id="r-material-zeile" class="feld-zeile">freiwillig</span>
               <textarea id="r-material" class="von-lehrkraft" rows="4" spellcheck="true" aria-labelledby="r-material-t"
@@ -340,7 +358,7 @@
                 <div id="a-material-feld" class="feld-breit material-ort" data-material="a">
                   <label class="feld"><span class="feld-kopf"><span id="a-material-t">Dein Material (Text, Stichpunkte oder Dateien)</span>
                       <span class="info-knopf" role="button" tabindex="0" aria-expanded="false" aria-label="Hinweis zum Material im Chat"
-                        data-info="material_info">ⓘ</span></span>
+                        data-info="material_info">i</span></span>
                     <span class="info-text feld-zeile" data-info-text="material_info" hidden></span>
                     <span id="a-material-zeile" class="feld-zeile"
                       hidden>für diese Art nötig</span>
@@ -395,7 +413,9 @@
             type="button" class="info-knopf" aria-expanded="false" aria-controls="aus-bilder-kurz-info"
             aria-label="Erklärung zu Mit Bildern" data-hinweis="3-bilder">i</button></div>
           <p id="aus-bilder-kurz-info" class="info-text" hidden></p>
-          <div id="aus-bilder-kurz" class="kacheln-wahl bilder-wahl" role="radiogroup" aria-labelledby="aus-bilder-kurz-t"></div></div>
+          <div id="aus-bilder-kurz" class="kacheln-wahl bilder-wahl" role="radiogroup" aria-labelledby="aus-bilder-kurz-t"></div>
+          <!-- R7 (Nachmessung 4): wer ein eigenes Foto will, sucht hier nach dem Hochladen -->
+          <p id="aus-bilder-foto" class="leise aus-satz">Eigene Fotos lädst du später hoch; sobald die Antwort des Chats eingefügt ist, kommt dafür ein Schritt „Bilder“ dazu.</p></div>
         <div id="erweitert-3" class="erw">
           <button type="button" id="erweitert-3-knopf" class="erw-knopf" aria-expanded="false" aria-controls="erweitert-3-inhalt"><span
             class="erw-wort">Erweitert</span><span class="erw-was">Zahl der Bilder, Dichte, Ränder, Kursformat, Übungen</span></button>
@@ -504,7 +524,7 @@
       <div id="chat-text" hidden>
         <!-- MF6: der allgemeine Satz zum Modell steht im (i) „Welches Modell?“ an der Zeile des Chats; AP13.45 B1: der Satz
              des gewählten Chats (katalog.yaml chats.aufwand) steht sichtbar darunter -->
-        <p class="chat-fuer"><span id="chat-zeile"></span> <button type="button" id="chat-aendern" class="textlink">Anderer Chat</button><span
+        <p class="chat-fuer"><span id="chat-zeile"></span> <button type="button" id="chat-aendern" class="textlink">Chat wechseln</button><span
           id="chat-modell-zeile" class="chat-modell-zeile"><button type="button" class="info-knopf" aria-expanded="false"
           aria-controls="chat-modell-info" aria-label="Welches Modell?" data-hinweis="4-modell">i</button></span></p>
         <p id="chat-modell-satz" class="chat-modell-satz" hidden></p>
@@ -679,7 +699,7 @@
       <p id="bilder-stand" class="stand" role="status" aria-live="polite"></p>
       <div class="knopf-reihe">
         <button type="button" id="weiter-bilder" class="knopf haupt">Weiter</button>
-        <button type="button" id="bilder-weg" class="knopf" hidden>Ohne Bilder weiter</button>
+        <button type="button" id="bilder-weg" class="knopf" hidden>Platzhalter entfernen und ohne Bilder weiter</button>
       </div>
       <button type="button" id="zurueck-bilder" class="knopf haupt s-zurueck" data-nr="5.5" hidden></button>
     </div>
@@ -773,6 +793,8 @@
       <dl id="pruef-liste" class="pruef-liste"></dl>
       <button type="button" id="editor-auf-8" class="textlink pruef-aendern" aria-label="Ansehen: Einheit" hidden>Ansehen</button>
       <p id="nl-hinweis" class="stand warn" role="status" hidden></p>
+      <p id="ki-hinweis" class="leise">KI kann halluzinieren und fachliche Fehler machen. Lies den Kurs vor dem Einsatz
+        einmal durch.</p>
       <div class="erstellen">
         <button type="button" id="herunterladen" class="knopf ergebnis">Kursdatei herunterladen</button>
         <button type="button" id="herunterladen-ganz" class="knopf" hidden>Ganze Datei herunterladen</button>
@@ -874,8 +896,7 @@
   <button type="button" id="editor-auf-2" class="knopf editor-auf-2" hidden>Einheit ansehen und bearbeiten</button>
  </div>
 
- <input id="datei-oeffnen" class="unsichtbar" type="file" tabindex="-1" multiple accept=".zip,application/zip,.md,.yaml,.yml,image/png,image/jpeg">
- <input id="ordner-oeffnen" class="unsichtbar" type="file" tabindex="-1" multiple webkitdirectory>
+ <input id="datei-oeffnen" class="unsichtbar" type="file" tabindex="-1" aria-label="Zwischenstand öffnen" multiple accept=".zip,application/zip,.md,.yaml,.yml,image/png,image/jpeg">
  <datalist id="phasen"></datalist>
 </main>
 <!-- AP13.38: schwebender Knopf, öffnet dieselbe Ansicht wie der Link in der Kopfzeile (editor.js, Text aus katalog.yaml
@@ -895,26 +916,36 @@
 </nav>
 <footer class="fuss">
   <button type="button" id="fuss-rueckmeldung" class="textlink">Rückmeldung</button>
-  <a href="../impressum.html" class="fuss-klein">Impressum und Datenschutz</a>
+  <a href="../impressum.html" class="fuss-klein">Impressum</a>
+  <a href="../datenschutz.html" class="fuss-klein">Datenschutz</a>
   <a href="../">Startseite</a>
   <!-- Link zur Beta-Vorschau; veroeffentlichen.py nimmt ihn in docs/beta/ heraus. AP13.45 B15: „Testversion“ mit (i)
-       (hinweise.json „fuss-beta“); die id steht an der ganzen Zeile, damit (i) und Text mit herausgehen -->
+       (hinweise.json „fuss-beta“); die id steht an der ganzen Zeile, damit (i) und Text mit herausgehen. Die Zeile
+       löst sich in die Reihe der Verweise auf (display: contents), der Text steht in einer eigenen Zeile darunter -->
   <p id="beta-link" class="fuss-klein fuss-beta"><a href="../beta/start/">Testversion</a><button type="button" class="info-knopf"
     aria-expanded="false" aria-controls="beta-info" aria-label="Was ist die Testversion?" data-hinweis="fuss-beta">i</button><span
     id="beta-info" class="info-text" hidden></span></p>
-  <details id="fuss-mehr" class="fuss-mehr">
-    <summary>Mehr</summary>
-    <label for="ordner-oeffnen" class="textlink">Ordner aus Kursmühle 1 öffnen</label>
-  </details>
 </footer>
 <script src="themen.js"></script>
 <script>
 // MF2 (Konzept §7, Entscheidung 5): kein Platzhalter im Feld; unter dem Thema steht grau ein Beispiel, bei jedem Laden ein
-// anderes aus references/themen.yaml (themen.js, AP13.8 §8)
+// anderes aus references/themen.yaml (themen.js, AP13.8 §8). Passend zur gewählten Schulart (Grundschule:
+// Grundschulthemen, jede andere: Mittelschulthemen, keine: beliebig); kern.js ruft es nach dem Vorbelegen der Schulart,
+// ein Wechsel der Schulart bei leerem Thema zieht ein passendes
 (function () {
-  var paare = window.KM_THEMEN || [], z = document.getElementById("f-thema-beispiel");
+  var paare = window.KM_THEMEN || [], z = document.getElementById("f-thema-beispiel"), los = Math.random();
   if (!paare.length || !z) return;
-  z.textContent = "zum Beispiel: " + paare[Math.floor(Math.random() * paare.length)].thema;
+  function beispiel() {
+    var sa = document.getElementById("f-schulart"), v = sa ? sa.value : "";
+    var art = v ? (v === "Grundschule" ? "Grundschule" : "Mittelschule") : "";
+    var wahl = art ? paare.filter(function (x) { return x.schulart === art; }) : paare;
+    if (!wahl.length) wahl = paare;
+    z.textContent = "zum Beispiel: " + wahl[Math.min(wahl.length - 1, Math.floor(los * wahl.length))].thema;
+  }
+  beispiel();
+  window.KM_BEISPIEL = beispiel;
+  document.getElementById("f-schulart").addEventListener("change", function () {
+    if (!document.getElementById("f-thema").value.trim()) beispiel(); });
 })();
 </script>
 <script src="kern.js"></script>

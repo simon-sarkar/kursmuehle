@@ -187,7 +187,7 @@
   box.appendChild(el("p", { id: "lehrplan-zg", cls: "feld-zeile lp-zg", hidden: "hidden",
     text: "Mit Zielgruppe ohne Lehrplanbezug" }));
   // Fächer zur Eingabe im Fach-Feld (Kürzel und Wortanfänge), nur mit Haken; ohne Haken die Liste des Browsers
-  box.insertBefore(el("p", { id: "fach-treffer", cls: "lp-vorschlag lp-fach-treffer", hidden: "hidden" }), box.firstChild);
+  $("fach-ort").appendChild(el("p", { id: "fach-treffer", cls: "lp-vorschlag lp-fach-treffer", hidden: "hidden" }));
   var loesen = el("button", { type: "button", cls: "kopf-x lp-loesen", "aria-label": "Lehrplan lösen",
     title: "Lehrplan lösen", text: "×" });
   $("lehrplan-auf").appendChild(el("span", { id: "lehrplan-vermerk", cls: "lp-vermerk", hidden: "hidden" }, [el("span"),
@@ -201,6 +201,7 @@
   box.appendChild(el("div", { id: "lehrplan-feld", cls: "lp-feld", hidden: "hidden" }));
   teil.appendChild(el("p", { id: "lehrplan-fehlt", cls: "lp-warnung", role: "status", hidden: "hidden", text: FEHLT }));
   teil.addEventListener("click", klick);
+  $("fach-ort").addEventListener("click", klick);            // die Fach-Treffer stehen beim Feld, nicht im Lehrplan-Teil
   teil.addEventListener("change", aenderung);
   $("fach").addEventListener("input", fachTreffer);
   // Ausklappteil gemerkt über data-merken (S.ausklapp, AP13.12 a); zugeklappt mit Haken im offenen Picker gelten die
@@ -299,6 +300,23 @@
   function wahlLeeren() {
     if (gewaehlteZahl()) P.geleert = true;
     P.wahl = {}; P.auf = {};
+  }
+  // Das freie Fach oben (Feld #fach): gibt es dasselbe Fach für die Schulart im Picker (ohne Groß- und Kleinschreibung und
+  // Randleerzeichen), ist es dort vorgewählt; -> true, wenn es gesetzt wurde
+  function normFach(x) { return String(x || "").trim().toLocaleLowerCase("de"); }
+  function obenVorwaehlen() {
+    if (!P || !P.index || !P.schulart || P.fach) return false;
+    var oben = normFach($("fach").value);
+    var name = oben && namenImPicker().filter(function (n) { return normFach(n) === oben; })[0];
+    if (!name) return false;
+    fachSetzen(name);
+    return true;
+  }
+  // Wahl der Lehrkraft im Picker: ein anderes Fach als oben leert das obere Feld, dasselbe lässt es stehen
+  function fachGewaehlt(name) {
+    var oben = $("fach").value;
+    if (name && oben.trim() && normFach(oben) !== normFach(name) && S.fachFeld) S.fachFeld("");
+    fachSetzen(name);
   }
   function fachSetzen(name) {
     P.fach = name || null; P.datei = null; P.daten = null; wahlLeeren();
@@ -468,7 +486,7 @@
       if (P !== p) return;
       P.index = index;
       var e = P.schulart && lp && gewaehlt() && lp.schulart === P.schulart ? dateiZuLehrplan(index, lp) : null;
-      if (!e) { zeichnePicker(); fokusSetzen(); return; }
+      if (!e) { if (!obenVorwaehlen()) zeichnePicker(); fokusSetzen(); return; }
       P.fach = e.fach; P.datei = e.datei;
       zeichnePicker();
       return ladeDatei(e.datei).then(function (d) {
@@ -534,7 +552,7 @@
     if (was === "fachwahl") { fachWaehlen(b.dataset.wert); return; }
     if (!P) return;
     if (was === "schulart") { if (P.schulart !== b.dataset.wert) { P.schulart = b.dataset.wert; P.fach = null;
-        P.datei = null; P.daten = null; wahlLeeren(); } zeichnePicker(); }
+        P.datei = null; P.daten = null; wahlLeeren(); } if (!obenVorwaehlen()) zeichnePicker(); }
     else if (was === "datei") { P.datei = b.dataset.wert; P.daten = null; wahlLeeren(); dateiLaden(); }
     else if (was === "auf") { var i = b.dataset.i; P.auf[i] = !P.auf[i]; zeichnePicker();
         var t = $("lehrplan-feld").querySelector(".lp-titel[data-i='" + i + "']"); if (t) t.focus(); }
@@ -551,7 +569,7 @@
     var t = ev.target, was = t.dataset.lp; if (!was || !Z.mappe) return;
     if (was === "bezug") { hakenSetzen(t.checked); return; }
     if (!P) return;
-    if (was === "fach") { fachSetzen(t.value); return; }
+    if (was === "fach") { fachGewaehlt(t.value); return; }
     var i = t.dataset.i, w = P.wahl[i] = P.wahl[i] || { an: false, tb: {} };
     if (was === "lb") {
       w.an = t.checked; if (!t.checked) w.tb = {};
@@ -611,6 +629,7 @@
     if (!still || !gleich(lp, S.angaben.lehrplan)) vorschlag.auto = null;   // eine Wahl der Lehrkraft, kein Vorschlag mehr
     P = null;
     zeichnePicker();
+    if (S.fachAbbrechen) S.fachAbbrechen();        // eine ausstehende Eingabe oben überschreibt das Fach des Lehrplans nicht
     schreiben({ fach: lp.fach, schulart: SCHULARTEN[lp.schulart], lehrplan: lp });
     S.felderFuellen();
     if (!still) $("lehrplan-knopf").focus({ preventScroll: true });

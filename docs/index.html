@@ -262,7 +262,7 @@
       </details>
       <p>Die Mühle ist für gängige KI-Chats eingerichtet; Konto, Kosten und Nutzungsbedingungen regelt der Anbieter, und
       ob du einen Chat dienstlich nutzen darfst, klärst du mit deiner Schule.</p>
-      <p>Nimm das neueste Modell ohne Zusatz; Namen mit mini, fast, flash, lite, nano oder small sind die kleinen, und
+      <p>Nimm ein großes Modell; Namen mit mini, fast, flash, lite, nano oder small sind die kleinen, und
       solche Modelle brauchen öfter eine Korrekturbitte. Steht
       „Auto“ voreingestellt, stell um, denn „Auto“ lässt den Dienst raten, und bei einem langen Text rät er oft klein. Gibt
       es einen Schalter wie „Denken“ oder „ausführlich“, schalte ihn ein.</p>
@@ -285,8 +285,8 @@
 <footer>
   <div class="innen">
     <ul class="links">
-      <li><a href="impressum.html">Impressum und Datenschutz</a></li>
-      <li><a href="schule.html">Für Schulleitung und Datenschutz</a></li>
+      <li><a href="impressum.html">Impressum</a></li>
+      <li><a href="datenschutz.html">Datenschutz</a></li>
       <li><a href="verbinden.md">Eigene KI verbinden</a></li>
       <li><a href="https://github.com/simon-sarkar/kursmuehle/tree/main/docs/kachel">Kachel fürs Schulportal</a></li>
       <li><a href="https://github.com/simon-sarkar/kursmuehle">GitHub</a></li>
@@ -298,7 +298,7 @@
     <!-- Link zur Beta-Vorschau; veroeffentlichen.py nimmt ihn in docs/beta/ heraus -->
     <p class="leise" id="beta-link"><a href="beta/">Testversion</a> mit neuen Funktionen, noch nicht freigegeben und mit
     eigenem Speicher im Browser.</p>
-    <!-- Datenschutz: derselbe Wortlaut in impressum.html (test_landing.py vergleicht) -->
+    <!-- Datenschutz: derselbe Wortlaut in datenschutz.html (test_landing.py vergleicht) -->
     <p class="leise datenschutz">Deine Eingaben bleiben in deinem Browser. Der KI-Chat bekommt nur den Text, den du kopierst; eine eigene KI oder, in
     der Testphase, mein Dienst ki.kursmühle.de bekommt ihn direkt. Gib keine Namen von Schülerinnen und Schülern ein.</p>
   </div>
@@ -443,20 +443,32 @@
 
 // Platzhalter: bei jedem Laden ein anderes Paar aus Thema und Jahrgangsstufe, nur das Thema, ohne „zum Beispiel“.
 // Die Paare kommen aus start/themen.js (AP13.8, aus references/themen.yaml): window.KM_THEMEN als Liste von
-// [Thema, Jahrgangsstufe] oder {thema, jahrgang}. Fehlt die Datei, gilt die Liste hier.
+// {thema, jahrgang, schulart} (oder [Thema, Jahrgangsstufe]). Fehlt die Datei, gilt die Liste hier. Das Beispiel passt zur gewählten oder gemerkten
+// Schulart (Grundschule: Grundschulthemen, jede andere: Mittelschulthemen); ohne Schulart ist es beliebig. Die Schulart
+// selbst wird nie aus dem Beispiel vorbelegt. Wechselt sie bei leerem Thema und leerer Jahrgangsstufe, wechselt es mit.
 (function () {
   var aus = window.KM_THEMEN, paare = [];
-  if (Array.isArray(aus)) paare = aus.map(function (x) { return Array.isArray(x) ? x : [x && x.thema, x && x.jahrgang]; })
-      .filter(function (x) { return x[0]; });
+  if (Array.isArray(aus)) paare = aus.map(function (x) {
+      return Array.isArray(x) ? { thema: x[0], jahrgang: x[1], schulart: x[1] <= 4 ? "Grundschule" : "Mittelschule" } : x; })
+      .filter(function (x) { return x && x.thema; });
   if (!paare.length) paare = [["Bruchrechnen", 6], ["Satz des Pythagoras", 9], ["Das Ohr", 7], ["Photosynthese", 8],
     ["Die Französische Revolution", 8], ["Wetter und Klima", 5], ["Der Wasserkreislauf", 4], ["Nomen und Verben", 3],
     ["Simple past", 6], ["Prozentrechnung", 7], ["Das Eichhörnchen", 2], ["Der einfache Stromkreis", 5],
     ["Lineare Funktionen", 8], ["Eine Bewerbung schreiben", 9], ["Die mittelalterliche Stadt", 7], ["Aufbau der Zelle", 9],
-    ["Die Lunge", 7], ["Netzwerke und IP-Adressen", 9], ["Säuren und Basen", 9], ["Die Uhr lesen", 2]];
-  var p = paare[Math.floor(Math.random() * paare.length)];
-  var t = document.getElementById("f-thema"), j = document.getElementById("f-jahrgang");
-  if (t && !t.value) t.placeholder = String(p[0]);
-  if (j && !j.value && p[1] != null) j.placeholder = String(p[1]);
+    ["Die Lunge", 7], ["Netzwerke und IP-Adressen", 9], ["Säuren und Basen", 9], ["Die Uhr lesen", 2]].map(function (x) {
+      return { thema: x[0], jahrgang: x[1], schulart: x[1] <= 4 ? "Grundschule" : "Mittelschule" }; });
+  var los = Math.random();
+  var t = document.getElementById("f-thema"), j = document.getElementById("f-jahrgang"), sa = document.getElementById("f-schulart");
+  function beispiel() {
+    var art = sa && sa.value ? (sa.value === "Grundschule" ? "Grundschule" : "Mittelschule") : "";
+    var wahl = art ? paare.filter(function (x) { return x.schulart === art; }) : paare;
+    if (!wahl.length) wahl = paare;
+    var p = wahl[Math.min(wahl.length - 1, Math.floor(los * wahl.length))];
+    if (t) t.placeholder = String(p.thema);
+    if (j && p.jahrgang != null) j.placeholder = String(p.jahrgang);
+  }
+  beispiel();
+  if (sa) sa.addEventListener("change", function () { if (!t.value.trim() && !j.value.trim()) beispiel(); });
 })();
 </script>
 </body>

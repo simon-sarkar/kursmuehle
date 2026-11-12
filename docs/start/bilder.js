@@ -330,19 +330,51 @@
     $("bilder-stufe").textContent = bz ? bz.stufe.charAt(0).toUpperCase() + bz.stufe.slice(1) + " gewählt, " + bz.zahl +
         " im Text" : "";
     // MF3 (Konzept §3.6): der Hauptknopf nennt immer den nächsten Schritt und geht immer (fehlende Bilder bleiben
-    // Platzhalter); „Ohne Bilder weiter“ daneben nimmt die fehlenden Bilder aus der Einheit
+    // Platzhalter); der Knopf daneben sagt, dass er die Platzhalter entfernt, und fragt vorher (bilderFrage)
+    var tb = ohneTexte();
     $("weiter-bilder").textContent = "Weiter: " + S.kurzName(S.fragenListe.length && !Z.mappe.durchsicht ? 6 : 7);
     $("bilder-weg").hidden = !fehlen;
-    $("bilder-weg").textContent = fehlen === mitDatei ? "Ohne Bilder weiter" : "Ohne die fehlenden Bilder weiter";
+    $("bilder-weg").textContent = fehlen === mitDatei ? tb.knopf_alle : tb.knopf_fehlende;
     $("bilder-stand").textContent = !w.length ? "" : fehlen
       ? (fehlen === 1 ? "Ein Bild fehlt" : fehlen + " Bilder fehlen") +
           "; im Kurs steht dort ein grauer Platzhalter, bis du es nachlieferst."
       : geprueftZahl + " von " + mitDatei + " Bildern geprüft";
     $("bilder-stand").className = "stand " + (fehlen ? "" : "ok");
   }
-  // MF3: „Ohne Bilder weiter“: die fehlenden Bilder (ohne Datei; sind es alle, jede Bildzeile und jeder Bildwunsch der
+  // „Platzhalter entfernen und ohne Bilder weiter“ fragt zuerst: die Stunde ist mit Bildern geplant, besser eine neue
+  // ohne Bilder. Drei Wege: Stunde verwerfen (zurück zum Text für den Chat, schritte.js stundeVerwerfen), trotzdem ohne
+  // Bilder weiter (ohneBilder), Abbrechen. Esc wie Abbrechen; der Fokus geht danach auf den Knopf zurück
+  var frageDlg = $("bilder-frage");
+  function ohneTexte() {
+    var t = {};
+    (S.katalog.oberflaeche.bilder_ohne || []).forEach(function (w) { t[w.wert] = w.text; });
+    return t;
+  }
+  function frageZu() { if (frageDlg.open) frageDlg.close(); }
+  frageDlg.addEventListener("close", function () {
+    if (!$("bilder-weg").hidden && document.activeElement !== $("bilder-weg") && !frageDlg.dataset.weiter)
+      $("bilder-weg").focus();
+    delete frageDlg.dataset.weiter;
+  });
+  $("bilder-weg").onclick = function () {
+    if (!Z.mappe) return;
+    var tb = ohneTexte();
+    $("bilder-frage-text").textContent = tb.frage;
+    $("bilder-frage-neu").textContent = tb.verwerfen;
+    $("bilder-frage-ohne").textContent = tb.trotzdem;
+    $("bilder-frage-ab").textContent = tb.abbrechen;
+    frageDlg.showModal();
+    $("bilder-frage-ab").focus();
+  };
+  $("bilder-frage-ab").onclick = frageZu;
+  $("bilder-frage-ohne").onclick = function () { frageDlg.dataset.weiter = "1"; frageZu(); ohneBilder(); };
+  $("bilder-frage-neu").onclick = function () {
+    frageDlg.dataset.weiter = "1"; frageZu();
+    S.stundeVerwerfen().catch(zeigeFehler);
+  };
+  // MF3: ohne Bilder weiter: die fehlenden Bilder (ohne Datei; sind es alle, jede Bildzeile und jeder Bildwunsch der
   // Einheit) gehen aus der Einheit (gen/mappe.py bilder_entfernen), im Kurs steht dort nichts; danach weiter wie „Weiter“
-  $("bilder-weg").onclick = async function () {
+  async function ohneBilder() {
     if (!Z.mappe) return;
     var w = bildwuensche(), namen = w.filter(function (b) { return b.datei && !bildDa(b); }).map(function (b) { return b.datei; });
     if (!namen.length) return;
@@ -356,7 +388,7 @@
       zeichne(); geaendert();
       $("weiter-bilder").onclick();
     } catch (e) { zeigeFehler(e); }
-  };
+  }
   // Wechsel der offenen Karte: die Liste bleibt, wo sie im Fenster steht (kein Sprung durch das Zuklappen); steht die
   // neue Karte dann über dem Fensterrand, rückt sie an den oberen Rand. Wird die Liste kürzer, hält eine Mindesthöhe
   // die Seite so lang, dass der Browser nicht nach oben rutscht; sie schwindet, sobald unter dem Fenster Platz ist

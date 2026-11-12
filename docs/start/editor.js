@@ -59,20 +59,30 @@
     ".km-ed-inhalt .km-stelle { pointer-events: auto; cursor: pointer; border-radius: 4px; }",
     ".km-ed-inhalt .km-stelle:hover { outline: 2px dashed #8a6416; outline-offset: 3px; }",
     ".km-ed-inhalt .km-stelle-offen { display: none !important; }",
-    // AP13.45 B4: je Stelle ein Knopf „Ändern“ hinter ihr; er erscheint, sobald er den Fokus hat, über dem Anfang dessen,
-    // was folgt (ohne den Text zu verschieben, sonst ginge ein Klick daneben), die Stelle bekommt dann den Rahmen. Der
-    // Inhalt selbst bleibt Absatz, Liste oder Überschrift
+    // AP13.45 B4: je Stelle ein Knopf „Ändern“ hinter ihr; er erscheint, sobald er den Fokus hat, die Stelle bekommt dann
+    // den Rahmen. Der Inhalt selbst bleibt Absatz, Liste oder Überschrift. Er steht rechts neben der letzten Zeile
+    // seiner Stelle in einem freien Rand der Fläche (km-mit-stellen), nie über Text und ohne den Text zu verschieben
+    // (sonst ginge ein Klick daneben); die Kästen der Kurse haben keine eigene Position, Bezug ist die Fläche
+    ".km-ed-inhalt.km-mit-stellen { position: relative; padding-right: 108px; }",
     ".km-ed-inhalt .km-aendern { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; " +
         "overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }",
     // AP13.45 (09.11.): mit der Maus erscheint er auch beim Überfahren der Stelle (Klasse km-zeigen, nur bei hover: hover)
-    ".km-ed-inhalt .km-aendern:focus, .km-ed-inhalt .km-aendern.km-zeigen { z-index: 1; width: auto; height: auto; margin: 4px 0 0; padding: 5px 14px; " +
+    ".km-ed-inhalt .km-aendern:focus, .km-ed-inhalt .km-aendern.km-zeigen { z-index: 1; right: 10px; width: auto; height: 30px; " +
+        "margin: -30px 0 0; padding: 0 12px; " +
         "overflow: visible; clip: auto; border: 1px solid #8a6416; border-radius: 6px; background: #ffffff; color: #1d2125; " +
-        "font: 600 14px/1.3 system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif; cursor: pointer; pointer-events: auto; " +
+        "font: 600 14px/28px system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif; cursor: pointer; pointer-events: auto; " +
         "outline: 3px solid #8a6416; outline-offset: 2px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); }",
     ".km-ed-inhalt .km-aendern.km-zeigen:not(:focus) { outline: none; }",
+    // schmal (Handy): kein Rand; der Knopf steht mit dem Fokus unter seiner Stelle im Fluss und schiebt, was folgt
+    "@media (max-width: 699px) { .km-ed-inhalt.km-mit-stellen { padding-right: 18px; } " +
+        ".km-ed-inhalt .km-aendern:focus, .km-ed-inhalt .km-aendern.km-zeigen { position: static; display: block; margin: 6px 0 10px; } }",
     ".km-ed-inhalt .km-stelle:has(+ .km-aendern:focus), .km-ed-inhalt .km-stelle:has(+ .km-aendern.km-zeigen) { " +
         "outline: 2px dashed #8a6416; outline-offset: 3px; }",
-    "slot[name=km-stelle] { display: block; }"
+    "slot[name=km-stelle] { display: block; }",
+    // R7: an einer Kachel mit Knöpfen darin bedient die Tastatur den Titel (.km-ue-griff), nicht die ganze Kachel
+    ".km-ed-inhalt .km-ue-griff { pointer-events: auto; border-radius: 4px; }",
+    ".km-ed-inhalt .km-ue-griff:focus { outline: none; }",
+    ".km-ed-inhalt .km-ue-griff:focus-visible { outline: 2px dashed #8a6416; outline-offset: 3px; }"
   ].join("\n");
 
   function sichtbar() { return !!(Z.mappe && Z.pruefung && Z.pruefung.bausteine && Z.pruefung.bausteine.length); }
@@ -139,8 +149,9 @@
   $("editor-weiter").onclick = weiter;
   // R6: Navigation; „Kursdatei“ führt in den Schritt „Kursdatei“ zum Herunterladen (wie „Weiter“ dorthin)
   $("ed-navi-muehle").onclick = zurueck;
-  $("ed-navi-datei").onclick = function () { fokusDanach = function () { S.weiterZu(7); }; schliessen(); };
-  $("navi-datei").onclick = function () { S.weiterZu(7); };
+  // Gesperrt, bis der Schritt „Kursdatei“ erreicht ist (schritte.js zeichneSchritte); danach nur Navigation
+  $("ed-navi-datei").onclick = function () { if (this.disabled) return; fokusDanach = function () { S.weiterZu(7); }; schliessen(); };
+  $("navi-datei").onclick = function () { if (!this.disabled) S.weiterZu(7); };
 
   // ---------------------------------------------------------------- Öffnen, Schließen, Esc
   function oeffnen(von) {
@@ -495,10 +506,15 @@
       // §9: Kurstitel, Abschnitte und Kacheln sind bedienbar (Tabulator, Enter, Leertaste); Pfeile verschieben
       // AP13.45 B4: der Kurstitel bleibt Überschrift (mit der Maus anklickbar); mit der Tastatur führt „Kurstitel ändern“
       // im Kopf der Kursübersicht dorthin
+      // R7: eine Kachel mit Knöpfen darin (Pfeile, „Kachel löschen“) ist selbst kein Knopf, sonst stecken Knöpfe im Knopf;
+      // die Rolle trägt dann ihr Titel, mit der Maus bleibt die ganze Kachel anklickbar
       Array.prototype.forEach.call(innen.querySelectorAll("[data-ziel]:not([data-ziel=kopf])"), function (x) {
-        x.setAttribute("tabindex", "0");
-        x.setAttribute("role", "button");
-        x.setAttribute("aria-label", x.dataset.ziel === "weitere" ? T("weitere") : T("abschnitt_titel") + ": " +
+        var g = x.querySelector("button") && x.querySelector(".km-ue-abtitel");
+        if (g) g.classList.add("km-ue-griff");
+        g = g || x;
+        g.setAttribute("tabindex", "0");
+        g.setAttribute("role", "button");
+        g.setAttribute("aria-label", x.dataset.ziel === "weitere" ? T("weitere") : T("abschnitt_titel") + ": " +
             (x.dataset.titel || x.textContent));
       });
       Array.prototype.forEach.call(innen.querySelectorAll("button[data-aktion]"), function (x) {
@@ -506,7 +522,7 @@
       root.addEventListener("click", ueKlick);
       root.addEventListener("keydown", function (ev) {
         var z = ev.target.closest && ev.target.closest("[data-ziel]");
-        if (z && z === ev.target && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); ueKlick(ev); }
+        if (z && griff(z) === ev.target && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); ueKlick(ev); }
       });
     }
     return host;
@@ -514,6 +530,13 @@
 
   // AP13.45 B7: Überschriften der Fläche (wie auf der Kursseite h1 bis h3) bekommen ihre Ebene unter der Überschrift des
   // Bausteins (h4) bzw. der Kursübersicht (h3); die oberste Ebene der Fläche wird `oben`
+  function griff(x) { return x && (x.querySelector(".km-ue-griff") || x); }
+  // die bedienbare Stelle zu einem Ziel („kopf“, „abschnitt:n“) in einer Fläche: das Ziel selbst oder sein Titel
+  function zielGriff(root, ziel) {
+    var x = null;
+    try { x = griff(root && root.querySelector("[data-ziel='" + ziel + "']")); } catch (e) { x = null; }
+    return x && x.hasAttribute("tabindex") ? x : null;
+  }
   function ebenen(innen, oben) {
     var hs = innen.querySelectorAll("h1, h2, h3, h4, h5, h6"), min = 6;
     Array.prototype.forEach.call(hs, function (h) { min = Math.min(min, +h.tagName.charAt(1)); });
@@ -570,12 +593,15 @@
     if (s !== k.sig) {
       // AP13.33 §2.1: lag der Fokus in der alten Fläche (Kurstitel, Kachel, Pfeil), geht er an dieselbe Stelle der neuen
       var alt = k.koerper.firstChild, inAlt = alt && document.activeElement === alt && alt.shadowRoot &&
-          alt.shadowRoot.activeElement, wo = inAlt ? (inAlt.dataset.ziel ? "[data-ziel='" + inAlt.dataset.ziel + "']" :
-          inAlt.dataset.aktion ? "[data-aktion='" + inAlt.dataset.aktion + "'][data-nr='" + inAlt.dataset.nr + "']" : "") : "";
+          alt.shadowRoot.activeElement;
+      var zielAlt = inAlt && (inAlt.dataset.ziel || (inAlt.classList.contains("km-ue-griff") &&
+          inAlt.closest("[data-ziel]").dataset.ziel)) || "";
+      var wo = inAlt && !zielAlt && inAlt.dataset.aktion ? "[data-aktion='" + inAlt.dataset.aktion + "'][data-nr='" +
+          inAlt.dataset.nr + "']" : "";
       k.sig = s; k.koerper.textContent = "";
       try { k.koerper.appendChild(flaeche(u.html, true)); } catch (e) { console.error("Vorschau", UE, e); }
-      var neu = wo && k.koerper.firstChild && k.koerper.firstChild.shadowRoot &&
-          k.koerper.firstChild.shadowRoot.querySelector(wo + ":not([disabled])");
+      var neuRoot = k.koerper.firstChild && k.koerper.firstChild.shadowRoot;
+      var neu = zielAlt ? zielGriff(neuRoot, zielAlt) : wo && neuRoot && neuRoot.querySelector(wo + ":not([disabled])");
       if (neu) neu.focus({ preventScroll: true });
     }
     if (ueZiel && !ueAbschnitt(ueZiel) && ueZiel !== "kopf" && ueZiel !== "weitere") ueZu(true);
@@ -721,9 +747,7 @@
     k.werk.hidden = true; k.werk.textContent = "";
     var kn = k.kopf.querySelector("[data-aktion=kurstitel]"); if (kn) kn.setAttribute("aria-expanded", "false");
     if (stumm) return;
-    var f = null;
-    try { f = ziel && k.koerper.firstChild && k.koerper.firstChild.shadowRoot &&
-        k.koerper.firstChild.shadowRoot.querySelector("[data-ziel='" + ziel + "'][tabindex]"); } catch (e) { f = null; }
+    var f = ziel ? zielGriff(k.koerper.firstChild && k.koerper.firstChild.shadowRoot, ziel) : null;
     (f || (ziel === "kopf" && k.kopf.querySelector("[data-aktion=kurstitel]")) || k.kopf.querySelector(".ed-b-titel"))
         .focus({ preventScroll: true });
   }
@@ -761,7 +785,7 @@
   function ueFokus(ziel) {
     var k = knoten[UE]; if (!k) return;
     var root = k.koerper.firstChild && k.koerper.firstChild.shadowRoot;
-    var f = root && root.querySelector("[data-ziel='" + ziel + "'][tabindex]");
+    var f = zielGriff(root, ziel);
     (f || (ziel === "kopf" && k.kopf.querySelector("[data-aktion=kurstitel]")) || k.kopf.querySelector(".ed-b-titel"))
         .focus({ preventScroll: true });
   }
@@ -777,7 +801,7 @@
     await aktualisieren();
     var k = knoten[UE], root = k && k.koerper.firstChild && k.koerper.firstChild.shadowRoot;
     var f = root && (root.querySelector("[data-aktion=" + (richtung < 0 ? "hoch" : "runter") + "][data-nr='" + r.nach + "']:not([disabled])")
-        || root.querySelector("[data-ziel='abschnitt:" + r.nach + "']"));
+        || griff(root.querySelector("[data-ziel='abschnitt:" + r.nach + "']")));
     if (f) f.focus({ preventScroll: true });
   }
 
@@ -968,7 +992,7 @@
     meldung(UE, T("weitere_eingesetzt"));
     var root = knoten[UE] && knoten[UE].koerper.firstChild && knoten[UE].koerper.firstChild.shadowRoot;
     var alle = root ? root.querySelectorAll("[data-ziel^='abschnitt:']") : [];
-    var f = alle.length ? alle[alle.length - 1] : knoten[UE] && knoten[UE].kopf.querySelector(".ed-b-titel");
+    var f = alle.length ? griff(alle[alle.length - 1]) : knoten[UE] && knoten[UE].kopf.querySelector(".ed-b-titel");
     if (f) f.focus({ preventScroll: true });
   }
 
@@ -1230,6 +1254,8 @@
         x.after(el("button", { type: "button", cls: "km-aendern", "data-km-nr": String(s.nr), "aria-label": stelleLabel(b.id, s),
             text: TS("aendern") }));
       });
+      var flaeche = root.querySelector(".km-ed-inhalt");
+      if (flaeche) flaeche.classList.toggle("km-mit-stellen", !!Object.keys(da).length);   // Rand für „Ändern“
       // AP13.45 (09.11.): mit der Maus steht „Ändern“ auch, solange der Zeiger auf der Stelle oder dem Knopf ist; ein kurzer
       // Nachlauf trägt ihn über den Abstand zwischen beiden. Auf Touch-Geräten (hover: none) bleibt es beim Fokus
       var hoverAus = null;

@@ -643,6 +643,7 @@ window.km = km;
     fs.appendChild(el("option", { value: "", text: "Noch keine Schulart" }));
     o.schulart.forEach(function (w) { if (w.wert) fs.appendChild(el("option", { value: w.wert, text: w.text })); });
     if (!Z.mappe && S.schulartGemerkt) fs.value = S.schulartGemerkt();
+    if (window.KM_BEISPIEL) window.KM_BEISPIEL();           // Beispiel unter dem Thema passend zur Schulart
     var gruppen = S.katalog.chat_gruppen;
     var chat = $("a-chat"); chat.innerHTML = "";
     chat.appendChild(el("option", { value: "", text: "Noch nicht gewählt" }));
@@ -682,11 +683,13 @@ window.km = km;
     // Steckbrief trägt ihn dann; früher blieb angabenFuer leer, und lehrplan.js belegte nie vor). angabenFuer: die
     // Angaben dieser Mappe sind vollständig gelesen (lehrplan.js belegt den Lehrplan erst danach vor, sonst überschriebe
     // der Vorschlag eine gespeicherte Wahl)
+    var erstes = S.angabenFuer !== Z.mappe;
     for (var versuch = 0; versuch < 5; versuch++) {
       for (var kette = null; kette !== S.schreibKette;) { kette = S.schreibKette; await kette; }
       var gelesen = await km.mappeFn("angaben_lesen", [Z.steckbrief_text]);
       if (kette === S.schreibKette) { S.angaben = gelesen; S.angabenFuer = Z.mappe; break; }
     }
+    if (erstes && Z.mappe && S.heftGlaetten) S.heftGlaetten();      // beim Öffnen einer Einheit: kein Heft auf der Kursseite
     await auswertung();
     zeichne();
     autosave();

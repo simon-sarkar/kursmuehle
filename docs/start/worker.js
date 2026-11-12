@@ -149,6 +149,7 @@ var PY_BRUECKE = [
   "          'kurstitel_setzen', 'kachel_teilen', 'baustein_verschieben', 'kachel_loeschen', 'ids_ergaenzen',",
   "          'leer_nach_antwort', 'abgeschnitten', 'einheit_ersetzen', 'andere_einheiten',",
   "          'sequenzplan_einsetzen', 'sequenz_offen', 'sequenz_stunde', 'bilder_entfernen', 'stelle_setzen',",
+  "          'einheit_verwerfen',",
   "          'plan_rueckfrage'}",
   "_PROMPT = {'einheit', 'baustein', 'korrektur', 'korrektur_bitte', 'diagnose', 'fragen', 'fachcheck', 'vergleich',",
   "           'lehrplan', 'format_hilfe', 'sequenzplan', 'plan_hinweise'}",

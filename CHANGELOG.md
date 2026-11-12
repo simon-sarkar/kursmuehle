@@ -2,6 +2,28 @@
 
 ## Unveröffentlicht
 
+## 2.0.0-b21 – 2026-11-11 (AP15a Runde 1, Rückmeldungen aus zwei Durchgängen: Menü, Editor, Bilder, Datenschutzseite)
+
+* Menü und Breite in allen Schritten einheitlich, die Vorschau steht ruhig
+* Im Editor lassen sich auch Kastentitel ändern
+* Impressum und Datenschutz auf getrennten Seiten
+
+- Alle Schritte sind so breit wie „Wie soll der Kurs aussehen?“; „Mühle“, „Editor“ und „Kursdatei“ stehen in jedem Schritt neben der Karte, die Vorschau zittert nicht mehr.
+- „Kursdatei“ neben der Seite und im Editor ist ausgegraut, bis der Schritt „Kursdatei“ erreicht ist.
+- Das Beispielthema passt zur gewählten Schulart; das Feld „Fach (freiwillig)“ steht direkt unter dem Lernziel, der Lehrplan übernimmt es, ein anderes Fach im Lehrplan leert es.
+- Ein Arbeitsheft ist nur mit „Als eigene Aktivitäten“ wählbar; bei Übungen auf der Kursseite steht dort der Grund.
+- Im Editor steht „Ändern“ rechts neben seiner Stelle; auch der Titel eines Kastens oder Beispiels lässt sich so bearbeiten.
+- Im Editor sind Kacheln der Kursübersicht für Vorlesegeräte kein Knopf mehr mit Knöpfen darin; ausgeschaltete Bausteine sind gestrichelt statt blass.
+- Im Schritt Bilder sagt der zweite Knopf, dass er die Platzhalter entfernt, und fragt vorher, ob die Stunde besser neu beauftragt wird; unter der Bilderwahl steht, wann und wo eigene Fotos hochgeladen werden.
+- In Schritt 7 steht über dem Knopf ein leiser Hinweis, dass KI Fehler machen kann und der Kurs vor dem Einsatz durchgelesen werden sollte.
+- Der Link neben dem gewählten Chat heißt „Chat wechseln“, die Zeile darüber „Text für ByLKI“; der Satz zur Modellwahl spricht von einem großen Modell und sagt, wofür „mini“ und „flash“ stehen.
+- Nach dem Einfügen sagt die Stand-Karte, dass kein Klick auf „Antwort einsetzen“ nötig ist; die graue Zeitzeile nennt die Minuten und sagt, dass man so weitermachen kann.
+- Steht bei der Jahrgangsstufe „Klasse 3“ statt „3“, gelten dieselben Mindestlängen und dieselbe Zeitschätzung.
+- Die Vorschau im Editor zeigt fremdes Markup aus einer Antwort strenger als Text; Anführungszeichen im Bildtext erscheinen richtig, seltene Trennzeichen brechen keine Zeile mehr um.
+- Die Info-Knöpfe am Material und an der Zahl der Stunden sind rund wie die übrigen; der Hinweis zur Testversion in der Fußzeile klappt darunter auf.
+- „Ordner aus Kursmühle 1 öffnen“ und „Mehr“ in der Fußzeile entfallen.
+- Impressum und Datenschutz stehen auf getrennten Seiten; der Teil für Schulleitungen steht beim Datenschutz.
+
 ## 2.0.0-b20 – 2026-11-10 (AP13.45: Tiefenprüfung, Barrierefreiheit, Navigation)
 
 * Navigation „Mühle“, „Editor“, „Kursdatei“ neben der Seite

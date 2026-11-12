@@ -741,6 +741,7 @@
      "probe": "Import auf der Plattform noch nicht geprüft"
     }
    ],
+   "nur_aktivitaeten": "Nur mit „Als eigene Aktivitäten“.",
    "bestehen": "Abschluss ab Prozent der Punkte (1 bis 100)",
    "bestehen_zeile": "Leer: abgeschlossen, sobald das Heft abgeschickt ist.",
    "fazit": "Arbeitsheft",
@@ -763,6 +764,32 @@
     "totalScoreLabel": "Punkte im Heft"
    }
   },
+  "bilder_ohne": [
+   {
+    "wert": "knopf_alle",
+    "text": "Platzhalter entfernen und ohne Bilder weiter"
+   },
+   {
+    "wert": "knopf_fehlende",
+    "text": "Platzhalter entfernen und ohne die fehlenden Bilder weiter"
+   },
+   {
+    "wert": "frage",
+    "text": "Diese Stunde ist mit Bildern geplant; Texte und Aufgaben können sich auf sie beziehen. Besser ist eine neue Stunde ohne Bilder. Der Text für den Chat verlangt dann keine Bilder."
+   },
+   {
+    "wert": "verwerfen",
+    "text": "Stunde verwerfen und zurück zum Text für den Chat"
+   },
+   {
+    "wert": "trotzdem",
+    "text": "Trotzdem ohne Bilder weiter"
+   },
+   {
+    "wert": "abbrechen",
+    "text": "Abbrechen"
+   }
+  ],
   "bilder": [
    {
     "wert": "0",
@@ -1083,12 +1110,12 @@
    "zeit_kurz_satz": "Die Bitte an den Chat: Inhalte ergänzen, bis die Einheit etwa {minuten} Minuten füllt.",
    "zeit_kurz_kopieren": "Bitte kopieren",
    "zeit_kurz_abbrechen": "Abbrechen",
-   "zeit_dauer_zeile": "Geplant sind {minuten} Minuten, der Text reicht für etwa {ist}.",
+   "zeit_dauer_zeile": "Geplant sind {minuten} Minuten, der Text reicht für etwa {ist} Minuten. Gespräche in der Klasse zählt die Schätzung nicht mit; du kannst so weitermachen.",
    "zeit_dauer_pruef": "geplant {minuten} Minuten, Text für etwa {ist}",
    "zeit_dauer_info": "Die Mühle schätzt die Dauer aus der Textmenge: Lesezeit der Texte, Abschreiben des Hefteintrags und eine feste Zeit je Aufgabe. Gespräche in der Klasse rechnet sie nicht mit, deshalb liegt die Schätzung oft unter der Planung.",
    "zeit_dauer_info_name": "Woher kommt die Schätzung?",
    "antwort_eingesetzt": "Antwort eingesetzt",
-   "schon_uebernommen": "Das Einfügen hat sie schon übernommen.",
+   "schon_uebernommen": "Das Einfügen hat sie schon übernommen, ein Klick auf „Antwort einsetzen“ ist nicht nötig.",
    "gegen_eingesetzt": "{n} Lösungen verglichen.",
    "gegen_eingesetzt_eine": "1 Lösung verglichen.",
    "chat_weg": "Öffne {chat} in einem neuen Tab und beginne dort ein neues Gespräch.",
@@ -1238,6 +1265,7 @@
     "Beispiel": "Beispiel",
     "Hinweis": "Hinweis",
     "Text": "Text",
+    "Titel": "Titel des Kastens",
     "Liste": "Liste",
     "Schritte": "Schritte",
     "Frage": "Frage",
@@ -1347,7 +1375,7 @@
    "eingabe_kb": null,
    "bilder": true,
    "bilder_hinweis": "Das Bildguthaben ist klein; ist es leer, meldet der Generator eine Inhaltswarnung, auch bei harmlosen Aufträgen. Dann ein anderer Generator oder morgen.",
-   "aufwand": "Wähl in ByLKI das neueste Modell ohne Zusatz wie mini oder flash im Namen."
+   "aufwand": "Wähl in ByLKI bei der Modellwahl ein großes Modell. Namen mit „mini“ oder „flash“ stehen für kleine Modelle, die schwächere Einheiten schreiben."
   },
   {
    "wert": "ais",
@@ -1367,7 +1395,7 @@
    "teil_bausteine": null,
    "eingabe_kb": 68,
    "bilder": false,
-   "aufwand": "Stell in fobizz „Auto“ um und nimm unter „Mehr Modelle“ das neueste Modell ohne Zusatz wie mini oder flash im Namen."
+   "aufwand": "Stell in fobizz die Modellwahl von „Auto“ um und nimm unter „Mehr Modelle“ ein großes Modell. Namen mit „mini“ oder „flash“ stehen für kleine Modelle, die schwächere Einheiten schreiben."
   },
   {
    "wert": "mucgpt",
@@ -1377,7 +1405,7 @@
    "teil_bausteine": 6,
    "eingabe_kb": null,
    "bilder": false,
-   "aufwand": "Bietet MUCGPT eine Modellwahl, nimm das neueste Modell ohne Zusatz wie mini oder flash im Namen."
+   "aufwand": "Bietet MUCGPT eine Modellwahl, nimm ein großes Modell. Namen mit „mini“ oder „flash“ stehen für kleine Modelle, die schwächere Einheiten schreiben."
   },
   {
    "wert": "chatgpt",
@@ -1397,7 +1425,7 @@
    "teil_bausteine": null,
    "eingabe_kb": null,
    "bilder": false,
-   "aufwand": "Nimm in Claude das neueste Modell ohne Zusatz und schalte das Denken ein, wenn es den Schalter gibt."
+   "aufwand": "Nimm in Claude ein großes Modell und schalte das Denken ein, wenn es den Schalter gibt."
   },
   {
    "wert": "gemini",
@@ -1407,7 +1435,7 @@
    "teil_bausteine": null,
    "eingabe_kb": null,
    "bilder": true,
-   "aufwand": "Nimm in Gemini das neueste Modell ohne Zusatz wie flash oder lite im Namen und schalte das Denken ein, wenn es den Schalter gibt."
+   "aufwand": "Nimm in Gemini ein großes Modell, keins mit „flash“ oder „lite“ im Namen, und schalte das Denken ein, wenn es den Schalter gibt."
   },
   {
    "wert": "eigene",
@@ -1426,7 +1454,7 @@
    "teil_bausteine": 6,
    "eingabe_kb": null,
    "bilder": false,
-   "aufwand": "Nimm das neueste Modell ohne Zusatz wie mini oder flash im Namen; steht „Auto“ voreingestellt, stell um."
+   "aufwand": "Nimm ein großes Modell, keins mit „mini“, „flash“ oder „lite“ im Namen; steht die Modellwahl auf „Auto“, stell sie um."
   }
  ],
  "chat_gruppen": {
@@ -1658,5 +1686,5 @@
    }
   ]
  },
- "version": "2.0.0-b20"
+ "version": "2.0.0-b21"
 }
